@@ -1,0 +1,24 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Lesson 2 : Modes"
+    },
+
+    "trigger": 2,
+    
+    "event": "HOME,AWAY,VACATION",
+    
+    "access": [
+      {
+        "category": 1,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "reason": {
+          "en": "We want to know when your mode changes to HOME, AWAY, VACATION, but not SLEEP."
+        }
+      }
+    ]
+  }
+}

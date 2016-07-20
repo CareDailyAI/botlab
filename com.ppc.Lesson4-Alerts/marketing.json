@@ -1,0 +1,19 @@
+{
+  "app": {
+    "category": "S",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Lesson 4 : Alerts",
+        "author": "David Moss",
+        "copyright": "Copyright 2016 Your Company",
+        "description": "This is an example of how to run apps in Composer that trigger off of device alerts",
+        "marketingUrl": "http://marketingurl.com",
+        "supportUrl": "http://myurl.com/support",
+        "videoUrl": "http://youtube.com/?s=myvideo",
+        "privacyUrl": "http://myurl.com/privacy",
+        "keywords": "device,alert,demo"
+      }
+    ]
+  }
+}

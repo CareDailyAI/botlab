@@ -1,0 +1,15 @@
+{
+  "app": {
+    "category": "L,E",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Lesson 6 : Notifications",
+        "author": "David Moss",
+        "copyright": "Copyright 2016 People Power Company",
+        "description": "This app will demonstrate how to send push and email notifications\nincluding inline email graphics and attachments.\n\nThe app will execute when you change modes.",
+        "keywords": "notifications,alerts,email,push,sms,message,msg"
+      }
+    ]
+  }
+}

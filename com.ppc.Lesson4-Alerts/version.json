@@ -1,0 +1,22 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+      "en": "Creation"
+    },
+
+    "trigger": 4,
+
+    "deviceTypes": [{
+      "id": 24,
+      "minOccurrence": 1,
+      "trigger": true,
+      "read": true,
+      "control": false,
+      "triggerAlertType": "motion",
+      "reason": {
+        "en": "Listening for motion recording events"
+      }
+    }]
+  }
+}

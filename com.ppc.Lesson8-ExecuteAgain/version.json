@@ -1,0 +1,35 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Creation"
+    },
+
+    "trigger": 8,
+    
+    "deviceTypes": [
+      {
+        "id": 10014,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "reason": {
+          "en": "We're going to debounce your doors and windows."
+        }
+      },
+      {
+        "id": 10072,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "ppc.switchStatus",
+        "triggerParamValues": "0,1",
+        "reason": {
+          "en": "We're going to debounce your virtual light switch and pretend it's a door."
+        }
+      }
+    ]
+  }
+}

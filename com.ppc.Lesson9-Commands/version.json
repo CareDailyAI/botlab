@@ -1,0 +1,35 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Creation"
+    },
+
+    "trigger": 8,
+        
+    "deviceTypes": [
+      {
+        "id": 10072,
+        "minOccurrence": 1,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "ppc.switchStatus",
+        "triggerParamValues": "0,1",
+        "reason": {
+          "en": "Light switches will control our lights"
+        }
+      },
+      {
+        "id": 10071,
+        "minOccurrence": 1,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Add lights to control with your light switches."
+        }
+      }
+    ]
+  }
+}

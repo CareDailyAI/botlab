@@ -1,0 +1,34 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Lesson 6 : Notifications"
+    },
+
+    "trigger": 2,
+    
+    "event": "HOME,AWAY,VACATION,SLEEP",
+    
+    "access": [
+      {
+        "category": 1,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "reason": {
+          "en": "We'll practice sending notifications when your mode changes."
+        }
+      }
+    ],
+    
+    "communications": [
+      {
+        "category": 0,
+        "email": true,
+        "push": true,
+        "sms": false,
+        "msg": false
+      }
+    ]
+  }
+}

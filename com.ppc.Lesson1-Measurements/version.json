@@ -1,0 +1,37 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Lesson 1 Created"
+    },
+
+    "trigger": 8,
+        
+    "deviceTypes": [
+      {
+        "id": 10014,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "doorStatus",
+        "triggerParamValues": "true",
+        "reason": {
+          "en": "We're going to monitor your doors and windows."
+        }
+      },
+      {
+        "id": 10072,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "ppc.switchStatus",
+        "triggerParamValues": "0,1",
+        "reason": {
+          "en": "We're going to monitor your virtual light switch."
+        }
+      }
+    ]
+  }
+}

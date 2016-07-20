@@ -1,0 +1,24 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Lesson 3 : Schedules"
+    },
+
+    "trigger": 1,
+    "schedule": "0 0/1 * * * ?",
+    
+    
+    "access": [
+      {
+        "category": 1,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "reason": {
+          "en": "Valid apps always need to access something. For completeness, we're saying this app would hypothetically access your location information."
+        }
+      }
+    ]
+  }
+}

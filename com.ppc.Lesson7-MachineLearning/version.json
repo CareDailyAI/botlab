@@ -1,0 +1,39 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Creation"
+    },
+
+    "trigger": 9,
+    
+    "deviceTypes": [
+      {
+        "id": 10014,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "doorStatus",
+        "triggerParamValues": "true,false",
+        "reason": {
+          "en": "We're going to monitor your doors and windows."
+        }
+      },
+      {
+        "id": 10072,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "ppc.switchStatus",
+        "triggerParamValues": "0,1",
+        "reason": {
+          "en": "We're going to listen for measurements from your virtual light switch."
+        }
+      }
+    ],
+    
+    "schedule": "0/30 * * * * ?"
+  }
+}
