@@ -18,4 +18,4 @@ To view the composer documentation clone this repo and open the index.html file 
 
 ##Getting Started
 
-Read through the lessons located in this repo. Each lesson is a simple example of an app built with the Composer Framework.
+Read through the lessons located in this repo. Each lesson is a simple example of an app built with the Composer Framework. Be sure to look specifically at the app.py files in each lesson.
