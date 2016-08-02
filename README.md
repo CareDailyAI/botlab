@@ -10,7 +10,7 @@ To install the composer framework on your local machine run the following line o
 
 **Note:** You must have Python 3  on your computer to install the composer framework.
 
-The installer file will download the composer framework and all the dependecies needed to run composer.
+The installer file will download the composer framework and all the dependencies needed to run composer.
 
 ##Documentation
 
