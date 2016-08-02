@@ -1,6 +1,5 @@
 #!/bin/bash
 if command -v python3 > /dev/null 2>&1; then
-  echo true
   TMP_FILE=/tmp/composer.tmp
   TMP_FILE_ONE=/tmp/composer_bytecode.tmp
   pip3 install requests python-dateutil tzlocal dill
