@@ -15,9 +15,8 @@ This app shows how to trigger off of modes. Each user account has at least 1 loc
 
  We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
  
-    `$ ./runlesson.sh`
+   `$ ./runlesson.sh`
 
- 
  This script will automatically do the following for you. From a terminal window *above* this app's current directory:
  
  1. Create a new directory for your app with your given bundle ID, and copy all the files from this lesson into that new directory.
