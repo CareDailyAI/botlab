@@ -1,6 +1,6 @@
 #Lesson 4 - Device Alerts
 
-This is an example of an app that listens to alerts from devices. Alerts are different than measurements, in that they occur one time and without state, simply indicating something happened.
+This is an example of an app that listens to alerts from devices. Alerts are different than measurements, in that they occur one time and without state, simply indicating something happened. See app.py for more information.
 
 ##Dependencies
 
