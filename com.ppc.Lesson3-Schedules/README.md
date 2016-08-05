@@ -19,7 +19,7 @@ The apscheduler python module is required. Run the command: 'pip3 install apsche
 
  We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
  
-    '$ ./runlesson.sh'
+  '$ ./runlesson.sh'
 
  This script will automatically do the following for you. 
  From a terminal window *above* this app's current directory:
@@ -27,7 +27,7 @@ The apscheduler python module is required. Run the command: 'pip3 install apsche
  1. Create a new directory for your app with your given bundle ID, and copy all the files from this lesson into that new directory.
  
  2. Create a new app in your user account with the given bundle ID.
-    
+
     'composer --new com.yourname.YourApp'
  
  3. Commit your app to the server. This will push all the code, version information, marketing information, and icon to the server. The app will become privately available.
