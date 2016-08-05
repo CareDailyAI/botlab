@@ -14,9 +14,9 @@ This app shows you how to persist variables across multuple app triggers and exe
 
 			`$ python lightSwitch.py`
 
-  	This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
+This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
  
-  	You will need to have at least 1 entry sensor OR 1 virtual light switch in your account before you can purchase this app to run it (see below). Otherwise, this app will be incompatible with your account.
+You will need to have at least 1 entry sensor OR 1 virtual light switch in your account before you can purchase this app to run it (see below). Otherwise, this app will be incompatible with your account.
  
  
  There are several steps needed to run this app:
