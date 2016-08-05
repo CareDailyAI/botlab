@@ -12,7 +12,7 @@ This is an example of an app that is triggered from multiple types of triggers. 
 
    Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
 
-                `$ python lightSwitch.py`
+			`$ python lightSwitch.py`
 
    This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
  
