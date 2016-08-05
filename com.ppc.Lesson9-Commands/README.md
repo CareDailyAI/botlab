@@ -8,14 +8,14 @@ First, register your developer account at http://presto.peoplepowerco.com.
   Create virtual light switch(es) locally.
     Open up another terminal window. In this lesson's directory, run
 
-    `$ python lightSwitch.py`
-              
+    $ python lightSwitch.py
+
     This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
     
   Create virtual light bulb(s) locally.
     Open a terminal window. In this lesson's directory, run
 
-    `$ python lightBulb.py`
+    $ python lightBulb.py
     
     This will register a new 'Virtual Light Bulb' into your account, which will simply declare its status on the command line.
 
