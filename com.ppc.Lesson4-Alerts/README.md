@@ -14,7 +14,7 @@ To run this app install the "Presence" app on an iOS device and turn it into a c
 
  We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
  
-    `$ ./runlesson.sh`
+   `$ ./runlesson.sh`
  
  This script will automatically do the following for you. 
  From a terminal window *above* this app's current directory:
