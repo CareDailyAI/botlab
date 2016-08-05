@@ -19,8 +19,8 @@ The apscheduler python module is required. Run the command: 'pip3 install apsche
 
  We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
  
- 		`$ ./runlesson.sh`
-
+    `$ ./runlesson.sh`
+ 		
  This script will automatically do the following for you. 
  From a terminal window *above* this app's current directory:
  
