@@ -8,13 +8,13 @@ This is an example of an app that is triggered from multiple types of triggers. 
 
  This app will require a device to be connected to your account:
  
-    Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
+   Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
 
-    Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
+   Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
 
                 `$ python lightSwitch.py`
 
-    This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
+   This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
  
     You will need to have at least 1 entry sensor OR 1 virtual light switch in your account before you can purchase this app to run it (see below). Otherwise, this app will be incompatible with your account.
  
