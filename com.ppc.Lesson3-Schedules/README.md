@@ -39,9 +39,9 @@ The apscheduler python module is required. Run the command: 'pip3 install apsche
     'composer --purchase com.yourname.YourApp'
  
     This will return a unique instance ID for your purchased app, which you may reference to reconfigure the app instance later.
-    
+
  5. Run the app locally.
-    
+ 
     'composer --run com.yourname.YourApp'
-    
+
     This will automatically look up your app instance ID and run the app, using the real-time streaming data from the server and the code that is on your local computer.
