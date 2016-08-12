@@ -1,10 +1,23 @@
-#Lesson 2 - Modes
+#Lesson 5 - Combining Triggers
 
-This app shows how to trigger off of modes. Each user account has at least 1 location, and each location has a mode. The standard modes are: "Home", "Away", "SLEEP", "VACATION", but it is technically possible for the mode to be called anything. See app.py for more information.
+This is an example of an app that is triggered from multiple types of triggers. This app triggers off of 4 different trigger types: measurements, modes, alerts, and schedulues. See app.py for more information.
 
-#Running This App
+##Running This App
 
  First, register your developer account at http://presto.peoplepowerco.com.
+
+ This app will require a device to be connected to your account:
+ 
+   Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
+
+   Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
+
+			`$ python lightSwitch.py`
+
+   This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
+ 
+    You will need to have at least 1 entry sensor OR 1 virtual light switch in your account before you can purchase this app to run it (see below). Otherwise, this app will be incompatible with your account.
+ 
  
  There are several steps needed to run this app:
     1. Create a new directory for your app, with your own unique bundle ID. Copy all the files into it. Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourApp) and cannot be deleted or edited once created.
@@ -15,17 +28,16 @@ This app shows how to trigger off of modes. Each user account has at least 1 loc
 
  We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
  
-   `$ ./runlesson.sh`
-
- This script will automatically do the following for you. From a terminal window *above* this app's current directory:
+    `$ ./runlesson.sh`
+ 
+ This script will automatically do the following for you. 
+ From a terminal window *above* this app's current directory:
  
  1. Create a new directory for your app with your given bundle ID, and copy all the files from this lesson into that new directory.
-
  
  2. Create a new app in your user account with the given bundle ID.
     
     `composer --new com.yourname.YourApp`
-    
  
  3. Commit your app to the server. This will push all the code, version information, marketing information, and icon to the server. The app will become privately available.
 

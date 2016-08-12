@@ -1,6 +1,6 @@
 #Lesson 1 - Measurements
 
-This lesson is an example of an app that alerts you when an entry sensor on a door is triggered, or a light switch is toggled on or off.
+This lesson is an example of an app that alerts you when an entry sensor on a door is triggered, or a light switch is toggled on or off. See app.py for more information.
 
 #Running This App
 First, register your developer account at http://presto.peoplepowerco.com.

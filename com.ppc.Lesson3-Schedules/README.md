@@ -1,6 +1,10 @@
-#Lesson 2 - Modes
+#Lesson 3 - Schedules
 
-This app shows how to trigger off of modes. Each user account has at least 1 location, and each location has a mode. The standard modes are: "Home", "Away", "SLEEP", "VACATION", but it is technically possible for the mode to be called anything. See app.py for more information.
+This is an example of an app that runs on a recurring basis using Cron schedules. See the app.py file's comments for more details.
+
+##Dependencies
+
+The apscheduler python module is required. Run the command: 'pip3 install apscheduler' to install the module.
 
 #Running This App
 
@@ -15,30 +19,29 @@ This app shows how to trigger off of modes. Each user account has at least 1 loc
 
  We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
  
-   `$ ./runlesson.sh`
-
- This script will automatically do the following for you. From a terminal window *above* this app's current directory:
+    `$ ./runlesson.sh`
+ 		
+ This script will automatically do the following for you. 
+ From a terminal window *above* this app's current directory:
  
  1. Create a new directory for your app with your given bundle ID, and copy all the files from this lesson into that new directory.
-
  
  2. Create a new app in your user account with the given bundle ID.
-    
+
     `composer --new com.yourname.YourApp`
-    
  
  3. Commit your app to the server. This will push all the code, version information, marketing information, and icon to the server. The app will become privately available.
 
     `composer --commit com.yourname.YourApp`
-
+ 
  4. Purchase the app as if you're an end-user. Note that because your app is privately available, other end users will not be able to see or access it.
 
     `composer --purchase com.yourname.YourApp`
  
     This will return a unique instance ID for your purchased app, which you may reference to reconfigure the app instance later.
-    
+
  5. Run the app locally.
-    
+ 
     `composer --run com.yourname.YourApp`
-    
+
     This will automatically look up your app instance ID and run the app, using the real-time streaming data from the server and the code that is on your local computer.
