@@ -68,7 +68,7 @@ Email support@peoplepowerco.com if you have questions!
 #    and the code that is on your local computer.
 # 
     
-def run(composer, initialize=False):
+def run(composer):
 
     # Initialize
     logger = composer.get_logger()                  # Debug logger

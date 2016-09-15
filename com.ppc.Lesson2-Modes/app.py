@@ -84,7 +84,7 @@ Email support@peoplepowerco.com if you have questions!
 # 
 
 
-def run(composer, initialize=False):
+def run(composer):
     logger = composer.get_logger()                  # Debug logger, this will capture logged output to an external 'app.log' file
     inputs = composer.get_inputs()                  # Information input into the app
     access = composer.get_access_block()            # Capture info about all things this app has permission to access

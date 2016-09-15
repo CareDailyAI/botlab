@@ -110,7 +110,7 @@ VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE = 10072
 VIRTUAL_LIGHT_BULB_DEVICE_TYPE = 10071
 
 
-def run(composer, initialize=False):
+def run(composer):
     # Initialize
     logger = composer.get_logger()                  # Debug logger
     inputs = composer.get_inputs()                  # Information input into the app

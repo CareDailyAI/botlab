@@ -168,7 +168,7 @@ Email support@peoplepowerco.com if you have questions!
 # 
 
 
-def run(composer, initialize=False):
+def run(composer):
     '''This is the execution starting point of your app
     
     @param composer: Instance of the Composer object, which provides built-in functions for you to privately interact with this user's data

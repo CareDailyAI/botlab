@@ -120,7 +120,7 @@ TRIGGER_TYPE_MEASUREMENT = 8
 TRIGGER_TYPE_EXECUTE_AGAIN = 64
 
 
-def run(composer, initialize=False):
+def run(composer):
     # Initialize
     logger = composer.get_logger()                  # Debug logger
     inputs = composer.get_inputs()                  # Information input into the app

@@ -182,7 +182,7 @@ Email support@peoplepowerco.com if you have questions!
 
 import datetime
 
-def run(composer, initialize=False):
+def run(composer):
     # Initialize
     logger = composer.get_logger()                  # Debug logger
     inputs = composer.get_inputs()                  # Information input into the app
