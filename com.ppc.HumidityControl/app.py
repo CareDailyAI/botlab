@@ -30,8 +30,8 @@ ACCESS_CATEGORY_DEVICE = 4
 
 
 def run(composer):
-    '''This is the execution starting point of your app
-    
+    '''
+    This is the execution starting point of your app
     @param composer: Instance of the Composer object, which provides built-in functions for you to privately interact with this user's data
     '''
     
@@ -44,15 +44,22 @@ def run(composer):
     access = composer.get_access_block()            # Capture info about all things this app has permission to access
     timestamp = composer.get_timestamp()            # Get the current UNIX epoch timestamp in milliseconds
     
+    print("\n\n>run()")
+    
     if triggerType == TRIGGER_DEVICE_MEASUREMENT:
+        print("TRIGGER: Measurement!")
         
         if deviceType == HumiditySensorDevice.DEVICE_TYPE:
+            print("\t=> From a humidity sensor")
+            
             current_humidity = composer.get_property(measures, "name", "relativeHumidity", "value")
-                
+            print("\t=> Current humidity is " + str(current_humidity) + "%")
+            
             # Blindly turn all the smart plugs we have permission to access either on or off each humidity trigger.
             # This could be made more intelligent by using save_variable() and load_variable(), 
             # but that's a little bit overkill for the simple use case we're trying to fulfill here.
             if current_humidity >= HUMIDITY_THRESHOLD:
+                print("\t=> The humidity is above our threshold")
                 
                 # When was the last time we turned on the plug?
                 on_timestamp = composer.load_variable("on_timestamp", on_timestamp)
@@ -62,20 +69,26 @@ def run(composer):
                     
                 # Let's not turn it on more than once ever 30 minutes
                 if timestamp - on_timestamp > (utilities.ONE_MINUTE_MS * 30):
+                    print("\t=> It's time to turn on our smart plugs! Execute me again in 15 minutes.")
+                    
                     toggle_all_smart_plugs(composer, True)
                     on_timestamp = timestamp
                     composer.save("on_timestamp", on_timestamp)
                     
                     # Turn it back off again in 15 minutes.
                     composer.execute_again_in_n_sec(utilities.ONE_MINUTE_MS * 15)
+                    
+                else:
+                    print("\t=> Not enough time has passed, leaving the smart plugs alone")
                 
                 
     elif triggerType == TRIGGER_EXECUTE_AGAIN:
         # It must have been 15 minutes since we last turned on the plug, now turn it off.
+        print("TRIGGER: Execute Again!")
         toggle_all_smart_plugs(composer, False)
         
     # The composer app completely exits at this point.
-    
+    print("<run()")
     
 
 def toggle_all_smart_plugs(composer, turn_on):
@@ -87,6 +100,7 @@ def toggle_all_smart_plugs(composer, turn_on):
     :param composer: Composer object that is executing this app
     :param turn_on: True to turn on all smart plugs, False to turn them all off.
     """
+    print(">toggle_all_smart_plugs(" + str(turn_on) + ")")
     access = composer.get_access_block()            # Capture info about all things this app has permission to access
     
     for item in access:
@@ -109,6 +123,8 @@ def toggle_all_smart_plugs(composer, turn_on):
                     device_object.off()
                 device_object.terminate(composer)
         
+    
+    print("<toggle_all_smart_plugs")
     
     
 
