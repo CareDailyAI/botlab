@@ -1,0 +1,8 @@
+
+
+# Time conversions to ms
+ONE_MINUTE_MS = 60000
+ONE_HOUR_MS = ONE_MINUTE_MS * 60
+ONE_DAY_MS = ONE_HOUR_MS * 24
+ONE_MONTH_MS = ONE_DAY_MS * 30
+

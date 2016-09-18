@@ -1,0 +1,34 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Control humidity by turning on a smart plug connected appliance."
+    },
+
+    "trigger": 8,
+        
+    "deviceTypes": [
+      {
+        "id": 10034,
+        "minOccurrence": 1,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "relativeHumidity",
+        "reason": {
+          "en": "Monitor humidity."
+        }
+      },
+      {
+        "id": 10035,
+        "minOccurrence": 1,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Connect with smart plugs."
+        }
+      }
+    ]
+  }
+}

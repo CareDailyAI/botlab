@@ -1,0 +1,19 @@
+{
+  "app": {
+    "category": "L",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Humidity Control",
+        "author": "David Moss",
+        "copyright": "Copyright 2016 People Power Company",
+        "description": "Manage humidity levels automatically!\n\n1. Drop a humidity sensor in a place where you want to control the humidity levels.\n2. Plug a fan or dehumidifier into a smart plug.\n3. Give this app permission to access your humidity sensor and smart plug.\n\nWhala - the app takes care of the rest! Enjoy.",
+        "marketingUrl": "http://peoplepowerco.com",
+        "supportUrl": "http://presencepro.com/support",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": "humidity,dehumidifier,air,mold,mildew,fan,summer,heat,weather"
+      }
+    ]
+  }
+}
