@@ -3,6 +3,12 @@ if command -v python3 > /dev/null 2>&1; then
   TMP_FILE=/tmp/composer.tmp
   TMP_FILE_ONE=/tmp/composer_bytecode.tmp
   pip3 install requests python-dateutil tzlocal dill
+  if [ $? -ne 0 ]
+    then
+      echo "STOPPING THE SCRIPT."
+      echo
+      exit $?
+  fi
   if [ -e /tmp/composer.tmp ]; then
     echo "Cleaning up from previous install failure"
     rm -f /tmp/composer.tmp
