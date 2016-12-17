@@ -6,7 +6,7 @@ Composer is a Python framework made to help users build Ambient Computing apps o
 
 To install the composer framework on your local machine, copy and paste the following line of code in your terminal:
 
-`curl -s https://raw.githubusercontent.com/peoplepower/composer-sdk-python/master/installer.sh | sudo /bin/bash`
+`curl -s https://raw.githubusercontent.com/peoplepower/botengine/master/installer.sh | sudo /bin/bash`
 
 **Note:** You must have Python 3 or newer on your computer to install the composer framework.
 

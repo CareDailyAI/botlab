@@ -4,15 +4,15 @@
     "marketing": [
       {
         "lang": "en",
-        "name": "Lesson 9 : Commands",
+        "name": "Lesson 8 : Timers",
         "author": "David Moss",
         "copyright": "Copyright 2016 People Power Company",
-        "description": "This example bot demonstrates how to send commands to devices.\n\nThe user can grant permission for this bot to form a group out of any number of lights, and any number of light switches can be used to toggle those lights.",
+        "description": "This example bot demonstrates how user timers to make an bot execute itself again.",
         "marketingUrl": "http://peoplepowerco.com",
         "supportUrl": "http://presencepro.com/support",
         "videoUrl": "",
         "privacyUrl": "",
-        "keywords": "commands,control,light,switch"
+        "keywords": "timers,execution,triggers,devices,example"
       }
     ]
   }

@@ -6,7 +6,7 @@
     },
 
     "trigger": 1,
-    "schedule": "0 0/1 * * * ?",
+    "schedule": "0/30 * * * * ?",
     
     
     "access": [
@@ -16,7 +16,7 @@
         "read": true,
         "control": false,
         "reason": {
-          "en": "Valid apps always need to access something. For completeness, we're saying this app would hypothetically access your location information."
+          "en": "Valid bots always need to access something. For completeness, we're saying this bot would hypothetically access your location information."
         }
       }
     ]

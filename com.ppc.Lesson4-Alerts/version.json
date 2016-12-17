@@ -7,7 +7,19 @@
 
     "trigger": 4,
 
-    "deviceTypes": [{
+    "deviceTypes": [
+    {
+      "id": 23,
+      "minOccurrence": 1,
+      "trigger": true,
+      "read": true,
+      "control": false,
+      "triggerAlertType": "motion",
+      "reason": {
+        "en": "Listening for motion recording events"
+      }
+    },
+    {
       "id": 24,
       "minOccurrence": 1,
       "trigger": true,
@@ -17,6 +29,7 @@
       "reason": {
         "en": "Listening for motion recording events"
       }
-    }]
+    }
+    ]
   }
 }

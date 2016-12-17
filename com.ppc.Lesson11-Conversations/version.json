@@ -2,10 +2,10 @@
   "version": {
     "version": "1.0.0",
     "whatsnew": {
-        "en": "Lesson 2 : Modes"
+        "en": "Lesson 11 Created"
     },
-
-    "trigger": 2,
+  
+    "trigger": 18,
     
     "access": [
       {
@@ -14,7 +14,7 @@
         "read": true,
         "control": false,
         "reason": {
-          "en": "We want to know when your mode changes."
+          "en": "Listen for changing modes."
         }
       }
     ]

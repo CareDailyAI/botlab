@@ -15,7 +15,7 @@
         "read": true,
         "control": false,
         "reason": {
-          "en": "We're going to monitor your doors and windows."
+          "en": "We're going to debounce your doors and windows."
         }
       },
       {
@@ -27,7 +27,7 @@
         "triggerParamName": "ppc.switchStatus",
         "triggerParamValues": "0,1",
         "reason": {
-          "en": "We're going to listen for measurements from your virtual light switch."
+          "en": "We're going to debounce your virtual light switch and pretend it's a door."
         }
       }
     ],
@@ -39,7 +39,7 @@
         "read": true,
         "control": false,
         "reason": {
-          "en": "We want to know when your mode changes so we can show you how location and user tags work."
+          "en": "We want to know when your mode changes."
         }
       }
     ]

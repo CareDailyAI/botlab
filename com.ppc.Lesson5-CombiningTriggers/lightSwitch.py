@@ -47,7 +47,7 @@ def main(argv=None):
     if not deviceId:
         deviceId = input('Specify a globally unique device ID for this virtual device: ')
     
-    # Define the app server
+    # Define the bot server
     if not server:
         server = "https://app.presencepro.com"
     
@@ -181,7 +181,7 @@ def _listen(device_server, deviceId):
             
     
 def _login(server, username, password):
-    """Get an App API key and User Info by login with a username and password"""
+    """Get an Bot API key and User Info by login with a username and password"""
 
     if not username:
         username = input('Email address: ')
