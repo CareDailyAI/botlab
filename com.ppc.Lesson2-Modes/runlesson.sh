@@ -5,11 +5,7 @@ green="\033[0;32m"
 red='\033[0;31m'
 normal=$(tput sgr0)
 
-<<<<<<< HEAD
 echo -ne "${green}What is your unique bundle ID that will last forever for this bot (i.e. com.yourname.YourBot): ${normal}"
-=======
-echo -ne "${green}What is your unique bundle ID that will last forever for this bot (i.e. com.yourname.YourBot): ${normal}"
->>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
 read bundle_id
 periods=`echo $bundle_id | grep -o "\." | wc -l`
 
@@ -39,12 +35,6 @@ cp * ../$bundle_id/
 cd ..
 
 echo
-<<<<<<< HEAD
-echo "CREATE A NEW BOT IN YOUR ACCOUNT"
-echo "${bold}botengine --new $bundle_id${normal}"
-./botengine --new $bundle_id -u $user -p $password
-
-echo
 echo "COMMIT YOUR BOT"
 echo "${bold}botengine --commit $bundle_id${normal}"
 ./botengine --commit $bundle_id -u $user -p $password
@@ -55,23 +45,7 @@ echo "${bold}botengine --purchase $bundle_id${normal}"
 ./botengine --purchase $bundle_id -u $user -p $password
 
 echo
-=======
-echo "COMMIT YOUR BOT"
-echo "${bold}botengine --commit $bundle_id${normal}"
-./botengine --commit $bundle_id -u $user -p $password
-
-echo
-echo "PURCHASE YOUR BOT"
-echo "${bold}botengine --purchase $bundle_id${normal}"
-./botengine --purchase $bundle_id -u $user -p $password
-
-echo
->>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
 echo "RUN YOUR BOT LOCALLY"
 echo "Refer to the 'version.json' and 'bot.py' files to identify what inputs trigger this bot to execute"
 echo "${bold}botengine --run $bundle_id${normal}"
 ./botengine --run $bundle_id -u $user -p $password
-<<<<<<< HEAD
-
-=======
->>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
