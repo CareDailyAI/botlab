@@ -21,8 +21,13 @@
                     <a href="http://presencepro.com" style="margin-left:4px;"><img src="http://peoplepowerco.com/email/img/presence-logo.png" style="width:90%;"></a>
                   </td>
                   <td style="width:50%; text-align:right;" valign="middle" align="right">
+<<<<<<< HEAD
                     <a href="https://itunes.apple.com/us/app/presence-by-people-power/id618598211?mt=8"><img src="http://peoplepowerco.com/email/img/app-store.png" alt="Available in the bot store" style="width:35%;"></a>
                     <a href="https://play.google.com/store/apps/details?id=com.peoplepowerco.presencepro" style="margin-right:4px;"><img src="http://peoplepowerco.com/email/img/google-play.png" alt="Android bot on Google Play" style="width:35%;"></a>
+=======
+                    <a href="https://itunes.apple.com/us/app/presence-by-people-power/id618598211?mt=8"><img src="http://peoplepowerco.com/email/img/botstore.png" alt="Available in the botstore" style="width:35%;"></a>
+                    <a href="https://play.google.com/store/app/details?id=com.peoplepowerco.presencepro" style="margin-right:4px;"><img src="http://peoplepowerco.com/email/img/google-play.png" alt="Android boton Google Play" style="width:35%;"></a>
+>>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
                   </td>
                 </tr>
               </table>
@@ -39,7 +44,7 @@
         <table cellpadding="0" cellspacing="0" border="0" align="center" style="width:100%; max-width:580px; background-color:#ffffff;">
           <tr>
             <td style="padding:0px;">
-              <a href="https://app.presencepro.com"><img src="cid:inlineImageId" width="100%" alt=""></a>
+              <a href="https://botpresencepro.com"><img src="cid:inlineImageId" width="100%" alt=""></a>
             </td>
           </tr>
           <tr>

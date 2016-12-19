@@ -4,15 +4,15 @@
     "marketing": [
       {
         "lang": "en",
-        "name": "Lesson 8 : Execute Again",
+        "name": "Lesson 8 : Timers",
         "author": "David Moss",
         "copyright": "Copyright 2016 People Power Company",
-        "description": "This example bot demonstrates how make an bot execute itself again, using this to debounce a door/window sensor.",
+        "description": "This example bot demonstrates how user timers to make an bot execute itself again.",
         "marketingUrl": "http://peoplepowerco.com",
         "supportUrl": "http://presencepro.com/support",
         "videoUrl": "",
         "privacyUrl": "",
-        "keywords": "execution,triggers,devices,example"
+        "keywords": "timers,execution,triggers,devices,example"
       }
     ]
   }

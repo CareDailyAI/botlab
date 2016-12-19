@@ -7,7 +7,11 @@
         "name": "Lesson 4 : Alerts",
         "author": "David Moss",
         "copyright": "Copyright 2016 Your Company",
+<<<<<<< HEAD
         "description": "This is an example of how to run apps in BotEngine that trigger off of device alerts",
+=======
+        "description": "This is an example of how to run bots in BotEngine that trigger off of device alerts",
+>>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
         "marketingUrl": "http://marketingurl.com",
         "supportUrl": "http://myurl.com/support",
         "videoUrl": "http://youtube.com/?s=myvideo",

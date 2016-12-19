@@ -1,5 +1,5 @@
 '''
-Created on 
+Created on
 
 @author: Destry Teeter and David Moss
 
@@ -8,66 +8,61 @@ Email support@peoplepowerco.com if you have questions!
 
 # LESSON 4 - DEVICE ALERTS
 # This lesson will demonstrate how to listen for alerts from devices.
-# Alerts are different than measurements, in that they occur one time and without state, 
-# simply indicating something happened.  Alerts are used in Presence Cameras to 
+# Alerts are different than measurements, in that they occur one time and without state,
+# simply indicating something happened.  Alerts are used in Presence Cameras to
 # declare that videos have been recorded, triggering the server to send out
 # push notifications and emails to the user.
 #
-# To make this lesson work, install the "Presence" bot on an iOS device and 
+# To make this lesson work, install the "Presence" bot on an iOS device and
 # turn it into a camera. Enable motion recording. Run this bot, and give the
 # bot permission to access your camera. When motion is recording,
 # you'll see this bot react.
-# 
+#
 
 
 # RUNNING THIS BOT
 # First, register your developer account at http://presto.peoplepowerco.com.
-# 
+#
 # You'll need to add a Presence Camera to your account to run this bot.
 # Download the Presence bot for free in the bot store, on iOS and Android.
 # Sign into the bot and turn your mobile device into a security camera.
-# 
+#
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
-# 
+#
 #    $ ./runlesson.sh
 #
-# 
-# This script will automatically do the following for you. 
+#
+# This script will automatically do the following for you.
 # From a terminal window *above* this bot's current directory:
-# 
+#
 # 1. Create a new directory for your bot with your given bundle ID, and copy all the files from this
 #    lesson into that new directory.
 #
-# 
-# 2. Create a new bot in your user account with the given bundle ID.
-#    
-#    botengine --new com.yourname.YourBot
-#    
-# 
-# 3. Commit your bot to the server. 
-#    This will push all the code, version information, marketing information, and icon to the server. 
+#
+# 2. Commit your bot to the server.
+#    This will push all the code, version information, marketing information, and icon to the server.
 #    The bot will become privately available.
 #
 #    botengine --commit com.yourname.YourBot
 #
-# 
-# 4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
+#
+# 3. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
 #    will not be able to see or access it.
 #
 #    botengine --purchase com.yourname.YourBot
-# 
+#
 #    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
-#    
-#    
-# 5. Run the bot locally.
-#    
+#
+#
+# 4. Run the bot locally.
+#
 #    botengine --run com.yourname.YourBot
-#    
+#
 #    This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server
 #    and the code that is on your local computer.
-# 
-    
+#
+
 def run(botengine):
 
     # Initialize
@@ -78,8 +73,8 @@ def run(botengine):
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     alerts = botengine.get_alerts_block()            # Capture new alerts, if any
-    
-    
+
+
 # This is what inputs we see when I run this bot against one of my Presence Cameras:
 #
 #{
@@ -129,21 +124,14 @@ def run(botengine):
 #}
 
 
-    if triggerType == 4:
+    if triggerType == botengine.TRIGGER_DEVICE_ALERT:
         # This bot is triggered off an alert.
         # Notice that a single trigger can contain alerts from multiple devices, so we'll iterate through them.
         for focused_alert in alerts:
             alertType = focused_alert['alertType']
             deviceName = trigger['device']['description']
-            
+
             print("\n\nGot a '" + alertType + "' alert from your '" + deviceName +"'!")
-            
+
             for parameter in focused_alert['params']:
                 print("\t" + parameter['name'] + " = " + parameter['value'])
-            
-
-
-
-    
-    
-

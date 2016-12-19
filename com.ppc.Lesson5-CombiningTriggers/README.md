@@ -20,7 +20,7 @@ This is an example of an bot that is triggered from multiple types of triggers. 
  
  
  There are several steps needed to run this bot:
-    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it. Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourApp) and cannot be deleted or edited once created.
+    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it. Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourBot) and cannot be deleted or edited once created.
     2. Create a new --bot on the server with botengine
     3. Commit your bot to the server with botengine
     4. Purchase your bot with botengine
@@ -37,20 +37,20 @@ This is an example of an bot that is triggered from multiple types of triggers. 
  
  2. Create a new bot in your user account with the given bundle ID.
     
-    `botengine --new com.yourname.YourApp`
+    `botengine --new com.yourname.YourBot`
  
  3. Commit your bot to the server. This will push all the code, version information, marketing information, and icon to the server. The bot will become privately available.
 
-    `botengine --commit com.yourname.YourApp`
+    `botengine --commit com.yourname.YourBot`
 
  4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users will not be able to see or access it.
 
-    `botengine --purchase com.yourname.YourApp`
+    `botengine --purchase com.yourname.YourBot`
  
     This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
     
  5. Run the bot locally.
     
-    `botengine --run com.yourname.YourApp`
+    `botengine --run com.yourname.YourBot`
     
     This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server and the code that is on your local computer.

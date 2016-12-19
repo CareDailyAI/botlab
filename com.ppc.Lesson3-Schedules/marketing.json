@@ -7,7 +7,11 @@
         "name": "Lesson 3 : Schedules",
         "author": "David Moss",
         "copyright": "Copyright 2016 People Power Company",
+<<<<<<< HEAD
         "description": "This example bot demonstrates how to trigger apps based on a schedule.",
+=======
+        "description": "This example bot demonstrates how to trigger bots based on a schedule.",
+>>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
         "marketingUrl": "http://peoplepowerco.com",
         "supportUrl": "http://presencepro.com/support",
         "videoUrl": "",

@@ -7,8 +7,6 @@
 
     "trigger": 10,
     
-    "event": "HOME,AWAY,VACATION,SLEEP",
-    
     "deviceTypes": [
       {
         "id": 10014,

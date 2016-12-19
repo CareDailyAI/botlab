@@ -23,20 +23,20 @@ To run this bot install the "Presence" bot on an iOS device and turn it into a c
 
  2. Create a new bot in your user account with the given bundle ID.
     
-    `botengine --new com.yourname.YourApp`
+    `botengine --new com.yourname.YourBot`
  
  3. Commit your bot to the server. This will push all the code, version information, marketing information, and icon to the server. The bot will become privately available.
 
-    `botengine --commit com.yourname.YourApp`
+    `botengine --commit com.yourname.YourBot`
  
  4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users will not be able to see or access it.
 
-    `botengine --purchase com.yourname.YourApp`
+    `botengine --purchase com.yourname.YourBot`
  
     This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
     
  5. Run the bot locally.
     
-    `botengine --run com.yourname.YourApp`
+    `botengine --run com.yourname.YourBot`
     
     This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server and the code that is on your local computer.

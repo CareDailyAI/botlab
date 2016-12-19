@@ -7,8 +7,6 @@
 
     "trigger": 2,
     
-    "event": "HOME,AWAY,VACATION,SLEEP",
-    
     "access": [
       {
         "category": 1,

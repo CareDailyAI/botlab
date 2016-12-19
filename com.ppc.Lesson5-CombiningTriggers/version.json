@@ -45,6 +45,17 @@
         }
       },
       {
+        "id": 23,
+        "minOccurrence": 1,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerAlertType": "motion",
+        "reason": {
+          "en": "Listening for motion recording events"
+        }
+      },
+      {
         "id": 24,
         "minOccurrence": 1,
         "trigger": true,
@@ -57,8 +68,6 @@
       }
     ],
     
-    "event": "HOME,AWAY,VACATION",
-    
     "schedule": "0 0/1 * * * ?",
     
     "access": [
@@ -68,7 +77,7 @@
         "read": true,
         "control": false,
         "reason": {
-          "en": "We want to know when your mode changes to HOME, AWAY, VACATION, but not SLEEP."
+          "en": "We want to know when your mode changes."
         }
       }
     ]

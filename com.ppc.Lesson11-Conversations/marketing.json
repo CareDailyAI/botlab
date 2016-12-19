@@ -1,0 +1,19 @@
+{
+  "app": {
+    "category": "L",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Lesson 11 : Bots",
+        "author": "David Moss",
+        "copyright": "Copyright 2016 People Power Company",
+        "description": "A look at how to implement bot-like behavior by asking users questions and having a conversation.",
+        "marketingUrl": "http://peoplepowerco.com",
+        "supportUrl": "http://presencepro.com/support",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": "question,questions"
+      }
+    ]
+  }
+}

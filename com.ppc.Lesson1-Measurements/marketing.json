@@ -7,7 +7,11 @@
         "name": "Lesson 1 : Measurements",
         "author": "David Moss",
         "copyright": "Copyright 2016 People Power Company",
+<<<<<<< HEAD
         "description": "This example bot demonstrates how to trigger BotEngine apps when real-time data flows through the Ensemble software suite.",
+=======
+        "description": "This example bot demonstrates how to trigger bots when real-time data flows through the Ensemble software suite.",
+>>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
         "marketingUrl": "http://peoplepowerco.com",
         "supportUrl": "http://presencepro.com/support",
         "videoUrl": "",
