@@ -12,9 +12,9 @@ Email support@peoplepowerco.com if you have questions!
 # Tags enable use to categorize these objects.  Tags can also surface into the Maestro
 # Command Center to help us proactively enhance the customer experience.
 # 
-# The tags that a Composer app applies are only available within that Composer app 
-# instance, and the Maestro Command Center.  No other Composer apps can see the tags
-# this app applies.
+# The tags that a BotEngine bot applies are only available within that BotEngine bot 
+# instance, and the Maestro Command Center.  No other BotEngine apps can see the tags
+# this bot applies.
 #
 # Here are some examples of where you'd consider using Tags:
 # 
@@ -37,17 +37,17 @@ Email support@peoplepowerco.com if you have questions!
 #
 # The methods we have available to us are:
 #
-#     composer.tag_user(<tag>) - Tag this user's account
-#     composer.tag_location(<tag>, <location_id>) - Tag a location
-#     composer.tag_device(<tag>, <device_id>) - Tag a device
-#     composer.tag_file(<tag>, <file_id>) - Tag a file
+#     botengine.tag_user(<tag>) - Tag this user's account
+#     botengine.tag_location(<tag>, <location_id>) - Tag a location
+#     botengine.tag_device(<tag>, <device_id>) - Tag a device
+#     botengine.tag_file(<tag>, <file_id>) - Tag a file
 #
-#     composer.delete_user_tag(<tag>) - Delete a tag for a user
-#     composer.delete_location_tag(<tag>, <location_id>) - Delete a tag for a location
-#     composer.delete_device_tag(<tag>, <device_id>) - Delete a device tag
-#     composer.delete_file_tag(<tag>, <file_id>) - Delete a file tag
+#     botengine.delete_user_tag(<tag>) - Delete a tag for a user
+#     botengine.delete_location_tag(<tag>, <location_id>) - Delete a tag for a location
+#     botengine.delete_device_tag(<tag>, <device_id>) - Delete a device tag
+#     botengine.delete_file_tag(<tag>, <file_id>) - Delete a file tag
 # 
-#     composer.get_tags(type=None, id=None) - Get tags, where 'type' and 'id' are optional
+#     botengine.get_tags(type=None, id=None) - Get tags, where 'type' and 'id' are optional
 #         type 1 = User tag
 #         type 2 = Location tag (id = location ID)
 #         type 3 = Device tag (id = device ID)
@@ -55,10 +55,10 @@ Email support@peoplepowerco.com if you have questions!
 # 
 #
 
-# RUNNING THIS APP
+# RUNNING THIS BOT
 # First, register your developer account at http://presto.peoplepowerco.com.
 #
-# This app will require a device to be connected to your account:
+# This bot will require a device to be connected to your account:
 #    Option A:  Buy a Presence Security Pack (http://presencepro.com/store).
 #               This is recommended because it will give you a lot more tools
 #               to create cool apps with.
@@ -74,18 +74,18 @@ Email support@peoplepowerco.com if you have questions!
 #               software suite server, is a real device.
 # 
 #    You will need to have at least 1 entry sensor OR 1 virtual light switch in your
-#    account before you can purchase this app to run it (see below). Otherwise,
-#    this app will be incompatible with your account.
+#    account before you can purchase this bot to run it (see below). Otherwise,
+#    this bot will be incompatible with your account.
 # 
 # 
-# There are several steps needed to run this app:
-#    1. Create a new directory for your app, with your own unique bundle ID. Copy all the files into it.
+# There are several steps needed to run this bot:
+#    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourApp) and cannot
 #       be deleted or edited once created.
-#    2. Create a new --app on the server with composer
-#    3. Commit your app to the server with composer
-#    4. Purchase your app with composer
-#    5. Run your app locally
+#    2. Create a new --bot on the server with botengine
+#    3. Commit your bot to the server with botengine
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 # 
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -94,37 +94,37 @@ Email support@peoplepowerco.com if you have questions!
 #
 # 
 # This script will automatically do the following for you. 
-# From a terminal window *above* this app's current directory:
+# From a terminal window *above* this bot's current directory:
 # 
-# 1. Create a new directory for your app with your given bundle ID, and copy all the files from this
+# 1. Create a new directory for your bot with your given bundle ID, and copy all the files from this
 #    lesson into that new directory.
 #
 # 
-# 2. Create a new app in your user account with the given bundle ID.
+# 2. Create a new bot in your user account with the given bundle ID.
 #    
-#    composer --new com.yourname.YourApp
+#    botengine --new com.yourname.YourApp
 #    
 # 
-# 3. Commit your app to the server. 
+# 3. Commit your bot to the server. 
 #    This will push all the code, version information, marketing information, and icon to the server. 
-#    The app will become privately available.
+#    The bot will become privately available.
 #
-#    composer --commit com.yourname.YourApp
+#    botengine --commit com.yourname.YourApp
 #
 # 
-# 4. Purchase the app as if you're an end-user. Note that because your app is privately available, other end users
+# 4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
 #    will not be able to see or access it.
 #
-#    composer --purchase com.yourname.YourApp
+#    botengine --purchase com.yourname.YourApp
 # 
-#    This will return a unique instance ID for your purchased app, which you may reference to reconfigure the app instance later.
+#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
 #    
 #    
-# 5. Run the app locally.
+# 5. Run the bot locally.
 #    
-#    composer --run com.yourname.YourApp
+#    botengine --run com.yourname.YourApp
 #    
-#    This will automatically look up your app instance ID and run the app, using the real-time streaming data from the server
+#    This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server
 #    and the code that is on your local computer.
 # 
 
@@ -136,14 +136,14 @@ VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE = 10072
 TRIGGER_MODE = 2
 TRIGGER_MEASUREMENT = 8
 
-def run(composer, initialize=False):
+def run(botengine, initialize=False):
     # Initialize
-    logger = composer.get_logger()                  # Debug logger
-    inputs = composer.get_inputs()                  # Information input into the app
-    triggerType = composer.get_trigger_type()       # What type of trigger caused the app to execute this time
-    trigger = composer.get_trigger_info()           # Get the information about the trigger
-    measures = composer.get_measures_block()        # Capture new measurements, if any
-    access = composer.get_access_block()            # Capture info about all things this app has permission to access
+    logger = botengine.get_logger()                  # Debug logger
+    inputs = botengine.get_inputs()                  # Information input into the bot
+    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
+    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    measures = botengine.get_measures_block()        # Capture new measurements, if any
+    access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     
     logger.debug("Inputs: " + str(inputs));     # Save it to our logging debug file, just to show you what's going on. You'll have to run with --console to see this.
     
@@ -228,7 +228,7 @@ def run(composer, initialize=False):
     print("-----")
     
     # Tag the user account
-    composer.tag_user("developer")
+    botengine.tag_user("developer")
     
     if triggerType == TRIGGER_MODE:
         # Executing on a change of mode
@@ -236,15 +236,15 @@ def run(composer, initialize=False):
         locationId = trigger['location']['locationId']
         
         new_tag = mode.lower()
-        last_tag = composer.load_variable("last_mode_tag")
+        last_tag = botengine.load_variable("last_mode_tag")
     
         if last_tag:
-            composer.delete_user_tag("user" + last_tag)
-            composer.delete_location_tag("location" + last_tag, locationId)
+            botengine.delete_user_tag("user" + last_tag)
+            botengine.delete_location_tag("location" + last_tag, locationId)
             
-        composer.tag_user("user" + new_tag)
-        composer.tag_location("location" + new_tag, locationId)
-        composer.save_variable("last_mode_tag", new_tag)
+        botengine.tag_user("user" + new_tag)
+        botengine.tag_location("location" + new_tag, locationId)
+        botengine.save_variable("last_mode_tag", new_tag)
         
         
     elif triggerType == TRIGGER_MEASUREMENT:
@@ -254,39 +254,39 @@ def run(composer, initialize=False):
         deviceId = trigger['device']['deviceId']
         
         if deviceType == ENTRY_SENSOR_DEVICE_TYPE:
-            batteryLevel = composer.get_property(measures, "name", "batteryLevel", "value")
+            batteryLevel = botengine.get_property(measures, "name", "batteryLevel", "value")
             
             if batteryLevel is not None:
                 if int(batteryLevel) > 20:
-                    composer.delete_device_tag("badBattery", deviceId)
-                    composer.tag_device("goodBattery", deviceId)
+                    botengine.delete_device_tag("badBattery", deviceId)
+                    botengine.tag_device("goodBattery", deviceId)
                 
                 else:
-                    composer.delete_device_tag("goodBattery", deviceId)
-                    composer.tag_device("badBattery", deviceId)
+                    botengine.delete_device_tag("goodBattery", deviceId)
+                    botengine.tag_device("badBattery", deviceId)
         
         if deviceType == VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE:
-            switchStatus = composer.get_property(measures, "name", "ppc.switchStatus", "value")
+            switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
             
             if int(switchStatus) == 1:
                 new_tag = "switchOn"
             else:
                 new_tag = "switchOff"
                 
-            last_tag = composer.load_variable("last_device_tag_" + str(deviceId))
-            last_device_id = composer.load_variable("last_device_id")
+            last_tag = botengine.load_variable("last_device_tag_" + str(deviceId))
+            last_device_id = botengine.load_variable("last_device_id")
             
             if last_tag and last_device_id:
-                composer.delete_device_tag(last_tag, last_device_id)
+                botengine.delete_device_tag(last_tag, last_device_id)
                 
-            composer.tag_device(new_tag, deviceId)
-            composer.save_variable("last_device_tag_" + str(deviceId), new_tag)
-            composer.save_variable("last_device_id", str(deviceId))
+            botengine.tag_device(new_tag, deviceId)
+            botengine.save_variable("last_device_tag_" + str(deviceId), new_tag)
+            botengine.save_variable("last_device_id", str(deviceId))
             
     
     # Show you our existing tags
     import json
-    existingTags = composer.get_tags()
+    existingTags = botengine.get_tags()
     print("Existing Tags: " + json.dumps(existingTags, indent=2, sort_keys=True))
     print()
         

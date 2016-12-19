@@ -7,7 +7,7 @@
         "name": "Lesson 1 : Measurements",
         "author": "David Moss",
         "copyright": "Copyright 2016 People Power Company",
-        "description": "This example app demonstrates how to trigger Composer apps when real-time data flows through the Ensemble software suite.",
+        "description": "This example bot demonstrates how to trigger BotEngine apps when real-time data flows through the Ensemble software suite.",
         "marketingUrl": "http://peoplepowerco.com",
         "supportUrl": "http://presencepro.com/support",
         "videoUrl": "",

@@ -13,19 +13,19 @@ Email support@peoplepowerco.com if you have questions!
 # declare that videos have been recorded, triggering the server to send out
 # push notifications and emails to the user.
 #
-# To make this lesson work, install the "Presence" app on an iOS device and 
-# turn it into a camera. Enable motion recording. Run this app, and give the
-# app permission to access your camera. When motion is recording,
-# you'll see this app react.
+# To make this lesson work, install the "Presence" bot on an iOS device and 
+# turn it into a camera. Enable motion recording. Run this bot, and give the
+# bot permission to access your camera. When motion is recording,
+# you'll see this bot react.
 # 
 
 
-# RUNNING THIS APP
+# RUNNING THIS BOT
 # First, register your developer account at http://presto.peoplepowerco.com.
 # 
-# You'll need to add a Presence Camera to your account to run this app.
-# Download the Presence app for free in the app store, on iOS and Android.
-# Sign into the app and turn your mobile device into a security camera.
+# You'll need to add a Presence Camera to your account to run this bot.
+# Download the Presence bot for free in the bot store, on iOS and Android.
+# Sign into the bot and turn your mobile device into a security camera.
 # 
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -34,53 +34,53 @@ Email support@peoplepowerco.com if you have questions!
 #
 # 
 # This script will automatically do the following for you. 
-# From a terminal window *above* this app's current directory:
+# From a terminal window *above* this bot's current directory:
 # 
-# 1. Create a new directory for your app with your given bundle ID, and copy all the files from this
+# 1. Create a new directory for your bot with your given bundle ID, and copy all the files from this
 #    lesson into that new directory.
 #
 # 
-# 2. Create a new app in your user account with the given bundle ID.
+# 2. Create a new bot in your user account with the given bundle ID.
 #    
-#    composer --new com.yourname.YourApp
+#    botengine --new com.yourname.YourApp
 #    
 # 
-# 3. Commit your app to the server. 
+# 3. Commit your bot to the server. 
 #    This will push all the code, version information, marketing information, and icon to the server. 
-#    The app will become privately available.
+#    The bot will become privately available.
 #
-#    composer --commit com.yourname.YourApp
+#    botengine --commit com.yourname.YourApp
 #
 # 
-# 4. Purchase the app as if you're an end-user. Note that because your app is privately available, other end users
+# 4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
 #    will not be able to see or access it.
 #
-#    composer --purchase com.yourname.YourApp
+#    botengine --purchase com.yourname.YourApp
 # 
-#    This will return a unique instance ID for your purchased app, which you may reference to reconfigure the app instance later.
+#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
 #    
 #    
-# 5. Run the app locally.
+# 5. Run the bot locally.
 #    
-#    composer --run com.yourname.YourApp
+#    botengine --run com.yourname.YourApp
 #    
-#    This will automatically look up your app instance ID and run the app, using the real-time streaming data from the server
+#    This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server
 #    and the code that is on your local computer.
 # 
     
-def run(composer):
+def run(botengine):
 
     # Initialize
-    logger = composer.get_logger()                  # Debug logger
-    inputs = composer.get_inputs()                  # Information input into the app
-    triggerType = composer.get_trigger_type()       # What type of trigger caused the app to execute this time
-    trigger = composer.get_trigger_info()           # Get the information about the trigger
-    measures = composer.get_measures_block()        # Capture new measurements, if any
-    access = composer.get_access_block()            # Capture info about all things this app has permission to access
-    alerts = composer.get_alerts_block()            # Capture new alerts, if any
+    logger = botengine.get_logger()                  # Debug logger
+    inputs = botengine.get_inputs()                  # Information input into the bot
+    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
+    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    measures = botengine.get_measures_block()        # Capture new measurements, if any
+    access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
+    alerts = botengine.get_alerts_block()            # Capture new alerts, if any
     
     
-# This is what inputs we see when I run this app against one of my Presence Cameras:
+# This is what inputs we see when I run this bot against one of my Presence Cameras:
 #
 #{
 #  "access": [
@@ -130,7 +130,7 @@ def run(composer):
 
 
     if triggerType == 4:
-        # This app is triggered off an alert.
+        # This bot is triggered off an alert.
         # Notice that a single trigger can contain alerts from multiple devices, so we'll iterate through them.
         for focused_alert in alerts:
             alertType = focused_alert['alertType']

@@ -7,7 +7,7 @@
         "name": "Lesson 8 : Execute Again",
         "author": "David Moss",
         "copyright": "Copyright 2016 People Power Company",
-        "description": "This example app demonstrates how make an app execute itself again, using this to debounce a door/window sensor.",
+        "description": "This example bot demonstrates how make an bot execute itself again, using this to debounce a door/window sensor.",
         "marketingUrl": "http://peoplepowerco.com",
         "supportUrl": "http://presencepro.com/support",
         "videoUrl": "",

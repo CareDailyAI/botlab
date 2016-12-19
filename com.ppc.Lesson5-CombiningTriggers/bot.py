@@ -7,7 +7,7 @@ Email support@peoplepowerco.com if you have questions!
 '''
 
 # LESSON 5 - COMBINING TRIGGERS
-# This lesson will demonstrate how to create an app that is triggered from multiple types
+# This lesson will demonstrate how to create an bot that is triggered from multiple types
 # of triggers.
 # 
 # VERSION.JSON
@@ -29,7 +29,7 @@ Email support@peoplepowerco.com if you have questions!
 # 1011'binary = 
 #     1000'b (Device Measurements) | 10'b (Modes) | 1'b (Schedules)
 #
-# Therefore, this app will trigger off of 4 different trigger types: measurements, modes, alerts, and schedules.
+# Therefore, this bot will trigger off of 4 different trigger types: measurements, modes, alerts, and schedules.
 #
 # We then see the details of each of these triggers down below.
 #
@@ -100,17 +100,17 @@ Email support@peoplepowerco.com if you have questions!
 #
 #
 # SCHEDULES
-# Run once per minute, just to demonstrate it works. Never let a real app run this fast, forever.
+# Run once per minute, just to demonstrate it works. Never let a real bot run this fast, forever.
 # 
 #    "schedule": "0 0/1 * * * ?",
 # 
 # 
 
 
-# RUNNING THIS APP
+# RUNNING THIS BOT
 # First, register your developer account at http://presto.peoplepowerco.com.
 #
-# This app will require a device to be connected to your account:
+# This bot will require a device to be connected to your account:
 #    Option A:  Buy a Presence Security Pack (http://presencepro.com/store).
 #               This is recommended because it will give you a lot more tools
 #               to create cool apps with.
@@ -126,18 +126,18 @@ Email support@peoplepowerco.com if you have questions!
 #               software suite server, is a real device.
 # 
 #    You will need to have at least 1 entry sensor OR 1 virtual light switch in your
-#    account before you can purchase this app to run it (see below). Otherwise,
-#    this app will be incompatible with your account.
+#    account before you can purchase this bot to run it (see below). Otherwise,
+#    this bot will be incompatible with your account.
 # 
 # 
-# There are several steps needed to run this app:
-#    1. Create a new directory for your app, with your own unique bundle ID. Copy all the files into it.
+# There are several steps needed to run this bot:
+#    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourApp) and cannot
 #       be deleted or edited once created.
-#    2. Create a new --app on the server with composer
-#    3. Commit your app to the server with composer
-#    4. Purchase your app with composer
-#    5. Run your app locally
+#    2. Create a new --bot on the server with botengine
+#    3. Commit your bot to the server with botengine
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 # 
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -146,51 +146,51 @@ Email support@peoplepowerco.com if you have questions!
 #
 # 
 # This script will automatically do the following for you. 
-# From a terminal window *above* this app's current directory:
+# From a terminal window *above* this bot's current directory:
 # 
-# 1. Create a new directory for your app with your given bundle ID, and copy all the files from this
+# 1. Create a new directory for your bot with your given bundle ID, and copy all the files from this
 #    lesson into that new directory.
 #
 # 
-# 2. Create a new app in your user account with the given bundle ID.
+# 2. Create a new bot in your user account with the given bundle ID.
 #    
-#    composer --new com.yourname.YourApp
+#    botengine --new com.yourname.YourApp
 #    
 # 
-# 3. Commit your app to the server. 
+# 3. Commit your bot to the server. 
 #    This will push all the code, version information, marketing information, and icon to the server. 
-#    The app will become privately available.
+#    The bot will become privately available.
 #
-#    composer --commit com.yourname.YourApp
+#    botengine --commit com.yourname.YourApp
 #
 # 
-# 4. Purchase the app as if you're an end-user. Note that because your app is privately available, other end users
+# 4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
 #    will not be able to see or access it.
 #
-#    composer --purchase com.yourname.YourApp
+#    botengine --purchase com.yourname.YourApp
 # 
-#    This will return a unique instance ID for your purchased app, which you may reference to reconfigure the app instance later.
+#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
 #    
 #    
-# 5. Run the app locally.
+# 5. Run the bot locally.
 #    
-#    composer --run com.yourname.YourApp
+#    botengine --run com.yourname.YourApp
 #    
-#    This will automatically look up your app instance ID and run the app, using the real-time streaming data from the server
+#    This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server
 #    and the code that is on your local computer.
 # 
 
 import datetime
 
-def run(composer):
+def run(botengine):
     # Initialize
-    logger = composer.get_logger()                  # Debug logger
-    inputs = composer.get_inputs()                  # Information input into the app
-    triggerType = composer.get_trigger_type()       # What type of trigger caused the app to execute this time
-    trigger = composer.get_trigger_info()           # Get the information about the trigger
-    measures = composer.get_measures_block()        # Capture new measurements, if any
-    access = composer.get_access_block()            # Capture info about all things this app has permission to access
-    alerts = composer.get_alerts_block()            # Capture new alerts, if any
+    logger = botengine.get_logger()                  # Debug logger
+    inputs = botengine.get_inputs()                  # Information input into the bot
+    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
+    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    measures = botengine.get_measures_block()        # Capture new measurements, if any
+    access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
+    alerts = botengine.get_alerts_block()            # Capture new alerts, if any
     
     logger.debug("Inputs: " + str(inputs));     # Save it to our logging debug file, just to show you what's going on. You'll have to run with --console to see this.
     
@@ -228,11 +228,11 @@ def run(composer):
         
         if deviceType == 10014:
             print("\t=> It's an Entry Sensor")
-            doorStatus = composer.get_property(measures, "name", "doorStatus", "value")
+            doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
             
             if doorStatus == "true":
                 print("\t=> Your '" + deviceName + "' opened")
-                composer.execute_again_in_n_seconds(5)
+                botengine.execute_again_in_n_seconds(5)
                 
             else:
                 print("\t=> Your '" + deviceName + "' closed")
@@ -240,7 +240,7 @@ def run(composer):
             
         elif deviceType == 10017:
             print("\t=> It's a Water Sensor")
-            waterLeak = composer.get_property(measures, "name", "waterLeak", "value")
+            waterLeak = botengine.get_property(measures, "name", "waterLeak", "value")
             
             if waterLeak == "true":
                 print("\t=> Your '" + deviceName + "' got wet")
@@ -251,16 +251,16 @@ def run(composer):
     
         elif deviceType == 10072:
             print("\t=> It's a Virtual Light Switch")
-            switchStatus = composer.get_property(measures, "name", "ppc.switchStatus", "value")
+            switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
             
             if int(switchStatus) > 0:
                 print("Your '" + deviceName + "' switched on")
-                composer.execute_again_in_n_seconds(5)
+                botengine.execute_again_in_n_seconds(5)
                 
             else:
                 print("Your '" + deviceName + "' switched off")
                 
     elif triggerType == 64:
-        print("\nExecuting again, because a device previously triggered the app and then we called 'composer.execute_again_in_n_seconds(5)', which you'll learn about in Lesson 8  :)")  
+        print("\nExecuting again, because a device previously triggered the bot and then we called 'botengine.execute_again_in_n_seconds(5)', which you'll learn about in Lesson 8  :)")  
         
 

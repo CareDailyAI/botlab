@@ -10,7 +10,7 @@ Email support@peoplepowerco.com if you have questions!
 # Up until now, your apps have been executing, and at the end of execution all of
 # the local variables are completely deleted. 
 # 
-# Now it's time to persist variables across multiple app triggers and executions.
+# Now it's time to persist variables across multiple bot triggers and executions.
 # 
 # This lesson will demonstrate how to manage variables that persist across executions.
 # We will listen to door/window sensors, and virtual light switches, and give you a
@@ -28,7 +28,7 @@ Email support@peoplepowerco.com if you have questions!
 # 
 # 
 # VARIABLES
-# The Composer app pickles all variables coming in, and unpickles them coming out.
+# The BotEngine bot pickles all variables coming in, and unpickles them coming out.
 # That means you can store everything that can be pickled.
 # Integers. Strings. Floats. Tuples. Arrays. Objects. Everything.
 #
@@ -43,14 +43,14 @@ Email support@peoplepowerco.com if you have questions!
 #   * Instances of such classes whose __dict__ or the result of calling __getstate__() is 
 #     picklable (see section Pickling Class Instances for details).
 # 
-# The Composer framework will automatically load all variables before your app starts,
-# and it will flush all variables when your app exits.  When you save and load variables
-# while the app is running, no API calls are made until the very end of execution. This makes
-# the load() and save() operations extremely efficient while your app is running. 
+# The BotEngine framework will automatically load all variables before your bot starts,
+# and it will flush all variables when your bot exits.  When you save and load variables
+# while the bot is running, no API calls are made until the very end of execution. This makes
+# the load() and save() operations extremely efficient while your bot is running. 
 #
-# When the app finishes executing, any variables that were saved during execution will
+# When the bot finishes executing, any variables that were saved during execution will
 # be flushed to non-volatile memory on the server. This requires an API call to be made 
-# to synchronize your local Composer app with the server. 
+# to synchronize your local BotEngine bot with the server. 
 # 
 # You should never have to flush variables yourself. Just load() and save(), and let the 
 # framework do its job.
@@ -61,7 +61,7 @@ Email support@peoplepowerco.com if you have questions!
 #   - save_variables(variables_dictionary)   # In the form of {"variable1": "value1", "variable2": "value2"}
 #   - clear_variable(name)                   # The equivalent of save_variable("yourVariable", None)
 #   - flush_variables()                      # It's available, but you should never call this. 
-#                                              It is called automatically each time your app exits.
+#                                              It is called automatically each time your bot exits.
 #   - load_variable(name)                    # Returns the object you saved last time, or None.
 # 
 # 
@@ -73,10 +73,10 @@ Email support@peoplepowerco.com if you have questions!
 # 
 # 
 
-# RUNNING THIS APP
+# RUNNING THIS BOT
 # First, register your developer account at http://presto.peoplepowerco.com.
 #
-# This app will require a device to be connected to your account:
+# This bot will require a device to be connected to your account:
 #    Option A:  Buy a Presence Security Pack (http://presencepro.com/store).
 #               This is recommended because it will give you a lot more tools
 #               to create cool apps with.
@@ -92,18 +92,18 @@ Email support@peoplepowerco.com if you have questions!
 #               software suite server, is a real device.
 # 
 #    You will need to have at least 1 entry sensor OR 1 virtual light switch in your
-#    account before you can purchase this app to run it (see below). Otherwise,
-#    this app will be incompatible with your account.
+#    account before you can purchase this bot to run it (see below). Otherwise,
+#    this bot will be incompatible with your account.
 # 
 # 
-# There are several steps needed to run this app:
-#    1. Create a new directory for your app, with your own unique bundle ID. Copy all the files into it.
+# There are several steps needed to run this bot:
+#    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourApp) and cannot
 #       be deleted or edited once created.
-#    2. Create a new --app on the server with composer
-#    3. Commit your app to the server with composer
-#    4. Purchase your app with composer
-#    5. Run your app locally
+#    2. Create a new --bot on the server with botengine
+#    3. Commit your bot to the server with botengine
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 # 
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -112,67 +112,67 @@ Email support@peoplepowerco.com if you have questions!
 #
 # 
 # This script will automatically do the following for you. 
-# From a terminal window *above* this app's current directory:
+# From a terminal window *above* this bot's current directory:
 # 
-# 1. Create a new directory for your app with your given bundle ID, and copy all the files from this
+# 1. Create a new directory for your bot with your given bundle ID, and copy all the files from this
 #    lesson into that new directory.
 #
 # 
-# 2. Create a new app in your user account with the given bundle ID.
+# 2. Create a new bot in your user account with the given bundle ID.
 #    
-#    composer --new com.yourname.YourApp
+#    botengine --new com.yourname.YourApp
 #    
 # 
-# 3. Commit your app to the server. 
+# 3. Commit your bot to the server. 
 #    This will push all the code, version information, marketing information, and icon to the server. 
-#    The app will become privately available.
+#    The bot will become privately available.
 #
-#    composer --commit com.yourname.YourApp
+#    botengine --commit com.yourname.YourApp
 #
 # 
-# 4. Purchase the app as if you're an end-user. Note that because your app is privately available, other end users
+# 4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
 #    will not be able to see or access it.
 #
-#    composer --purchase com.yourname.YourApp
+#    botengine --purchase com.yourname.YourApp
 # 
-#    This will return a unique instance ID for your purchased app, which you may reference to reconfigure the app instance later.
+#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
 #    
 #    
-# 5. Run the app locally.
+# 5. Run the bot locally.
 #    
-#    composer --run com.yourname.YourApp
+#    botengine --run com.yourname.YourApp
 #    
-#    This will automatically look up your app instance ID and run the app, using the real-time streaming data from the server
+#    This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server
 #    and the code that is on your local computer.
 # 
 
 
 
-def run(composer):
+def run(botengine):
     # Initialize
-    logger = composer.get_logger()                  # Debug logger
-    inputs = composer.get_inputs()                  # Information input into the app
-    triggerType = composer.get_trigger_type()       # What type of trigger caused the app to execute this time
-    trigger = composer.get_trigger_info()           # Get the information about the trigger
-    measures = composer.get_measures_block()        # Capture new measurements, if any
-    access = composer.get_access_block()            # Capture info about all things this app has permission to access
-    timestampMs = composer.get_timestamp()          # Get the timestamp of execution
+    logger = botengine.get_logger()                  # Debug logger
+    inputs = botengine.get_inputs()                  # Information input into the bot
+    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
+    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    measures = botengine.get_measures_block()        # Capture new measurements, if any
+    access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
+    timestampMs = botengine.get_timestamp()          # Get the timestamp of execution
     
     # Let's figure out what triggered us, and therefore what we should do next.
     if triggerType == 1:
         print("\nExecuting on schedule")
         print("---------")
-        doorObject = composer.load_variable("doorObject")
+        doorObject = botengine.load_variable("doorObject")
         if doorObject == None:
             # This has never been run before - go ahead and create the DoorTracker() object for the first time.
             doorObject = DoorTracker(timestampMs, False)
-            composer.save_variable("doorObject", doorObject)
+            botengine.save_variable("doorObject", doorObject)
                 
-        switchObject = composer.load_variable("switchObject")
+        switchObject = botengine.load_variable("switchObject")
         if switchObject == None:
             # This has never been run before - go ahead and create the SwitchTracker() object for the first time.
             switchObject = SwitchTracker(timestampMs, False)
-            composer.save_variable("switchObject", switchObject)
+            botengine.save_variable("switchObject", switchObject)
         
         # Get our objects ready for reporting
         opens = doorObject.totalOpens()
@@ -189,8 +189,8 @@ def run(composer):
         print("Your switch spent " + str(onMs / 1000) + " seconds on")
         
         # Create new objects to start accumulating data fresh for the next report
-        composer.save_variable("doorObject", DoorTracker(timestampMs, doorObject.wasOpen))
-        composer.save_variable("switchObject", SwitchTracker(timestampMs, switchObject.wasSwitchedOn))
+        botengine.save_variable("doorObject", DoorTracker(timestampMs, doorObject.wasOpen))
+        botengine.save_variable("switchObject", SwitchTracker(timestampMs, switchObject.wasSwitchedOn))
         
         
     elif triggerType == 8:
@@ -203,14 +203,14 @@ def run(composer):
             # This is a door/window entry sensor.
             
             # See if we previously stored a DoorTracker() object - if not, initialize it.
-            doorObject = composer.load_variable("doorObject")
+            doorObject = botengine.load_variable("doorObject")
             if doorObject == None:
                 # This has never been run before - go ahead and create the DoorTracker() object for the first time.
                 doorObject = DoorTracker(timestampMs, False)
-                composer.save_variable("doorObject", doorObject)
+                botengine.save_variable("doorObject", doorObject)
             
             # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
-            doorStatus = composer.get_property(measures, "name", "doorStatus", "value")
+            doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
             
             if doorStatus == "true":
                 print("\t=> Your '" + deviceName + "' opened")
@@ -228,21 +228,21 @@ def run(composer):
             print("Your door spent " + str(openMs / 1000) + " seconds open")
             
             # Save!
-            composer.save_variable("doorObject", switchObject)
+            botengine.save_variable("doorObject", switchObject)
             
             
         elif deviceType == 10072:
             # This is a Virtual Light Switch
             
             # See if we previously stored a SwitchTracker() object - if not, initialize it.
-            switchObject = composer.load_variable("switchObject")
+            switchObject = botengine.load_variable("switchObject")
             if switchObject == None:
                 # This has never been run before - go ahead and create the SwitchTracker() object for the first time.
                 switchObject = SwitchTracker(timestampMs, False)
-                composer.save_variable("switchObject", switchObject)
+                botengine.save_variable("switchObject", switchObject)
             
             # Now augment our saved variables
-            switchStatus = composer.get_property(measures, "name", "ppc.switchStatus", "value")
+            switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
             
             if int(switchStatus) > 0:
                 print("Your '" + deviceName + "' switched on")
@@ -261,7 +261,7 @@ def run(composer):
             print("Your switch spent " + str(onMs / 1000) + " seconds on")
             
             # Save!
-            composer.save_variable("switchObject", switchObject)
+            botengine.save_variable("switchObject", switchObject)
             
             
                 

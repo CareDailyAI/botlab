@@ -25,15 +25,15 @@ class Device:
         self.device_type = device_type
         self.description = device_description
         
-    def initialize(self, composer):
+    def initialize(self, botengine):
         """
         Initialize
         
-        This is the proper way to initialize an object in Composer.
+        This is the proper way to initialize an object in BotEngine.
         Because your class can be instantiated used object data that was
         created from a previous version of this class.
         """
-        self.composer = composer
+        self.botengine = botengine
         
         try:
             self.battery_tag
@@ -88,7 +88,7 @@ class Device:
         try:
             self.born_on
         except:
-            self.born_on = composer.get_timestamp()
+            self.born_on = botengine.get_timestamp()
             
         try:
             self.email_priority
@@ -99,15 +99,15 @@ class Device:
     def terminate(self):
         """Terminate
         
-        You terminate this class to wipe the Composer object before saving,
+        You terminate this class to wipe the BotEngine object before saving,
         so you aren't saving excess fat you won't use again in the next execution.
         """
-        self.composer = None
+        self.botengine = None
     
     def log(self, message):
         """Log some info output"""
-        if self.composer:
-            self.composer.get_logger().info(message)
+        if self.botengine:
+            self.botengine.get_logger().info(message)
         
     def update_battery_level(self, batteryLevel):
         """Update the battery level
@@ -137,17 +137,17 @@ class Device:
                     return
                 
                 else:
-                    self.composer.delete_device_tag(self.signal_strength_tag, self.device_id)
+                    self.botengine.delete_device_tag(self.signal_strength_tag, self.device_id)
                     self.signal_strength_tag = None
                     
             self.log("\tTagging device " + str(self.device_id) + " #" + LOW_SIGNAL_STRENGTH_TAG)
-            self.composer.tag_device(LOW_SIGNAL_STRENGTH_TAG, self.device_id)
+            self.botengine.tag_device(LOW_SIGNAL_STRENGTH_TAG, self.device_id)
             self.signal_strength_tag = LOW_SIGNAL_STRENGTH_TAG
             
         elif self.signal_strength_tag is not None:
             # High average signal strength and a tag exists, remove the #tag
             self.log("\tRemoving #" + self.signal_strength_tag + " from device " + str(self.device_id))
-            self.composer.delete_device_tag(self.signal_strength_tag, self.device_id)
+            self.botengine.delete_device_tag(self.signal_strength_tag, self.device_id)
             self.signal_strength_tag = None
         
         #self.log("<update_rssi()")
@@ -179,10 +179,10 @@ class Device:
     
     def add_measurement(self, status, timestamp):
         """Update the device's status"""
-        self.composer.get_logger().info(">add_measurement(" + str(status) + ", " + str(timestamp) + ")")
+        self.botengine.get_logger().info(">add_measurement(" + str(status) + ", " + str(timestamp) + ")")
         booleanStatus = (str(status).lower() == "true") or (str(status) == "1") or (status == True)
         self.history.insert(0, (booleanStatus, timestamp))
-        self.composer.get_logger().info("<add_measurement")
+        self.botengine.get_logger().info("<add_measurement")
     
     
     def garbage_collect(self, current_timestamp):

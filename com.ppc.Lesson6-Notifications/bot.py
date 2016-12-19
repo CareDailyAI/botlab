@@ -11,8 +11,8 @@ Email support@peoplepowerco.com if you have questions!
 # When you change your mode, we send a push notification and an HTML email.
 # 
 # The email is actually quite interesting. We load an HTML email template from a file outside
-# of this app.py. Then we modify the email template to inject a phrase based on your new mode.
-# We also load an external .png image from outside this app.py file, and include it as an email
+# of this bot.py. Then we modify the email template to inject a phrase based on your new mode.
+# We also load an external .png image from outside this bot.py file, and include it as an email
 # attachment. 
 # 
 # Look in the email_template.vm file for the <img src="cid:inlineImageId" width="100%" alt=""> tag.
@@ -21,17 +21,17 @@ Email support@peoplepowerco.com if you have questions!
 # 
 
 
-# RUNNING THIS APP
+# RUNNING THIS BOT
 # First, register your developer account at http://presto.peoplepowerco.com.
 # 
-# There are several steps needed to run this app:
-#    1. Create a new directory for your app, with your own unique bundle ID. Copy all the files into it.
+# There are several steps needed to run this bot:
+#    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourApp) and cannot
 #       be deleted or edited once created.
-#    2. Create a new --app on the server with composer
-#    3. Commit your app to the server with composer
-#    4. Purchase your app with composer
-#    5. Run your app locally
+#    2. Create a new --bot on the server with botengine
+#    3. Commit your bot to the server with botengine
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 # 
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -40,50 +40,50 @@ Email support@peoplepowerco.com if you have questions!
 #
 # 
 # This script will automatically do the following for you. 
-# From a terminal window *above* this app's current directory:
+# From a terminal window *above* this bot's current directory:
 # 
-# 1. Create a new directory for your app with your given bundle ID, and copy all the files from this
+# 1. Create a new directory for your bot with your given bundle ID, and copy all the files from this
 #    lesson into that new directory.
 #
 # 
-# 2. Create a new app in your user account with the given bundle ID.
+# 2. Create a new bot in your user account with the given bundle ID.
 #    
-#    composer --new com.yourname.YourApp
+#    botengine --new com.yourname.YourApp
 #    
 # 
-# 3. Commit your app to the server. 
+# 3. Commit your bot to the server. 
 #    This will push all the code, version information, marketing information, and icon to the server. 
-#    The app will become privately available.
+#    The bot will become privately available.
 #
-#    composer --commit com.yourname.YourApp
+#    botengine --commit com.yourname.YourApp
 #
 # 
-# 4. Purchase the app as if you're an end-user. Note that because your app is privately available, other end users
+# 4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
 #    will not be able to see or access it.
 #
-#    composer --purchase com.yourname.YourApp
+#    botengine --purchase com.yourname.YourApp
 # 
-#    This will return a unique instance ID for your purchased app, which you may reference to reconfigure the app instance later.
+#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
 #    
 #    
-# 5. Run the app locally.
+# 5. Run the bot locally.
 #    
-#    composer --run com.yourname.YourApp
+#    botengine --run com.yourname.YourApp
 #    
-#    This will automatically look up your app instance ID and run the app, using the real-time streaming data from the server
+#    This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server
 #    and the code that is on your local computer.
 # 
 
 
-def run(composer):
-    '''This is the execution starting point of your app
+def run(botengine):
+    '''This is the execution starting point of your bot
     
-    @param composer: Instance of the Composer object, which provides built-in functions for you to privately interact with this user's data
-    @param initialize: True if we should initialize this app for the given deviceId, and perhaps clear variables
+    @param botengine: Instance of the BotEngine object, which provides built-in functions for you to privately interact with this user's data
+    @param initialize: True if we should initialize this bot for the given deviceId, and perhaps clear variables
     '''
     
-    inputs = composer.get_inputs()              # Get the inputs to this app from Composer
-    trigger = composer.get_trigger_info()        # Get the list of things we have permission to access.
+    inputs = botengine.get_inputs()              # Get the inputs to this bot from BotEngine
+    trigger = botengine.get_trigger_info()        # Get the list of things we have permission to access.
     
 # This is what I get back from our inputs. 
 #{
@@ -113,7 +113,7 @@ def run(composer):
     # So you can see how long this takes.
     print("Sending ...")
     
-    # First we need to identify this app's directory so we can extract the files that we included.
+    # First we need to identify this bot's directory so we can extract the files that we included.
     import os 
     my_app_directory = os.path.dirname(os.path.realpath(__file__))
     
@@ -141,13 +141,13 @@ def run(composer):
         
     # Form a list of attachments, and then add the image's base64-encoded utf-8 string as an attachment.
     attachments = []
-    composer.add_email_attachment(attachments, "inline_image.png", utf8_decoded_image, "image/png", "inlineImageId")
+    botengine.add_email_attachment(attachments, "inline_image.png", utf8_decoded_image, "image/png", "inlineImageId")
     
     # Send the messages. Messages are implied to the user only, unless otherwise specified
-    composer.notify(
-                    push_content = "Composer says you are now in " + mode + " mode.",
+    botengine.notify(
+                    push_content = "BotEngine says you are now in " + mode + " mode.",
                     push_sound = None,
-                    email_subject = "Composer email notification",
+                    email_subject = "BotEngine email notification",
                     email_content = template,
                     email_html = True,
                     email_attachments = attachments

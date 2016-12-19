@@ -55,7 +55,7 @@ class SmartPlugDevice(Device):
             return False
         
         self.log(">on(" + str(self.device_id) + ")")
-        self.composer.send_command(self.device_id, "outletStatus", "true")
+        self.botengine.send_command(self.device_id, "outletStatus", "true")
         return True
     
     
@@ -65,6 +65,6 @@ class SmartPlugDevice(Device):
             return False
         
         self.log(">off(" + str(self.device_id) + ")")
-        self.composer.send_command(self.device_id, "outletStatus", "false")
+        self.botengine.send_command(self.device_id, "outletStatus", "false")
         return True
     

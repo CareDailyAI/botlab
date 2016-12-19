@@ -29,20 +29,20 @@ ACCESS_CATEGORY_LOCATION = 1
 ACCESS_CATEGORY_DEVICE = 4
 
 
-def run(composer):
+def run(botengine):
     '''
-    This is the execution starting point of your app
-    @param composer: Instance of the Composer object, which provides built-in functions for you to privately interact with this user's data
+    This is the execution starting point of your bot
+    @param botengine: Instance of the BotEngine object, which provides built-in functions for you to privately interact with this user's data
     '''
     
-    # Initialize the app by grabbing access to all the important information
-    logger = composer.get_logger()                  # Debug logger, this will capture logged output to an external 'app.log' file
-    inputs = composer.get_inputs()                  # Information input into the app
-    triggerType = composer.get_trigger_type()       # What type of trigger caused the app to execute this time
-    trigger = composer.get_trigger_info()           # Get the information about the trigger
-    measures = composer.get_measures_block()        # Capture new measurements, if any
-    access = composer.get_access_block()            # Capture info about all things this app has permission to access
-    timestamp = composer.get_timestamp()            # Get the current UNIX epoch timestamp in milliseconds
+    # Initialize the bot by grabbing access to all the important information
+    logger = botengine.get_logger()                  # Debug logger, this will capture logged output to an external 'bot.log' file
+    inputs = botengine.get_inputs()                  # Information input into the bot
+    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
+    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    measures = botengine.get_measures_block()        # Capture new measurements, if any
+    access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
+    timestamp = botengine.get_timestamp()            # Get the current UNIX epoch timestamp in milliseconds
     
     print("\n\n>run()")
     
@@ -52,7 +52,7 @@ def run(composer):
         if deviceType == HumiditySensorDevice.DEVICE_TYPE:
             print("\t=> From a humidity sensor")
             
-            current_humidity = composer.get_property(measures, "name", "relativeHumidity", "value")
+            current_humidity = botengine.get_property(measures, "name", "relativeHumidity", "value")
             print("\t=> Current humidity is " + str(current_humidity) + "%")
             
             # Blindly turn all the smart plugs we have permission to access either on or off each humidity trigger.
@@ -62,7 +62,7 @@ def run(composer):
                 print("\t=> The humidity is above our threshold")
                 
                 # When was the last time we turned on the plug?
-                on_timestamp = composer.load_variable("on_timestamp", on_timestamp)
+                on_timestamp = botengine.load_variable("on_timestamp", on_timestamp)
                 if on_timestamp is None:
                     # Initialize it
                     on_timestamp = 0
@@ -71,12 +71,12 @@ def run(composer):
                 if timestamp - on_timestamp > (utilities.ONE_MINUTE_MS * 30):
                     print("\t=> It's time to turn on our smart plugs! Execute me again in 15 minutes.")
                     
-                    toggle_all_smart_plugs(composer, True)
+                    toggle_all_smart_plugs(botengine, True)
                     on_timestamp = timestamp
-                    composer.save("on_timestamp", on_timestamp)
+                    botengine.save("on_timestamp", on_timestamp)
                     
                     # Turn it back off again in 15 minutes.
-                    composer.execute_again_in_n_sec(utilities.ONE_MINUTE_MS * 15)
+                    botengine.execute_again_in_n_sec(utilities.ONE_MINUTE_MS * 15)
                     
                 else:
                     print("\t=> Not enough time has passed, leaving the smart plugs alone")
@@ -85,23 +85,23 @@ def run(composer):
     elif triggerType == TRIGGER_EXECUTE_AGAIN:
         # It must have been 15 minutes since we last turned on the plug, now turn it off.
         print("TRIGGER: Execute Again!")
-        toggle_all_smart_plugs(composer, False)
+        toggle_all_smart_plugs(botengine, False)
         
-    # The composer app completely exits at this point.
+    # The botengine bot completely exits at this point.
     print("<run()")
     
 
-def toggle_all_smart_plugs(composer, turn_on):
+def toggle_all_smart_plugs(botengine, turn_on):
     """
     Function to turn on all the smart plugs.
     
-    Pass in the composer object. We extract all the devices we have access to.
+    Pass in the botengine object. We extract all the devices we have access to.
     For every device that's a smart plug that we have access to, we turn it on or off.
-    :param composer: Composer object that is executing this app
+    :param botengine: BotEngine object that is executing this bot
     :param turn_on: True to turn on all smart plugs, False to turn them all off.
     """
     print(">toggle_all_smart_plugs(" + str(turn_on) + ")")
-    access = composer.get_access_block()            # Capture info about all things this app has permission to access
+    access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     
     for item in access:
         if item['category'] == ACCESS_CATEGORY_DEVICE:
@@ -116,12 +116,12 @@ def toggle_all_smart_plugs(composer, turn_on):
             
             if device_type == SmartPlugDevice.DEVICE_TYPE and is_connected and can_control:
                 device_object = SmartPlugDevice(device_id, device_type, device_desc)
-                device_object.initialize(composer)
+                device_object.initialize(botengine)
                 if turn_on:
                     device_object.on()
                 else:
                     device_object.off()
-                device_object.terminate(composer)
+                device_object.terminate(botengine)
         
     
     print("<toggle_all_smart_plugs")

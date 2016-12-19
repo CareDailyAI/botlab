@@ -7,7 +7,7 @@ Email support@peoplepowerco.com if you have questions!
 '''
 
 # LESSON 1 - MEASUREMENTS
-# You must use Python 3.0 or newer to run Composer.
+# You must use Python 3.0 or newer to run BotEngine.
 # 
 # This lesson demonstrates how to listen and do processing on real-time data flowing
 # through a cloud server from a door/window Entry Sensor.  This example will require you to
@@ -17,19 +17,19 @@ Email support@peoplepowerco.com if you have questions!
 # http://presencepro.com/store.
 # 
 # Device type 10072 is a virtual light switch. Run the "lightSwitch.py" application in this 
-# app's local directory to attach a virtual light switch to your account.
+# bot's local directory to attach a virtual light switch to your account.
 # 
 # 
 # VERSION.JSON
-# First, open up version.json. This file drives the behavior of when this app runs,
-# and it's updated with every new version of the app. One of the most important
+# First, open up version.json. This file drives the behavior of when this bot runs,
+# and it's updated with every new version of the bot. One of the most important
 # lines in this version.json file is here:
 # 
 #     "trigger": 8,
 #
-# This is the trigger that causes this app to run. Trigger 8 means "Run this app when a new device measurement comes in."
+# This is the trigger that causes this bot to run. Trigger 8 means "Run this bot when a new device measurement comes in."
 #
-# Here are some other triggers, for your information. These are found in the Composer API documentation.
+# Here are some other triggers, for your information. These are found in the BotEngine API documentation.
 #   * Trigger 1 = Schedule (based off a cron schedule inside the version.json file)
 #   * Trigger 2 = Location Event (switching between home / away / etc.)
 #   * Trigger 4 = Device Alert
@@ -61,43 +61,43 @@ Email support@peoplepowerco.com if you have questions!
 #       "read": true,
 #       "control": false,
 #       "triggerParamName": "ppc.switchStatus", <-- Listen for the parameter 'ppc.switchStatus'
-#       "triggerParamValues": "0,1",            <-- Only fire the app when the parameter is a 0 or a 1
+#       "triggerParamValues": "0,1",            <-- Only fire the bot when the parameter is a 0 or a 1
 #       "reason": {
 #         "en": "Monitor your virtual light switches."
 #       }
 #     }
 #   ],
 # 
-# One very important thing to note:  If you want to make changes to the way your app executes:
+# One very important thing to note:  If you want to make changes to the way your bot executes:
 # first you should first edit the version.json file to describe how you want it to execute,
-# then you should COMMIT your app to the cloud.  
+# then you should COMMIT your bot to the cloud.  
 #
-#     composer --commit <your app bundle>
+#     botengine --commit <your bot bundle>
 # 
-# You may want to reconfigure your purchased app instance after that to give your app access
+# You may want to reconfigure your purchased bot instance after that to give your bot access
 # to anything else in your account:
 #
-#     composer --configure <your app instance ID or bundle ID>
+#     botengine --configure <your bot instance ID or bundle ID>
 # 
 # 
-# APP.PY
-# The run(..) function in this file executes exactly 1 time, every time the app is triggered.
-# When the run() function exits, this app completely exits. Completely Exits! Gone! Poof. 
+# BOT.PY
+# The run(..) function in this file executes exactly 1 time, every time the bot is triggered.
+# When the run() function exits, this bot completely exits. Completely Exits! Gone! Poof. 
 # All your local variables - evaporated! So if you want to persist some variables, you'll
-# need to ask Composer to store them for you.
+# need to ask BotEngine to store them for you.
 #
-# The 'composer' object is our window into the user's account. It provides access to things like:
+# The 'botengine' object is our window into the user's account. It provides access to things like:
 #    * Logger, to capture debug output
 #    * The user's info, including language preference, Locations in the user's account, timezones for each location, and Home/Away/Sleep/Vacation modes for each location
-#    * Ability to store and load variables - remember, your local variables evaporate every time your app runs
+#    * Ability to store and load variables - remember, your local variables evaporate every time your bot runs
 #    * Measurements from devices
 #    * Ability to communicate with users, professional monitoring services, etc.
 # 
 
-# RUNNING THIS APP
+# RUNNING THIS BOT
 # First, register your developer account at http://presto.peoplepowerco.com.
 #
-# This app will require a device to be connected to your account:
+# This bot will require a device to be connected to your account:
 #    Option A:  Buy a Presence Security Pack (http://presencepro.com/store).
 #               This is recommended because it will give you a lot more tools
 #               to create cool apps with.
@@ -113,18 +113,18 @@ Email support@peoplepowerco.com if you have questions!
 #               software suite server, is a real device.
 # 
 #    You will need to have at least 1 entry sensor OR 1 virtual light switch in your
-#    account before you can purchase this app to run it (see below). Otherwise,
-#    this app will be incompatible with your account.
+#    account before you can purchase this bot to run it (see below). Otherwise,
+#    this bot will be incompatible with your account.
 # 
 # 
-# There are several steps needed to run this app:
-#    1. Create a new directory for your app, with your own unique bundle ID. Copy all the files into it.
+# There are several steps needed to run this bot:
+#    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourApp) and cannot
 #       be deleted or edited once created.
-#    2. Create a new --app on the server with composer
-#    3. Commit your app to the server with composer
-#    4. Purchase your app with composer
-#    5. Run your app locally
+#    2. Create a new --bot on the server with botengine
+#    3. Commit your bot to the server with botengine
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 # 
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -133,55 +133,55 @@ Email support@peoplepowerco.com if you have questions!
 #
 # 
 # This script will automatically do the following for you. 
-# From a terminal window *above* this app's current directory:
+# From a terminal window *above* this bot's current directory:
 # 
-# 1. Create a new directory for your app with your given bundle ID, and copy all the files from this
+# 1. Create a new directory for your bot with your given bundle ID, and copy all the files from this
 #    lesson into that new directory.
 #
 # 
-# 2. Create a new app in your user account with the given bundle ID.
+# 2. Create a new bot in your user account with the given bundle ID.
 #    
-#    composer --new com.yourname.YourApp
+#    botengine --new com.yourname.YourApp
 #    
 # 
-# 3. Commit your app to the server. 
+# 3. Commit your bot to the server. 
 #    This will push all the code, version information, marketing information, and icon to the server. 
-#    The app will become privately available.
+#    The bot will become privately available.
 #
-#    composer --commit com.yourname.YourApp
+#    botengine --commit com.yourname.YourApp
 #
 # 
-# 4. Purchase the app as if you're an end-user. Note that because your app is privately available, other end users
+# 4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
 #    will not be able to see or access it.
 #
-#    composer --purchase com.yourname.YourApp
+#    botengine --purchase com.yourname.YourApp
 # 
-#    This will return a unique instance ID for your purchased app, which you may reference to reconfigure the app instance later.
+#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
 #    
 #    
-# 5. Run the app locally.
+# 5. Run the bot locally.
 #    
-#    composer --run com.yourname.YourApp
+#    botengine --run com.yourname.YourApp
 #    
-#    This will automatically look up your app instance ID and run the app, using the real-time streaming data from the server
+#    This will automatically look up your bot instance ID and run the bot, using the real-time streaming data from the server
 #    and the code that is on your local computer.
 # 
 
 
-def run(composer):
-    '''This is the execution starting point of your app
+def run(botengine):
+    '''This is the execution starting point of your bot
     
-    @param composer: Instance of the Composer object, which provides built-in functions for you to privately interact with this user's data
-    @param initialize: True if we should initialize this app for the given deviceId, and perhaps clear variables
+    @param botengine: Instance of the BotEngine object, which provides built-in functions for you to privately interact with this user's data
+    @param initialize: True if we should initialize this bot for the given deviceId, and perhaps clear variables
     '''
     
-    # Initialize the app by grabbing access to all the important information
-    logger = composer.get_logger()                  # Debug logger, this will capture logged output to an external 'app.log' file
-    inputs = composer.get_inputs()                  # Information input into the app
-    triggerType = composer.get_trigger_type()       # What type of trigger caused the app to execute this time
-    trigger = composer.get_trigger_info()           # Get the information about the trigger
-    measures = composer.get_measures_block()        # Capture new measurements, if any
-    access = composer.get_access_block()            # Capture info about all things this app has permission to access
+    # Initialize the bot by grabbing access to all the important information
+    logger = botengine.get_logger()                  # Debug logger, this will capture logged output to an external 'bot.log' file
+    inputs = botengine.get_inputs()                  # Information input into the bot
+    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
+    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    measures = botengine.get_measures_block()        # Capture new measurements, if any
+    access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     
 # Below is what the inputs look like when I run this on my account with only a Virtual Light Switch.
 # 
@@ -226,7 +226,7 @@ def run(composer):
         # This is a door/window entry sensor.
         
         # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
-        doorStatus = composer.get_property(measures, "name", "doorStatus", "value")
+        doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
         
         # Do something with this value
         if doorStatus == "true":
@@ -240,7 +240,7 @@ def run(composer):
     elif deviceType == 10072:
         # This is a Virtual Light Switch
         
-        switchStatus = composer.get_property(measures, "name", "ppc.switchStatus", "value")
+        switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
         
         if int(switchStatus) > 0:
             print("Your '" + deviceName + "' switched on")
@@ -249,7 +249,7 @@ def run(composer):
             print("Your '" + deviceName + "' switched off")
             
             
-    # That's it!  Your app is complete, demonstrating you can get real-time data from Ensemble-connected devices for processing in Python,
+    # That's it!  Your bot is complete, demonstrating you can get real-time data from Ensemble-connected devices for processing in Python,
     # on your local computer, or pushed to a cloud server to run 24/7 in the background of your life.
     
     

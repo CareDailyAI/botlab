@@ -48,7 +48,7 @@ def main(argv=None):
         sys.stderr.write("Specify a device ID for this virtual device with the -d option. Use --help for more info.")
         return 1
     
-    # Define the app server
+    # Define the bot server
     if not server:
         server = "https://app.presencepro.com"
     
@@ -117,7 +117,7 @@ def _listen(device_server, deviceId):
             
     
 def _login(server, username, password):
-    """Get an App API key and User Info by login with a username and password"""
+    """Get an Bot API key and User Info by login with a username and password"""
 
     if not username:
         username = input('Email address: ')
@@ -174,7 +174,7 @@ def _get_ensemble_server_url(server, device_id=None):
 
 
 def _check_for_errors(json_response):
-    """Check some JSON response for Composer errors"""
+    """Check some JSON response for BotEngine errors"""
     if not json_response:
         raise ComposerError("No response from the server!", -1)
     
@@ -191,7 +191,7 @@ def _check_for_errors(json_response):
     
     
 class ComposerError(Exception):
-    """Composer exception to raise and log errors."""
+    """BotEngine exception to raise and log errors."""
     def __init__(self, msg, code):
         super(ComposerError).__init__(type(self))
         self.msg = msg

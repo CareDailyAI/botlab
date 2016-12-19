@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Composer Framework 1.0 documentation</title>
+    <title>BotEngine Framework 1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -39,12 +39,12 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="welcome-to-composer-framework-s-documentation">
-<h1>Welcome to Composer Framework&#8217;s documentation!<a class="headerlink" href="#welcome-to-composer-framework-s-documentation" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="welcome-to-botengine-framework-s-documentation">
+<h1>Welcome to BotEngine Framework&#8217;s documentation!<a class="headerlink" href="#welcome-to-botengine-framework-s-documentation" title="Permalink to this headline">¶</a></h1>
 <p>Contents:</p>
 <div class="toctree-wrapper compound">
-<span id="document-about"></span><div class="section" id="composer-the-app-store-for-the-internet-of-things">
-<h2>Composer - The App Store for the Internet of Things<a class="headerlink" href="#composer-the-app-store-for-the-internet-of-things" title="Permalink to this headline">¶</a></h2>
+<span id="document-about"></span><div class="section" id="botengine-the-app-store-for-the-internet-of-things">
+<h2>BotEngine - The Bot Store for the Internet of Things<a class="headerlink" href="#botengine-the-app-store-for-the-internet-of-things" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Author: David Moss</li>
 <li>Copyright: 2016 People Power Company. All rights reserved.</li>
@@ -60,15 +60,15 @@
 <li>tzlocal  - use &#8220;pip install tzlocal&#8221; to install</li>
 </ul>
 </div>
-<span id="document-compClass"></span><div class="section" id="composer">
-<h2>Composer<a class="headerlink" href="#composer" title="Permalink to this headline">¶</a></h2>
+<span id="document-compClass"></span><div class="section" id="botengine">
+<h2>BotEngine<a class="headerlink" href="#botengine" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="composer.Composer">
-<em class="property">class </em><code class="descclassname">composer.</code><code class="descname">Composer</code><span class="sig-paren">(</span><em>inputs</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer" title="Permalink to this definition">¶</a></dt>
-<dd><p>This class implements raw API connectivity to the Composer</p>
+<dt id="botengine.BotEngine">
+<em class="property">class </em><code class="descclassname">botengine.</code><code class="descname">BotEngine</code><span class="sig-paren">(</span><em>inputs</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements raw API connectivity to the BotEngine</p>
 <dl class="method">
-<dt id="composer.Composer.add_email_attachment">
-<code class="descname">add_email_attachment</code><span class="sig-paren">(</span><em>destination_attachment_array</em>, <em>filename</em>, <em>base64_content</em>, <em>content_type</em>, <em>content_id</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.add_email_attachment" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.add_email_attachment">
+<code class="descname">add_email_attachment</code><span class="sig-paren">(</span><em>destination_attachment_array</em>, <em>filename</em>, <em>base64_content</em>, <em>content_type</em>, <em>content_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.add_email_attachment" title="Permalink to this definition">¶</a></dt>
 <dd><p>This helper method will create an email attachment block and add it to a destination array of existing email attachments</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -95,14 +95,14 @@
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.cancel_execution_request">
-<code class="descname">cancel_execution_request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.cancel_execution_request" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.cancel_execution_request">
+<code class="descname">cancel_execution_request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.cancel_execution_request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancel any existing requests for delayed executions</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.cancel_professional_monitoring_alert">
-<code class="descname">cancel_professional_monitoring_alert</code><span class="sig-paren">(</span><em>message</em>, <em>type</em>, <em>device_id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.cancel_professional_monitoring_alert" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.cancel_professional_monitoring_alert">
+<code class="descname">cancel_professional_monitoring_alert</code><span class="sig-paren">(</span><em>message</em>, <em>type</em>, <em>device_id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.cancel_professional_monitoring_alert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancel an alert to the professional monitoring services</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -129,8 +129,8 @@ E100 - General medical alarm (future - Personal Emergency Reporting System (PERS
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.clear_variable">
-<code class="descname">clear_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.clear_variable" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.clear_variable">
+<code class="descname">clear_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.clear_variable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clear a variable from the cloud</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -143,8 +143,8 @@ E100 - General medical alarm (future - Personal Emergency Reporting System (PERS
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.delete_device_tag">
-<code class="descname">delete_device_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>device_id</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.delete_device_tag" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.delete_device_tag">
+<code class="descname">delete_device_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>device_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.delete_device_tag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete a location device</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -157,8 +157,8 @@ E100 - General medical alarm (future - Personal Emergency Reporting System (PERS
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.delete_file_tag">
-<code class="descname">delete_file_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>file_id</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.delete_file_tag" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.delete_file_tag">
+<code class="descname">delete_file_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>file_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.delete_file_tag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete a location file</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -171,8 +171,8 @@ E100 - General medical alarm (future - Personal Emergency Reporting System (PERS
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.delete_location_tag">
-<code class="descname">delete_location_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.delete_location_tag" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.delete_location_tag">
+<code class="descname">delete_location_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.delete_location_tag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete a location tag</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -185,8 +185,8 @@ E100 - General medical alarm (future - Personal Emergency Reporting System (PERS
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.delete_user_tag">
-<code class="descname">delete_user_tag</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.delete_user_tag" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.delete_user_tag">
+<code class="descname">delete_user_tag</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.delete_user_tag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete a user tag</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -199,38 +199,38 @@ E100 - General medical alarm (future - Personal Emergency Reporting System (PERS
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.execute_again_at_timestamp">
-<code class="descname">execute_again_at_timestamp</code><span class="sig-paren">(</span><em>unix_timestamp_ms</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.execute_again_at_timestamp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute this Composer app again at an absolute time, at the given timestamp, without an external trigger
+<dt id="botengine.BotEngine.execute_again_at_timestamp">
+<code class="descname">execute_again_at_timestamp</code><span class="sig-paren">(</span><em>unix_timestamp_ms</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.execute_again_at_timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute this BotEngine bot again at an absolute time, at the given timestamp, without an external trigger
 :param unix_timestamp_ms:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.execute_again_in_n_seconds">
-<code class="descname">execute_again_in_n_seconds</code><span class="sig-paren">(</span><em>seconds</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.execute_again_in_n_seconds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute this Composer app again at a relative time, N seconds from now, without an external trigger
+<dt id="botengine.BotEngine.execute_again_in_n_seconds">
+<code class="descname">execute_again_in_n_seconds</code><span class="sig-paren">(</span><em>seconds</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.execute_again_in_n_seconds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute this BotEngine bot again at a relative time, N seconds from now, without an external trigger
 :param seconds</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.flush_commands">
-<code class="descname">flush_commands</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.flush_commands" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.flush_commands">
+<code class="descname">flush_commands</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.flush_commands" title="Permalink to this definition">¶</a></dt>
 <dd><p>Flush all the commands to the server and execute them.
-This is called automatically when the app exits, you should never have to call this manually.</p>
+This is called automatically when the bot exits, you should never have to call this manually.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.flush_tags">
-<code class="descname">flush_tags</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.flush_tags" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.flush_tags">
+<code class="descname">flush_tags</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.flush_tags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Flush the new and deleted tags to the server,
-This is called automatically when the app is finished executing. It should never have to be called manually.</p>
+This is called automatically when the bot is finished executing. It should never have to be called manually.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.flush_variables">
-<code class="descname">flush_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.flush_variables" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.flush_variables">
+<code class="descname">flush_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.flush_variables" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will pickle and save multiple variables from the local variables cache to the cloud.
-It is always called by the Composer framework at the end of a program executing</p>
+It is always called by the BotEngine framework at the end of a program executing</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -258,8 +258,8 @@ picklable (see section Pickling Class Instances for details).</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.form_command">
-<code class="descname">form_command</code><span class="sig-paren">(</span><em>param_name</em>, <em>value</em>, <em>index=None</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.form_command" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.form_command">
+<code class="descname">form_command</code><span class="sig-paren">(</span><em>param_name</em>, <em>value</em>, <em>index=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.form_command" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will form a command.</p>
 <p>You can pass in parameter name / optional index / value pairs and it will
 generate a dictionary to represent this command. This is a shortcut to send
@@ -280,32 +280,32 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_access_block">
-<code class="descname">get_access_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_access_block" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_access_block">
+<code class="descname">get_access_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_access_block" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the access block from our inputs, if any</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_alerts_block">
-<code class="descname">get_alerts_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_alerts_block" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_alerts_block">
+<code class="descname">get_alerts_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_alerts_block" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the alerts block from our inputs, if any</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_inputs">
-<code class="descname">get_inputs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_inputs" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_inputs">
+<code class="descname">get_inputs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_inputs" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will return the inputs, e.g. apiKey, apiHOST, trigger type, alerts, measurement blocks</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_location_scenes_history">
-<code class="descname">get_location_scenes_history</code><span class="sig-paren">(</span><em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_location_scenes_history" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_location_scenes_history">
+<code class="descname">get_location_scenes_history</code><span class="sig-paren">(</span><em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_location_scenes_history" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will return location change scenes history in backward order (lastest first)</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_measurements">
-<code class="descname">get_measurements</code><span class="sig-paren">(</span><em>device_id</em>, <em>*</em>, <em>userId=None</em>, <em>start_date=None</em>, <em>end_date=None</em>, <em>param_name=None</em>, <em>index=None</em>, <em>last_rows=None</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_measurements" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_measurements">
+<code class="descname">get_measurements</code><span class="sig-paren">(</span><em>device_id</em>, <em>*</em>, <em>userId=None</em>, <em>start_date=None</em>, <em>end_date=None</em>, <em>param_name=None</em>, <em>index=None</em>, <em>last_rows=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_measurements" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will return measurements from the given device</p>
 <ul class="simple">
 <li>param_name[*] &#8211;&gt; getting current measurement</li>
@@ -319,7 +319,7 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 <tr class="field-odd field"><th class="field-name" colspan="2">Params device_id:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Device ID to extract parameters from</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Params userId:</th><td class="field-body">User ID to access devices of specific user by an organization app</td>
+<tr class="field-even field"><th class="field-name">Params userId:</th><td class="field-body">User ID to access devices of specific user by an organization bot</td>
 </tr>
 <tr class="field-odd field"><th class="field-name" colspan="2">Params start_date:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Start time in milliseconds to begin receiving measurements. If not set, only latest measurements will be returned. e.g. 1483246800000</td>
@@ -340,14 +340,14 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_measures_block">
-<code class="descname">get_measures_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_measures_block" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_measures_block">
+<code class="descname">get_measures_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_measures_block" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the measurements block from our inputs, if any</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_participants">
-<code class="descname">get_participants</code><span class="sig-paren">(</span><em>challengeId</em>, <em>status=None</em>, <em>userId=None</em>, <em>getDevices=None</em>, <em>deviceCategory=None</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_participants" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_participants">
+<code class="descname">get_participants</code><span class="sig-paren">(</span><em>challengeId</em>, <em>status=None</em>, <em>userId=None</em>, <em>getDevices=None</em>, <em>deviceCategory=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_participants" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the participants of the challenge with the id &#8216;challengeId&#8217;
 :params status: Participation status filter.
 :params userId: Filter the response by user ID.
@@ -356,8 +356,8 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_property">
-<code class="descname">get_property</code><span class="sig-paren">(</span><em>obj_arr</em>, <em>property_name</em>, <em>property_value</em>, <em>return_property_name</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_property" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_property">
+<code class="descname">get_property</code><span class="sig-paren">(</span><em>obj_arr</em>, <em>property_name</em>, <em>property_value</em>, <em>return_property_name</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_property" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will locate the specified first object from object array, and then return the specified property value</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -379,8 +379,8 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_tags">
-<code class="descname">get_tags</code><span class="sig-paren">(</span><em>type=None</em>, <em>id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_tags" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_tags">
+<code class="descname">get_tags</code><span class="sig-paren">(</span><em>type=None</em>, <em>id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_tags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get tags</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -401,15 +401,15 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_timestamp">
-<code class="descname">get_timestamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_timestamp" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_timestamp">
+<code class="descname">get_timestamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_timestamp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the Unix timestamp of this execution, in milliseconds</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_trigger_info">
-<code class="descname">get_trigger_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_trigger_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method will find and return the information about what triggered this app.</p>
+<dt id="botengine.BotEngine.get_trigger_info">
+<code class="descname">get_trigger_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_trigger_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will find and return the information about what triggered this bot.</p>
 <dl class="docutils">
 <dt>Location Events (Modes) Example:</dt>
 <dd><dl class="first docutils">
@@ -454,9 +454,9 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_trigger_type">
-<code class="descname">get_trigger_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_trigger_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method will return the type of trigger that your app uses:
+<dt id="botengine.BotEngine.get_trigger_type">
+<code class="descname">get_trigger_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_trigger_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return the type of trigger that your bot uses:
 * Trigger 1 = Schedule (based off a cron schedule inside the version.json file)
 * Trigger 2 = Location Event (switching between home / away / etc.)
 * Trigger 4 = Device Alert
@@ -467,14 +467,14 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.get_user_info">
-<code class="descname">get_user_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.get_user_info" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.get_user_info">
+<code class="descname">get_user_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_user_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will return the current user info</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.load_variable">
-<code class="descname">load_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.load_variable" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.load_variable">
+<code class="descname">load_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.load_variable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Download a single variable from the server and unpickle it</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -487,8 +487,8 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.notify">
-<code class="descname">notify</code><span class="sig-paren">(</span><em>*</em>, <em>push_sound=None</em>, <em>push_content=None</em>, <em>email_subject=None</em>, <em>email_content=None</em>, <em>email_html=False</em>, <em>email_attachments=[]</em>, <em>toMeOnly=True</em>, <em>toMyFriends=False</em>, <em>toMyFamily=False</em>, <em>toMyGroup=False</em>, <em>toOrganizationAdmins=False</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.notify" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.notify">
+<code class="descname">notify</code><span class="sig-paren">(</span><em>*</em>, <em>push_sound=None</em>, <em>push_content=None</em>, <em>email_subject=None</em>, <em>email_content=None</em>, <em>email_html=False</em>, <em>email_attachments=[]</em>, <em>toMeOnly=True</em>, <em>toMyFriends=False</em>, <em>toMyFamily=False</em>, <em>toMyGroup=False</em>, <em>toOrganizationAdmins=False</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.notify" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method sends a notification to the user.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -529,20 +529,20 @@ multiple commands with the send_commands(device_id, commands) method.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.professional_monitoring_alerts">
-<code class="descname">professional_monitoring_alerts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.professional_monitoring_alerts" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.professional_monitoring_alerts">
+<code class="descname">professional_monitoring_alerts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.professional_monitoring_alerts" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will return call center service alerts</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.professional_monitoring_status">
-<code class="descname">professional_monitoring_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.professional_monitoring_status" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.professional_monitoring_status">
+<code class="descname">professional_monitoring_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.professional_monitoring_status" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will return call center service statuses</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.raise_professional_monitoring_alert">
-<code class="descname">raise_professional_monitoring_alert</code><span class="sig-paren">(</span><em>message</em>, <em>type</em>, <em>device_id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.raise_professional_monitoring_alert" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.raise_professional_monitoring_alert">
+<code class="descname">raise_professional_monitoring_alert</code><span class="sig-paren">(</span><em>message</em>, <em>type</em>, <em>device_id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.raise_professional_monitoring_alert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raise an alert to the professional monitoring services</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -569,8 +569,8 @@ E100 - General medical alarm (future - Personal Emergency Reporting System (PERS
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.save_variable">
-<code class="descname">save_variable</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.save_variable" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.save_variable">
+<code class="descname">save_variable</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.save_variable" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will pickle and save a single variable to the cloud</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -600,10 +600,10 @@ picklable (see section Pickling Class Instances for details).</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.save_variables">
-<code class="descname">save_variables</code><span class="sig-paren">(</span><em>variables_dictionary</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.save_variables" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.save_variables">
+<code class="descname">save_variables</code><span class="sig-paren">(</span><em>variables_dictionary</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.save_variables" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will cache multiple variables from a dictionary to be saved to the cloud upon flush_variables()
-Composer will always flush variables to the cloud at the end of executing the app.</p>
+BotEngine will always flush variables to the cloud at the end of executing the bot.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -616,8 +616,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.send_command">
-<code class="descname">send_command</code><span class="sig-paren">(</span><em>device_id</em>, <em>param_name</em>, <em>value</em>, <em>index=None</em>, <em>userId=None</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.send_command" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.send_command">
+<code class="descname">send_command</code><span class="sig-paren">(</span><em>device_id</em>, <em>param_name</em>, <em>value</em>, <em>index=None</em>, <em>userId=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.send_command" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method sends a command to the device ID</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -633,7 +633,7 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </tr>
 <tr class="field-even field"><th class="field-name">Params index:</th><td class="field-body">Optional index number / letters. Default is None.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Params userId:</th><td class="field-body">user ID to access devices of specific user by an organization app.</td>
+<tr class="field-odd field"><th class="field-name">Params userId:</th><td class="field-body">user ID to access devices of specific user by an organization bot.</td>
 </tr>
 </tbody>
 </table>
@@ -641,8 +641,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.send_commands">
-<code class="descname">send_commands</code><span class="sig-paren">(</span><em>device_id</em>, <em>commands</em>, <em>userId=None</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.send_commands" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.send_commands">
+<code class="descname">send_commands</code><span class="sig-paren">(</span><em>device_id</em>, <em>commands</em>, <em>userId=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.send_commands" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method sends one or multiple commands simultaneously to the given device ID</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -651,7 +651,7 @@ Composer will always flush variables to the cloud at the end of executing the ap
 <tr class="field-odd field"><th class="field-name" colspan="2">Params device_id:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body">The exact device ID to send a command to. This is case-sensitive.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Params userId:</th><td class="field-body">User ID to access devices of specific user by an organization app.</td>
+<tr class="field-even field"><th class="field-name">Params userId:</th><td class="field-body">User ID to access devices of specific user by an organization bot.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name" colspan="2">Params commands:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Array of dictionaries of the form [{&#8220;name&#8221;:&#8221;parameterName&#8221;, &#8220;index&#8221;:0, &#8220;value&#8221;:&#8221;parameterValue&#8221;}, ...]</td>
@@ -662,8 +662,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="staticmethod">
-<dt id="composer.Composer.strftime">
-<em class="property">static </em><code class="descname">strftime</code><span class="sig-paren">(</span><em>dt</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.strftime" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.strftime">
+<em class="property">static </em><code class="descname">strftime</code><span class="sig-paren">(</span><em>dt</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.strftime" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will convert the datetime object to the string of IOS-8601 format, eg: &#8216;2014-06-20T12:47:11-07:00</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -676,8 +676,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="staticmethod">
-<dt id="composer.Composer.strftimestamp">
-<em class="property">static </em><code class="descname">strftimestamp</code><span class="sig-paren">(</span><em>ts</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.strftimestamp" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.strftimestamp">
+<em class="property">static </em><code class="descname">strftimestamp</code><span class="sig-paren">(</span><em>ts</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.strftimestamp" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will convert the time in milliseconds to the string of IOS-8601 format, eg: &#8216;2014-06-20T12:47:11-07:00</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -690,8 +690,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="staticmethod">
-<dt id="composer.Composer.strptime">
-<em class="property">static </em><code class="descname">strptime</code><span class="sig-paren">(</span><em>dt_str</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.strptime" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.strptime">
+<em class="property">static </em><code class="descname">strptime</code><span class="sig-paren">(</span><em>dt_str</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.strptime" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will convert the string of IOS-8601 to the datetime object</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -704,8 +704,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.tag_device">
-<code class="descname">tag_device</code><span class="sig-paren">(</span><em>tag</em>, <em>device_id</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.tag_device" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.tag_device">
+<code class="descname">tag_device</code><span class="sig-paren">(</span><em>tag</em>, <em>device_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.tag_device" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tag a device</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -722,8 +722,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.tag_file">
-<code class="descname">tag_file</code><span class="sig-paren">(</span><em>tag</em>, <em>file_id</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.tag_file" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.tag_file">
+<code class="descname">tag_file</code><span class="sig-paren">(</span><em>tag</em>, <em>file_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.tag_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tag a file</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -740,8 +740,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.tag_location">
-<code class="descname">tag_location</code><span class="sig-paren">(</span><em>tag</em>, <em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.tag_location" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.tag_location">
+<code class="descname">tag_location</code><span class="sig-paren">(</span><em>tag</em>, <em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.tag_location" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tag a location</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -758,8 +758,8 @@ Composer will always flush variables to the cloud at the end of executing the ap
 </dd></dl>
 
 <dl class="method">
-<dt id="composer.Composer.tag_user">
-<code class="descname">tag_user</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#composer.Composer.tag_user" title="Permalink to this definition">¶</a></dt>
+<dt id="botengine.BotEngine.tag_user">
+<code class="descname">tag_user</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.tag_user" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tag a user</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -793,9 +793,9 @@ Composer will always flush variables to the cloud at the end of executing the ap
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html#document-index">Table Of Contents</a></h3>
   <ul>
-<li class="toctree-l1"><a class="reference internal" href="index.html#document-about">Composer - The App Store for the Internet of Things</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-about">BotEngine - The Bot Store for the Internet of Things</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html#document-dependencies">Dependencies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="index.html#document-compClass">Composer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-compClass">BotEngine</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
