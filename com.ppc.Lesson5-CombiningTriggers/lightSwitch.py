@@ -238,7 +238,7 @@ def _get_ensemble_server_url(server, device_id=None):
 
 
 def _check_for_errors(json_response):
-    """Check some JSON response for Composer errors"""
+    """Check some JSON response for BotEngine errors"""
     if not json_response:
         raise ComposerError("No response from the server!", -1)
     
@@ -255,7 +255,7 @@ def _check_for_errors(json_response):
     
     
 class ComposerError(Exception):
-    """Composer exception to raise and log errors."""
+    """BotEngine exception to raise and log errors."""
     def __init__(self, msg, code):
         super(ComposerError).__init__(type(self))
         self.msg = msg

@@ -1,0 +1,824 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>BotEngine Framework 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="index.html#document-about" />
+    <link rel="top" title="None" href="index.html#document-index" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-botengine-framework-s-documentation">
+<h1>Welcome to BotEngine Framework&#8217;s documentation!<a class="headerlink" href="#welcome-to-botengine-framework-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<span id="document-about"></span><div class="section" id="botengine-the-app-store-for-the-internet-of-things">
+<h2>BotEngine - The Bot Store for the Internet of Things<a class="headerlink" href="#botengine-the-app-store-for-the-internet-of-things" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Author: David Moss</li>
+<li>Copyright: 2016 People Power Company. All rights reserved.</li>
+<li>Contact: <a class="reference external" href="mailto:dmoss&#37;&#52;&#48;peoplepowerco&#46;com">dmoss<span>&#64;</span>peoplepowerco<span>&#46;</span>com</a></li>
+</ul>
+</div>
+<span id="document-dependencies"></span><div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Python3</li>
+<li>requests - use &#8220;pip install requests&#8221; to install</li>
+<li>dateutil - use &#8220;pip install python-dateutil&#8221; to install</li>
+<li>tzlocal  - use &#8220;pip install tzlocal&#8221; to install</li>
+</ul>
+</div>
+<span id="document-compClass"></span><div class="section" id="botengine">
+<h2>BotEngine<a class="headerlink" href="#botengine" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="botengine.BotEngine">
+<em class="property">class </em><code class="descclassname">botengine.</code><code class="descname">BotEngine</code><span class="sig-paren">(</span><em>inputs</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements raw API connectivity to the BotEngine</p>
+<dl class="method">
+<dt id="botengine.BotEngine.add_email_attachment">
+<code class="descname">add_email_attachment</code><span class="sig-paren">(</span><em>destination_attachment_array</em>, <em>filename</em>, <em>base64_content</em>, <em>content_type</em>, <em>content_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.add_email_attachment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This helper method will create an email attachment block and add it to a destination array of existing email attachments</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Params destination_attachment_array:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Destination array of attachments. Pass in [] if you are starting a new list of attachments.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params filename:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">Filename of the file, for example, &#8220;imageName.jpg&#8221;</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params base64_content:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Base64-encoded binary image content</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params content_type:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">Content type of the file, for example &#8220;image/jpeg&#8221;</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params content_id:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Unique ID for the content, for example &#8220;inlineImageId&#8221;. The email can reference this content with &lt;img src=&#8221;<a class="reference external" href="cid:inlineImageId">cid:inlineImageId</a>&#8220;&gt;.</td>
+</tr>
+</tbody>
+</table>
+<p>:return the destination_attachment_array with the new attachment, ready to pass into the email_attachments argument in the notify() method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.cancel_execution_request">
+<code class="descname">cancel_execution_request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.cancel_execution_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancel any existing requests for delayed executions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.cancel_professional_monitoring_alert">
+<code class="descname">cancel_professional_monitoring_alert</code><span class="sig-paren">(</span><em>message</em>, <em>type</em>, <em>device_id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.cancel_professional_monitoring_alert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancel an alert to the professional monitoring services</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params message:</th><td class="field-body">signal message</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Params type:</th><td class="field-body">E130 - General burglary alarm
+E131 - Perimeter alarm (door/window entry sensor)
+E132 - Interior alarm (motion sensor)
+E134 - Entry/exit alarm (more specific than E131, but I&#8217;m not sure we can declare that our door/window sensors will always be used on an entry/exit)
+E154 - Water leak
+E111 - Smoke alarm (future)
+E114 - Heat alarm (future - analytics on temperature sensors above the stove, for example)
+E158 - Environmental high temperature alarm (temperature sensor)
+E159 - Environmental low temperature alarm (temperature sensor)
+E100 - General medical alarm (future - Personal Emergency Reporting System (PERS) button)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params device_id:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">device ID</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.clear_variable">
+<code class="descname">clear_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.clear_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear a variable from the cloud</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params name:</th><td class="field-body">Custom name of the variable to clear at the cloud</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.delete_device_tag">
+<code class="descname">delete_device_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>device_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.delete_device_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a location device</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tag</strong> &#8211; Tag to delete</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.delete_file_tag">
+<code class="descname">delete_file_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>file_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.delete_file_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a location file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tag</strong> &#8211; Tag to delete</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.delete_location_tag">
+<code class="descname">delete_location_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.delete_location_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a location tag</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tag</strong> &#8211; Tag to delete</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.delete_user_tag">
+<code class="descname">delete_user_tag</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.delete_user_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a user tag</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tag</strong> &#8211; Tag to delete</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.execute_again_at_timestamp">
+<code class="descname">execute_again_at_timestamp</code><span class="sig-paren">(</span><em>unix_timestamp_ms</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.execute_again_at_timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute this BotEngine bot again at an absolute time, at the given timestamp, without an external trigger
+:param unix_timestamp_ms:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.execute_again_in_n_seconds">
+<code class="descname">execute_again_in_n_seconds</code><span class="sig-paren">(</span><em>seconds</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.execute_again_in_n_seconds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute this BotEngine bot again at a relative time, N seconds from now, without an external trigger
+:param seconds</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.flush_commands">
+<code class="descname">flush_commands</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.flush_commands" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush all the commands to the server and execute them.
+This is called automatically when the bot exits, you should never have to call this manually.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.flush_tags">
+<code class="descname">flush_tags</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.flush_tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush the new and deleted tags to the server,
+This is called automatically when the bot is finished executing. It should never have to be called manually.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.flush_variables">
+<code class="descname">flush_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.flush_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will pickle and save multiple variables from the local variables cache to the cloud.
+It is always called by the BotEngine framework at the end of a program executing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Params variables_dictionary:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Dictionary of {name:value} variables to persist to the cloud</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>According to <a class="reference external" href="https://docs.python.org/3/library/pickle.html">https://docs.python.org/3/library/pickle.html</a>, the following can be pickled:</dt>
+<dd><ul class="first last simple">
+<li>None, True, and False</li>
+<li>integers, floating point numbers, complex numbers</li>
+<li>strings, bytes, bytearrays</li>
+<li>tuples, lists, sets, and dictionaries containing only picklable objects</li>
+<li>functions defined at the top level of a module (using def, not lambda)</li>
+<li>built-in functions defined at the top level of a module</li>
+<li>classes that are defined at the top level of a module</li>
+<li>instances of such classes whose __dict__ or the result of calling __getstate__() is
+picklable (see section Pickling Class Instances for details).</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.form_command">
+<code class="descname">form_command</code><span class="sig-paren">(</span><em>param_name</em>, <em>value</em>, <em>index=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.form_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will form a command.</p>
+<p>You can pass in parameter name / optional index / value pairs and it will
+generate a dictionary to represent this command. This is a shortcut to send
+multiple commands with the send_commands(device_id, commands) method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Params param_name:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">The name of the parameter to configure.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Params value:</th><td class="field-body">The value to set for this parameter.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Params index:</th><td class="field-body">Optional index number / letters. Default is None.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_access_block">
+<code class="descname">get_access_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_access_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the access block from our inputs, if any</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_alerts_block">
+<code class="descname">get_alerts_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_alerts_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the alerts block from our inputs, if any</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_inputs">
+<code class="descname">get_inputs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_inputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return the inputs, e.g. apiKey, apiHOST, trigger type, alerts, measurement blocks</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_location_scenes_history">
+<code class="descname">get_location_scenes_history</code><span class="sig-paren">(</span><em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_location_scenes_history" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return location change scenes history in backward order (lastest first)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_measurements">
+<code class="descname">get_measurements</code><span class="sig-paren">(</span><em>device_id</em>, <em>*</em>, <em>userId=None</em>, <em>start_date=None</em>, <em>end_date=None</em>, <em>param_name=None</em>, <em>index=None</em>, <em>last_rows=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_measurements" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return measurements from the given device</p>
+<ul class="simple">
+<li>param_name[*] &#8211;&gt; getting current measurement</li>
+<li>start_date, end_date[?], param_name[*], index[?] &#8211;&gt; getting historical measurements</li>
+<li>start_date, end_date[?], param_name[*], index[?], last_count &#8211;&gt; getting last n measurements</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Params device_id:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Device ID to extract parameters from</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Params userId:</th><td class="field-body">User ID to access devices of specific user by an organization bot</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params start_date:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Start time in milliseconds to begin receiving measurements. If not set, only latest measurements will be returned. e.g. 1483246800000</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params end_date:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">End time in milliseconds to stop receiving measurements, default is the current time. e.g. 1483246800000</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params param_name:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Only obtain measurements for given parameter names. Multiple values can be passed, example: &#8220;batteryLevel&#8221; or [&#8220;batteryLevel&#8221;, &#8220;doorStatus&#8221;]</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Params index:</th><td class="field-body">Only obtain measurements for parameters with this index number.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params last_rows:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Receive only last N measurements</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_measures_block">
+<code class="descname">get_measures_block</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_measures_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the measurements block from our inputs, if any</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_participants">
+<code class="descname">get_participants</code><span class="sig-paren">(</span><em>challengeId</em>, <em>status=None</em>, <em>userId=None</em>, <em>getDevices=None</em>, <em>deviceCategory=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_participants" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the participants of the challenge with the id &#8216;challengeId&#8217;
+:params status: Participation status filter.
+:params userId: Filter the response by user ID.
+:params getDevices: Return user devices as well.
+:params deviceCategory: Filter devices by a type category.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_property">
+<code class="descname">get_property</code><span class="sig-paren">(</span><em>obj_arr</em>, <em>property_name</em>, <em>property_value</em>, <em>return_property_name</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_property" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will locate the specified first object from object array, and then return the specified property value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params obj_arr:</th><td class="field-body">object array</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params property_name:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">the key in searching criteria</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params property_value:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">the value in searching criteria</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params return_property_name:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">the key in the object indicates which corresponding value will be returned</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_tags">
+<code class="descname">get_tags</code><span class="sig-paren">(</span><em>type=None</em>, <em>id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tags</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>type</strong> &#8211; Optional, filter by type:
+1 - Users
+2 - Locations
+3 - Devices
+4 - Files</li>
+<li><strong>id</strong> &#8211; Optional, filter by location ID, device ID, or file ID</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_timestamp">
+<code class="descname">get_timestamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Unix timestamp of this execution, in milliseconds</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_trigger_info">
+<code class="descname">get_trigger_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_trigger_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will find and return the information about what triggered this bot.</p>
+<dl class="docutils">
+<dt>Location Events (Modes) Example:</dt>
+<dd><dl class="first docutils">
+<dt>{</dt>
+<dd><p class="first">&#8216;category&#8217;:1,
+&#8216;control&#8217;:True,
+&#8216;trigger&#8217;:True,
+&#8216;location&#8217;:{</p>
+<blockquote>
+<div>&#8216;locationId&#8217;:62,
+&#8216;prevEvent&#8217;:&#8217;HOME&#8217;,
+&#8216;event&#8217;:&#8217;AWAY&#8217;</div></blockquote>
+<p class="last">},
+&#8216;read&#8217;:True</p>
+</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+<dt>Device Measurements Example:</dt>
+<dd><dl class="first docutils">
+<dt>{</dt>
+<dd><p class="first">&#8216;trigger&#8217;:True,
+&#8216;device&#8217;:{</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>&#8216;deviceType&#8217;:10014,</dt>
+<dd>&#8216;updateDate&#8217;:1465517032000,
+&#8216;deviceId&#8217;:&#8217;FFFFFFFF00600a70&#8217;,
+&#8216;description&#8217;:&#8217;Practice&nbsp;Entry&nbsp;Sensor&#8217;,
+&#8216;measureDate&#8217;:1465517031000</dd>
+</dl>
+</div></blockquote>
+<p class="last">},
+&#8216;read&#8217;:True,
+&#8216;control&#8217;:True,
+&#8216;category&#8217;:4</p>
+</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_trigger_type">
+<code class="descname">get_trigger_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_trigger_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return the type of trigger that your bot uses:
+* Trigger 1 = Schedule (based off a cron schedule inside the version.json file)
+* Trigger 2 = Location Event (switching between home / away / etc.)
+* Trigger 4 = Device Alert
+* Trigger 8 = Device Measurements
+* Trigger 16 = Question Answered
+* Trigger 32 = New device file (like a video or picture)
+* Trigger 64 = Execute Again Countdown Timer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.get_user_info">
+<code class="descname">get_user_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.get_user_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return the current user info</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.load_variable">
+<code class="descname">load_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.load_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download a single variable from the server and unpickle it</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params name:</th><td class="field-body">Name of the variable to load</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.notify">
+<code class="descname">notify</code><span class="sig-paren">(</span><em>*</em>, <em>push_sound=None</em>, <em>push_content=None</em>, <em>email_subject=None</em>, <em>email_content=None</em>, <em>email_html=False</em>, <em>email_attachments=[]</em>, <em>toMeOnly=True</em>, <em>toMyFriends=False</em>, <em>toMyFamily=False</em>, <em>toMyGroup=False</em>, <em>toOrganizationAdmins=False</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.notify" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sends a notification to the user.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Params push_sound:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">(optional) Eg: &#8220;sound.wav&#8221;</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params push_content:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">(optional) Push notification text (limited to the push notification service maximum message size)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params email_subject:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">(optional) Email subject line</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params email_content:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">(optional) Email body</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params email_html:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">(optional) True or False; default is False.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params toMeOnly:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">Send the message to the user only</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params toMyFriends:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Send the message to my friends</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params toMyFamily:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">Send the message to my family</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params toMyGroup:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Send the message to people in my group in my organization</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params toOrganizationAdmins:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">Send the message to the admins</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.professional_monitoring_alerts">
+<code class="descname">professional_monitoring_alerts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.professional_monitoring_alerts" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return call center service alerts</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.professional_monitoring_status">
+<code class="descname">professional_monitoring_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.professional_monitoring_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return call center service statuses</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.raise_professional_monitoring_alert">
+<code class="descname">raise_professional_monitoring_alert</code><span class="sig-paren">(</span><em>message</em>, <em>type</em>, <em>device_id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.raise_professional_monitoring_alert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raise an alert to the professional monitoring services</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params message:</th><td class="field-body">signal message</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Params type:</th><td class="field-body">E130 - General burglary alarm
+E131 - Perimeter alarm (door/window entry sensor)
+E132 - Interior alarm (motion sensor)
+E134 - Entry/exit alarm (more specific than E131, but I&#8217;m not sure we can declare that our door/window sensors will always be used on an entry/exit)
+E154 - Water leak
+E111 - Smoke alarm (future)
+E114 - Heat alarm (future - analytics on temperature sensors above the stove, for example)
+E158 - Environmental high temperature alarm (temperature sensor)
+E159 - Environmental low temperature alarm (temperature sensor)
+E100 - General medical alarm (future - Personal Emergency Reporting System (PERS) button)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params device_id:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">device ID</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.save_variable">
+<code class="descname">save_variable</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.save_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will pickle and save a single variable to the cloud</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params name:</th><td class="field-body">Custom name of the variable to persist to the cloud</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Params value:</th><td class="field-body">Value of the variable to persist to the cloud</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>According to <a class="reference external" href="https://docs.python.org/3/library/pickle.html">https://docs.python.org/3/library/pickle.html</a>, the following can be pickled:</dt>
+<dd><ul class="first last simple">
+<li>None, True, and False</li>
+<li>integers, floating point numbers, complex numbers</li>
+<li>strings, bytes, bytearrays</li>
+<li>tuples, lists, sets, and dictionaries containing only picklable objects</li>
+<li>functions defined at the top level of a module (using def, not lambda)</li>
+<li>built-in functions defined at the top level of a module</li>
+<li>classes that are defined at the top level of a module</li>
+<li>instances of such classes whose __dict__ or the result of calling __getstate__() is
+picklable (see section Pickling Class Instances for details).</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.save_variables">
+<code class="descname">save_variables</code><span class="sig-paren">(</span><em>variables_dictionary</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.save_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will cache multiple variables from a dictionary to be saved to the cloud upon flush_variables()
+BotEngine will always flush variables to the cloud at the end of executing the bot.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Params variables_dictionary:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Dictionary of {name:value} variables to persist to the cloud</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.send_command">
+<code class="descname">send_command</code><span class="sig-paren">(</span><em>device_id</em>, <em>param_name</em>, <em>value</em>, <em>index=None</em>, <em>userId=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.send_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sends a command to the device ID</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Params device_id:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">The exact device ID to send a command to. This is case-sensitive.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Params param_name:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">The name of the parameter to configure.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Params value:</th><td class="field-body">The value to set for this parameter.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Params index:</th><td class="field-body">Optional index number / letters. Default is None.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Params userId:</th><td class="field-body">user ID to access devices of specific user by an organization bot.</td>
+</tr>
+</tbody>
+</table>
+<p>PUT /devices/{device ID}/parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.send_commands">
+<code class="descname">send_commands</code><span class="sig-paren">(</span><em>device_id</em>, <em>commands</em>, <em>userId=None</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.send_commands" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sends one or multiple commands simultaneously to the given device ID</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Params device_id:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">The exact device ID to send a command to. This is case-sensitive.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Params userId:</th><td class="field-body">User ID to access devices of specific user by an organization bot.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Params commands:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Array of dictionaries of the form [{&#8220;name&#8221;:&#8221;parameterName&#8221;, &#8220;index&#8221;:0, &#8220;value&#8221;:&#8221;parameterValue&#8221;}, ...]</td>
+</tr>
+</tbody>
+</table>
+<p>&#8216;index&#8217; is optional - if your parameter does not use an index number, do not reference or populate it.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="botengine.BotEngine.strftime">
+<em class="property">static </em><code class="descname">strftime</code><span class="sig-paren">(</span><em>dt</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.strftime" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will convert the datetime object to the string of IOS-8601 format, eg: &#8216;2014-06-20T12:47:11-07:00</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params dt:</th><td class="field-body">the datetime object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="botengine.BotEngine.strftimestamp">
+<em class="property">static </em><code class="descname">strftimestamp</code><span class="sig-paren">(</span><em>ts</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.strftimestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will convert the time in milliseconds to the string of IOS-8601 format, eg: &#8216;2014-06-20T12:47:11-07:00</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params ts:</th><td class="field-body">the time in seconds, eg: 1403293631000</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="botengine.BotEngine.strptime">
+<em class="property">static </em><code class="descname">strptime</code><span class="sig-paren">(</span><em>dt_str</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.strptime" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will convert the string of IOS-8601 to the datetime object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Params dt_str:</th><td class="field-body">the string of IOS-8601 format (eg: &#8216;2014-06-20T12:47:11-07:00)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.tag_device">
+<code class="descname">tag_device</code><span class="sig-paren">(</span><em>tag</em>, <em>device_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.tag_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tag a device</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tag</strong> &#8211; The tag to give the device</li>
+<li><strong>device_id</strong> &#8211; The device ID to tag</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.tag_file">
+<code class="descname">tag_file</code><span class="sig-paren">(</span><em>tag</em>, <em>file_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.tag_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tag a file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tag</strong> &#8211; The tag to give the file</li>
+<li><strong>file_id</strong> &#8211; The file ID to tag</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.tag_location">
+<code class="descname">tag_location</code><span class="sig-paren">(</span><em>tag</em>, <em>location_id</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.tag_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tag a location</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tag</strong> &#8211; The tag to give the location</li>
+<li><strong>location_id</strong> &#8211; The location ID to tag</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="botengine.BotEngine.tag_user">
+<code class="descname">tag_user</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#botengine.BotEngine.tag_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tag a user</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tag</strong> &#8211; The tag to give the user</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html#document-index">Table Of Contents</a></h3>
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-about">BotEngine - The Bot Store for the Internet of Things</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-dependencies">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-compClass">BotEngine</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html#document-index">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, David Moss.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
