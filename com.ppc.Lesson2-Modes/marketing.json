@@ -7,11 +7,7 @@
         "name": "Lesson 2 : Modes",
         "author": "David Moss",
         "copyright": "Copyright 2016 People Power Company",
-<<<<<<< HEAD
-        "description": "This example bot demonstrates how to trigger apps by changing your location's Mode between Home, Away, Vacation, and Sleep.",
-=======
-        "description": "This example bot demonstrates how to trigger botsby changing your location's mode.",
->>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
+        "description": "This example bot demonstrates how to trigger bots by changing your location's mode.",
         "marketingUrl": "http://peoplepowerco.com",
         "supportUrl": "http://presencepro.com/support",
         "videoUrl": "",

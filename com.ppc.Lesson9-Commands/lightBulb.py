@@ -47,11 +47,6 @@ def main(argv=None):
     if not deviceId:
         sys.stderr.write("Specify a device ID for this virtual device with the -d option. Use --help for more info.")
         return 1
-<<<<<<< HEAD
-    
-=======
-
->>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
     # Define the bot server
     if not server:
         server = "https://app.presencepro.com"
