@@ -2,7 +2,7 @@
 
 This lesson is an example of an bot that alerts you when an entry sensor on a door is triggered, or a light switch is toggled on or off. See bot.py for more information.
 
-#Running This Bot
+##Running This Bot
 First, register your developer account at http://presto.peoplepowerco.com.
 
  This bot will require a device to be connected to your account:
@@ -20,10 +20,9 @@ First, register your developer account at http://presto.peoplepowerco.com.
  There are several steps needed to run this bot:
     1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
        Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourBot) and cannot be deleted or edited once created.
-    2. Create a new --bot on the server with botengine
-    3. Commit your bot to the server with botengine
-    4. Purchase your bot with botengine
-    5. Run your bot locally
+    2. Commit your bot to the server with botengine
+    3. Purchase your bot with botengine
+    4. Run your bot locally
 
  We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
 
@@ -34,23 +33,19 @@ First, register your developer account at http://presto.peoplepowerco.com.
 
  1. Create a new directory for your bot with your given bundle ID, and copy all the files from this lesson into that new directory.
 
- 2. Create a new bot in your user account with the given bundle ID.
-
-    `botengine --new com.yourname.YourBot`
-
- 3. Commit your bot to the server.
+ 2. Commit your bot to the server.
       This will push all the code, version information, marketing information, and icon to the server. The bot will become privately available.
 
       `botengine --commit com.yourname.YourBot`
 
 
- 4. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users will not be able to see or access it.
+ 3. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users will not be able to see or access it.
 
     `botengine --purchase com.yourname.YourBot`
 
     This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
 
- 5. Run the bot locally.
+ 4. Run the bot locally.
 
       `botengine --run com.yourname.YourBot`
 
