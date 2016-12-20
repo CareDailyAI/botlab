@@ -37,10 +37,9 @@ Email support@peoplepowerco.com if you have questions!
 #    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourBot) and cannot
 #       be deleted or edited once created.
-#    2. Create a new --bot on the server with botengine
-#    3. Commit your bot to the server with botengine
-#    4. Purchase your bot with botengine
-#    5. Run your bot locally
+#    2. Commit your bot to the server with botengine
+#    3. Purchase your bot with botengine
+#    4. Run your bot locally
 #
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
