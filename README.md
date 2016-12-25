@@ -11,7 +11,6 @@ To install the BotEngine framework on your local machine, copy and paste the fol
 **Note:** You must have Python 3 or newer on your computer to install and run the framework.
 
 The installer file will download the BotEngine framework and all the dependencies needed to run botengine.
->>>>>>> 0a10d22171bd98f677176d1a751cd0c4428e15a8
 
 When you clone the botengine repository, be sure to add its location to your PYTHONPATH variable.
 
