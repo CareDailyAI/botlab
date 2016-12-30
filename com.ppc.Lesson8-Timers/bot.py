@@ -56,7 +56,7 @@ Email support@peoplepowerco.com if you have questions!
 # You can set as many timers as you want. Avoid setting timers faster than 2 seconds.
 #
 #
-# This bot demonstration initially triggers off of a door/window sensor or a virtual light switch.
+# This bot will demonstration initially triggers off of a door/window sensor or a virtual light switch.
 # We'll show how to debounce these devices in software.
 #
 # Now, normal 'debouncing' is done at the microsecond level on physical circuitry. This is
@@ -99,9 +99,10 @@ Email support@peoplepowerco.com if you have questions!
 #    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourBot) and cannot
 #       be deleted or edited once created.
-#    2. Commit your bot to the server with botengine
-#    3. Purchase your bot with botengine
-#    4. Run your bot locally
+#    2. Create a new --bot on the server with botengine
+#    3. Commit your bot to the server with botengine
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 #
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -197,6 +198,17 @@ def run(botengine):
         botengine.cancel_timers("mode")
 
         # Again, I recommend using an integer for the reference, but I'll use a string here for readability.
+        botengine.start_timer(-1, mode_timer_fired, "Minus One Second", "mode")
+        botengine.start_timer(0, mode_timer_fired, "Zero Second", "mode")
+        botengine.start_timer(1, mode_timer_fired, "One Second", "mode")
+        botengine.start_timer(2, mode_timer_fired, "Two Second", "mode")
+        botengine.start_timer(3, mode_timer_fired, "Three Second", "mode")
+        botengine.start_timer(4, mode_timer_fired, "Four Second", "mode")
+        botengine.start_timer(5, mode_timer_fired, "Five Second", "mode")
+        botengine.start_timer(6, mode_timer_fired, "Six Second", "mode")
+        botengine.start_timer(7, mode_timer_fired, "Seven Second", "mode")
+        botengine.start_timer(8, mode_timer_fired, "Eight Second", "mode")
+        botengine.start_timer(9, mode_timer_fired, "Nine Second", "mode")
         botengine.start_timer(10, mode_timer_fired, "Ten Second", "mode")
         botengine.start_timer(15, mode_timer_fired, "Fifteen Second", "mode")
         botengine.set_timer(timestamp + 20000, mode_timer_fired, "Twenty Second Absolute", "mode")
@@ -271,7 +283,7 @@ def entry_sensor_timer_fired(botengine, device_id):
     # a reference to the newest objects. Save and load the objects using a reference to them, so you always know what to trust.
     focused_object = botengine.load_variable(device_id)
 
-    if focused_object.was_active_longer_than_x_seconds(2):
+    if focused_object.was_active_longer_than_x_seconds(1):
         print("\t[" + str(botengine.get_timestamp()) + "]=> OPENED. The last time your '" + focused_object.device_name + "' opened, it was open for longer than 2 seconds.")
     else:
         print("\t[" + str(botengine.get_timestamp()) + "]=> FALSE POSITIVE DETECTED. Your '" + focused_object.device_name + "' wasn't open long enough for someone to get through.")
@@ -297,7 +309,7 @@ def mode_timer_fired(botengine, name):
     :param botengine: Execution environment
     :param name: Name of this timer
     """
-    print("\n\n[" + str(botengine.get_timestamp()) + "] => Your '" + name + "' mode timer fired!")
+    print("\n[" + str(botengine.get_timestamp()) + "] => '" + name + "' mode timer fired!")
 
 
 
