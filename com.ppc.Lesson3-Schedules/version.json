@@ -5,10 +5,12 @@
         "en": "Lesson 3 : Schedules"
     },
 
+    "runtime": 1, 
+
     "trigger": 1,
+
     "schedule": "0/30 * * * * ?",
-
-
+    
     "access": [
       {
         "category": 1,

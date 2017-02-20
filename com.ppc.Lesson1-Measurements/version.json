@@ -5,6 +5,8 @@
         "en": "Lesson 1 Created"
     },
 
+    "runtime": 1,
+    
     "trigger": 8,
         
     "deviceTypes": [

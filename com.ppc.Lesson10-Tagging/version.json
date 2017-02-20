@@ -5,6 +5,8 @@
         "en": "Creation"
     },
 
+    "runtime": 1,
+
     "trigger": 10,
     
     "deviceTypes": [

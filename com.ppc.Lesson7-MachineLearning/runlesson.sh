@@ -11,7 +11,7 @@ periods=`echo $bundle_id | grep -o "\." | wc -l`
 
 if [ $periods -ne 2 ]
   then
-    echo "${red}You must specify a reverse-domain notation bundle ID for your bots.${normal}"
+    echo "${red}You must specify a reverse-domain notation bundle ID for your .${normal}"
     echo
     exit -1
 fi
@@ -35,17 +35,12 @@ cp * ../$bundle_id/
 cd ..
 
 echo
-echo "COMMIT YOUR BOT"
+echo "COMMIT YOUR APP"
 echo "${bold}botengine --commit $bundle_id${normal}"
 ./botengine --commit $bundle_id -u $user -p $password
 
 echo
-echo "PURCHASE YOUR BOT"
-echo "${bold}botengine --purchase $bundle_id${normal}"
-./botengine --purchase $bundle_id -u $user -p $password
-
-echo
-echo "RUN YOUR BOT LOCALLY"
+echo "RUN YOUR APP LOCALLY"
 echo "Refer to the 'version.json' and 'bot.py' files to identify what inputs trigger this bot to execute"
 echo "${bold}botengine --run $bundle_id${normal}"
 ./botengine --run $bundle_id -u $user -p $password

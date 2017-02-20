@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Created on September 19, 2016
 
@@ -34,18 +35,12 @@ Email support@peoplepowerco.com if you have questions!
 #    This will push all the code, version information, marketing information, and icon to the server.
 #    The bot will become privately available.
 #
+#    This will also purchase the bot for you.
+#
 #    botengine --commit com.yourname.YourBot
 #
 #
-# 3. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
-#    will not be able to see or access it.
-#
-#    botengine --purchase com.yourname.YourBot
-#
-#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
-#
-#
-# 4. Run the bot locally.
+# 3. Run the bot locally.
 #
 #    botengine --run com.yourname.YourBot
 #

@@ -1,6 +1,6 @@
-# BotEngine: Adding Thoughts to Things.
+# Bot Lab: Add Thoughts to Things.
 
-The BotEngine is a Python framework that enables developers to create new features and services on top of every Internet-connected data source or device. This is no longer the Internet of Things. This is Ambient Computing.
+The Bot Lab contains the BotEngine Python framework, enabling developers to create new features and services on top of every Internet-connected data source or device. This is no longer the Internet of Things. This is Ambient Computing.
 
 ## Installation
 
@@ -8,11 +8,11 @@ To install the BotEngine framework on your local machine, copy and paste the fol
 
 `curl -s https://raw.githubusercontent.com/peoplepower/botengine/master/installer.sh | sudo /bin/bash`
 
-**Note:** You must have Python 3 or newer on your computer to install and run the framework.
-
 The installer file will download the BotEngine framework and all the dependencies needed to run botengine.
 
 When you clone the botengine repository, be sure to add its location to your PYTHONPATH variable.
+
+BotEngine prefers Python 2.7. Python 3.x or newer is available with certain configurations.
 
 
 ## Documentation

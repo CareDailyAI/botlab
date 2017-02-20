@@ -5,6 +5,8 @@
         "en": "Lesson 2 : Modes"
     },
 
+    "runtime": 1, 
+    
     "trigger": 2,
     
     "access": [

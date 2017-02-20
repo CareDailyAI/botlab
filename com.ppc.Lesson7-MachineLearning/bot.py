@@ -6,7 +6,7 @@ Created on June 9, 2016
 Email support@peoplepowerco.com if you have questions!
 '''
 
-# LESSON 8 - MACHINE LEARNING
+# LESSON 7 - MACHINE LEARNING
 # Up until now, your bots have been executing, and at the end of execution all of
 # the local variables are completely deleted.
 #
@@ -96,13 +96,14 @@ Email support@peoplepowerco.com if you have questions!
 #    this bot will be incompatible with your account.
 #
 #
-# There are several steps needed to run this bot:
-#    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
+# There are several steps needed to run this :
+#    1. Create a new directory for your , with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourBot) and cannot
 #       be deleted or edited once created.
-#    2. Commit your bot to the server with botengine
-#    3. Purchase your bot with botengine
-#    4. Run your bot locally
+#    2. Create a new -- on the server with botengine
+#    3. Commit your bot to the server with botengine
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 #
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -121,18 +122,12 @@ Email support@peoplepowerco.com if you have questions!
 #    This will push all the code, version information, marketing information, and icon to the server.
 #    The bot will become privately available.
 #
+#    This will also purchase the bot for you.
+#
 #    botengine --commit com.yourname.YourBot
 #
 #
-# 3. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
-#    will not be able to see or access it.
-#
-#    botengine --purchase com.yourname.YourBot
-#
-#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
-#
-#
-# 4. Run the bot locally.
+# 3. Run the bot locally.
 #
 #    botengine --run com.yourname.YourBot
 #
@@ -141,6 +136,17 @@ Email support@peoplepowerco.com if you have questions!
 #
 
 
+
+def preload_variable_names():
+    """
+    Attempt to preload any variables that are used during every execution of this bot, to optimize performance.
+    This is called before run(). It is optional to implement. If a variable is attempted to be loaded later that was 
+    not pre-loaded, then a call will be made to the server to download it. If you are dealing with extremely large
+    variables, it's sometimes better to download them on-demand when they're really needed, and not preload them.
+    
+    :return: List of variable names
+    """
+    return ["doorObject", "switchObject"]
 
 def run(botengine):
     # Initialize
@@ -178,7 +184,7 @@ def run(botengine):
         # This would be our "daily report"
         print("Your door opened " + str(opens) + " times in the past 30 seconds")
         print("Your door spent " + str(openMs / 1000) + " seconds open")
-        print()
+        print("")
         print("Your switch turned on " + str(on) + " times in the past 30 seconds")
         print("Your switch spent " + str(onMs / 1000) + " seconds on")
 

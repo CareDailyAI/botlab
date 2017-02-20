@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # encoding: utf-8
 '''
 Created on June 19, 2016
@@ -7,6 +7,10 @@ Created on June 19, 2016
 '''
 
 # This module will emulate a light switch device.
+
+# input function behaves differently in Python 2.x and 3.x. And there is no raw_input in 3.x.
+if hasattr(__builtins__, 'raw_input'):
+    input=raw_input
 
 import requests
 import sys
@@ -46,6 +50,7 @@ def main(argv=None):
 
     if not deviceId:
         deviceId = input('Specify a globally unique device ID for this virtual device: ')
+
     # Define the bot server
     if not server:
         server = "https://app.presencepro.com"
@@ -206,7 +211,7 @@ def _login(server, username, password):
         _check_for_errors(j)
         return app_key, j
 
-    except ComposerError as e:
+    except BotError as e:
         sys.stderr.write("Error: " + e.msg)
         sys.stderr.write("\nCreate an account on " + server + " and use it to sign in")
         sys.stderr.write("\n\n")
@@ -239,7 +244,7 @@ def _get_ensemble_server_url(server, device_id=None):
 def _check_for_errors(json_response):
     """Check some JSON response for BotEngine errors"""
     if not json_response:
-        raise ComposerError("No response from the server!", -1)
+        raise BotError("No response from the server!", -1)
 
     if json_response['resultCode'] > 0:
         msg = "Unknown error!"
@@ -247,16 +252,16 @@ def _check_for_errors(json_response):
             msg = json_response['resultCodeMessage']
         elif 'resultCodeDesc' in json_response.keys():
             msg = json_response['resultCodeDesc']
-        raise ComposerError(msg, json_response['resultCode'])
+        raise BotError(msg, json_response['resultCode'])
 
     del(json_response['resultCode'])
 
 
 
-class ComposerError(Exception):
+class BotError(Exception):
     """BotEngine exception to raise and log errors."""
     def __init__(self, msg, code):
-        super(ComposerError).__init__(type(self))
+        super(BotError).__init__(type(self))
         self.msg = msg
         self.code = code
     def __str__(self):

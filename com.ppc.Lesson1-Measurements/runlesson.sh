@@ -46,32 +46,10 @@ if [ $? -ne 0 ]
 fi
 
 echo
-echo "PURCHASE YOUR BOT"
-echo "${bold}botengine --purchase $bundle_id${normal}"
-./botengine --purchase $bundle_id -u $user -p $password
-if [ $? -ne 0 ]
-  then
-    echo
-    echo "STOPPING THE SCRIPT."
-    echo "If the error above says this bot is incompatible with your devices,"
-    echo "then you need to add an Entry Sensor or a Virtual Light Switch to "
-    echo "your account. You can use 'python lightSwitch.py' to add a"
-    echo "Virtual Light Switch, then you will be able to run this script"
-    echo "again and purchase your bot on the cloud."
-    echo
-    echo "If you have already purchased this bot instance already, then"
-    echo "you should just run it. Use the following command from the directory"
-    echo "above your bot:"
-    echo    botengine --run $bundle_id
-    echo
-    exit $?
-fi
-
-echo
 echo Lesson 1 : Measurements
 echo If you haven\'t done so already, you should definitely open up the bot.py
 echo file and read through all the commentary there. Note on the first line of
-echo the bot.py commentary that you\'ll need Python 3.0 or newer to run botengine.
+echo the bot.py commentary that you may use Python 2.7 or 3.5 to run botengine.
 echo
 echo We just finished creating a directory for your bot, $bundle_id.
 echo Then we created a new bot in your account on the server with the same bundle ID.
@@ -83,7 +61,7 @@ echo
 echo Now the server knows what real-time data to deliver into your bot.
 echo If you need to reconfigure your bot instance, just use
 echo \"botengine --configure $bundle_id\". Remember, you always run botengine from
-echo the directory above the bot's directory.
+echo the directory above the bot\'s directory.
 echo
 echo The next step is to run your bot locally. The botengine framework will start listening
 echo to the server for real-time data, based on the permissions you configured when
@@ -100,7 +78,7 @@ echo
 echo Every device that connects has a globally unique device ID, like a MAC address.
 echo You can use anything you want.  I use \'moss-switch1\' for my device ID.
 echo Then you can toggle the light switch on and off from its command-line interface.
-echo The cloud software has no idea this isn't a real physical light switch.
+echo The cloud software has no idea this isn\'t a real physical light switch.
 echo
 echo So we\'re going to run this Lesson 1 bot now. But until you actually trigger
 echo some data from either an Entry Sensor or a Virtual Light Switch, then

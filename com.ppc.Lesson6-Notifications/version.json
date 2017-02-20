@@ -5,6 +5,8 @@
         "en": "Lesson 6 : Notifications"
     },
 
+    "runtime": 1,
+
     "trigger": 2,
     
     "access": [

@@ -7,7 +7,7 @@ Email support@peoplepowerco.com if you have questions!
 '''
 
 # LESSON 1 - MEASUREMENTS
-# You must use Python 3.0 or newer to run BotEngine.
+# You may use Python 2.7 or 3.5 to run BotEngine.
 #
 # This lesson demonstrates how to listen and do processing on real-time data flowing
 # through a cloud server from a door/window Entry Sensor.  This example will require you to
@@ -121,9 +121,10 @@ Email support@peoplepowerco.com if you have questions!
 #    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
 #       Note that bundle ID's are always reverse-domain notation (i.e. com.yourname.YourBot) and cannot
 #       be deleted or edited once created.
-#    2. Commit your bot to the server with botengine
-#    3. Purchase your bot with botengine
-#    4. Run your bot locally
+#    2. Create a new --bot on the server with botengine
+#    3. Commit your bot to the server with botengine
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 #
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
@@ -142,18 +143,12 @@ Email support@peoplepowerco.com if you have questions!
 #    This will push all the code, version information, marketing information, and icon to the server.
 #    The bot will become privately available.
 #
+#    This will also purchase the bot for you.
+#
 #    botengine --commit com.yourname.YourBot
 #
 #
-# 3. Purchase the bot as if you're an end-user. Note that because your bot is privately available, other end users
-#    will not be able to see or access it.
-#
-#    botengine --purchase com.yourname.YourBot
-#
-#    This will return a unique instance ID for your purchased bot, which you may reference to reconfigure the bot instance later.
-#
-#
-# 4. Run the bot locally.
+# 3. Run the bot locally.
 #
 #    botengine --run com.yourname.YourBot
 #
