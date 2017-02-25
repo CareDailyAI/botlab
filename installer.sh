@@ -1,8 +1,8 @@
 #!/bin/bash
-if command -v python3 > /dev/null 2>&1; then
+if command -v python > /dev/null 2>&1; then
   TMP_FILE=/tmp/botengine.tmp
   TMP_FILE_ONE=/tmp/botengine_bytecode.tmp
-  pip3 install requests python-dateutil tzlocal dill
+  python -m pip install requests python-dateutil tzlocal dill lz4
   if [ -e /tmp/botengine.tmp ]; then
     echo "Cleaning up from previous install failure"
     rm -f /tmp/botengine.tmp
@@ -23,5 +23,5 @@ if command -v python3 > /dev/null 2>&1; then
   sudo mv /tmp/botengine_bytecode.tmp /usr/local/bin/botengine_bytecode
   chmod 755 /usr/local/bin/botengine
 else
-  echo "Please download Python 3, then run this file again"
+  echo "Please download Python 2.7, then run this file again"
 fi
