@@ -2,7 +2,7 @@
 if command -v python > /dev/null 2>&1; then
   TMP_FILE=/tmp/botengine.tmp
   TMP_FILE_ONE=/tmp/botengine_bytecode.tmp
-  python -m pip install requests python-dateutil tzlocal dill lz4
+  pip install requests python-dateutil tzlocal dill lz4
   if [ -e /tmp/botengine.tmp ]; then
     echo "Cleaning up from previous install failure"
     rm -f /tmp/botengine.tmp
