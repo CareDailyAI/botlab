@@ -137,17 +137,6 @@ Email support@peoplepowerco.com if you have questions!
 
 
 
-def preload_variable_names():
-    """
-    Attempt to preload any variables that are used during every execution of this bot, to optimize performance.
-    This is called before run(). It is optional to implement. If a variable is attempted to be loaded later that was 
-    not pre-loaded, then a call will be made to the server to download it. If you are dealing with extremely large
-    variables, it's sometimes better to download them on-demand when they're really needed, and not preload them.
-    
-    :return: List of variable names
-    """
-    return ["doorObject", "switchObject"]
-
 def run(botengine):
     # Initialize
     logger = botengine.get_logger()                  # Debug logger
@@ -166,7 +155,14 @@ def run(botengine):
         if doorObject == None:
             # This has never been run before - go ahead and create the DoorTracker() object for the first time.
             doorObject = DoorTracker(timestampMs, False)
-            botengine.save_variable("doorObject", doorObject)
+            
+            # Here we demonstrate the 'required_for_each_execution' flag inside of the save_variable(..) method.
+            # If you use this flag, then your variable will be downloaded before your bot executes, every time.
+            # It will increase performance if you know your variable will definitely be used on every execution.
+            #
+            # If you use this flag but do not end up using this variable on every execution, then you might end
+            # up decreasing performance due to the extra overhead of loading it on each execution.
+            botengine.save_variable("doorObject", doorObject, required_for_each_execution=True)
 
         switchObject = botengine.load_variable("switchObject")
         if switchObject == None:
@@ -189,7 +185,8 @@ def run(botengine):
         print("Your switch spent " + str(onMs / 1000) + " seconds on")
 
         # Create new objects to start accumulating data fresh for the next report
-        botengine.save_variable("doorObject", DoorTracker(timestampMs, doorObject.wasOpen))
+        # If you use 'required_for_each_execution' once, then try to use it every time on when saving that variable name.
+        botengine.save_variable("doorObject", DoorTracker(timestampMs, doorObject.wasOpen), required_for_each_execution=True)
         botengine.save_variable("switchObject", SwitchTracker(timestampMs, switchObject.wasSwitchedOn))
 
 
@@ -207,7 +204,9 @@ def run(botengine):
             if doorObject == None:
                 # This has never been run before - go ahead and create the DoorTracker() object for the first time.
                 doorObject = DoorTracker(timestampMs, False)
-                botengine.save_variable("doorObject", doorObject)
+                
+                # If you use 'required_for_each_execution' once, then try to use it every time you save that variable name
+                botengine.save_variable("doorObject", doorObject, required_for_each_execution=True)
 
             # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
             doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
@@ -228,7 +227,7 @@ def run(botengine):
             print("Your door spent " + str(openMs / 1000) + " seconds open")
 
             # Save!
-            botengine.save_variable("doorObject", doorObject)
+            botengine.save_variable("doorObject", doorObject, required_for_each_execution=True)
 
 
         elif deviceType == 10072:
