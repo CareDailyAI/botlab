@@ -233,7 +233,7 @@ def run(botengine):
         botengine.save_variable("last_mode_tag", new_tag)
 
 
-    elif triggerType == botengine.TRIGGER_MEASUREMENT:
+    elif triggerType == botengine.TRIGGER_DEVICE_MEASUREMENT:
         # Executing on a device measurement
         deviceType = trigger['device']['deviceType']
         deviceName = trigger['device']['description']
