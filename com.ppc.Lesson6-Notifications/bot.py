@@ -30,8 +30,8 @@ Email support@peoplepowerco.com if you have questions!
 #       be deleted or edited once created.
 #    2. Create a new --boton the server with botengine
 #    3. Commit your botto the server with botengine
-#    4. Purchase your botwith botengine
-#    5. Run your botlocally
+#    4. Purchase your bot with botengine
+#    5. Run your bot locally
 #
 #
 # We've automated this for you with a script, 'runlesson.sh'. Run it from your terminal window:
