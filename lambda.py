@@ -26,6 +26,9 @@ def lambda_handler(data, context):
     logger.setLevel(logging.WARN)
     
     log_output_handler = LambdaHandler()
+    
+    formatter = logging.Formatter("%(asctime)s")
+    log_output_handler.setFormatter(formatter)
     logger.addHandler(log_output_handler)
     
     try:
@@ -50,7 +53,19 @@ class LambdaHandler(logging.Handler):
         self.logs = []
         
     def emit(self, record):
-        self.logs.append("%s: %s: %s" % (record.asctime, record.levelname, record.message))
+        self.format(record)
+        
+        go = True
+        if not hasattr(record, 'asctime'):
+            self.logs.append("LambdaHandler Error: LogRecord has no 'asctime' attribute")
+            go = False
+            
+        if not hasattr(record, 'message'):
+            self.logs.append("LambdaHandler Error: LogRecord has no 'message' attribute")
+            go = False
+            
+        if go:
+            self.logs.append("%s: %s: %s" % (record.asctime, record.levelname, record.message))
         
     def get_lambda_return(self):
         """
@@ -65,3 +80,5 @@ class LambdaHandler(logging.Handler):
             response['logs'] = self.logs
         
         return response
+    
+    
