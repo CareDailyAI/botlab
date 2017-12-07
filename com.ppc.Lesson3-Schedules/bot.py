@@ -8,14 +8,10 @@ Email support@peoplepowerco.com if you have questions!
 
 # LESSON 3 - SCHEDULES
 # Apps can be triggered to run on a recurring basis, using Cron schedules.
-# Some of this description is copied from the Quartz Scheduler Documentation. Hope it helps.
-# You'll need the 'apscheduler' module installed to run this on your local system. Run this command:
+# Check out http://www.cronmaker.com to quickly generate your own cron expressions.
 #
-#     pip install apscheduler
-#
-#
-# VERSION.JSON
-# Open the version.json file, and you'll see we are triggering off of a cron schedule:
+# RUNTIME.JSON
+# Open the runtime.json file, and you'll see we are triggering off of a cron schedule:
 #
 #    "trigger": 1,
 #
@@ -141,7 +137,7 @@ Email support@peoplepowerco.com if you have questions!
 #
 
 # RUNNING THIS BOT
-# First, register your developer account at http://presto.peoplepowerco.com.
+# First, register your developer account at http://app.presencepro.com.
 #
 # There are several steps needed to run this bot:
 #    1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
@@ -185,13 +181,10 @@ Email support@peoplepowerco.com if you have questions!
 import datetime
 
 def run(botengine):
-    '''This is the execution starting point of your bot
-
-    @param botengine: Instance of the BotEngine object, which provides built-in functions for you to privately interact with this user's data
-    @param initialize: True if we should initialize this bot for the given deviceId, and perhaps clear variables
-    '''
-
-    logger = botengine.get_logger()
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
     inputs = botengine.get_inputs()              # Get the inputs to this bot from BotEngine
 
 # This is what my inputs look like when the bot runs. Pretty sparse.
@@ -201,9 +194,10 @@ def run(botengine):
 #   'time': 1465683540431
 # }
 
-    unixTimeMs = int(inputs['time'])
-    unixTimeSec = unixTimeMs / 1000             # Convert to seconds, to later feed into the datetime converter
+    unix_time_ms = int(inputs['time'])
+    unix_time_sec = unix_time_ms / 1000             # Convert to seconds, to later feed into the datetime converter
 
-    print("\nExecuting on schedule")
-    print("\t=> Unix timestamp in milliseconds = " + str(unixTimeMs))
-    print("\t=> Human readable timestamp: " + datetime.datetime.fromtimestamp(unixTimeSec).strftime('%Y-%m-%d %H:%M:%S'))
+    print()
+    botengine.get_logger().info("Executing on schedule")
+    botengine.get_logger().info("\t=> Unix timestamp in milliseconds = " + str(unix_time_ms))
+    botengine.get_logger().info("\t=> Human readable timestamp: " + datetime.datetime.fromtimestamp(unix_time_sec).strftime('%Y-%m-%d %H:%M:%S'))

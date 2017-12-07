@@ -1,12 +1,12 @@
-#Lesson 3 - Schedules
+# Lesson 3 - Schedules
 
 This is an example of an bot that runs on a recurring basis using Cron schedules. See the bot.py file's comments for more details.
 
-##Dependencies
+## Dependencies
 
 The apscheduler python module is required. Run the command: 'pip3 install apscheduler' to install the module.
 
-##Running This Bot
+## Running This Bot
 
  First, register your developer account at http://presto.peoplepowerco.com.
 
