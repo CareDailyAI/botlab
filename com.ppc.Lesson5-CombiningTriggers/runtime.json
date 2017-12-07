@@ -48,8 +48,8 @@
         "trigger": true,
         "read": true,
         "control": false,
-        "triggerParamName": "doorStatus",
-        "triggerParamValues": "true",
+        #"triggerParamName": "doorStatus",
+        #"triggerParamValues": "true",
         "reason": {
           "en": "We're going to monitor your doors, only when they open"
         }
@@ -61,8 +61,8 @@
         "trigger": true,
         "read": true,
         "control": false,
-        "triggerParamName": "waterLeak",
-        "triggerParamValues": "true",
+        #"triggerParamName": "waterLeak",
+        #"triggerParamValues": "true",
         "reason": {
           "en": "We're going to monitor your water leak detector."
         }
@@ -74,8 +74,8 @@
         "trigger": true,
         "read": true,
         "control": false,
-        "triggerParamName": "ppc.switchStatus",
-        "triggerParamValues": "0,1",
+        #"triggerParamName": "ppc.switchStatus",
+        #"triggerParamValues": "0,1",
         "reason": {
           "en": "We're going to listen for measurements from your virtual light switch."
         }
@@ -109,7 +109,7 @@
     # SCHEDULE
     # Cron schedule to run the bot periodically
     # Check out http://www.cronmaker.com/ to generate the expression
-    "schedule": "0 0/1 * * * ?",
+    "schedule": "0/30 * * * * ?",
 
     # ACCESS
     # This access block defines data sources the bot should interact with in the user's account.

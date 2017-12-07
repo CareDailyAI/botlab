@@ -87,9 +87,11 @@ Email support@peoplepowerco.com if you have questions!
 # Trigger when the user sets their mode.
 #
 # SCHEDULES
-# Run once per minute, just to demonstrate it works. Never let a real bot run this fast, forever.
+# Run every 30 seconds, just to demonstrate it works.
+# We recommend you don't run a real bot this fast as it will eat up execution time and increase the cost to run
+# your service.
 #
-#    "schedule": "0 0/1 * * * ?",
+#    "schedule": "0/30 * * * * ?",
 #
 #
 
@@ -171,8 +173,6 @@ def run(botengine):
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     alerts = botengine.get_alerts_block()            # Capture new alerts, if any
-
-    botengine.get_logger().info("Inputs: " + str(inputs));     # Save it to our logging debug file, just to show you what's going on. You'll have to run with --console to see this.
 
     for trigger in triggers:
         if trigger_type == botengine.TRIGGER_SCHEDULE:
