@@ -1,5 +1,0 @@
-# Specify all the required packages for your bot in this file, one package per line.
-# These packages will be downloaded and included with your bot each time you commit
-# your bot to the server, using "python -m pip install <package> -t ./path/to/your.uploading.bot"
-#
-# The packages 'dill', 'requests', 'python-dateutil', and 'tzlocal' will be added automatically.

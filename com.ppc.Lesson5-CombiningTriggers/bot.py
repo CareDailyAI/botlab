@@ -10,26 +10,16 @@ Email support@peoplepowerco.com if you have questions!
 # This lesson will demonstrate how to create an bot that is triggered from multiple types
 # of triggers.
 #
-# VERSION.JSON
-# Open up version.json.
+# RUNTIME.JSON
+# Open up runtime.json.
 #
 # Our trigger is set to Decimal 15.
 #
 #     "trigger": 15,
 #
-# Decimal 11 represents several triggers combined (bitwise-OR'd). Remember our trigger types:
-#
-#     1'b = 0x1 = Schedule
-#     10'b = 0x2 = Location Event (Modes)
-#     100'b = 0x4 = Device Alert
-#     1000'b = 0x8 = Device Measurement
-#     ... and so on.
-#
-# 11 decimal = 1011'binary
-# 1011'binary =
-#     1000'b (Device Measurements) | 10'b (Modes) | 1'b (Schedules)
-#
-# Therefore, this bot will trigger off of 4 different trigger types: measurements, modes, alerts, and schedules.
+# 15 = 1 + 2 + 4 + 8 = schedules + modes + alerts + measurements
+# Therefore, this bot will trigger off of schedules, modes, alerts, and measurements from the data sources it specifies
+# in the runtime.json file.
 #
 # We then see the details of each of these triggers down below.
 #
@@ -94,10 +84,7 @@ Email support@peoplepowerco.com if you have questions!
 #
 #
 # MODES
-# Trigger when the user sets their mode to Home, Away, or Vacation. But not sleep.
-#
-#    "event": "HOME,AWAY,VACATION",
-#
+# Trigger when the user sets their mode.
 #
 # SCHEDULES
 # Run once per minute, just to demonstrate it works. Never let a real bot run this fast, forever.
@@ -108,7 +95,7 @@ Email support@peoplepowerco.com if you have questions!
 
 
 # RUNNING THIS BOT
-# First, register your developer account at http://presto.peoplepowerco.com.
+# First, create a user account at http://app.presencepro.com.
 #
 # This bot will require a device to be connected to your account:
 #    Option A:  Buy a Presence Security Pack (http://presencepro.com/store).
@@ -172,87 +159,95 @@ Email support@peoplepowerco.com if you have questions!
 import datetime
 
 def run(botengine):
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
+
     # Initialize
-    logger = botengine.get_logger()                  # Debug logger
     inputs = botengine.get_inputs()                  # Information input into the bot
-    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
-    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    trigger_type = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
+    triggers = botengine.get_triggers()              # Get a list of triggers for this execution
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     alerts = botengine.get_alerts_block()            # Capture new alerts, if any
 
-    logger.debug("Inputs: " + str(inputs));     # Save it to our logging debug file, just to show you what's going on. You'll have to run with --console to see this.
+    botengine.get_logger().info("Inputs: " + str(inputs));     # Save it to our logging debug file, just to show you what's going on. You'll have to run with --console to see this.
+
+    for trigger in triggers:
+        if trigger_type == botengine.TRIGGER_SCHEDULE:
+            print("")
+            botengine.get_logger().info("Executing on schedule")
+
+            unix_time_ms = int(inputs['time'])
+            unix_time_sec = unix_time_ms / 1000
+
+            botengine.get_logger().info("\t=> Unix timestamp in milliseconds = " + str(unix_time_ms))
+            botengine.get_logger().info("\t=> Human readable timestamp: " + datetime.datetime.fromtimestamp(unix_time_sec).strftime('%Y-%m-%d %H:%M:%S'))
+
+        elif trigger_type == botengine.TRIGGER_MODE:
+            print("")
+            botengine.get_logger().info("Executing on a change of mode")
+            mode = trigger['location']['event']
+            botengine.get_logger().info("Your current mode is " + mode)
+
+        elif trigger_type == botengine.TRIGGER_DEVICE_ALERT:
+            print("")
+            botengine.get_logger().info("Executing on a device alert")
+            for focused_alert in alerts:
+                alert_type = focused_alert['alertType']
+                device_name = trigger['device']['description']
+
+                botengine.get_logger().info("\n\nGot a '" + alert_type + "' alert from your '" + device_name +"'!")
+
+                for parameter in focused_alert['params']:
+                    botengine.get_logger().info("\t" + parameter['name'] + " = " + parameter['value'])
+
+        elif trigger_type == botengine.TRIGGER_DEVICE_MEASUREMENT:
+            print("")
+            botengine.get_logger().info("Executing on a new device measurement")
+
+            device_type = trigger['device']['deviceType']
+            device_name = trigger['device']['description']
+
+            if device_type == 10014:
+                botengine.get_logger().info("\t=> It's an Entry Sensor")
+                doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
+
+                if doorStatus == "true":
+                    botengine.get_logger().info("\t=> Your '" + device_name + "' opened")
+
+                    # Timers only promise to execute the app again in the future, at approximately the time you want.
+                    # Timers will not execute early, but you can expect them to execute late.
+                    # Do not try to set a timer that is faster than 2 seconds.
+                    # The usage is:  botengine.start_timer(seconds, function, argument).
+                    botengine.start_timer(5, timer_fired, device_name)
+
+                else:
+                    botengine.get_logger().info("\t=> Your '" + device_name + "' closed")
 
 
-    if triggerType == botengine.TRIGGER_SCHEDULE:
-        print("\nExecuting on schedule")
+            elif device_type == 10017:
+                botengine.get_logger().info("\t=> It's a Water Sensor")
+                waterLeak = botengine.get_property(measures, "name", "waterLeak", "value")
 
-        unixTimeMs = int(inputs['time'])
-        unixTimeSec = unixTimeMs / 1000
+                if waterLeak == "true":
+                    botengine.get_logger().info("\t=> Your '" + device_name + "' got wet")
 
-        print("\t=> Unix timestamp in milliseconds = " + str(unixTimeMs))
-        print("\t=> Human readable timestamp: " + datetime.datetime.fromtimestamp(unixTimeSec).strftime('%Y-%m-%d %H:%M:%S'))
-
-    elif triggerType == botengine.TRIGGER_MODE:
-        print("\nExecuting on a change of mode")
-        mode = trigger['location']['event']
-        print("Your current mode is " + mode)
-
-    elif triggerType == botengine.TRIGGER_DEVICE_ALERT:
-        print("\nExecuting on a device alert")
-        for focused_alert in alerts:
-            alertType = focused_alert['alertType']
-            deviceName = trigger['device']['description']
-
-            print("\n\nGot a '" + alertType + "' alert from your '" + deviceName +"'!")
-
-            for parameter in focused_alert['params']:
-                print("\t" + parameter['name'] + " = " + parameter['value'])
-
-    elif triggerType == botengine.TRIGGER_DEVICE_MEASUREMENT:
-        print("\nExecuting on a new device measurement")
-
-        deviceType = trigger['device']['deviceType']
-        deviceName = trigger['device']['description']
-
-        if deviceType == 10014:
-            print("\t=> It's an Entry Sensor")
-            doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
-
-            if doorStatus == "true":
-                print("\t=> Your '" + deviceName + "' opened")
-
-                # Timers only promise to execute the app again in the future, at approximately the time you want.
-                # Timers will not execute early, but you can expect them to execute late.
-                # Do not try to set a timer that is faster than 2 seconds.
-                # The usage is:  botengine.start_timer(seconds, function, argument).
-                botengine.start_timer(5, timer_fired, deviceName)
-
-            else:
-                print("\t=> Your '" + deviceName + "' closed")
+                else:
+                    botengine.get_logger().info("\t=> Your '" + device_name + "' dried up")
 
 
-        elif deviceType == 10017:
-            print("\t=> It's a Water Sensor")
-            waterLeak = botengine.get_property(measures, "name", "waterLeak", "value")
+            elif device_type == 10072:
+                botengine.get_logger().info("\t=> It's a Virtual Light Switch")
+                switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
 
-            if waterLeak == "true":
-                print("\t=> Your '" + deviceName + "' got wet")
+                if int(switchStatus) > 0:
+                    botengine.get_logger().info("Your '" + device_name + "' switched on")
+                    botengine.execute_again_in_n_seconds(5)
 
-            else:
-                print("\t=> Your '" + deviceName + "' dried up")
-
-
-        elif deviceType == 10072:
-            print("\t=> It's a Virtual Light Switch")
-            switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
-
-            if int(switchStatus) > 0:
-                print("Your '" + deviceName + "' switched on")
-                botengine.execute_again_in_n_seconds(5)
-
-            else:
-                print("Your '" + deviceName + "' switched off")
+                else:
+                    botengine.get_logger().info("Your '" + device_name + "' switched off")
 
 
 def timer_fired(botengine, argument):
@@ -266,4 +261,4 @@ def timer_fired(botengine, argument):
     :param botengine: Current execution environment
     :param argument: Argument we previously passed in when starting this timer
     """
-    print("Your timer fired because your '" + argument + "' opened recently!")
+    botengine.get_logger().info("Your timer fired because your '" + argument + "' opened recently!")

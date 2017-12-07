@@ -1,0 +1,10 @@
+# Comments are accepted in this file
+
+{
+  # This bot does not extend the code base of any other bots
+  "extends": "",
+
+  # Include the following list of Python packages when using this bot
+  "pip_install": [
+  ]
+}

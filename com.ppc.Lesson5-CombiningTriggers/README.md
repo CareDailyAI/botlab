@@ -2,9 +2,9 @@
 
 This is an example of an bot that is triggered from multiple types of triggers. This bot triggers off of 4 different trigger types: measurements, modes, alerts, and schedulues. See bot.py for more information.
 
-##Running This Bot
+## Running This Bot
 
- First, register your developer account at http://presto.peoplepowerco.com.
+ First, create a user account at http://app.presencepro.com.
 
  This bot will require a device to be connected to your account:
 
