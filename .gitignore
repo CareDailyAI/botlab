@@ -1,5 +1,8 @@
 # Byte-compiled / optimized / DLL files
 
+.bot
+_bot.zip
+_bot.tar
 .idea
 .project
 .pydevproject
