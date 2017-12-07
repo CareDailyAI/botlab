@@ -13,18 +13,16 @@ Email support@peoplepowerco.com if you have questions!
 # declare that videos have been recorded, triggering the server to send out
 # push notifications and emails to the user.
 #
-# To make this lesson work, install the "Presence" bot on an iOS device and
+# To make this lesson work, install the "Presence" app onto an Android or iOS device and
 # turn it into a camera. Enable motion recording. Run this bot, and give the
-# bot permission to access your camera. When motion is recording,
-# you'll see this bot react.
-#
+# bot permission to access your camera. When motion is recording, you'll see this bot react.
 
 
 # RUNNING THIS BOT
-# First, register your developer account at http://presto.peoplepowerco.com.
+# First, create a user account at http://app.presencepro.com.
 #
 # You'll need to add a Presence Camera to your account to run this bot.
-# Download the Presence bot for free in the bot store, on iOS and Android.
+# Download the Presence bot for free in the bot store, on iOS or Android.
 # Sign into the bot and turn your mobile device into a security camera.
 #
 #
@@ -58,12 +56,15 @@ Email support@peoplepowerco.com if you have questions!
 #
 
 def run(botengine):
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
 
     # Initialize
-    logger = botengine.get_logger()                  # Debug logger
     inputs = botengine.get_inputs()                  # Information input into the bot
-    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
-    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    trigger_type = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
+    triggers = botengine.get_triggers()              # Get a list of triggers
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     alerts = botengine.get_alerts_block()            # Capture new alerts, if any
@@ -118,14 +119,15 @@ def run(botengine):
 #}
 
 
-    if triggerType == botengine.TRIGGER_DEVICE_ALERT:
+    if trigger_type == botengine.TRIGGER_DEVICE_ALERT:
         # This bot is triggered off an alert.
         # Notice that a single trigger can contain alerts from multiple devices, so we'll iterate through them.
-        for focused_alert in alerts:
-            alertType = focused_alert['alertType']
-            deviceName = trigger['device']['description']
+        for trigger in triggers:
+            for focused_alert in alerts:
+                alert_type = focused_alert['alertType']
+                device_name = trigger['device']['description']
 
-            print("\n\nGot a '" + alertType + "' alert from your '" + deviceName +"'!")
+                print("\n\nGot a '" + alert_type + "' alert from your '" + device_name +"'!")
 
-            for parameter in focused_alert['params']:
-                print("\t" + parameter['name'] + " = " + parameter['value'])
+                for parameter in focused_alert['params']:
+                    print("\t" + parameter['name'] + " = " + parameter['value'])
