@@ -13,15 +13,11 @@ Email support@peoplepowerco.com if you have questions!
 # Modes drive rules and botengine bots. This bot will explore how to trigger off of modes.
 #
 #
-# VERSION.JSON
-# Open your version.json file. You'll notice the trigger specifies we're looking for changes
+# RUNTIME.JSON
+# Open your runtime.json file. You'll notice the trigger specifies we're looking for changes
 # to the user's location's mode:
 #
 #     "trigger": 2,
-#
-# You'll see another line that specifies which modes we're triggering off of:
-#
-#     "event": "HOME,AWAY,VACATION",
 #
 #
 # BOT.PY
@@ -74,11 +70,8 @@ Email support@peoplepowerco.com if you have questions!
 
 
 def run(botengine):
-    logger = botengine.get_logger()                  # Debug logger, this will capture logged output to an external 'bot.log' file
     inputs = botengine.get_inputs()                  # Information input into the bot
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
-
-
 
 # This is what I get back from our inputs. Notice it doesn't include any measurements, because
 # we triggered off of a Location mode changing event
@@ -102,6 +95,4 @@ def run(botengine):
 # }
 
     mode = access[0]['location']['event']
-
-    logger.debug("You are now in " + mode + " mode.")
-    print("You are now in " + mode + " mode.")          # For your convenience, in case you didn't want to add --console to the command line
+    botengine.get_logger().info("You are now in " + mode + " mode.")

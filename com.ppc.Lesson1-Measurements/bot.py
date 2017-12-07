@@ -7,7 +7,7 @@ Email support@peoplepowerco.com if you have questions!
 '''
 
 # LESSON 1 - MEASUREMENTS
-# You may use Python 2.7 or 3.5 to run BotEngine.
+# Bots currently use Python 2.7 to run everywhere.
 #
 # This lesson demonstrates how to listen and do processing on real-time data flowing
 # through a cloud server from a door/window Entry Sensor.  This example will require you to
@@ -20,33 +20,34 @@ Email support@peoplepowerco.com if you have questions!
 # bot's local directory to attach a virtual light switch to your account.
 #
 #
-# VERSION.JSON
-# First, open up version.json. This file drives the behavior of when this bot runs,
+# RUNTIME.JSON
+# First, open up runtime.json. This file drives the behavior of when this bot runs,
 # and it's updated with every new version of the bot. One of the most important
-# lines in this version.json file is here:
+# lines in this runtime.json file is here:
 #
 #     "trigger": 8,
 #
 # This is the trigger that causes this bot to run. Trigger 8 means "Run this bot when a new device measurement comes in."
 #
 # Here are some other triggers, for your information. These are found in the BotEngine API documentation.
-#   * botengine.TRIGGER_SCHEDULE = Trigger 1 = Schedule (based off a cron schedule inside the version.json file)
-#   * botengine.TRIGGER_MODE = Trigger 2 = Location Event (switching between home / away / etc.)
-#   * botengine.TRIGGER_DEVICE_ALERT = Trigger 4 = Device Alert
-#   * botengine.TRIGGER_DEVICE_MEASUREMENT = Trigger 8 = Device Measurements
-#   * botengine.TRIGGER_QUESTION_ANSWER = Trigger 16 = Question Answered
-#   * botengine.TRIGGER_DEVICE_FILES = Trigger 32 = New device file (like a video or picture)
-#   * botengine.TRIGGER_EXECUTE_AGAIN = Trigger 64 = Execute again
-#   * botengine.TRIGGER_CHALLENGE = Trigger 128 = Community Challenge
+#   * 1 = Schedule (based off a cron schedule inside the runtime.json file)
+#   * 2 = Location Event (switching between home / away / etc.)
+#   * 4 = Device Alert
+#   * 8 = Device Measurements
+#   * 16 = Question Answered
+#   * 32 = New device file (like a video or picture)
+#   * 64 = Reserved for timers
+#   * 128 = Device configuration or metadata was updated
+#   * 256 = Data Stream Message received
 #
-# Because we picked Trigger 8 in our version.json, we need to specify a device type to be the trigger.
+# Because we picked Trigger 8 in our runtime.json, we need to specify a device type to be the trigger.
 # You can see this in the next section:
 #
 #     "deviceTypes": [{
 #       "id": 10014,                           <-- Device type 10014 is a Door/Window sensor
-#       "minOccurrence": 1,                    <-- You need at least one device of this type
-#       "trigger": true,                       <-- This device type is the trigger
-#       "read": true,                          <-- We're going to read from the device
+#       "minOccurrence": 0,                    <-- You can connect this bot to your account even if you don't have a compatible device here
+#       "trigger": true,                       <-- This device type is going to trigger the bot
+#       "read": true,                          <-- We're going to read measurements from the device
 #       "control": false,                      <-- There's nothing to control
 #       "triggerParamName": "doorStatus",      <-- We'll trigger off of parameter 'doorStatus' ...
 #       "triggerParamValues": "true",          <-- ... whenever that trigger says only "true" (the door opened).
@@ -68,11 +69,10 @@ Email support@peoplepowerco.com if you have questions!
 #     }
 #   ],
 #
-# One very important thing to note:  If you want to make changes to the way your bot executes:
-# first you should first edit the version.json file to describe how you want it to execute,
-# then you should COMMIT your bot to the cloud.
+# VERY IMPORTANT:  If you want to make changes to the way your bot executes, you should first update the runtime.json
+# file to describe how you want it to execute, and then you should COMMIT your bot to the cloud.
 #
-#     botengine --commit <your bot bundle>
+#     botengine --commit com.ppc.Lesson1-Measurements
 #
 # You may want to reconfigure your purchased bot instance after that to give your bot access
 # to anything else in your account:
@@ -95,7 +95,7 @@ Email support@peoplepowerco.com if you have questions!
 #
 
 # RUNNING THIS BOT
-# First, register your developer account at http://presto.peoplepowerco.com.
+# First, create a user account at http://app.presencepro.com.
 #
 # This bot will require a device to be connected to your account:
 #    Option A:  Buy a Presence Security Pack (http://presencepro.com/store).
@@ -168,8 +168,8 @@ def run(botengine):
     # Initialize the bot by grabbing access to all the important information
     logger = botengine.get_logger()                  # Debug logger, this will capture logged output to an external 'bot.log' file
     inputs = botengine.get_inputs()                  # Information input into the bot
-    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
-    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    trigger_type = botengine.get_trigger_type()      # What type of trigger caused the bot to execute this time
+    triggers = botengine.get_triggers()              # Get a list of device that triggered this execution
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     timestamp = botengine.get_timestamp()            # Get the current time
@@ -210,37 +210,37 @@ def run(botengine):
 #}
 
 
-    deviceName = trigger['device']['description']
-    deviceType = trigger['device']['deviceType']
+    for trigger in triggers:
+        description = trigger['device']['description']
+        device_type = trigger['device']['deviceType']
 
-    if deviceType == 10014:
-        # This is a door/window entry sensor.
+        if device_type == 10014:
+            # This is a door/window entry sensor.
 
-        # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
-        doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
-        measurement_update_time = botengine.get_property(measures, "name", "doorStatus", "time")
+            # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
+            doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
+            measurement_update_time = botengine.get_property(measures, "name", "doorStatus", "time")
 
-        # Do something with this value
-        if doorStatus == "true":
-            print("[" + str( datetime.datetime.fromtimestamp(measurement_update_time/1000).strftime('%Y-%m-%d %H:%M:%S')) + "] Your '" + deviceName + "' opened!")        # print(), to make it easier for you
+            # Do something with this value
+            if doorStatus == "true":
+                print("[" + str( datetime.datetime.fromtimestamp(measurement_update_time/1000).strftime('%Y-%m-%d %H:%M:%S')) + "] Your '" + description + "' opened!")        # print(), to make it easier for you
 
-        else:
-            # Notice that this should never execute, because our version.json specifies the triggering device have param name 'doorStatus' equal to 'true'
-            print("[" + str( datetime.datetime.fromtimestamp(measurement_update_time/1000).strftime('%Y-%m-%d %H:%M:%S')) + "] Your '" + deviceName + "' closed!")        # print(), to make it easier for you
-
-
-    elif deviceType == 10072:
-        # This is a Virtual Light Switch
-
-        switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
-        measurement_update_time = botengine.get_property(measures, "name", "ppc.switchStatus", "time")
-
-        if int(switchStatus) > 0:
-            print("[" + str( datetime.datetime.fromtimestamp(measurement_update_time/1000).strftime('%Y-%m-%d %H:%M:%S')) + "] Your '" + deviceName + "' switched on")
-
-        else:
-            print("[" + str( datetime.datetime.fromtimestamp(measurement_update_time/1000).strftime('%Y-%m-%d %H:%M:%S')) + "] Your '" + deviceName + "' switched off")
+            else:
+                print("[" + str( datetime.datetime.fromtimestamp(measurement_update_time/1000).strftime('%Y-%m-%d %H:%M:%S')) + "] Your '" + description + "' closed!")        # print(), to make it easier for you
 
 
-    # That's it!  Your bot is complete, demonstrating you can get real-time data from Ensemble-connected devices for processing in Python,
-    # on your local computer, or pushed to a cloud server to run 24/7 in the background of your life.
+        elif device_type == 10072:
+            # This is a Virtual Light Switch
+
+            switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
+            measurement_update_time = botengine.get_property(measures, "name", "ppc.switchStatus", "time")
+
+            if int(switchStatus) > 0:
+                print("[" + str( datetime.datetime.fromtimestamp(measurement_update_time/1000).strftime('%Y-%m-%d %H:%M:%S')) + "] Your '" + description + "' switched on")
+
+            else:
+                print("[" + str( datetime.datetime.fromtimestamp(measurement_update_time/1000).strftime('%Y-%m-%d %H:%M:%S')) + "] Your '" + description + "' switched off")
+
+
+        # That's it!  Your bot is complete, demonstrating you can get real-time data from Ensemble-connected devices for processing in Python,
+        # on your local computer, or pushed to a cloud server to run 24/7 in the background of your life.

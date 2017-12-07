@@ -2,19 +2,19 @@
 
 This lesson is an example of an bot that alerts you when an entry sensor on a door is triggered, or a light switch is toggled on or off. See bot.py for more information.
 
-##Running This Bot
-First, register your developer account at http://presto.peoplepowerco.com.
+## Running This Bot
+First, register your developer account at http://app.presencepro.com.
 
  This bot will require a device to be connected to your account:
     Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
 
-  Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
+    Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
 
   `$ python lightSwitch.py`
 
-  This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
+  This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the IoT software suite server, is a real device.
 
-  You will need to have at least 1 entry sensor OR 1 virtual light switch in your account before you can purchase this bot to run it (see below). Otherwise, this bot will be incompatible with your account.
+  You will need to have at least 1 entry sensor or 1 virtual light switch in your account before you can purchase this bot to run it (see below). Otherwise, this bot will be incompatible with your account.
 
 
  There are several steps needed to run this bot:

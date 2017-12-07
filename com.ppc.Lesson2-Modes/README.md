@@ -1,10 +1,10 @@
 #Lesson 2 - Modes
 
-This bot shows how to trigger off of modes. Each user account has at least 1 location, and each location has a mode. The standard modes are: "Home", "Away", "SLEEP", "VACATION", but it is technically possible for the mode to be called anything. See bot.py for more information.
+This bot shows how to trigger off of modes. Each user account has at least 1 location, and each location has a mode. The standard modes are: "HOME", "AWAY", "SLEEP", "VACATION", but it is technically possible for the mode to be called anything. See bot.py for more information.
 
-##Running This Bot
+## Running This Bot
 
- First, register your developer account at http://presto.peoplepowerco.com.
+ First, register your developer account at http://app.presencepro.com.
 
  There are several steps needed to run this bot:
     1. Create a new directory for your bot, with your own unique bundle ID. Copy all the files into it.
