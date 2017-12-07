@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 
+.idea
 .project
 .pydevproject
 .DS_Store
