@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 
+.com*
 .bot
 _bot.zip
 _bot.tar
