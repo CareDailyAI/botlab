@@ -1,4 +1,4 @@
-#Lesson 1 - Measurements
+# Lesson 1 - Measurements
 
 This lesson is an example of an bot that alerts you when an entry sensor on a door is triggered, or a light switch is toggled on or off. See bot.py for more information.
 
