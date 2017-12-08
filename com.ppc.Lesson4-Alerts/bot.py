@@ -121,7 +121,8 @@ def run(botengine):
 
     if trigger_type == botengine.TRIGGER_DEVICE_ALERT:
         # This bot is triggered off an alert.
-        # Notice that a single trigger can contain alerts from multiple devices, so we'll iterate through them.
+        # Notice that a single trigger can contain alerts from multiple devices (parent and child),
+        # so we'll iterate through each of them.
         for trigger in triggers:
             for focused_alert in alerts:
                 alert_type = focused_alert['alertType']
