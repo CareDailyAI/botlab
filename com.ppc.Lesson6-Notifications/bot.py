@@ -69,7 +69,7 @@ def run(botengine):
     :param botengine: BotEngine environment - your link to the outside world
     """
     inputs = botengine.get_inputs()              # Get the inputs to this botfrom BotEngine
-    trigger = botengine.get_trigger_info()        # Get the list of things we have permission to access.
+    triggers = botengine.get_triggers()          # Get the list of triggers. Okay, in this case it will always be 1 trigger, but get in the habit of this.
 
 # This is what I get back from our inputs.
 #{
@@ -96,47 +96,48 @@ def run(botengine):
 #  "trigger": 2
 #}
 
-    # So you can see how long this takes.
-    print("Sending ...")
+    for trigger in triggers:
+        # So you can see how long this takes.
+        print("Sending ...")
 
-    # First we need to identify this bots directory so we can extract the files that we included.
-    import os
-    my_app_directory = os.path.dirname(os.path.realpath(__file__))
+        # First we need to identify this bots directory so we can extract the files that we included.
+        import os
+        my_app_directory = os.path.dirname(os.path.realpath(__file__))
 
-    # Open the local email template
-    with open(my_app_directory + '/email_template.vm', 'r') as email_template:
-        template = email_template.read()
+        # Open the local email template
+        with open(my_app_directory + '/email_template.vm', 'r') as email_template:
+            template = email_template.read()
 
-    # Modify the email template
-    mode = trigger['location']['event']
+        # Modify the email template
+        mode = trigger['location']['event']
 
-    if mode == "HOME":
-        template = template.replace("$message", "Welcome Home.")
-    elif mode == "AWAY":
-        template = template.replace("$message", "Goodbye.")
-    elif mode == "VACATION":
-        template = template.replace("$message", "Have a nice vacation.")
-    elif mode == "SLEEP":
-        template = template.replace("$message", "Goodnight.")
+        if mode == "HOME":
+            template = template.replace("$message", "Welcome Home.")
+        elif mode == "AWAY":
+            template = template.replace("$message", "Goodbye.")
+        elif mode == "VACATION":
+            template = template.replace("$message", "Have a nice vacation.")
+        elif mode == "SLEEP":
+            template = template.replace("$message", "Goodnight.")
 
-    # Load a picture and base64-encode it
-    import base64
-    with open(my_app_directory + "/inline_image.png", "rb") as image_file:
-        encoded_image = base64.b64encode(image_file.read())
-        utf8_decoded_image = encoded_image.decode('utf-8')
+        # Load a picture and base64-encode it
+        import base64
+        with open(my_app_directory + "/inline_image.png", "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read())
+            utf8_decoded_image = encoded_image.decode('utf-8')
 
-    # Form a list of attachments, and then add the image's base64-encoded utf-8 string as an attachment.
-    attachments = []
-    botengine.add_email_attachment(attachments, "inline_image.png", utf8_decoded_image, "image/png", "inlineImageId")
+        # Form a list of attachments, and then add the image's base64-encoded utf-8 string as an attachment.
+        attachments = []
+        botengine.add_email_attachment(attachments, "inline_image.png", utf8_decoded_image, "image/png", "inlineImageId")
 
-    # Send the messages. Messages are implied to the user only, unless otherwise specified
-    botengine.notify(
-                    push_content = "Your bot says you are now in " + mode + " mode.",
-                    push_sound = None,
-                    email_subject = "Email notification from your bot!",
-                    email_content = template,
-                    email_html = True,
-                    email_attachments = attachments
-                    )
+        # Send the messages. Messages are implied to the user only, unless otherwise specified
+        botengine.notify(
+                        push_content = "Your bot says you are now in " + mode + " mode.",
+                        push_sound = None,
+                        email_subject = "Email notification from your bot!",
+                        email_content = template,
+                        email_html = True,
+                        email_attachments = attachments
+                        )
 
-    print("\t=> Notifications sent")
+        print("\t=> Notifications sent")
