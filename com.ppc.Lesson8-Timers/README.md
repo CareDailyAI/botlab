@@ -1,13 +1,14 @@
-#Lesson 7 - Timers
+# Lesson 7 - Timers
 
 This bot shows demonstrates how to have a bot execute a function n seconds later. It will trigger off of door/window sensors or a virtual light switch, than execute a function a certain number of seconds later. The function will verify that the door/window sensor or virtual light bulb was open or on for longer than 2 seconds.
 
-##Running This Bot
+## Running This Bot
 
 First, register your developer account at http://presto.peoplepowerco.com.
 
  This bot will require a device to be connected to your account:
-    Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
+  
+  Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
 
   Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
 

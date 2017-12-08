@@ -7,9 +7,48 @@ Email support@peoplepowerco.com if you have questions!
 '''
 
 # LESSON 8 - TIMERS
-# Bots can set a timer to execute themselves again in the future.
+# Bots can set a timer to execute themselves again in the future, both with a relative timer and an absolute alarm.
 #
-# To start a timer, first define a function in your bot.py file to execute:
+# Timer and Alarm methods available in the 'botengine' object:
+#
+#     def start_timer(self, seconds, function, argument=None, reference=None):
+#        """
+#        Start a timer with a relative time to fire.
+#
+#        :param seconds: Number of seconds from now to execute.
+#        :param function: Function to execute when the timer fires. This must be a function, not be a class method.
+#        :param argument: Optional argument to inject into the fired timer
+#        :param reference: Optional ID to reference this timer. Useful if you plan on canceling the timer later.
+#        """
+#
+#     def set_alarm(self, timestamp_ms, function, argument=None, reference=None):
+#        """
+#        Set an alarm with an absolute timestamp
+#        :param timestamp_ms: Absolute unix epoch time in milliseconds to fire the timer
+#        :param function: Function to execute when the timer fires. This must be a function, not be a class method.
+#        :param argument: Optional argument to inject into the fired timer
+#        :param reference: Optional ID to reference this timer. Useful if you plan on canceling the timer later.
+#        """
+#
+#
+#     def is_timer_running(self, reference):
+#        """
+#        Find out if at least one instance of a particular timer is running
+#        :param reference: Search for timers with the given reference. Cannot be None.
+#        :return: True if there is at least 1 existing timer with this reference running
+#        """
+#
+#
+#     def cancel_timers(self, reference):
+#        """
+#        Cancel ALL timers with the given reference.
+#
+#        :param reference: Search for timers with the given reference and destroy them. Cannot be None.
+#        """
+#
+#
+# To start a timer, first define a function in your bot.py file to execute - we'll give it a random name here
+# "my_timer_fired(..)":
 #
 #     def my_timer_fired(botengine, argument):
 #
@@ -42,8 +81,8 @@ Email support@peoplepowerco.com if you have questions!
 #     botengine.cancel_timers(MY_TIMER_REFERENCE)
 #
 #
-# You can pass whatever you want into the timer, but consider the arguments you get when
-# the timer fires to be an exact copy of the arguments going in. In other words,
+# You can pass whatever you want into the timer, and the arguments you get when
+# the timer fires are an exact copy of the arguments going in. In other words,
 # avoid passing in any object that could have been edited between the time you start the
 # timer and the time the timer executes. Best practice, when dealing with device objects for
 # example, is to pass in a reference to the device object and then use load_variable(..) to
@@ -140,11 +179,15 @@ VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE = 10072
 
 
 def run(botengine):
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
+    
     # Initialize
-    logger = botengine.get_logger()                  # Debug logger
     inputs = botengine.get_inputs()                  # Information input into the bot
-    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
-    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    trigger_type = botengine.get_trigger_type()      # What type of trigger caused the bot to execute this time
+    triggers = botengine.get_triggers()              # Get a list of triggers
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     timestamp = botengine.get_timestamp()            # Capture the timestamp of execution
@@ -183,74 +226,77 @@ def run(botengine):
 #  "trigger": 8
 #}
 
+    # Trigger type 8 is a device measurement
+    if trigger_type == botengine.TRIGGER_MODE:
+        # There's always only 1 trigger for modes, but it's delivered in a list of triggers
+        for trigger in triggers:
+            print("\n[" + str(timestamp) + "] Executing on a change of mode, canceling any previous mode timers and starting new ones (10, 15, 20 second timers)")
+
+            # Cancel any previous mode timers
+            botengine.cancel_timers("mode")
+
+            # Again, I recommend using an integer for the reference, but I'll use a string here for readability.
+            botengine.start_timer(-1, mode_timer_fired, "Minus One Second", "mode")
+            botengine.start_timer(0, mode_timer_fired, "Zero Second", "mode")
+            botengine.start_timer(1, mode_timer_fired, "One Second", "mode")
+            botengine.start_timer(2, mode_timer_fired, "Two Second", "mode")
+            botengine.start_timer(3, mode_timer_fired, "Three Second", "mode")
+            botengine.start_timer(4, mode_timer_fired, "Four Second", "mode")
+            botengine.start_timer(5, mode_timer_fired, "Five Second", "mode")
+            botengine.start_timer(6, mode_timer_fired, "Six Second", "mode")
+            botengine.start_timer(7, mode_timer_fired, "Seven Second", "mode")
+            botengine.start_timer(8, mode_timer_fired, "Eight Second", "mode")
+            botengine.start_timer(9, mode_timer_fired, "Nine Second", "mode")
+            botengine.start_timer(10, mode_timer_fired, "Ten Second", "mode")
+            botengine.start_timer(15, mode_timer_fired, "Fifteen Second", "mode")
+            botengine.set_alarm(timestamp + 20000, mode_timer_fired, "Twenty Second Absolute", "mode")
+
 
     # Trigger type 8 is a device measurement
-    if triggerType == botengine.TRIGGER_MODE:
-        print("\n[" + str(timestamp) + "] Executing on a change of mode, canceling any previous mode timers and starting new ones (10, 15, 20 second timers)")
+    elif trigger_type == botengine.TRIGGER_DEVICE_MEASUREMENT:
+        # There can be multiple device triggers simultaneously (parent and child devices), so loop through each trigger
+        for trigger in triggers:
+            print("\n[" + str(timestamp) + "] Executing on a new device measurement")
 
-        # Cancel any previous mode timers
-        botengine.cancel_timers("mode")
+            device_type = trigger['device']['deviceType']
+            device_name = trigger['device']['description']
+            device_id = str(trigger['device']['deviceId'])
 
-        # Again, I recommend using an integer for the reference, but I'll use a string here for readability.
-        botengine.start_timer(-1, mode_timer_fired, "Minus One Second", "mode")
-        botengine.start_timer(0, mode_timer_fired, "Zero Second", "mode")
-        botengine.start_timer(1, mode_timer_fired, "One Second", "mode")
-        botengine.start_timer(2, mode_timer_fired, "Two Second", "mode")
-        botengine.start_timer(3, mode_timer_fired, "Three Second", "mode")
-        botengine.start_timer(4, mode_timer_fired, "Four Second", "mode")
-        botengine.start_timer(5, mode_timer_fired, "Five Second", "mode")
-        botengine.start_timer(6, mode_timer_fired, "Six Second", "mode")
-        botengine.start_timer(7, mode_timer_fired, "Seven Second", "mode")
-        botengine.start_timer(8, mode_timer_fired, "Eight Second", "mode")
-        botengine.start_timer(9, mode_timer_fired, "Nine Second", "mode")
-        botengine.start_timer(10, mode_timer_fired, "Ten Second", "mode")
-        botengine.start_timer(15, mode_timer_fired, "Fifteen Second", "mode")
-        botengine.set_timer(timestamp + 20000, mode_timer_fired, "Twenty Second Absolute", "mode")
+            # Load or create the appropriate object, with the device ID as part of the variable name to track multiple devices.
+            focused_object = botengine.load_variable("sensor_object" + str(device_id))
+            if focused_object == None:
+                focused_object = Sensor(device_id, device_type, device_name)
+                botengine.save_variable(device_id, focused_object)
 
+            # Find out what type of sensor it was.
+            if int(device_type) == ENTRY_SENSOR_DEVICE_TYPE:
+                # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
+                doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
+                time = botengine.get_property(measures, "name", "doorStatus", "time")
+                state = (doorStatus.lower() == "true") or (doorStatus == "1")
+                focused_object.update_state(state, time)
 
-    # Trigger type 8 is a device measurement
-    elif triggerType == botengine.TRIGGER_DEVICE_MEASUREMENT:
-        print("\n[" + str(timestamp) + "] Executing on a new device measurement")
-
-        device_type = trigger['device']['deviceType']
-        device_name = trigger['device']['description']
-        device_id = str(trigger['device']['deviceId'])
-
-        # Load or create the appropriate object, with the device ID as part of the variable name to track multiple devices.
-        focused_object = botengine.load_variable("sensor_object_" + str(device_id))
-        if focused_object == None:
-            focused_object = Sensor(device_id, device_type, device_name)
-            botengine.save_variable(device_id, focused_object)
-
-        # Find out what type of sensor it was.
-        if int(device_type) == ENTRY_SENSOR_DEVICE_TYPE:
-            # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
-            doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
-            time = botengine.get_property(measures, "name", "doorStatus", "time")
-            state = (doorStatus.lower() == "true") or (doorStatus == "1")
-            focused_object.update_state(state, time)
-
-            if state:
-                print("[" + str(timestamp) + "] Your '" + device_name + "' opened! Executing this bot again in 3 seconds...")
-                botengine.start_timer(3, entry_sensor_timer_fired, device_id)
-            else:
-                print("[" + str(timestamp) + "] Your '" + device_name + "' closed.")
+                if state:
+                    print("[" + str(timestamp) + "] Your '" + device_name + "' opened! Executing this bot again in 3 seconds...")
+                    botengine.start_timer(3, entry_sensor_timer_fired, device_id)
+                else:
+                    print("[" + str(timestamp) + "] Your '" + device_name + "' closed.")
 
 
-        if int(device_type) == VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE:
-            switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
-            time = botengine.get_property(measures, "name", "ppc.switchStatus", "time")
-            state = (switchStatus == "1")
-            focused_object.update_state(state, time)
+            if int(device_type) == VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE:
+                switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
+                time = botengine.get_property(measures, "name", "ppc.switchStatus", "time")
+                state = (switchStatus == "1")
+                focused_object.update_state(state, time)
 
-            if state:
-                print("[" + str(timestamp) + "] Your '" + device_name + "' switched on! Executing this bot at a specific timestamp 3 seconds from now...")
-                botengine.start_timer(3, virtual_light_switch_timer_fired, device_id)
-            else:
-                print("[" + str(timestamp) + "] Your '" + device_name + "' switched off.")
+                if state:
+                    print("[" + str(timestamp) + "] Your '" + device_name + "' switched on! Executing this bot at a specific timestamp 3 seconds from now...")
+                    botengine.start_timer(3, virtual_light_switch_timer_fired, device_id)
+                else:
+                    print("[" + str(timestamp) + "] Your '" + device_name + "' switched off.")
 
-        # Make sure you save your variables when you're done, or you'll get strange behaviors!
-        botengine.save_variable("sensor_object_" + str(device_id), focused_object)
+            # Make sure you save your variables when you're done, or you'll get strange behaviors!
+            botengine.save_variable("sensor_object" + str(device_id), focused_object)
 
 
 
