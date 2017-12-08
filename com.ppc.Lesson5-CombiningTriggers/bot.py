@@ -174,24 +174,27 @@ def run(botengine):
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     alerts = botengine.get_alerts_block()            # Capture new alerts, if any
 
-    for trigger in triggers:
-        if trigger_type == botengine.TRIGGER_SCHEDULE:
-            print("")
-            botengine.get_logger().info("Executing on schedule")
+    if trigger_type == botengine.TRIGGER_SCHEDULE:
+        print("")
+        botengine.get_logger().info("Executing on schedule")
 
-            unix_time_ms = int(inputs['time'])
-            unix_time_sec = unix_time_ms / 1000
+        unix_time_ms = int(inputs['time'])
+        unix_time_sec = unix_time_ms / 1000
 
-            botengine.get_logger().info("\t=> Unix timestamp in milliseconds = " + str(unix_time_ms))
-            botengine.get_logger().info("\t=> Human readable timestamp: " + datetime.datetime.fromtimestamp(unix_time_sec).strftime('%Y-%m-%d %H:%M:%S'))
+        botengine.get_logger().info("\t=> Unix timestamp in milliseconds = " + str(unix_time_ms))
+        botengine.get_logger().info("\t=> Human readable timestamp: " + datetime.datetime.fromtimestamp(unix_time_sec).strftime('%Y-%m-%d %H:%M:%S'))
 
-        elif trigger_type == botengine.TRIGGER_MODE:
+    elif trigger_type == botengine.TRIGGER_MODE:
+        # There's always only 1 trigger for mode changes, but it's delivered in a list of triggers.
+        for trigger in triggers:
             print("")
             botengine.get_logger().info("Executing on a change of mode")
             mode = trigger['location']['event']
             botengine.get_logger().info("Your current mode is " + mode)
 
-        elif trigger_type == botengine.TRIGGER_DEVICE_ALERT:
+    elif trigger_type == botengine.TRIGGER_DEVICE_ALERT:
+        # There can be multiple device triggers simultaneously (parent and child), loop through each of them
+        for trigger in triggers:
             print("")
             botengine.get_logger().info("Executing on a device alert")
             for focused_alert in alerts:
@@ -203,7 +206,9 @@ def run(botengine):
                 for parameter in focused_alert['params']:
                     botengine.get_logger().info("\t" + parameter['name'] + " = " + parameter['value'])
 
-        elif trigger_type == botengine.TRIGGER_DEVICE_MEASUREMENT:
+    elif trigger_type == botengine.TRIGGER_DEVICE_MEASUREMENT:
+        # There can be multiple device triggers simultaneously (parent and child), loop through each of them
+        for trigger in triggers:
             print("")
             botengine.get_logger().info("Executing on a new device measurement")
 
