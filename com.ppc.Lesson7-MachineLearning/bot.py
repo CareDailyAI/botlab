@@ -153,7 +153,7 @@ def run(botengine):
     Starting point of execution
     :param botengine: BotEngine environment - your link to the outside world
     """
-    
+
     # Initialize
     inputs = botengine.get_inputs()                  # Information input into the
     trigger_type = botengine.get_trigger_type()      # What type of trigger caused the bot to execute this time
@@ -162,51 +162,52 @@ def run(botengine):
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
     timestamp_ms = botengine.get_timestamp()          # Get the timestamp of execution
 
-    for trigger in triggers:
-        # Let's figure out what triggered us, and therefore what we should do next.
-        if trigger_type == botengine.TRIGGER_SCHEDULE:
-            print("\nExecuting on schedule")
-            print("---------")
-            door_object = botengine.load_variable("door_object")
-            if door_object == None:
-                # This has never been run before - go ahead and create the DoorTracker() object for the first time.
-                door_object = DoorTracker(timestamp_ms, False)
+    # Let's figure out what triggered us, and therefore what we should do next.
+    if trigger_type == botengine.TRIGGER_SCHEDULE:
+        print("\nExecuting on schedule")
+        print("---------")
+        door_object = botengine.load_variable("door_object")
+        if door_object == None:
+            # This has never been run before - go ahead and create the DoorTracker() object for the first time.
+            door_object = DoorTracker(timestamp_ms, False)
 
-                # Here we demonstrate the 'required_for_each_execution' flag inside of the save_variable(..) method.
-                # If you use this flag, then your variable will be downloaded before your bot executes, every time.
-                # It will increase performance if you know your variable will definitely be used on every execution.
-                #
-                # If you use this flag but do not end up using this variable on every execution, then you might end
-                # up decreasing performance due to the extra overhead of loading it on each execution.
-                botengine.save_variable("door_object", door_object, required_for_each_execution=True)
+            # Here we demonstrate the 'required_for_each_execution' flag inside of the save_variable(..) method.
+            # If you use this flag, then your variable will be downloaded before your bot executes, every time.
+            # It will increase performance if you know your variable will definitely be used on every execution.
+            #
+            # If you use this flag but do not end up using this variable on every execution, then you might end
+            # up decreasing performance due to the extra overhead of loading it on each execution.
+            botengine.save_variable("door_object", door_object, required_for_each_execution=True)
 
-            switch_object = botengine.load_variable("switch_object")
-            if switch_object == None:
-                # This has never been run before - go ahead and create the SwitchTracker() object for the first time.
-                switch_object = SwitchTracker(timestamp_ms, False)
-                botengine.save_variable("switch_object", switch_object)
+        switch_object = botengine.load_variable("switch_object")
+        if switch_object == None:
+            # This has never been run before - go ahead and create the SwitchTracker() object for the first time.
+            switch_object = SwitchTracker(timestamp_ms, False)
+            botengine.save_variable("switch_object", switch_object)
 
-            # Get our objects ready for reporting
-            opens = door_object.total_opens()
-            open_ms = door_object.total_time_open_ms(timestamp_ms)
+        # Get our objects ready for reporting
+        opens = door_object.total_opens()
+        open_ms = door_object.total_time_open_ms(timestamp_ms)
 
-            on = switch_object.total_on()
-            on_ms = switch_object.total_time_on_ms(timestamp_ms)
+        on = switch_object.total_on()
+        on_ms = switch_object.total_time_on_ms(timestamp_ms)
 
-            # This would be our "daily report"
-            print("Your door opened " + str(opens) + " times in the past 30 seconds")
-            print("Your door spent " + str(open_ms / 1000) + " seconds open")
-            print("")
-            print("Your switch turned on " + str(on) + " times in the past 30 seconds")
-            print("Your switch spent " + str(on_ms / 1000) + " seconds on")
+        # This would be our "daily report"
+        print("Your door opened " + str(opens) + " times in the past 30 seconds")
+        print("Your door spent " + str(open_ms / 1000) + " seconds open")
+        print("")
+        print("Your switch turned on " + str(on) + " times in the past 30 seconds")
+        print("Your switch spent " + str(on_ms / 1000) + " seconds on")
 
-            # Create new objects to start accumulating data fresh for the next report
-            # If you use 'required_for_each_execution' once, then try to use it every time on when saving that variable name.
-            botengine.save_variable("door_object", DoorTracker(timestamp_ms, door_object.was_open), required_for_each_execution=True)
-            botengine.save_variable("switch_object", SwitchTracker(timestamp_ms, switch_object.was_switched_on))
+        # Create new objects to start accumulating data fresh for the next report
+        # If you use 'required_for_each_execution' once, then try to use it every time on when saving that variable name.
+        botengine.save_variable("door_object", DoorTracker(timestamp_ms, door_object.was_open), required_for_each_execution=True)
+        botengine.save_variable("switch_object", SwitchTracker(timestamp_ms, switch_object.was_switched_on))
 
 
-        elif trigger_type == botengine.TRIGGER_DEVICE_MEASUREMENT:
+    elif trigger_type == botengine.TRIGGER_DEVICE_MEASUREMENT:
+        # There can be multiple devices that trigger simultaneously (for example, a parent and child)
+        for trigger in triggers:
             print("\nExecuting on a new device measurement")
             print("---------")
             device_type = trigger['device']['deviceType']
@@ -228,11 +229,11 @@ def run(botengine):
                 door_status = botengine.get_property(measures, "name", "doorStatus", "value")
 
                 if door_status == "true":
-                    print("\t=> Your '" + device_name + "' opened")
+                    print("=> Your '" + device_name + "' opened")
                     door_object.opened(timestamp_ms)
 
                 else:
-                    print("\t=> Your '" + device_name + "' closed")
+                    print("=> Your '" + device_name + "' closed")
                     door_object.closed(timestamp_ms)
 
                 # Print out some status

@@ -1,7 +1,7 @@
 {
   "version": {
     # The current version number of your bot, which must increment on each publication.
-    "version": "1.0.0",
+    "version": "1.0.1",
 
     # Description of what's new in this version.
     "whatsnew": {
