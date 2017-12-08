@@ -123,17 +123,17 @@ VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE = 10072
 
 
 def run(botengine):
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
+    
     # Initialize
-    logger = botengine.get_logger()                  # Debug logger
     inputs = botengine.get_inputs()                  # Information input into the bot
     triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
-    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    triggers = botengine.get_triggers()               # Get a list of triggers
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
-
-    logger.debug("Inputs: " + str(inputs));     # Save it to our logging debug file, just to show you what's going on. You'll have to run with --console to see this.
-
-    # Scroll down past this commentary for the rest of the example code ...
 
 
 # INPUTS WHEN THE ENTRY SENSOR TRIGGERS:
@@ -217,61 +217,63 @@ def run(botengine):
     botengine.tag_user("developer")
 
     if triggerType == botengine.TRIGGER_MODE:
-        # Executing on a change of mode
-        mode = trigger['location']['event']
-        locationId = trigger['location']['locationId']
+        # There's always only 1 trigger for modes, but it's delivered in a list
+        for trigger in triggers:
+            # Executing on a change of mode
+            mode = trigger['location']['event']
+            location_id = trigger['location']['locationId']
 
-        new_tag = mode.lower()
-        last_tag = botengine.load_variable("last_mode_tag")
+            new_tag = mode.lower()
+            last_tag = botengine.load_variable("last_mode_tag")
 
-        if last_tag:
-            botengine.delete_user_tag("user" + last_tag)
-            botengine.delete_location_tag("location" + last_tag, locationId)
+            if last_tag:
+                botengine.delete_user_tag("user" + last_tag)
+                botengine.delete_location_tag("location" + last_tag, location_id)
 
-        botengine.tag_user("user" + new_tag)
-        botengine.tag_location("location" + new_tag, locationId)
-        botengine.save_variable("last_mode_tag", new_tag)
-
+            botengine.tag_user("user" + new_tag)
+            botengine.tag_location("location" + new_tag, location_id)
+            botengine.save_variable("last_mode_tag", new_tag)
 
     elif triggerType == botengine.TRIGGER_DEVICE_MEASUREMENT:
-        # Executing on a device measurement
-        deviceType = trigger['device']['deviceType']
-        deviceName = trigger['device']['description']
-        deviceId = trigger['device']['deviceId']
+        # There can be multiple simultaneous triggers from devices (parent and child), so loop through each one
+        for trigger in triggers:
+            # Executing on a device measurement
+            device_type = trigger['device']['deviceType']
+            device_name = trigger['device']['description']
+            device_id = trigger['device']['deviceId']
 
-        if deviceType == ENTRY_SENSOR_DEVICE_TYPE:
-            batteryLevel = botengine.get_property(measures, "name", "batteryLevel", "value")
+            if device_type == ENTRY_SENSOR_DEVICE_TYPE:
+                battery_level = botengine.get_property(measures, "name", "batteryLevel", "value")
 
-            if batteryLevel is not None:
-                if int(batteryLevel) > 20:
-                    botengine.delete_device_tag("badBattery", deviceId)
-                    botengine.tag_device("goodBattery", deviceId)
+                if battery_level is not None:
+                    if int(battery_level) > 20:
+                        botengine.delete_device_tag("badBattery", device_id)
+                        botengine.tag_device("goodBattery", device_id)
 
+                    else:
+                        botengine.delete_device_tag("goodBattery", device_id)
+                        botengine.tag_device("badBattery", device_id)
+
+            if device_type == VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE:
+                switch_status = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
+
+                if int(switch_status) == 1:
+                    new_tag = "switchOn"
                 else:
-                    botengine.delete_device_tag("goodBattery", deviceId)
-                    botengine.tag_device("badBattery", deviceId)
+                    new_tag = "switchOff"
 
-        if deviceType == VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE:
-            switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
+                last_tag = botengine.load_variable("last_device_tag_" + str(device_id))
+                last_device_id = botengine.load_variable("last_device_id")
 
-            if int(switchStatus) == 1:
-                new_tag = "switchOn"
-            else:
-                new_tag = "switchOff"
+                if last_tag and last_device_id:
+                    botengine.delete_device_tag(last_tag, last_device_id)
 
-            last_tag = botengine.load_variable("last_device_tag_" + str(deviceId))
-            last_device_id = botengine.load_variable("last_device_id")
-
-            if last_tag and last_device_id:
-                botengine.delete_device_tag(last_tag, last_device_id)
-
-            botengine.tag_device(new_tag, deviceId)
-            botengine.save_variable("last_device_tag_" + str(deviceId), new_tag)
-            botengine.save_variable("last_device_id", str(deviceId))
-
+                botengine.tag_device(new_tag, device_id)
+                botengine.save_variable("last_device_tag_" + str(device_id), new_tag)
+                botengine.save_variable("last_device_id", str(device_id))
 
     # Show you our existing tags
     import json
-    existingTags = botengine.get_tags()
-    print("Existing Tags: " + json.dumps(existingTags, indent=2, sort_keys=True))
+    existing_tags = botengine.get_tags()
+    print("Existing Tags: " + json.dumps(existing_tags, indent=2, sort_keys=True))
     print()

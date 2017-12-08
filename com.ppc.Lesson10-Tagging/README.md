@@ -1,8 +1,8 @@
-#Lesson 10 - Tagging
+# Lesson 10 - Tagging
 
 Tags can be applied to users, locations, devices, and files. Tags enable use to categorize these objects.  Tags can also surface into the Maestro Command Center to help us proactively enhance the customer experience. The tags that a BotEngine bot applies are only available within that BotEngine bot instance, and the Maestro Command Center.  No other BotEngine apps can see the tags this bot applies. See bot.py for more information.
 
-##Running This Bot
+## Running This Bot
 
 First, register your developer account at http://presto.peoplepowerco.com.
 
