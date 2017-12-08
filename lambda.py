@@ -10,7 +10,7 @@ AWS Lambda execution environment wrapper
 
 import botengine
 import importlib
-import logging
+import time
 
 def lambda_handler(data, context):
     """
@@ -22,14 +22,7 @@ def lambda_handler(data, context):
     if data is None:
         return 0
     
-    logger = logging.getLogger('bot')
-    logger.setLevel(logging.WARN)
-    
-    log_output_handler = LambdaHandler()
-    
-    formatter = logging.Formatter("%(asctime)s")
-    log_output_handler.setFormatter(formatter)
-    logger.addHandler(log_output_handler)
+    logger = LambdaLogger()
     
     try:
         bot = importlib.import_module('bot')
@@ -39,34 +32,42 @@ def lambda_handler(data, context):
         import traceback
         import sys
         (t, v, tb) = sys.exc_info()
-        log_output_handler.tracebacks = traceback.format_exception(t, v, tb)
+        logger.tracebacks = traceback.format_exception(t, v, tb)
     
-    return log_output_handler.get_lambda_return()
+    return logger.get_lambda_return()
     
 
 
-class LambdaHandler(logging.Handler):
+class LambdaLogger():
     
-    def __init__(self, level=logging.NOTSET):
-        logging.Handler.__init__(self, level)
+    def __init__(self):
+        # Tracebacks for crashes
         self.tracebacks = []
+
+        # Logs
         self.logs = []
-        
-    def emit(self, record):
-        self.format(record)
-        
-        go = True
-        if not hasattr(record, 'asctime'):
-            self.logs.append("LambdaHandler Error: LogRecord has no 'asctime' attribute")
-            go = False
-            
-        if not hasattr(record, 'message'):
-            self.logs.append("LambdaHandler Error: LogRecord has no 'message' attribute")
-            go = False
-            
-        if go:
-            self.logs.append("%s: %s: %s" % (record.asctime, record.levelname, record.message))
-        
+
+    def log(self, level, message):
+        pass
+
+    def debug(self, message):
+        pass
+
+    def info(self, message):
+        pass
+
+    def warning(self, message):
+        self.logs.append("{}: [{}] {}".format(time.time(), "WARNING", message))
+
+    def error(self, message):
+        self.logs.append("{}: [{}] {}".format(time.time(), "ERROR", message))
+
+    def critical(self, message):
+        self.logs.append("{}: [{}] {}".format(time.time(), "CRITICAL", message))
+
+    def exception(self, message):
+        self.logs.append("{}: [{}] {}".format(time.time(), "EXCEPTION", message))
+
     def get_lambda_return(self):
         """
         :return: JSON dictionary of execution details, only if we have info to share
