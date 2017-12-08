@@ -13,8 +13,6 @@ Email support@peoplepowerco.com if you have questions!
 #    * To configure an bot
 #    * To inform behavior
 #
-# This is very bot-like behavior
-#
 # Questions can be open-ended text, yes/no, radio buttons, checkbox, date, time, etc.
 # Questions can automatically tag users to segment the user base.
 #
@@ -48,24 +46,16 @@ Email support@peoplepowerco.com if you have questions!
 #    and the code that is on your local computer.
 #
 
-import json
-
-# ACCESS CATEGORIES
-ACCESS_CATEGORY_MODE = 1
-
 
 def run(botengine):
-    '''
-    This is the execution starting point of your bot
-    @param botengine: Instance of the BotEngine object, which provides built-in functions for you to privately interact with this user's data
-    '''
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
 
     # Initialize the bot by grabbing access to all the important information
-    logger = botengine.get_logger()                  # Debug logger, this will capture logged output to an external 'bot.log' file
     inputs = botengine.get_inputs()                  # Information input into the bot
-    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
-    trigger = botengine.get_trigger_info()           # Get the information about the trigger
-    measures = botengine.get_measures_block()        # Capture new measurements, if any
+    trigger_type = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
 
 # INPUTS:
@@ -101,7 +91,7 @@ def run(botengine):
 #  "trigger": 16
 #}
 
-    if triggerType == botengine.TRIGGER_MODE:
+    if trigger_type == botengine.TRIGGER_MODE:
         for item in access:
             if item['category'] == botengine.ACCESS_CATEGORY_MODE:
                 mode = item['location']['event']
@@ -135,7 +125,7 @@ def run(botengine):
             question.frame_question("¿Dejaste a sus mascotas en casa?", "sp")
             botengine.ask_question(question)
 
-    elif triggerType == botengine.TRIGGER_QUESTION_ANSWER:
+    elif trigger_type == botengine.TRIGGER_QUESTION_ANSWER:
         print("Triggered from a question being answered!")
         question = botengine.get_answered_question()
         print("The answer to '" + question.question["en"] + "' was " + str(question.answer))
