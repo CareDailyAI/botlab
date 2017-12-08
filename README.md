@@ -14,12 +14,12 @@ The installer file will download the BotEngine framework and all the dependencie
 
 When you clone the botengine repository, be sure to add its location to your PYTHONPATH variable.
 
-BotEngine prefers Python 2.7. Python 3.x or newer is available with certain configurations.
+BotEngine prefers Python 2.7.
 
 
 ## Documentation
 
-Each Lesson contains a bot with documentation. Open the bot.py file for step-by-step instructions to learn how to create your own bot micro-services on top of Internet-connected products.
+Each Lesson contains a bot with documentation. Open the bot.py and runtime.json files for step-by-step instructions to learn how to create your own bot micro-services on top of Internet-connected products.
 
 ## Connecting products 
 
