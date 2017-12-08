@@ -1,12 +1,13 @@
-#Lesson 9 - Commands
+# Lesson 9 - Commands
 
 This lesson will show how to send commands to devices. The user gives the bot permission to manage any number of lights in the user's account. The user can also give the bot permission to listen to any number of light switches. In this way, virtual light switches can bind to control a group of lights. See bot.py for more information.
 
-##Running This Bot
+## Running This Bot
 First, register your developer account at http://presto.peoplepowerco.com.
 
  This bot will require a device to be connected to your account:
-    Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
+  
+  Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
 
   Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
 

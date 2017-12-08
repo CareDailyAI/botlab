@@ -6,10 +6,12 @@ Created on June 9, 2016
 Email support@peoplepowerco.com if you have questions!
 '''
 
-# LESSON 9 -COMMANDS
+# LESSON 9 - COMMANDS
 # This lesson will show how to send commands to devices.
-# The user gives the bot permission to manage any number of lights in the user's account.
-# The user can also give the bot permission to listen to any number of light switches.
+# By default, the bot will access all devices it is requesting access to in the runtime.json file.
+# Users can opt-out of sharing devices with the bot.
+#
+# In this example bot, the user can also the bot permission to listen to any number of light switches and light bulbs.
 # In this way, virtual light switches can bind to control a group of lights.
 #
 #
@@ -21,11 +23,14 @@ Email support@peoplepowerco.com if you have questions!
 # The specific device measurement we'll trigger off of is from a light switch,
 # on both on and off.
 #
-# The bot will also be compatible with light bulbs of type 10036. These are
-# recognized by the Ensemble software suite as GE LED light bulbs, capable of
-# turning on and off with the 'state' parameter set to 'true' or 'false', and
-# also capable of dimming with the 'currentLevel' parameter between 0 to 100.
 #
+# HOMEWORK: LIGHTING BOT
+#   Make a version of this bot that is compatible with real in-wall switches, light bulbs, and motion detectors.
+#   When motion is detected by any motion sensor accessible by the bot, turn on all the lights.
+#   When a light switch is toggled on, turn on all the other lights accessible by the bot.
+#   If bots turned on from motion detection, then when no motion is detected for 5 minutes, turn off the lights.
+#
+#   Use "botengine --device_types" to find the correct device type ID's for light bulbs, switches, and motion sensors.
 #
 
 
@@ -100,8 +105,12 @@ VIRTUAL_LIGHT_BULB_DEVICE_TYPE = 10071
 
 
 def run(botengine):
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
+    
     # Initialize
-    logger = botengine.get_logger()                  # Debug logger
     inputs = botengine.get_inputs()                  # Information input into the bot
     triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
     trigger = botengine.get_trigger_info()           # Get the information about the trigger
@@ -172,21 +181,15 @@ def run(botengine):
 #}
 #
 
+    if botengine.load_variable("lights_on") == None:
+        # Initialize the 'lights_on' variable
+        botengine.save_variable("lights_on", False)
 
-
-    if botengine.load_variable("lightsOn") == None:
-        # Initialize the 'lightsOn' variable
-        botengine.save_variable("lightsOn", False)
-
-    lightsOn = botengine.load_variable("lightsOn")
-    lightsOn = not lightsOn
-
-    # Get list of all accessible (device ID, device type pairs) relevant to Pro Security
-    lights = []
+    lights_on = botengine.load_variable("lights_on")
+    lights_on = not lights_on
 
     # For your convenience to see what's going on
-    logger.info("Light switch toggled")
-    print("Light switch toggled")
+    botengine.get_logger().info("Light switch toggled")
 
     # Send the command to all the lights we're given permission to access
     for item in access:
@@ -194,10 +197,10 @@ def run(botengine):
             device_type = item['device']['deviceType']
 
             if device_type == VIRTUAL_LIGHT_BULB_DEVICE_TYPE:
-                print("Commanding '" + item['device']['deviceId'] + "' to switch to " + str(lightsOn).lower())
-                botengine.send_command(device_id=item['device']['deviceId'], param_name="outletStatus", value=str(lightsOn).lower())
+                print("Commanding '" + item['device']['deviceId'] + "' to switch to " + str(lights_on).lower())
+                botengine.send_command(device_id=item['device']['deviceId'], param_name="outletStatus", value=str(lights_on).lower())
 
         except KeyError:
             pass
 
-    botengine.save_variable("lightsOn", lightsOn)
+    botengine.save_variable("lights_on", lights_on)
