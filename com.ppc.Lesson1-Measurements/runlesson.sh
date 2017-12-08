@@ -49,7 +49,7 @@ echo
 echo Lesson 1 : Measurements
 echo If you haven\'t done so already, you should definitely open up the bot.py
 echo file and read through all the commentary there. Note on the first line of
-echo the bot.py commentary that you may use Python 2.7 to run botengine.
+echo the bot.py commentary that you should use Python 2.7 to run botengine.
 echo
 echo We just finished creating a directory for your bot, $bundle_id.
 echo Then we created a new bot in your account on the server with the same bundle ID.

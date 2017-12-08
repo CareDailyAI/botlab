@@ -1,18 +1,18 @@
-#Lesson 7 - Machine Learning
+# Lesson 7 - Machine Learning
 
 This bot shows you how to persist variables across multuple bot triggers and execuations. It will listen to door/window sensors, and virtual light switches, and give you a report about how many times they were opened or turned on, and for how long, onschedule every 30 seconds. See bot.py for more information.
 
-##Running This Bot
+## Running This Bot
 
  First, register your developer account at http://presto.peoplepowerco.com.
 
  This bot will require a device to be connected to your account:
 
-   Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
+  Option A:  Buy a Presence Security Pack (http://presencepro.com/store). This is recommended because it will give you a lot more tools to create cool apps with.
 
-   Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
+  Option B:  Create a virtual light switch locally. Open up another terminal window. In this lesson's directory, run
 
-	  `$ python lightSwitch.py`
+  `$ python lightSwitch.py`
 
 This will register a new 'Virtual Light Switch' into your account, which you can control manually from its command line. It uses the Device API, and from the point of view of the Ensemble software suite server, is a real device.
 

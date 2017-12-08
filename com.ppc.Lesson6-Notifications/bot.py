@@ -64,12 +64,10 @@ Email support@peoplepowerco.com if you have questions!
 #
 
 def run(botengine):
-    '''This is the execution starting point of your bot
-
-    @param botengine: Instance of the BotEngine object, which provides built-in functions for you to privately interact with this user's data
-    @param initialize: True if we should initialize this botfor the given deviceId, and perhaps clear variables
-    '''
-
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
     inputs = botengine.get_inputs()              # Get the inputs to this botfrom BotEngine
     trigger = botengine.get_trigger_info()        # Get the list of things we have permission to access.
 

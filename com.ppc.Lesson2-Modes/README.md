@@ -1,4 +1,4 @@
-#Lesson 2 - Modes
+# Lesson 2 - Modes
 
 This bot shows how to trigger off of modes. Each user account has at least 1 location, and each location has a mode. The standard modes are: "HOME", "AWAY", "SLEEP", "VACATION", but it is technically possible for the mode to be called anything. See bot.py for more information.
 

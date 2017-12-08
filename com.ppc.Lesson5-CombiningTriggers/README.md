@@ -1,4 +1,4 @@
-#Lesson 5 - Combining Triggers
+# Lesson 5 - Combining Triggers
 
 This is an example of an bot that is triggered from multiple types of triggers. This bot triggers off of 4 different trigger types: measurements, modes, alerts, and schedulues. See bot.py for more information.
 

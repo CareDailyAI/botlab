@@ -1,12 +1,12 @@
-#Lesson 4 - Device Alerts
+# Lesson 4 - Device Alerts
 
 This is an example of an bot that listens to alerts from devices. Alerts are different than measurements, in that they occur one time and without state, simply indicating something happened. See bot.py for more information.
 
-##Dependencies
+## Dependencies
 
 To run this bot install the "Presence" bot on an iOS device and turn it into a camera. Enable motion recording. Run this bot, and give the bot permission to access your camera. When motion is recording, you'll see this bot react.
 
-##Running This Bot
+## Running This Bot
 
  First, register your developer account at http://presto.peoplepowerco.com.
 

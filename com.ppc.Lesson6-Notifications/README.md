@@ -1,8 +1,8 @@
-#Lesson 6 - Notifications
+# Lesson 6 - Notifications
 
 This bot demonstrates how to send push notifications and HTML emails to users when their mode changes. See bot.py for more details.
 
-##Running This Bot
+## Running This Bot
 
  First, register your developer account at http://presto.peoplepowerco.com.
 

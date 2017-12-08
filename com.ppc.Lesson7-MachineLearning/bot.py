@@ -26,6 +26,17 @@ Email support@peoplepowerco.com if you have questions!
 # very complex machine learning algorithms. The limits of what you can create
 # are found at the boundaries of the Python programming language capabilities.
 #
+# To add real machine learning libraries to your project like scikit-learn, open the structure.json
+# and add the Python package dependencies to the "pip_install" list. This will download and install those dependencies
+# locally into the bot's directory on your computer during the bot generation process while committing and running.
+#
+# structure.json:
+#
+#     "pip_install": [
+#        "scipy",
+#        "numpy"
+#     ],
+#
 #
 # VARIABLES
 # The BotEngine bot pickles all variables coming in, and unpickles them coming out.
@@ -68,13 +79,13 @@ Email support@peoplepowerco.com if you have questions!
 # HOMEWORK EXERCISE
 #   * The framework can save objects. Objects are instantiated from classes.
 #     As you evolve your code, under what circumstances can you safely
-#     modify the definition of your class?  How do you future-proof your code?
-#     What guidelines or best practices can you offer?
+#     update the definition of your class while loading into that new definition an object created from
+#     an older definition?  How do you future-proof your code?
 #
 #
 
 # RUNNING THIS APP
-# First, register your developer account at http://presto.peoplepowerco.com.
+# First, create a user account at http://app.presencepro.com.
 #
 # This bot will require a device to be connected to your account:
 #    Option A:  Buy a Presence Security Pack (http://presencepro.com/store).
@@ -138,129 +149,134 @@ Email support@peoplepowerco.com if you have questions!
 
 
 def run(botengine):
+    """
+    Starting point of execution
+    :param botengine: BotEngine environment - your link to the outside world
+    """
+    
     # Initialize
-    logger = botengine.get_logger()                  # Debug logger
     inputs = botengine.get_inputs()                  # Information input into the
-    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
-    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    trigger_type = botengine.get_trigger_type()      # What type of trigger caused the bot to execute this time
+    triggers = botengine.get_triggers()              # Get the information about the trigger
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
-    timestampMs = botengine.get_timestamp()          # Get the timestamp of execution
+    timestamp_ms = botengine.get_timestamp()          # Get the timestamp of execution
 
-    # Let's figure out what triggered us, and therefore what we should do next.
-    if triggerType == botengine.TRIGGER_SCHEDULE:
-        print("\nExecuting on schedule")
-        print("---------")
-        doorObject = botengine.load_variable("doorObject")
-        if doorObject == None:
-            # This has never been run before - go ahead and create the DoorTracker() object for the first time.
-            doorObject = DoorTracker(timestampMs, False)
-            
-            # Here we demonstrate the 'required_for_each_execution' flag inside of the save_variable(..) method.
-            # If you use this flag, then your variable will be downloaded before your bot executes, every time.
-            # It will increase performance if you know your variable will definitely be used on every execution.
-            #
-            # If you use this flag but do not end up using this variable on every execution, then you might end
-            # up decreasing performance due to the extra overhead of loading it on each execution.
-            botengine.save_variable("doorObject", doorObject, required_for_each_execution=True)
-
-        switchObject = botengine.load_variable("switchObject")
-        if switchObject == None:
-            # This has never been run before - go ahead and create the SwitchTracker() object for the first time.
-            switchObject = SwitchTracker(timestampMs, False)
-            botengine.save_variable("switchObject", switchObject)
-
-        # Get our objects ready for reporting
-        opens = doorObject.totalOpens()
-        openMs = doorObject.totalTimeOpenMs(timestampMs)
-
-        on = switchObject.totalOn()
-        onMs = switchObject.totalTimeOnMs(timestampMs)
-
-        # This would be our "daily report"
-        print("Your door opened " + str(opens) + " times in the past 30 seconds")
-        print("Your door spent " + str(openMs / 1000) + " seconds open")
-        print("")
-        print("Your switch turned on " + str(on) + " times in the past 30 seconds")
-        print("Your switch spent " + str(onMs / 1000) + " seconds on")
-
-        # Create new objects to start accumulating data fresh for the next report
-        # If you use 'required_for_each_execution' once, then try to use it every time on when saving that variable name.
-        botengine.save_variable("doorObject", DoorTracker(timestampMs, doorObject.wasOpen), required_for_each_execution=True)
-        botengine.save_variable("switchObject", SwitchTracker(timestampMs, switchObject.wasSwitchedOn))
-
-
-    elif triggerType == botengine.TRIGGER_DEVICE_MEASUREMENT:
-        print("\nExecuting on a new device measurement")
-        print("---------")
-        deviceType = trigger['device']['deviceType']
-        deviceName = trigger['device']['description']
-
-        if deviceType == 10014:
-            # This is a door/window entry sensor.
-
-            # See if we previously stored a DoorTracker() object - if not, initialize it.
-            doorObject = botengine.load_variable("doorObject")
-            if doorObject == None:
+    for trigger in triggers:
+        # Let's figure out what triggered us, and therefore what we should do next.
+        if trigger_type == botengine.TRIGGER_SCHEDULE:
+            print("\nExecuting on schedule")
+            print("---------")
+            door_object = botengine.load_variable("door_object")
+            if door_object == None:
                 # This has never been run before - go ahead and create the DoorTracker() object for the first time.
-                doorObject = DoorTracker(timestampMs, False)
-                
-                # If you use 'required_for_each_execution' once, then try to use it every time you save that variable name
-                botengine.save_variable("doorObject", doorObject, required_for_each_execution=True)
+                door_object = DoorTracker(timestamp_ms, False)
 
-            # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
-            doorStatus = botengine.get_property(measures, "name", "doorStatus", "value")
+                # Here we demonstrate the 'required_for_each_execution' flag inside of the save_variable(..) method.
+                # If you use this flag, then your variable will be downloaded before your bot executes, every time.
+                # It will increase performance if you know your variable will definitely be used on every execution.
+                #
+                # If you use this flag but do not end up using this variable on every execution, then you might end
+                # up decreasing performance due to the extra overhead of loading it on each execution.
+                botengine.save_variable("door_object", door_object, required_for_each_execution=True)
 
-            if doorStatus == "true":
-                print("\t=> Your '" + deviceName + "' opened")
-                doorObject.opened(timestampMs)
-
-            else:
-                print("\t=> Your '" + deviceName + "' closed")
-                doorObject.closed(timestampMs)
-
-            # Print out some status
-            opens = doorObject.totalOpens()
-            openMs = doorObject.totalTimeOpenMs(timestampMs)
-
-            print("Your door opened " + str(opens) + " times so far")
-            print("Your door spent " + str(openMs / 1000) + " seconds open")
-
-            # Save!
-            botengine.save_variable("doorObject", doorObject, required_for_each_execution=True)
-
-
-        elif deviceType == 10072:
-            # This is a Virtual Light Switch
-
-            # See if we previously stored a SwitchTracker() object - if not, initialize it.
-            switchObject = botengine.load_variable("switchObject")
-            if switchObject == None:
+            switch_object = botengine.load_variable("switch_object")
+            if switch_object == None:
                 # This has never been run before - go ahead and create the SwitchTracker() object for the first time.
-                switchObject = SwitchTracker(timestampMs, False)
-                botengine.save_variable("switchObject", switchObject)
+                switch_object = SwitchTracker(timestamp_ms, False)
+                botengine.save_variable("switch_object", switch_object)
 
-            # Now augment our saved variables
-            switchStatus = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
+            # Get our objects ready for reporting
+            opens = door_object.total_opens()
+            open_ms = door_object.total_time_open_ms(timestamp_ms)
 
-            if int(switchStatus) > 0:
-                print("Your '" + deviceName + "' switched on")
-                switchObject.didSwitchOn(timestampMs)
+            on = switch_object.total_on()
+            on_ms = switch_object.total_time_on_ms(timestamp_ms)
 
-            else:
-                print("Your '" + deviceName + "' switched off")
-                switchObject.didSwitchOff(timestampMs)
+            # This would be our "daily report"
+            print("Your door opened " + str(opens) + " times in the past 30 seconds")
+            print("Your door spent " + str(open_ms / 1000) + " seconds open")
+            print("")
+            print("Your switch turned on " + str(on) + " times in the past 30 seconds")
+            print("Your switch spent " + str(on_ms / 1000) + " seconds on")
+
+            # Create new objects to start accumulating data fresh for the next report
+            # If you use 'required_for_each_execution' once, then try to use it every time on when saving that variable name.
+            botengine.save_variable("door_object", DoorTracker(timestamp_ms, door_object.was_open), required_for_each_execution=True)
+            botengine.save_variable("switch_object", SwitchTracker(timestamp_ms, switch_object.was_switched_on))
 
 
-            # Print out some status
-            on = switchObject.totalOn()
-            onMs = switchObject.totalTimeOnMs(timestampMs)
+        elif trigger_type == botengine.TRIGGER_DEVICE_MEASUREMENT:
+            print("\nExecuting on a new device measurement")
+            print("---------")
+            device_type = trigger['device']['deviceType']
+            device_name = trigger['device']['description']
 
-            print("Your switch turned on " + str(on) + " times so far")
-            print("Your switch spent " + str(onMs / 1000) + " seconds on")
+            if device_type == 10014:
+                # This is a door/window entry sensor.
 
-            # Save!
-            botengine.save_variable("switchObject", switchObject)
+                # See if we previously stored a DoorTracker() object - if not, initialize it.
+                door_object = botengine.load_variable("door_object")
+                if door_object == None:
+                    # This has never been run before - go ahead and create the DoorTracker() object for the first time.
+                    door_object = DoorTracker(timestamp_ms, False)
+
+                    # If you use 'required_for_each_execution' once, then try to use it every time you save that variable name
+                    botengine.save_variable("door_object", door_object, required_for_each_execution=True)
+
+                # Retrieve from the input measurements the "value" for the parameter with the "name" = "doorStatus"
+                door_status = botengine.get_property(measures, "name", "doorStatus", "value")
+
+                if door_status == "true":
+                    print("\t=> Your '" + device_name + "' opened")
+                    door_object.opened(timestamp_ms)
+
+                else:
+                    print("\t=> Your '" + device_name + "' closed")
+                    door_object.closed(timestamp_ms)
+
+                # Print out some status
+                opens = door_object.total_opens()
+                open_ms = door_object.total_time_open_ms(timestamp_ms)
+
+                print("Your door opened " + str(opens) + " times so far")
+                print("Your door spent " + str(open_ms / 1000) + " seconds open")
+
+                # Save!
+                botengine.save_variable("door_object", door_object, required_for_each_execution=True)
+
+
+            elif device_type == 10072:
+                # This is a Virtual Light Switch
+
+                # See if we previously stored a SwitchTracker() object - if not, initialize it.
+                switch_object = botengine.load_variable("switch_object")
+                if switch_object == None:
+                    # This has never been run before - go ahead and create the SwitchTracker() object for the first time.
+                    switch_object = SwitchTracker(timestamp_ms, False)
+                    botengine.save_variable("switch_object", switch_object)
+
+                # Now augment our saved variables
+                switch_status = botengine.get_property(measures, "name", "ppc.switchStatus", "value")
+
+                if int(switch_status) > 0:
+                    print("Your '" + device_name + "' switched on")
+                    switch_object.did_switch_on(timestamp_ms)
+
+                else:
+                    print("Your '" + device_name + "' switched off")
+                    switch_object.did_switch_off(timestamp_ms)
+
+
+                # Print out some status
+                on = switch_object.total_on()
+                on_ms = switch_object.total_time_on_ms(timestamp_ms)
+
+                print("Your switch turned on " + str(on) + " times so far")
+                print("Your switch spent " + str(on_ms / 1000) + " seconds on")
+
+                # Save!
+                botengine.save_variable("switch_object", switch_object)
 
 
 
@@ -273,44 +289,44 @@ class DoorTracker:
         """Constructor"""
 
         self.opens = 0;
-        self.openMs = 0;
-        self.wasOpenOnInit = doorWasOpen
-        self.wasOpen = doorWasOpen
-        self.openedTimestamp = timestamp
+        self.open_ms = 0;
+        self.was_open_on_init = doorWasOpen
+        self.was_open = doorWasOpen
+        self.opened_timestamp = timestamp
 
     def opened(self, timestamp):
         '''The door opened'''
-        if self.wasOpen:
+        if self.was_open:
             return
 
         self.opens = self.opens + 1
-        self.openedTimestamp = timestamp
-        self.wasOpenOnInit = False
-        self.wasOpen = True
+        self.opened_timestamp = timestamp
+        self.was_open_on_init = False
+        self.was_open = True
 
     def closed(self, timestamp):
         '''The door closed'''
-        if not self.wasOpen:
+        if not self.was_open:
             return
 
-        self.openMs = self.openMs + (timestamp - self.openedTimestamp)
-        self.wasOpen = False
+        self.open_ms = self.open_ms + (timestamp - self.opened_timestamp)
+        self.was_open = False
 
-    def totalOpens(self):
+    def total_opens(self):
         '''Return the total number of times the door opened'''
         return self.opens
 
-    def totalTimeOpenMs(self, timestamp):
+    def total_time_open_ms(self, timestamp):
         '''Return the total amount of time the door spent open, in milliseconds'''
-        if self.opens == 0 and not self.wasOpenOnInit:
+        if self.opens == 0 and not self.was_open_on_init:
             return 0
 
-        totalTimeOpenMs = self.openMs
+        total_time_open_ms = self.open_ms
 
-        if self.wasOpen:
-            totalTimeOpenMs = totalTimeOpenMs + (timestamp - self.openedTimestamp)
+        if self.was_open:
+            total_time_open_ms = total_time_open_ms + (timestamp - self.opened_timestamp)
 
-        return totalTimeOpenMs
+        return total_time_open_ms
 
 
 
@@ -319,42 +335,42 @@ class SwitchTracker:
     def __init__(self, timestamp, switchWasOn):
         """Constructor"""
 
-        self.switchedOn = 0;
-        self.onMs = 0;
-        self.switchedOnTimestamp = timestamp
-        self.wasOnOnInit = switchWasOn
-        self.wasSwitchedOn = switchWasOn
+        self.switched_on = 0;
+        self.on_ms = 0;
+        self.switched_on_timestamp = timestamp
+        self.was_on_on_init = switchWasOn
+        self.was_switched_on = switchWasOn
 
-    def didSwitchOn(self, timestamp):
+    def did_switch_on(self, timestamp):
         '''Switched on'''
-        if self.wasSwitchedOn:
+        if self.was_switched_on:
             return
 
-        self.switchedOn = self.switchedOn + 1
-        self.switchedOnTimestamp = timestamp
-        self.wasOnOnInit = False
-        self.wasSwitchedOn = True
+        self.switched_on = self.switched_on + 1
+        self.switched_on_timestamp = timestamp
+        self.was_on_on_init = False
+        self.was_switched_on = True
 
-    def didSwitchOff(self, timestamp):
+    def did_switch_off(self, timestamp):
         '''Switched off'''
-        if not self.wasSwitchedOn:
+        if not self.was_switched_on:
             return
 
-        self.onMs = self.onMs + (timestamp - self.switchedOnTimestamp)
-        self.wasSwitchedOn = False
+        self.on_ms = self.on_ms + (timestamp - self.switched_on_timestamp)
+        self.was_switched_on = False
 
-    def totalOn(self):
+    def total_on(self):
         '''Return the total number of times the switch turned on'''
-        return self.switchedOn
+        return self.switched_on
 
-    def totalTimeOnMs(self, timestamp):
+    def total_time_on_ms(self, timestamp):
         '''Return the total amount of time the switch turned off, in milliseconds'''
-        if self.switchedOn == 0 and not self.wasOnOnInit:
+        if self.switched_on == 0 and not self.was_on_on_init:
             return 0
 
-        totalTimeOpenMs = self.onMs
+        total_time_open_ms = self.on_ms
 
-        if self.wasSwitchedOn:
-            totalTimeOpenMs = totalTimeOpenMs + (timestamp - self.switchedOnTimestamp)
+        if self.was_switched_on:
+            total_time_open_ms = total_time_open_ms + (timestamp - self.switched_on_timestamp)
 
-        return totalTimeOpenMs
+        return total_time_open_ms

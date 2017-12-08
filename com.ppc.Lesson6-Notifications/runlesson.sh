@@ -41,6 +41,6 @@ echo "${bold}botengine --commit $bundle_id${normal}"
 
 echo
 echo "RUN YOUR BOT LOCALLY"
-echo "Refer to the 'version.json' and 'bot.py' files to identify what inputs trigger this bot to execute"
+echo "Refer to the 'runtime.json' and 'bot.py' files to identify what inputs trigger this bot to execute"
 echo "${bold}botengine --run $bundle_id${normal}"
 ./botengine --run $bundle_id -u $user -p $password
