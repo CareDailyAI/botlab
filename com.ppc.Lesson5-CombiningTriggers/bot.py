@@ -226,7 +226,7 @@ def run(botengine):
                     # Timers will not execute early, but you can expect them to execute late.
                     # Do not try to set a timer that is faster than 2 seconds.
                     # The usage is:  botengine.start_timer(seconds, function, argument).
-                    botengine.start_timer(5, timer_fired, device_name)
+                    botengine.start_timer(5, timer_fired, argument=device_name)
 
                 else:
                     botengine.get_logger().info("\t=> Your '" + device_name + "' closed")
@@ -249,7 +249,7 @@ def run(botengine):
 
                 if int(switchStatus) > 0:
                     botengine.get_logger().info("Your '" + device_name + "' switched on")
-                    botengine.execute_again_in_n_seconds(5)
+                    botengine.start_timer(5, timer_fired, argument=device_name)
 
                 else:
                     botengine.get_logger().info("Your '" + device_name + "' switched off")

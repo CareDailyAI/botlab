@@ -107,7 +107,7 @@ def run(botengine):
                 print("> Deleting the AWAY mode question")
                 botengine.delete_question(question)
 
-            question = botengine.generate_question("com.ppc.Lesson11-home", botengine.QUESTION_RESPONSE_TYPE_YESNO, editable=True, urgent=False, front_page=True, send_push=True)
+            question = botengine.generate_question("com.ppc.Lesson11-home", botengine.QUESTION_RESPONSE_TYPE_BOOLEAN, display_type=botengine.QUESTION_DISPLAY_BOOLEAN_YESNO, editable=True, urgent=False, front_page=True, send_push=True)
             question.frame_question("Did you have a nice trip?", "en")
             question.frame_question("¿Tuviste un buen viaje?", "sp")
             botengine.ask_question(question)
@@ -120,7 +120,7 @@ def run(botengine):
                 print("> Deleting the HOME mode question")
                 botengine.delete_question(question)
 
-            question = botengine.generate_question("Left your pets?", botengine.QUESTION_RESPONSE_TYPE_YESNO, urgent=True, front_page=True, send_push=True)
+            question = botengine.generate_question("Left your pets?", botengine.QUESTION_RESPONSE_TYPE_BOOLEAN, display_type=botengine.QUESTION_DISPLAY_BOOLEAN_YESNO, urgent=True, front_page=True, send_push=True)
             question.frame_question("Did you leave the pets at home?", "en")
             question.frame_question("¿Dejaste a sus mascotas en casa?", "sp")
             botengine.ask_question(question)

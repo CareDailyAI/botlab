@@ -109,11 +109,10 @@ def run(botengine):
     Starting point of execution
     :param botengine: BotEngine environment - your link to the outside world
     """
-    
+
     # Initialize
     inputs = botengine.get_inputs()                  # Information input into the bot
-    triggerType = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
-    trigger = botengine.get_trigger_info()           # Get the information about the trigger
+    trigger_type = botengine.get_trigger_type()       # What type of trigger caused the bot to execute this time
     measures = botengine.get_measures_block()        # Capture new measurements, if any
     access = botengine.get_access_block()            # Capture info about all things this bot has permission to access
 
@@ -196,7 +195,7 @@ def run(botengine):
         try:
             device_type = item['device']['deviceType']
 
-            if device_type == VIRTUAL_LIGHT_BULB_DEVICE_TYPE:
+            if device_type == VIRTUAL_LIGHT_SWITCH_DEVICE_TYPE:
                 print("Commanding '" + item['device']['deviceId'] + "' to switch to " + str(lights_on).lower())
                 botengine.send_command(device_id=item['device']['deviceId'], param_name="outletStatus", value=str(lights_on).lower())
 
