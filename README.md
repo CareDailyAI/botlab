@@ -43,7 +43,7 @@ Then you can run your botengine like this:
 
 If you are operating in a corporate network that has a proxy, you can provide the proxy information as an argument to the command line interface with the `--https-proxy <proxy>` argument:
 
-`botengine --my_purchased_bots --https-proxy http://10.10.1.10:1080`
+`botengine --my_purchased_bots --https_proxy http://10.10.1.10:1080`
 
 The BotEngine uses the Python `requests` library to make HTTPS calls to the server. The `requests` library allows you to alternatively set the proxy through an environment variable:
 
