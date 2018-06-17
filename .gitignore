@@ -9,6 +9,8 @@ _bot.tar
 .pydevproject
 .DS_Store
 
+.*
+
 __pycache__/
 *.py[cod]
 *$py.class
