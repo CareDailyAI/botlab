@@ -1,0 +1,206 @@
+# Comments are accepted in this file
+
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Creation"
+    },
+    
+    "runtime": 1,
+    
+    "trigger": 318,
+    
+    "deviceTypes": [
+      {
+        "id": 10014,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "doorStatus",
+        "reason": {
+          "en": "Monitor doors and windows."
+        }
+      },
+      {
+        "id": 10038,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "motionStatus",
+        "reason": {
+          "en": "Monitor motion sensors."
+        }
+      },
+      {
+        "id": 10017,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "triggerParamName": "waterLeak",
+        "reason": {
+          "en": "Monitor water leak sensors."
+        }
+      },
+      {
+        "id": 23,
+        "minOccurrence": 0,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Use cameras as a touchpad and siren."
+        }
+      },
+      {
+        "id": 24,
+        "minOccurrence": 0,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Use cameras as a touchpad and siren."
+        }
+      },
+      {
+        "id": 25,
+        "minOccurrence": 0,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Enable Touchpads."
+        }
+      },
+      {
+        "id": 10036,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "triggerParamName": "state",
+        "reason": {
+          "en": "Turn on lights if an intrusion is detected, and learn your daily usage of lighting to make it look like you're home when you're not."
+        }
+      },
+      {
+        "id": 9001,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "triggerParamName": "outletStatus",
+        "reason": {
+          "en": "Turn on lights if an intrusion is detected, and learn your daily usage of lighting to make it look like you're home when you're not."
+        }
+      },
+      {
+        "id": 9002,
+        "minOccurrence": 0,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Sound the alarm."
+        }
+      },
+      {
+        "id": 10031,
+        "minOccurrence": 0,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Monitor gateways."
+        }
+      },
+      {
+        "id": 31,
+        "minOccurrence": 0,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Monitor gateways."
+        }
+      }
+    ],
+    
+    "dataStreams": [
+      {
+        "address": "SMS"
+      }
+    ],
+    
+    "access": [
+      {
+        "category": 1,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "We need to know your home's current state so we can deliver appropriate notifications."
+        }
+      },
+      {
+        "category": 2,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Video and picture analysis to reduce false alarms."
+        }
+      },
+      {
+        "category": 6,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Manage rules."
+        }
+      }
+    ],
+    
+    "communications": [
+      {
+        "category": 0,
+        "email": true,
+        "push": true,
+        "sms": true,
+        "msg": true
+      },
+      {
+        "category": 1,
+        "email": true,
+        "push": true,
+        "sms": true,
+        "msg": true
+      },
+      {
+        "category": 2,
+        "email": true,
+        "push": true,
+        "sms": true,
+        "msg": true
+      },
+      {
+        "category": 3,
+        "email": false,
+        "push": false,
+        "sms": false,
+        "msg": true
+      },
+      {
+        "category": 4,
+        "email": true,
+        "push": true,
+        "sms": true,
+        "msg": true
+      }
+    ]
+  }
+}
