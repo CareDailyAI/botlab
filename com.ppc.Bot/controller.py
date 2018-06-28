@@ -239,8 +239,6 @@ class Controller:
         :param device_id: Device ID
         :param device_object: Device object
         """
-        botengine.get_logger().info("Synchronizing device: " + device_object.description)
-        
         # Make sure the location exists
         if location_id not in self.locations:
             # The location isn't being tracked yet, add it

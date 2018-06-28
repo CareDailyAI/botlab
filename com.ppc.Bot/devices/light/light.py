@@ -24,7 +24,7 @@ class LightDevice(Device):
     COMMAND_NAME_BRIGHTNESS = 'currentLevel'
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [10036]
+    DEVICE_TYPES = [10036, 10071]
     
     
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):

@@ -20,7 +20,7 @@ class LightswitchGeDevice(LightDevice):
     COMMAND_NAME_STATUS = 'outletStatus'
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [9001]
+    DEVICE_TYPES = [9001, 10072]
     
     
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):

@@ -136,6 +136,17 @@ class Intelligence:
         """
         return
 
+    def coordinates_updated(self, botengine, latitude, longitude):
+        """
+        Approximate coordinates of the parent proxy device object have been updated
+        :param latitude: Latitude
+        :param longitude: Longitude
+        """
+        return
+    
+    #===============================================================================
+    # The sunrise_fired() and sunset_fired() event methods require your bot to include the 'daylight' microservice.
+    #===============================================================================
     def sunrise_fired(self, botengine, proxy_object):
         """
         It is now sunrise.
@@ -153,15 +164,6 @@ class Intelligence:
         :param proxy_object: Proxy/gateway object where the sun is setting
         """
         return
-
-    def coordinates_updated(self, botengine, latitude, longitude):
-        """
-        Approximate coordinates of the parent proxy device object have been updated
-        :param latitude: Latitude
-        :param longitude: Longitude
-        """
-        return
-
 
     #===============================================================================
     # Built-in Timer and Alarm methods.

@@ -1,8 +1,10 @@
 # Bot Lab: Add Thoughts to Things.
 
-The Bot Lab contains the BotEngine Python framework, enabling developers to explore the creation of new features, agents, and services on top of every internet-connected data source or device. 
+The Bot Lab contains the BotEngine Microservices Python framework, enabling developers to explore the creation of new features, agents, and services on top of every internet-connected data source or device. 
 
-These aren't silly chatbots. These bots run 24/7 in the background of your life, making products do things the manufacturer never imagined. In the same way that mobile app developers can create apps for smartphones, now we can move beyond screens and add features and services to every internet-connected device. 
+These bots run 24/7 in the background of your life, making products do things the manufacturer never imagined. In the same way that mobile app developers can create apps for smartphones, now we can move beyond screens and add features and services to every internet-connected device. 
+
+**You do not need to host your own server to run bot microservices.** We host and run them for you on our servers. Of course, you can also run them live on your local computer and watch them execute against real-time data from the real world.
 
 ## Setup Python
 
@@ -54,11 +56,15 @@ The BotEngine exclusively uses HTTPS and never uses HTTP communications.
 
 ## Documentation
 
-Each Lesson contains a bot with documentation. Open the bot.py and runtime.json files for step-by-step instructions to learn how to create your own bot micro-services on top of Internet-connected products.
+Each Lesson contains documentation. Open each lesson to review the documentation, and then drill down into the individual microservices inside the intelligence directories.
 
 
 ## Connecting products 
 
-Explore this store of already-connected devices and sensors: http://presencepro.com/store.
+Explore this store of already-connected devices and sensors from one of our partners:
 
-Or connect your own at http://presto.peoplepowerco.com.
+* MyPlace by Florida Power and Light Energy Services : http://myplace.com
+* Home HQ by Origin Energy : http://originhomehq.com.au
+* Presence by People Power : http://presencepro.com/store.
+
+Or connect your own smart home and IoT devices at http://presto.peoplepowerco.com.

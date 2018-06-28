@@ -98,6 +98,7 @@ def run(botengine):
                 if device_object is not None:
                     device_location = trigger['device']['locationId']
                     updated_devices, updated_metadata = device_object.update(botengine)
+
                     for updated_device in updated_devices:
                         controller.sync_device(botengine, device_location, device_id, updated_device)
                         controller.device_measurements_updated(botengine, device_location, updated_device)
