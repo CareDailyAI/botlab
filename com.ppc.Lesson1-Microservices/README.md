@@ -1,4 +1,4 @@
-# Lesson 1 : Real-time Data
+# Lesson 1 : Microservices
 
 Welcome to the world of bot microservices. The first lesson here is the most involved, but once you get through it then you can more or less rapidly create your own bot-drive smart home services.
 
@@ -269,13 +269,13 @@ You can dynamically add and remove microservices by adding and removing referenc
 
 ## Microservices
 
-A `microservice` is the highest layer of the stack where you, the developer, lives. A microservice is intended to perform a small job. Anyone who has done UI development will be familiar with the event-driven nature of a microservice. As data becomes available, methods are called within your microservice file, and it is your job to simply react to whatever is of interest.
+**A `microservice` is the highest layer of the stack where you, the developer, lives.** A microservice is intended to perform a small job. Anyone who has done UI development will be familiar with the event-driven nature of a microservice. As data becomes available, methods are called within your microservice file, and it is your job to simply react to whatever is of interest.
 
-Every microservice has a well formatted name, like `device_*_microservice.py` or `location_*_microservice.py`. The naming convention helps developers understand that the Python module is a microservice, and that it's either a "Device Microservice" or a "Location Microservice".
+Every microservice has a well formatted name, like `device_*_microservice.py` or `location_*_microservice.py`. The naming convention helps developers understand that the Python module is a microservice, and that it's either a "Device Microservice" or a "Location Microservice" which we explain below.
 
-Microservices can be packaged together in a directory (like a library) so you can keep them in one place in your repository and use them across multiple bot services without forking your code for each service. Use the `structure.json` file to pull entire `microservice` directories into your local bot project. You can see that `intelligence/lesson1` is a self-describing microservice package because it contains `index.py`, `runtime.json`, and `structure.json` files. That means you could technically take the `lesson1` microservice directory and drag it somewhere else in your file system, and then simply reference it with `structure.json` to pull it back in as you generate or commit your bot.
+Microservices can be packaged together in a directory (like a library) so you can keep them in one place in your repository and use them across multiple bot services without forking your code for each service. Use the `structure.json` file to pull entire `microservice` directories into your local bot project. Microservice packages all end up underneath the `intelligence/` directory. You can see that `intelligence/lesson1` is a self-describing microservice package because it contains `index.py`, `runtime.json`, and `structure.json` files. That means you could technically take the `lesson1` microservice directory and drag it somewhere else in your file system, and then simply reference it with your bot's main `structure.json` to pull it back in as you generate or commit your bot.
 
-Every microservice extends the `Intelligence` class found in `com.ppc.Bot/intelligence/intelligence.py`. The event-driven methods found in any microservice are simply copy/pasted from the top of the `com.ppc.Bot/intelligence/intelligence.py` file.
+Every microservice extends the `Intelligence` class found in `com.ppc.Bot/intelligence/intelligence.py`. The event-driven methods found in any microservice are unapologetically copy/pasted from the top of the `com.ppc.Bot/intelligence/intelligence.py` file.
 
 
 ### Device Microservices
@@ -368,4 +368,4 @@ The following methods whenever ANY device inside the location is updated:
   
 ### Explore more
 
-Edit the `device_realtimedata_microservice.py` and the `location_realtimedata_microservice.py` with your outputs inside some events, and re-run the bot to observe how it executes.
+Edit the `device_realtimedata_microservice.py` and the `location_realtimedata_microservice.py` with your outputs inside some events, and re-run the bot to observe how it executes against incoming real-time data.
