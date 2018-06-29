@@ -162,7 +162,7 @@ When your bot begins running locally, you'll see the following output to your Te
     Device Server: https://esp.peoplepowerco.com:8443
     Running forever, until you press CTRL+Z to quit
 
-### Step 5 : Shortcuts
+#### Shortcuts
 
 When you interact with the 'botengine' file, you must pass in your username and password and brand/server. It's a slog to type that in every. single. time. I know.
 
