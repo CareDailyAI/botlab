@@ -1,0 +1,22 @@
+# STRUCTURE.JSON INSIDE A MICROSERVICE PACKAGE
+# The 'pip_install' and 'pip_install_remotely' lists are typically populated inside the structure.json files found in specific
+# microservice packages (intelligence/* directories), and describe the Python packages that are required to run those microservices.
+# You would use 'pip_install_remotely' when a Python package requires native libraries to be compiled, which you will
+# want to have compiled on the server environment instead of whatever random computer you happen to have in front of you.
+
+
+{
+  # Locally install the following Python package dependencies when using this microservice
+  # Do not include any Python packages in this list that will compile .so/.dll library files natively
+  # because they may not be able to run on the Linux-based server environment.
+  "pip_install": [
+  ],
+
+  # Remotely install the following Python package dependencies
+  # This will compile library files at the server in a Linux environment.
+  # Note that when installed on Linux, some Python packages may get significantly inflated (like scipy and numpy)
+  # due to the addition of hidden .libs directories that end up exceeding the maximum size of a bot
+  # (50MB compressed / 250MB uncompressed).
+  "pip_install_remotely": [
+  ]
+}

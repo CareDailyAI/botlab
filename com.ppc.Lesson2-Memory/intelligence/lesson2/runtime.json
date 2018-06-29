@@ -1,0 +1,457 @@
+{
+  "version": {
+
+    # TRIGGER
+    # Describe when this bot should trigger and execute. Add the trigger IDs together to combine triggers.
+    # For example, to trigger off of both a Schedule (1) and a Device Measurement (8): 1 + 8 ==math==> "trigger": 9
+    #
+    # 1 = Schedule (based off a cron schedule inside this runtime.json file)
+    # 2 = Switching modes (home / away / etc.)
+    # 4 = Device alert
+    # 8 = Device measurements or state change
+    # 16 = Question answered by the user
+    # 32 = New device file (like a video or picture)
+    # 64 = Reserved for timers
+    # 128 = Device configuration or metadata was updated
+    # 256 = Data Stream Message received
+    #
+    # In this example, we trigger off of everything just to demonstrate the power.
+    # In a commercial setting, you should be very selective of what triggers to listen for.
+    # The more the bot triggers, the more it costs to host.
+    "trigger": 447,
+
+    # DEVICE TYPES
+    # For trigger types 4 (alerts), 8 (measurements), and 128 (configurations), we must specify which device types
+    # we want to interact with and how. When bots are attached to users' accounts, they automatically connect with
+    # every device in the user's account that match these criteria.
+    #
+    # And just like a user can control what permissions a mobile app has on their phone, the user is in control of what data
+    # and devices they allow your bot services to access. You provide a reason for the user to keep that access alive.
+    #
+    # Use this command in your terminal to discover device types:
+    #   botengine --device_types
+    #
+    # Attributes:
+    #   * "id" = device type ID to interact with
+    #   * "minOccurrence" = (optional) the minimum number of occurrences of this device type required for this bot to perform
+    #   * "trigger" = true to trigger off devices of this type
+    #   * "read" = true to read measurements from devices of this type
+    #   * "control" = true to send commands to devices of this type
+    #   * "triggerParamName" = (optional) a single parameter name to listen to, which can help optimize execution performance
+    #   * "triggerParamValues" = (optional) only trigger when the 'triggerParamName' is equal to this value
+    #   * "reason" = Message to the end user about why they should let your bot access this device. You can specify multiple languages.
+    #
+    # For these lessons, I have included all the device types from one server.
+    # In a commercial setting, you should be very selective of what devices to access.
+    "deviceTypes": [
+      {
+        "id": 10035,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access smart plugs."
+        }
+      },
+      {
+        "id": 23,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Android app cameras."
+        }
+      },
+      {
+        "id": 24,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access iOS app cameras."
+        }
+      },
+      {
+        "id": 4220,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Sensibo Sky A/C Infrared Controllers."
+        }
+      },
+      {
+        "id": 4230,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Honeywell Lyric thermostats."
+        }
+      },
+      {
+        "id": 4240,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Ecobee thermostats."
+        }
+      },
+      {
+        "id": 25,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Touchpads."
+        }
+      },
+      {
+        "id": 4200,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Netatmo Healthy Home Coach."
+        }
+      },
+      {
+        "id": 4201,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Netatmo Weather Stations."
+        }
+      },
+      {
+        "id": 4202,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Netatmo Outdoor Module."
+        }
+      },
+      {
+        "id": 9001,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access GE In-Wall Switch."
+        }
+      },
+      {
+        "id": 10036,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access smart bulbs."
+        }
+      },
+      {
+        "id": 10071,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Virtual Light Bulbs - for these lessons if you do not have your own devices."
+        }
+      },
+      {
+        "id": 10072,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Virtual Light Switches - for these lessons if you do not have your own devices."
+        }
+      },
+      {
+        "id": 1000,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access TED Measuring Transmitting Unit - Load."
+        }
+      },
+      {
+        "id": 1001,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access TED Measuring Transmitting Unit - Solar."
+        }
+      },
+      {
+        "id": 1002,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access TED Measuring Transmitting Unit - Net."
+        }
+      },
+      {
+        "id": 1003,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access TED Measuring Transmitting Unit - Standalone."
+        }
+      },
+      {
+        "id": 1004,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access TED Gateways."
+        }
+      },
+      {
+        "id": 31,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access M-series Gateways."
+        }
+      },
+      {
+        "id": 10031,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access ZigBee Gateways."
+        }
+      },
+      {
+        "id": 9002,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Smartenit Sirens."
+        }
+      },
+      {
+        "id": 9009,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access People Power Sirens."
+        }
+      },
+      {
+        "id": 9004,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Humidity, Temperature, and Light Sensors."
+        }
+      },
+      {
+        "id": 10014,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Entry Sensors."
+        }
+      },
+      {
+        "id": 10017,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Water Sensors."
+        }
+      },
+      {
+        "id": 10019,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Touch Sensors."
+        }
+      },
+      {
+        "id": 10033,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Temperature Sensors."
+        }
+      },
+      {
+        "id": 10034,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Temperature & Humidity Sensors."
+        }
+      },
+      {
+        "id": 10038,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Motion Sensors."
+        }
+      }
+    ],
+
+    # DATA STREAMS
+    # This dataStreams block defines a list of data stream addresses that are allowed to trigger this bot.
+    # Data stream messages can be passed around internally between microservices within the bot without
+    # including their addresses on this list, but your bot cannot receive any data stream messages from
+    # other authorized bots, apps, or clouds without opening a port for each address we want to listen to here.
+    "dataStreams": [
+      {
+        # This is just an example.
+        # The 'SMS' data stream address is reserved for delivering SMS messages from the user to the bot
+        "address": "SMS"
+      }
+    ],
+
+    # SCHEDULE
+    # Cron schedule to run the bot periodically
+    # Check out http://www.cronmaker.com/ to generate the expression
+    "schedules": {
+      # This is an example of how to schedule the bot to trigger once every week on Fridays at 23:00 hours.
+      "WEEKLY": "0 0 23 ? * FRI *"
+    },
+
+    # ACCESS
+    # This access block defines data sources the bot should interact with in the user's account.
+    # By default, the bot will access everything it requests. Users can opt-out and manage their permissions.
+    #
+    # Attributes:
+    #   * "category":
+    #     1 = This bot should access the user's Modes (home / away / etc.)
+    #     2 = This bot should access the user's Files (pictures, videos, etc.)
+    #     3 = This bot will call for help with Professional Monitoring Services
+    #     4 = Reserved
+    #     5 = Reserved
+    #     6 = This bot wants to manage the user's if-then Rules
+    #
+    #   * "trigger" = true to trigger off of this category (valid for categories 1 and 2)
+    #   * "read" = read from this category (valid for all categories)
+    #   * "control" = send commands to this category (change modes, call for help, modify a rule)
+    "access": [
+      {
+        "category": 1,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "reason": {
+          "en": "We want to access your modes."
+        }
+      },
+      {
+        "category": 2,
+        "trigger": true,
+        "read": true,
+        "control": false,
+        "reason": {
+          "en": "We want to access your files."
+        }
+      },
+      {
+        "category": 6,
+        "trigger": false,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "We want to access your rules."
+        }
+      }
+    ],
+
+    # COMMUNICATIONS
+    # Bots request permission to communicate over specific channels with different people and groups. Users can
+    # opt-out of communications.
+    #
+    # Categories:
+    #   0 = Me only
+    #   1 = Friends
+    #   2 = Family / Caregivers
+    #   3 = Neighbors in my group in an organization
+    #   4 = Organizational administrators
+    #
+    # Communication types:
+    #   "email" - Email notifications
+    #   "push" - Push notifications to phones signed into your account
+    #   "sms" - SMS message to designated phone numbers or groups
+    #   "msg" - in-app messaging
+    "communications": [
+      {
+        # Open up communications to the user
+        "category": 0,
+        "email": true,
+        "push": true,
+        "sms": true,
+        "msg": true
+      }
+    ],
+
+
+    # Memory in MB required for the bot.
+    # Default is 128 MB (minimum value).
+    # Increments must be multiples of 64 MB.
+    # Maximum value is 3008 MB.
+    # AWS Lambda uses this memory size in pricing calculations
+    "memory": 128,
+
+    # Maximum time this bot is allowed to run, in seconds (maximum is 300 seconds)
+    "timeout": 15,
+
+    # Maximum times this bot can be purchased into a user's account. Default is 1.
+    "maxPurchaseOccurrence": 1
+  }
+}
