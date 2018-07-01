@@ -74,6 +74,29 @@ If you successfully get back something that looks like this, you're in business.
     
     Done!
 
+### Common botengine commands
+
+* **botengine --my_purchased_bots** : Get a list of the bot services you are running in your account.
+
+* **botengine --my_developer_bots** : Get a list of the bots you have created as a developer.
+
+* **botengine --commit [bot]** : Commit a bot to the cloud. Do this especially when you want to change the what the runtime.json file says your bot is listening to.
+
+* **botengine --purchase [bot]** : Purchase an instance of a bot into your account. For example, this can take the blueprint of the bot that you committed as a developer, and activate it inside your own end-user account.
+
+* **botengine --configure [bot]** : Configure which devices and data sources a bot instance has access to in your account.
+
+* **botengine --run [bot]** : Migrate the execution of the bot from the cloud to your local computer, using bot source code you have available locally.
+
+* **botengine --play [bot]** : Resume execution of a bot that is paused. Note that your developer bots pause automatically after 24 hours if you aren't explicitly interacting with them with the botengine.
+
+* **botengine --pause [bot]** : Pause the execution of a bot that is actively running in your account.
+
+* **botengine --delete [bot]** : Delete a bot instance out of your account. This doesn't delete the committed developer blueprint of the bot. It only deletes the instance of that bot which you've purchased and activated inside your end user account. You can `--purchase` the bot again.
+
+* **botengine --errors [bot]** : As a developer of the bot, you can see the errors and warnings your bot is generating while running in the cloud.
+
+
 ## What is 'botengine'?
 
 The `botengine` serves two purposes:

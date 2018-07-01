@@ -120,7 +120,7 @@ Remember this means your password is obviously not secure. Writing it in clear t
 
 If you have a smart home pack of products attached to your account, you'll see the bot execute every time data is produced by one of your sensors. Open an entry sensor, walk in front of a motion sensor, turn on a smart plug or light bulb. Open your smart home's app and toggle between HOME and AWAY modes. Anything you do in your smart home ecosystem, the bot will execute and react live on your computer using the source code you now control.
 
-**Don't have any devices?** No problem. Included in this repository is a Python application "virtual_devices/virtual_light_switch.py". Run it like this:
+**Don't have any devices?** No problem. Included in this repository is a Python application `virtual_devices/virtual_light_switch.py`. Run it like this:
 
     cd virtual_devices
     python virtual_light_switch.py -b <brand>
@@ -129,7 +129,7 @@ This will add a virtual light switch device to your account (our server thinks i
 
 #### What happens when your bot is running
 
-Unlike active applications on your computer, active bots do not run all the time. They go to sleep whenever possible - which techincally means they exit and stop executing. That would normally mean you lose all your variables between executions, but the bot microservices framework by People Power takes care of that for you and makes it appear as if your bot never exits. It just keeps running. Thank you, bot microservices framework. 
+Unlike active applications on your computer, active bots do not run all the time. They go to sleep whenever possible - which technically means they exit and stop executing. That would normally mean you lose all your variables between executions, but the bot microservices framework by People Power takes care of that for you and makes it appear as if your bot never exits. It just keeps running. Thank you, bot microservices framework. 
 
 Imagine if you had 10 million users and each of them had a python application that needed to run. Now imagine you have a computer (or in the case of a cloud server - a cluster of computers) running those applications. Can you imagine, even on a large body of computers, having 10 million applications open and running simultaneously? Ya, right. If you don't believe me, try opening a even just a few hundred applications on your own computer and see how that goes. This is why the bots run and exit completely. Your job, as the developer, is to make the bots trigger infrequently and get done executing quickly to free up CPU time for other bots to run.
 
@@ -163,11 +163,13 @@ The structure.json file exists in the root directory of your bot, and other copi
 
 **Homework Assignment**: Find the structure.json files in your Lesson 1 directory, read them, and understand them. There are at least 2.
 
+#### Generate your bot
+
 To see the structure.json file in action, `--generate` your bot and check out the directory that is created (no username/password is needed because this doesn't interact with the server):
 
     botengine --generate com.yourname.Lesson1
     
-This will generate a directory called `.com.yourname.Lesson1` in your local working directory. It might be a hidden directory - see the '.' at the front? If you look at the contents of this newly generated bot, you'll find that it looks almost nothing like the contents of the original `com.ppc.Lesson1-RealTimeData` bot we started with. That's because the `structure.json` file `"extends": "com.ppc.Bot"`. First, a new directory is created, called `.com.yourname.Lesson1`. Next, all the contents from `com.ppc.Bot` are copied into that directory. Finally, all the contents from `com.yourname.Lesson1` are copied on top of that directory. This is how the files in your bot end up sitting on top of the foundational bot `com.ppc.Bot`.
+This will generate a directory called `.com.yourname.Lesson1` in your local working directory. It might be a hidden directory - see the '.' at the front? If you look at the contents of this newly generated bot, you'll find that it looks almost nothing like the contents of the original `com.ppc.Lesson1-Microservices` bot we started with. That's because the `structure.json` file `"extends": "com.ppc.Bot"`. First, a new directory is created, called `.com.yourname.Lesson1`. Next, all the contents from `com.ppc.Bot` are copied into that directory. Finally, all the contents from `com.yourname.Lesson1` are copied on top of that directory. This is how the files in your bot end up sitting on top of the foundational bot `com.ppc.Bot`.
 
 Open the resulting `structure.json` file inside the newly generated bot directory. You'll see its contents are very different than we started with, containing only the `pip_install` and `pip_install_remotely` attributes. Because the directory/file structure of the bot is already taken care of, your `structure.json` file no longer needs the `extends` or `microservices` attributes found in the original `structure.json` file, and only needs the Python package dependency information to make the bot fully functional.
 
@@ -190,7 +192,7 @@ The `runtime.json` file describes to the server:
 
 **Homework Assignment** : Find the runtime.json files in your Lesson 1 directory, read them, and understand them. There are at least 2.
 
-For your convenience, we have maximized the scope of the `runtime.json` file in your `lesson1` microservice package. It's a good place to start, but is likely triggering off of far more data than you'll ever use in your bot. The objective of any good bot developer is to minimize the data your bot needs to listen to.
+For your convenience, we have maximized the scope of the `runtime.json` file in your `lesson1` microservice package, meaning they'll listen to and trigger off of *all* devices and data sources. It's a good place to start, but is likely triggering off of far more data than you'll ever use in your bot. The objective of any good bot developer is to minimize the data your bot needs to listen to.
 
 ### index.py
 
@@ -202,7 +204,9 @@ You can dynamically add and remove microservices by adding and removing referenc
 
 ## Microservices
 
-**A `microservice` is the highest layer of the stack where you, the developer, lives.** A microservice is intended to perform a small job. Anyone who has done UI development will be familiar with the event-driven nature of a microservice. As data becomes available, methods are called within your microservice file, and it is your job to simply react to whatever is of interest.
+**A microservice is the highest layer of the stack where developers live.** A microservice is intended to perform a small job. Anyone who has done UI development will be familiar with the event-driven nature of a microservice. As data becomes available, methods are called within your microservice file, and it is your job to simply react to whatever is of interest.
+
+**All microservices are to be installed under the `intelligence/` directory.**
 
 Every microservice has a well formatted name, like `device_*_microservice.py` or `location_*_microservice.py`. The naming convention helps developers understand that the Python module is a microservice, and that it's either a "Device Microservice" or a "Location Microservice" which we explain below.
 
