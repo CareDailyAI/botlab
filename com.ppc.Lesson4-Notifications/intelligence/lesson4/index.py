@@ -48,12 +48,6 @@ MICROSERVICES = {
         # list of all the microservices to add to that device type.
         # Use "botengine --device_types" to see the available device types for your brand / server.
 
-
-        # I'm listing ALL device types on one of our servers here, so you can see each device type and how to add device microservices to each one.
-        # For example, the first one for Smart Plugs says "For every device that shows up in this user's account that is
-        # device type 10035 (which is a smart plug device), then create a new instance of the DeviceRealTimeDataMicroservice object
-        # and attach it to this device."
-
         # Entry Sensors
         10014: [
             {"module": "intelligence.lesson4.device_entrynotification_microservice", "class": "DeviceEntryNotificationMicroservice"}
