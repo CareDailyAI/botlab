@@ -89,6 +89,8 @@ Location microservices are where you should coordinate activities amongst multip
 
 Read through and understand the code and comments in `intelligence/lesson3/location_doorsandlighting_microservice.py`. Copy this bot to your own directory, commit it to the server, and run it.
 
+Run it in the cloud:
+
     cp -r com.ppc.Lesson3-Commands com.yourname.Lesson3
     botengine --commit com.yourname.Lesson3 -b <brand> -u <user@email.com> -p <password>
     botengine --purchase com.yourname.Lesson3 -b <brand> -u <user@email.com> -p <password>

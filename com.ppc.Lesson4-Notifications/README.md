@@ -81,7 +81,7 @@ There are 2 files to check out in this lesson.
 
 * `intelligence/lesson4/lesson_entrynotification_microservice` : Device microservice that sends a push notification with a sound when an entry sensor opens while you are not in HOME mode.
 
-Run it: 
+Run it in the cloud:
     
     cp -r com.ppc.Lesson4-Notifications com.yourname.Lesson4
     botengine --commit com.yourname.Lesson4 -b <brand> -u <user@email.com> -p <password>
@@ -91,3 +91,4 @@ Watch it run locally:
 
     botengine --run com.yourname.Lesson4 -b <brand> -u <user@email.com> -p <password>
     
+Toggle into AWAY mode. You will receive an email and push notification that you are now in AWAY mode. While in AWAY mode, open an entry sensor. You will receive another push notification that your door opened while you were away.

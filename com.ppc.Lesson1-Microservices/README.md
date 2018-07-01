@@ -303,7 +303,7 @@ The following methods whenever ANY device inside the location is updated:
 
 **Challenge**: Make your own device microservice for a specific device type, following the examples set by `intelligence/lesson1/device_entrysensor_microservice.py` and `intelligence/lesson1/device_motionsensor_microservice.py`. Be sure that your `intelligence/lesson1/index.py` adds your new device microservices properly, and that the `intelligence/lesson1/runtime.json` declares in its `deviceTypes` section that this type of device is required to run the bot.
 
-Quick recap of how to run the lesson:
+Quick recap of how to run the lesson in the cloud:
 
     cp -r com.ppc.Lesson1-Microservices com.yourname.Lesson1
     botengine --commit com.yourname.Lesson1 -b <brand>
