@@ -1,5 +1,9 @@
 # Lesson 0 : BotEngine
 
+These README.md files are best viewed on the open source repository at GitHub.com, if you're not there already.
+
+http://github.com/peoplepower/botlab
+
 By the end of this lesson, you will have done the following:
 * Setup your environment to run the botengine
 * Understand what the botengine is and what it generally does.
@@ -80,3 +84,14 @@ The `botengine` serves two purposes:
 The `botengine` is deployed as a single file so it can be easily downloaded and used.
 
 Use `botengine --help` to get a list of things the `botengine` CLI can do.
+
+When running bots, you will notice **every method** includes `botengine` as a first argument. This is standard practice for creating bots, so remember to include `botengine` in every method. 
+
+Sometimes if a method doesn't require use of the `botengine` object, we still support it as an argument so you can program without thinking about it. For example:
+
+    # Demonstration of a method that doesn't really need the botengine argument.
+    # Add it anyway. Always pass the botengine object around as it's your only window to the outside world.
+    def my_method(self, botengine=None):
+        ...
+        
+See the `docs/index.html` page in this repository for the documentation on the `botengine` object and what methods it provides to you bot services.
