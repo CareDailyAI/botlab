@@ -212,6 +212,23 @@ class Intelligence:
             # Device intelligence
             bot.start_device_intelligence_timer(botengine, seconds, self.intelligence_id, argument, self.intelligence_id + str(reference))
 
+    def is_timer_running(self, botengine, reference=""):
+        """
+        Check if a timer or alarm with the given reference is running
+        :param botengine: BotEngine environment
+        :param reference: Reference
+        :return: True if timers or alarms with the given reference are running.
+        """
+        return botengine.is_timer_running(self.intelligence_id + str(reference))
+
+    def cancel_timers(self, botengine, reference=""):
+        """
+        Cancel timers with the given reference
+        :param botengine: BotEngine environment
+        :param reference: Cancel all timers with the given reference
+        """
+        botengine.cancel_timers(self.intelligence_id + str(reference))
+    
     def set_alarm(self, botengine, timestamp_ms, argument=None, reference=""):
         """
         Set an absolute alarm
@@ -229,19 +246,21 @@ class Intelligence:
             # Device intelligence
             bot.set_device_intelligence_alarm(botengine, timestamp_ms, self.intelligence_id, argument, self.intelligence_id + str(reference))
 
-    def cancel_timers(self, botengine, reference=""):
-        """
-        Cancel timers with the given reference
-        :param botengine: BotEngine environment
-        :param reference: Cancel all timers with the given reference
-        """
-        botengine.cancel_timers(self.intelligence_id + str(reference))
-
-    def is_timer_running(self, botengine, reference=""):
+    def is_alarm_running(self, botengine, reference=""):
         """
         Check if a timer or alarm with the given reference is running
+        :param botengine: BotEngine environment
         :param reference: Reference
         :return: True if timers or alarms with the given reference are running.
         """
         return botengine.is_timer_running(self.intelligence_id + str(reference))
 
+    def cancel_alarms(self, botengine, reference=""):
+        """
+        Cancel alarms with the given reference
+        :param botengine: BotEngine environment
+        :param reference: Cancel all alarms with the given reference
+        """
+        # It's not a mistake that this is forwarding to `cancel_timers`.
+        # They're all the same thing underneath, and this is a convenience method help to avoid confusion and questions.
+        botengine.cancel_timers(self.intelligence_id + str(reference))
