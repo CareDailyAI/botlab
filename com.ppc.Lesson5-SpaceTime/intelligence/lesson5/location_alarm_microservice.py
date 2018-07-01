@@ -23,7 +23,8 @@ REFERENCE_MIDNIGHT = "midnight_alarm"
 
 class LocationAlarmMicroservice(Intelligence):
     """
-    This microservice will send a push notification with an alarm sound if your door opens while you are in AWAY mode.
+    This microservice will set an alarm for midnight tonight when you change modes.
+    If running locally, you'll see the output from helper methods provided by this location microservice's parent Location object.
     """
     def __init__(self, botengine, parent):
         """
@@ -80,7 +81,6 @@ class LocationAlarmMicroservice(Intelligence):
         botengine.get_logger().info("\tget_midnight_tonight() = {}".format(self.parent.get_midnight_tonight(botengine)))
         botengine.get_logger().info("\tget_local_hour_of_day() = {}".format(self.parent.get_local_hour_of_day(botengine)))
         botengine.get_logger().info("\tget_local_day_of_week() = {}".format(self.parent.get_local_day_of_week(botengine)))
-
 
     def device_measurements_updated(self, botengine, device_object):
         """

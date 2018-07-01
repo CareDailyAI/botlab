@@ -22,7 +22,8 @@ REFERENCE_DOOROPENED = "door_opened_timer"
 
 class DeviceEntryTimerMicroservice(Intelligence):
     """
-    This microservice will send a push notification with an alarm sound if your door opens while you are in AWAY mode.
+    This microservice will start a 10-second timer when your door opens and will cancel the timer if the door closes.
+    If the timer is allowed to fire, you will receive a push notification that your door was open for 10+ seconds.
     """
     def __init__(self, botengine, parent):
         """
