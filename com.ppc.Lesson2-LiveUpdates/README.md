@@ -4,7 +4,7 @@ When your bot begins running in someone's account, it's live. But you - the deve
 
 In live bots, microservice objects have already been instantiated and their constructor methods have already been called, so how do you add more features and variables to these objects?
 
-It turns out **the main thing you need to worry about are the class variables.** You can change the logic in your methods and nothing bad will happen (assuming you didn't add bugs to your code), but any new class variables you want to add to an already-running bot need to be properly instantiated. Failure to properly instantiate new class variables will crash live bots when your new logic attempts to access a variable that isn't there.
+It turns out **the main thing you need to worry about are new class variables.** You can change the logic in your methods and nothing bad will happen (assuming you didn't add bugs to your code), but any new class variables you want to add to an already-running bot need to be properly instantiated. Failure to properly instantiate new class variables will crash live bots when your new logic attempts to access a variable that isn't there.
 
 Let's cut straight to the point.
 
@@ -135,4 +135,11 @@ call to the server to retrieve it:
    
 
 ## Examples
-See the code in `intelligence/lesson2/location_memory_microservice.py` for examples.
+See the code in `intelligence/lesson2/location_memory_microservice.py` for examples of creating a new class variable in the `initialize()` method, and examples of protecting variables in a separate memory space in the `device_measurements_updated()` method.
+
+Run the bot:
+
+    cp -r com.ppc.Lesson2-LiveUpdates com.yourname.Lesson2
+    botengine --commit com.yourname.Lesson2 -b <brand> -u <user@email.com> -p <password>
+    botengine --purchase com.yourname.Lesson2 -b <brand> -u <user@email.com> -p <password>
+    botengine --run com.yourname.Lesson2 -b <brand> -u <user@email.com> -p <password>
