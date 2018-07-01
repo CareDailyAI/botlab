@@ -150,7 +150,8 @@ class Intelligence:
     def sunrise_fired(self, botengine, proxy_object):
         """
         It is now sunrise.
-        Must have previously called your location's "enable_sunrise_sunset_events(botengine)" method to make this trigger.
+        To enable this event, include the 'com.ppc.Microservices/intelligence/daylight' microservice in your project.
+        You will need a gateway attached to the user's account to know approximately where they are located.
         :param botengine: BotEngine environment
         :param proxy_object: Proxy/gateway object where the sun is setting
         """
@@ -159,7 +160,8 @@ class Intelligence:
     def sunset_fired(self, botengine, proxy_object):
         """
         It is now sunset.
-        Must have previously called your location's "enable_sunrise_sunset_events(botengine)" method to make this trigger.
+        To enable this event, include the 'com.ppc.Microservices/intelligence/daylight' microservice in your project.
+        You will need a gateway attached to the user's account to know approximately where they are located.
         :param botengine: BotEngine environment
         :param proxy_object: Proxy/gateway object where the sun is setting
         """
