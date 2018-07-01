@@ -11,12 +11,17 @@ from intelligence.intelligence import Intelligence
 
 class LocationMemoryMicroservice(Intelligence):
     """
-    The bot microservices framework completely takes care of memory management for you, but there are 2 rules to follow.
-    Breaking these rules could cause your user's bots to lose their memory and start all over again.
+    When your bot begins running in someone's account, it's live. But you - the developer - want to update it and add features. It's like changing a car tire while it's barreling down the road while trying not to crash.
+
+    In live bots, microservice objects have already been instantiated and their constructor methods have already been called, so how do you add more features and variables to these objects?
+
+    It turns out **the main thing you need to worry about are the class variables.** You can change the logic in your methods and nothing bad will happen (assuming you didn't add bugs to your code), but any new class variables you want to add to an already-running bot need to be properly instantiated. Failure to properly instantiate new class variables will crash live bots when your new logic attempts to access a variable that isn't there.
 
     Let's cut straight to the point.
 
-    ## Rule #1 : Initialize new variables in initialize()
+    ## Use initialize() to add new variables to bots that are running live
+    If there's anything to get out of this lesson, it's this one rule.
+
     When you need to add a new class variable to a microservice that may already be running inside a user's account,
     use the `initialize()` method to dynamically instantiate that new variable and add it to the class. Remember, the
     standardized `initialize(...)` method is called at the start of each execution in every microservice. Follow this template:
@@ -25,8 +30,10 @@ class LocationMemoryMicroservice(Intelligence):
             if not hasattr(self, 'new_variable'):
                 self.new_variable = None
 
+    If you don't do this, existing bot instances running in users' accounts may crash. It's not the end of the world: you can use `botengine --errors com.yourname.YourBot` to see errors from your bots running live on the server. In this world, you can fix the error and redeploy the bot instantaneously to fix the crasher.
 
-    ### Old objects in new classes
+
+    ### Explaining why: Old objects in new classes
 
     Class variables store memory that persists across multiple executions of the microservice. Class variables
     are typically defined in the `__init__()` method. But there's an important behavior to note: the `__init__()` method only gets called
@@ -47,8 +54,12 @@ class LocationMemoryMicroservice(Intelligence):
     if the class variable exists. If it doesn't, we create it. Now any logic in the new definition of your class that may reference
     `self.new_variable` will be able to see and interact with that variable with no problem, as if it existed all along.
 
-    ### Best practices
-    Rule #1 is inefficient (on the order of nanoseconds, but still, don't write inefficient code...) so you should have a plan to
+
+    ## Best practices for commercial grade bot services
+
+    While the code above is sufficient to solve most problems you'll run into as a developer, there are a few more concepts to internalize if you're going to deploy and manage commercial grade bots.
+
+    Since the initialize() method gets called on every trigger and in every microservice, it is inefficient (on the order of nanoseconds, but still, don't write inefficient code...) so you should have a plan to
     someday back off the dynamic initialization of this class variable in a future bot update (perhaps a few weeks from now) by adding
     the new variable definition to the `__init__()` method, and also commenting a timestamp recommendation of when you can safely remove
     the dynamically initialized variable.
@@ -76,7 +87,7 @@ class LocationMemoryMicroservice(Intelligence):
     be reminded that it's safe to remove the dynamically instantiated class variable from the `initialize()` method, making
     your bot execute that much faster.
 
-    ## Rule #2 : Careful renaming or deleting microservice files
+    ### Careful renaming or deleting microservice files
 
     When your bot executes, it downloads your serialized working environment from the server and uses the Python library `dill`
     to unpack and setup your whole environment. If a previous running version of your bot created a microservice, and then
@@ -93,7 +104,7 @@ class LocationMemoryMicroservice(Intelligence):
     gone from memory. You can safely delete or rename the microservice file if you'd like.
 
 
-    ## Deleting class variables
+    ### Deleting class variables
     If you need to get rid of a class variable, you will improve the execution speed. Remove the initialization of the variable
     from the `__init__()` and `initialize()` methods, and delete the variable in your `initialize()` method:
 
@@ -102,7 +113,7 @@ class LocationMemoryMicroservice(Intelligence):
                 del(self.variable_to_delete)
 
 
-    ## Large variables
+    ### Large variables
     If you have a large amount of data (>500kB) like a machine learning model or a picture, and if that data is not
     required on every execution of your bot, then you could further optimize your performance by placing that data into
     a separately stored botengine variable and avoid using class variables.
