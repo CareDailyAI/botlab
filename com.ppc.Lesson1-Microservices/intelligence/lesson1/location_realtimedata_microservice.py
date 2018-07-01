@@ -7,7 +7,7 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 '''
 
-# All microservices must extend the Intelligence class
+# All microservices must extend the Intelligence class. Muscle memory: import it like this.
 from intelligence.intelligence import Intelligence
 
 # Import an EntryDevice so we can see if the device that's currently sending a measurement is an instance of this.
@@ -16,6 +16,7 @@ from devices.entry.entry import EntryDevice
 # Import a MotionDevice so we can see if the device that's currently sending a measurement is an instance of this.
 from devices.motion.motion import MotionDevice
 
+# This is your microservice class, which extends the Intelligence class found in com.ppc.Bot/intelligence/intelligence.py
 class LocationRealTimeDataMicroservice(Intelligence):
     """
     This is a "location microservice". Location microservices add new services across one or more devices and data sources in your account.

@@ -27,9 +27,9 @@ We will explore the contents of the files in this lesson in a moment. For now, l
 
 Every bot has a unique name in reverse domain name notation (com.yourname.YourService). Once you `--commit` your bot, you permanently own that unique name. Choose wisely.
 
-Copy the entire com.ppc.Lesson1-RealTimeData directory structure recursively into a new directory. Give yours a good name:
+Copy the entire com.ppc.Lesson1-Microservices directory structure recursively into a new directory. Give yours a good name:
 
-    cp -r com.ppc.Lesson1-RealTimeData com.yourname.Lesson1
+    cp -r com.ppc.Lesson1-Microservices com.yourname.Lesson1
     
 We will explore the contents and the guts of this lesson in a moment. 
 
@@ -301,4 +301,14 @@ The following methods whenever ANY device inside the location is updated:
   
 ### Explore more
 
-Edit the `device_realtimedata_microservice.py` and the `location_realtimedata_microservice.py` with your outputs inside some events, and re-run the bot to observe how it executes against incoming real-time data.
+**Challenge**: Make your own device microservice for a specific device type, following the examples set by `intelligence/lesson1/device_entrysensor_microservice.py` and `intelligence/lesson1/device_motionsensor_microservice.py`. Be sure that your `intelligence/lesson1/index.py` adds your new device microservices properly, and that the `intelligence/lesson1/runtime.json` declares in its `deviceTypes` section that this type of device is required to run the bot.
+
+Quick recap of how to run the lesson:
+
+    cp -r com.ppc.Lesson1-Microservices com.yourname.Lesson1
+    botengine --commit com.yourname.Lesson1 -b <brand>
+    botengine --purchase com.yourname.Lesson1 -b <brand>
+    botengine --run com.yourname.Lesson1 -b <brand>
+    (... do work editing the bot, then run it again to see how it changed ...)
+    botengine --run com.yourname.Lesson1 -b <brand>
+    

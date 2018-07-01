@@ -7,8 +7,11 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 '''
 
+# All microservices must extend the Intelligence class. Muscle memory: import it like this.
 from intelligence.intelligence import Intelligence
 
+
+# This is your microservice class, which extends the Intelligence class found in com.ppc.Bot/intelligence/intelligence.py
 class DeviceEntrySensorMicroservice(Intelligence):
     """
     This is a "device microservice" that extends the capabilities of Entry Sensors only. Each one of your Entry Sensors device types
