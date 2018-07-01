@@ -63,7 +63,7 @@ Each Lesson contains documentation. Open each lesson to review the documentation
 
 Explore this store of already-connected devices and sensors from one of our partners:
 
-* MyPlace by Florida Power and Light Energy Services : http://myplace.com
+* MyPlace by Florida Power and Light Smart Services : http://myplace.com
 * Home HQ by Origin Energy : http://originhomehq.com.au
 * Presence by People Power : http://presencepro.com/store.
 
