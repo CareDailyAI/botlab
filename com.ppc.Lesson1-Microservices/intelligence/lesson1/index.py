@@ -54,6 +54,16 @@ MICROSERVICES = {
         # device type 10035 (which is a smart plug device), then create a new instance of the DeviceRealTimeDataMicroservice object
         # and attach it to this device."
 
+        # Entry Sensors
+        10014: [
+            {"module": "intelligence.lesson1.device_entrysensor_microservice", "class": "DeviceEntrySensorMicroservice"}
+            ],
+
+        # Motion Sensor
+        10038: [
+            {"module": "intelligence.lesson1.device_motionsensor_microservice", "class": "DeviceMotionSensorMicroservice"}
+            ],
+
         # Smart Plugs
         10035: [
             {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
@@ -164,11 +174,6 @@ MICROSERVICES = {
             {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
             ],
 
-        # Entry Sensors
-        10014: [
-            {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
-            ],
-
         # Water Sensors
         10017: [
             {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
@@ -188,12 +193,6 @@ MICROSERVICES = {
         10034: [
             {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
             ],
-
-        # Motion Sensor
-        10038: [
-            {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
-            ],
-
 
         # Virtual Light Bulb (for these lessons in case you don't have devices)
         10071: [

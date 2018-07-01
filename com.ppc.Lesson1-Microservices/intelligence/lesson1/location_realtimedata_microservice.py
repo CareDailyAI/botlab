@@ -7,7 +7,14 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 '''
 
+# All microservices must extend the Intelligence class
 from intelligence.intelligence import Intelligence
+
+# Import an EntryDevice so we can see if the device that's currently sending a measurement is an instance of this.
+from devices.entry.entry import EntryDevice
+
+# Import a MotionDevice so we can see if the device that's currently sending a measurement is an instance of this.
+from devices.motion.motion import MotionDevice
 
 class LocationRealTimeDataMicroservice(Intelligence):
     """
@@ -105,8 +112,8 @@ class LocationRealTimeDataMicroservice(Intelligence):
         :param current_mode: Current mode
         :param current_timestamp: Current timestamp
         """
-        botengine.get_logger().info("LOCATION_realtimedata_microservice: mode_updated('{}')".format(current_mode))
-        return
+        # You can always access the current mode with "self.parent.mode" when you're inside a location intelligence module, because the parent is the location and the location keeps the current mode.
+        botengine.get_logger().info("{}LOCATION_realtimedata_microservice {}: mode_updated('{}'){}".format(Color.BOLD + Color.CYAN, self.intelligence_id, current_mode, Color.END))
 
     def device_measurements_updated(self, botengine, device_object):
         """
@@ -114,7 +121,30 @@ class LocationRealTimeDataMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :param device_object: Device object that was updated
         """
-        botengine.get_logger().info("LOCATION_realtimedata_microservice: device_measurements_updated from '{}'".format(device_object.description))
+
+        # Because this is a location intelligence module, it listens to all devices in this location.
+        # So if we want to do something specific with a particular device, we check out what type of device_object got passed in here.
+        # Check out the imports at the top to see how to import device classes.
+
+        # Note that devices send measurements that are heartbeats (keep alives). So just because you got a measurement from a device doesn't mean that the device actually changed state.
+
+        if isinstance(device_object, EntryDevice):
+            # This is an entry sensor, so now we can call EntrySensor specific methods.
+            if device_object.is_open():
+                botengine.get_logger().info("{}LOCATION_realtimedata_microservice {}: Your '{}' sent a measurement, and it is currently open.{}".format(Color.BOLD + Color.GREEN, self.intelligence_id, device_object.description, Color.END))
+            else:
+                botengine.get_logger().info("{}LOCATION_realtimedata_microservice {}: Your '{}' sent a measurement, and it is currently closed.{}".format(Color.BOLD + Color.GREEN, self.intelligence_id, device_object.description, Color.END))
+
+        elif isinstance(device_object, MotionDevice):
+            # This is a motion sensor so now we can call MotionSensor specific methods.
+            if device_object.is_detecting_motion():
+                botengine.get_logger().info("{}LOCATION_realtimedata_microservice {}: Your '{}' sent a measurement, and it is currently detecting motion.{}".format(Color.BOLD + Color.PURPLE, self.intelligence_id, device_object.description, Color.END))
+            else:
+                botengine.get_logger().info("{}LOCATION_realtimedata_microservice {}: Your '{}' sent a measurement, and it is currently not detecting motion.{}".format(Color.BOLD + Color.PURPLE, self.intelligence_id, device_object.description, Color.END))
+
+        else:
+            botengine.get_logger().info("{}LOCATION_realtimedata_microservice {}: Device '{}' measurements were updated!{}".format(Color.BOLD, self.intelligence_id, device_object.description, Color.END))
+
         return
 
     def device_metadata_updated(self, botengine, device_object):
@@ -206,4 +236,18 @@ class LocationRealTimeDataMicroservice(Intelligence):
         """
         botengine.get_logger().info("LOCATION_realtimedata_microservice: coordinates_updated(latitude={}, longitude={})".format(latitude, longitude))
         return
+
+
+class Color:
+    """Color your command line output text with Color.WHATEVER and Color.END"""
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
 

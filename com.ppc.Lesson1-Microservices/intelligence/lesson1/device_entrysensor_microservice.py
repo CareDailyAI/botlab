@@ -9,13 +9,20 @@ file 'LICENSE.txt', which is part of this source code package.
 
 from intelligence.intelligence import Intelligence
 
-class DeviceRealTimeDataMicroservice(Intelligence):
+class DeviceEntrySensorMicroservice(Intelligence):
     """
-    This device microservice attaches to any device types that are not an Entry Sensor device type or a Motion Sensor device type.
+    This is a "device microservice" that extends the capabilities of Entry Sensors only. Each one of your Entry Sensors device types
+    will have a unique `DeviceEntrySensorMicroservice` object instantiated and attached to it.
 
-    ----
+    When any of the device_* event methods are triggered, you can be guaranteed that it is only triggering off of
+    a single entry sensor in your account and not triggering off of any other devices other than the one it's attached to.
 
-    This is a "device microservice". Device microservices add new features to a single device in your account.
+    To try it out: attach an entry sensor to your account, and then open / close it.  You will see the entry sensor's own
+    `DeviceEntrySensorMicroservice` microservice trigger, and you will also see the location_realtimedata_microservice trigger
+    because location microservices listen to all devices and data in your account.
+    
+
+    ---
 
     In any index.py file in your project, you declare which device microservices should get added to specific device types.
     As individual devices appear in your account that are of the device type referenced in your index.py files, device microservices
@@ -81,7 +88,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param botengine: BotEngine environment
         """
         # Uncomment if you want proof that this initialize() method gets called on every single microservice when the bot is triggered from new data.
-        # botengine.get_logger().info("DEVICE_realtimedata_microservice: initialize()")
+        # botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: initialize()")
         return
 
     def destroy(self, botengine):
@@ -89,7 +96,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         This device or object is getting permanently deleted - it is no longer in the user's account.
         :param botengine: BotEngine environment
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: destroy()")
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: destroy()")
         return
 
     def get_html_summary(self, botengine, oldest_timestamp_ms, newest_timestamp_ms, test_mode=False):
@@ -100,7 +107,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param newest_timestamp_ms: Newest timestamp in milliseconds to summarize
         :param test_mode: True to add or modify details for test mode, instead of a general weekly summary
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: get_html_summary(oldest_timestamp_ms={}, newest_timestamp_ms={})".format(oldest_timestamp_ms, newest_timestamp_ms))
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: get_html_summary(oldest_timestamp_ms={}, newest_timestamp_ms={})".format(oldest_timestamp_ms, newest_timestamp_ms))
         return ""
 
     def mode_updated(self, botengine, current_mode):
@@ -119,7 +126,24 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :param device_object: Device object that was updated
         """
-        botengine.get_logger().info("{}DEVICE_realtimedata_microservice {}: device_measurements_updated from '{}'{}".format(Color.BOLD, self.intelligence_id, device_object.description, Color.END))
+        # The device_object is guaranteed to be an EntryDevice (see com.ppc.Bot/devices/entry/entry.py) because the index.py says this device microservice
+        # should attach to entry sensors only.  So each entry sensor gets a unique instance of this DeviceEntrySensorMicroservice object attached to it.
+        # The self.intelligence_id isn't useful here, but I bring it out to show you that each device's microservice is different than the rest.
+
+        # I've added in my handy "Color" class at the bottom of this file to format the text output so you can see it better.
+        # As you can see, Microservice files can have multiple class definitions inside, which is why it's important for the index.py to call out exactly
+        # which class is the real microservice class inside this Python module.
+
+        # Note that devices send measurements that are heartbeats (keep alives). So just because you got a measurement from a device doesn't mean that the device actually changed state.
+
+        if device_object.did_change_state(botengine):
+            if device_object.is_open(botengine):
+                botengine.get_logger().info("{}DEVICE_ENTRYSENSOR_microservice {}: Your '{}' opened!{}".format(Color.BOLD + Color.GREEN, self.intelligence_id, device_object.description, Color.END))
+            else:
+                botengine.get_logger().info("{}DEVICE_ENTRYSENSOR_microservice {}: Your '{}' closed!{}".format(Color.BOLD + Color.GREEN, self.intelligence_id, device_object.description, Color.END))
+        else:
+            botengine.get_logger().info("{}DEVICE_ENTRYSENSOR_microservice {}: Your '{}' sent a heartbeat but didn't change state.{}".format(Color.BOLD + Color.RED, self.intelligence_id, device_object.description, Color.END))
+
         return
 
     def device_metadata_updated(self, botengine, device_object):
@@ -129,7 +153,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param device_object: Device object that was updated
         """
         # Device metadata can get updated multiple times in one execution. Uncomment this line if you'd like to see it.
-        #botengine.get_logger().info("DEVICE_realtimedata_microservice: device_metadata_updated from '{}'".format(device_object.description))
+        #botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: device_metadata_updated from '{}'".format(device_object.description))
         return
 
     def device_alert(self, botengine, device_object, alert_type, alert_params):
@@ -141,7 +165,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param device_object: Device object that sent the alert
         :param alert_type: Type of alert
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: device_alert from '{}': alert_type={}; alert_params={}".format(device_object.description, str(alert_type), str(alert_params)))
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice {}: device_alert from '{}': alert_type={}; alert_params={}".format(self.intelligence_id, device_object.description, str(alert_type), str(alert_params)))
         return
 
     def device_deleted(self, botengine, device_object):
@@ -150,7 +174,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :param device_object: Device object that is getting deleted
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: device_deleted() from '{}'".format(device_object.description))
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice {}: device_deleted() from '{}'".format(self.intelligence_id, device_object.description))
         return
 
     def question_answered(self, botengine, question):
@@ -159,7 +183,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :param question: Question object
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: question_answered()")
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: question_answered()")
         return
 
     def datastream_updated(self, botengine, address, content):
@@ -169,7 +193,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param address: Data Stream address
         :param content: Content of the message
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: datastream_updated(address={}, content={})".format(address, content))
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: datastream_updated(address={}, content={})".format(address, content))
         return
 
     def schedule_fired(self, botengine, schedule_id):
@@ -178,7 +202,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :param schedule_id: Schedule ID that is executing from our list of runtime schedules
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: schedule_fired(schedule_id={})".format(schedule_id))
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: schedule_fired(schedule_id={})".format(schedule_id))
         return
 
     def timer_fired(self, botengine, argument):
@@ -187,7 +211,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param botengine: Current botengine environment
         :param argument: Argument applied when setting the timer
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: timer_fired(argument={})".format(argument))
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: timer_fired(argument={})".format(argument))
         return
 
     def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
@@ -200,7 +224,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param content_type: The content type, for example 'video/mp4'
         :param file_extension: The file extension, for example 'mp4'
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: file_uploaded from device '{}'".format(device_object.description))
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: file_uploaded from device '{}'".format(device_object.description))
         return
 
     def coordinates_updated(self, botengine, latitude, longitude):
@@ -209,7 +233,7 @@ class DeviceRealTimeDataMicroservice(Intelligence):
         :param latitude: Latitude
         :param longitude: Longitude
         """
-        botengine.get_logger().info("DEVICE_realtimedata_microservice: coordinates_updated(latitude={}, longitude={})".format(latitude, longitude))
+        botengine.get_logger().info("DEVICE_ENTRYSENSOR_microservice: coordinates_updated(latitude={}, longitude={})".format(latitude, longitude))
         return
 
 
