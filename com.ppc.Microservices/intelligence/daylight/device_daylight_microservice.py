@@ -1,6 +1,9 @@
 '''
 Created on December 25, 2016
 
+Yes, I created this on Christmas day.
+This is my gift to you.
+
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
@@ -123,48 +126,13 @@ class DaylightMicroservice(Intelligence):
         """
         if argument == SUNRISE:
             botengine.get_logger().info("SUNRISE timer fired")
-
-            # Location intelligence modules
-            for intelligence_id in self.parent.location_object.intelligence_modules:
-                self.parent.location_object.intelligence_modules[intelligence_id].sunrise_fired(botengine, self.parent)
-
-            # Device intelligence modules
-            for device_id in self.parent.location_object.devices:
-                if hasattr(self.parent.location_object.devices[device_id], "intelligence_modules"):
-                    for intelligence_id in self.parent.location_object.devices[device_id].intelligence_modules:
-                        self.parent.location_object.devices[device_id].intelligence_modules[intelligence_id].sunrise_fired(botengine, self.parent)
+            self.parent.location_object.distribute_datastream_message(botengine, "sunrise_fired", {"proxy_id": self.parent.device_id, "proxy_object": self.parent}, internal=True, external=False)
 
         elif argument == SUNSET:
             botengine.get_logger().info("SUNSET timer fired")
-
-            # Location intelligence modules
-            for intelligence_id in self.parent.location_object.intelligence_modules:
-                self.parent.location_object.intelligence_modules[intelligence_id].sunset_fired(botengine, self.parent)
-
-            # Device intelligence modules
-            for device_id in self.parent.location_object.devices:
-                if hasattr(self.parent.location_object.devices[device_id], "intelligence_modules"):
-                    for intelligence_id in self.parent.location_object.devices[device_id].intelligence_modules:
-                        self.parent.location_object.devices[device_id].intelligence_modules[intelligence_id].sunset_fired(botengine, self.parent)
+            self.parent.location_object.distribute_datastream_message(botengine, "sunset_fired", {"proxy_id": self.parent.device_id, "proxy_object": self.parent}, internal=True, external=False)
 
         self._set_sunrise_sunset_alarm(botengine)
-
-
-    def sunrise_fired(self, botengine, proxy_object):
-        """
-        It is now sunrise.
-        Must have previously called your location's "enable_sunrise_sunset_events(botengine)" method to make this trigger.
-        :param botengine: BotEngine environment
-        """
-        return
-
-    def sunset_fired(self, botengine, proxy_object):
-        """
-        It is now sunset.
-        Must have previously called your location's "enable_sunrise_sunset_events(botengine)" method to make this trigger.
-        :param botengine: BotEngine environment
-        """
-        return
 
     def coordinates_updated(self, botengine, latitude, longitude):
         """
@@ -201,7 +169,7 @@ class DaylightMicroservice(Intelligence):
 
         if self.parent.longitude is None or self.parent.latitude is None or ephem is None:
             # Ya, we don't have any coordinate information. Call it 8 AM.
-            botengine.get_logger().warn("gateway_daylight_microservice : no coordinate information available")
+            botengine.get_logger().warn("device_daylight_microservice : no coordinate information available")
             dt = self.get_local_datetime(botengine).replace(hours=8)
             now = datetime.datetime.now()
             if dt < now:
@@ -226,7 +194,7 @@ class DaylightMicroservice(Intelligence):
 
         if self.parent.longitude is None or self.parent.latitude is None or ephem is None:
             # We don't have any coordinate information. Call it 8 PM.
-            botengine.get_logger().warn("gateway_daylight_microservice : no coordinate information available")
+            botengine.get_logger().warn("device_daylight_microservice : no coordinate information available")
             dt = self.get_local_datetime(botengine).replace(hours=20)
             now = datetime.datetime.now()
             if dt < now:

@@ -9,7 +9,6 @@ MICROSERVICES = {
         # Gateways
         31: [
             {"module": "intelligence.daylight.device_daylight_microservice", "class": "DaylightMicroservice"},
-            ],
+            ]
         },
-
 }
