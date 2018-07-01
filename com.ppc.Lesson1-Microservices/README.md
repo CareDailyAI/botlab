@@ -308,6 +308,9 @@ Quick recap of how to run the lesson:
     cp -r com.ppc.Lesson1-Microservices com.yourname.Lesson1
     botengine --commit com.yourname.Lesson1 -b <brand>
     botengine --purchase com.yourname.Lesson1 -b <brand>
+    
+Watch it run locally:
+
     botengine --run com.yourname.Lesson1 -b <brand>
     (... do work editing the bot, then run it again to see how it changed ...)
     botengine --run com.yourname.Lesson1 -b <brand>

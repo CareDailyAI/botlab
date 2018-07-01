@@ -142,4 +142,7 @@ Run the bot:
     cp -r com.ppc.Lesson2-LiveUpdates com.yourname.Lesson2
     botengine --commit com.yourname.Lesson2 -b <brand> -u <user@email.com> -p <password>
     botengine --purchase com.yourname.Lesson2 -b <brand> -u <user@email.com> -p <password>
+
+Watch it run locally:
+
     botengine --run com.yourname.Lesson2 -b <brand> -u <user@email.com> -p <password>

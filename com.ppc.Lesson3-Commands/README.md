@@ -92,6 +92,9 @@ Read through and understand the code and comments in `intelligence/lesson3/locat
     cp -r com.ppc.Lesson3-Commands com.yourname.Lesson3
     botengine --commit com.yourname.Lesson3 -b <brand> -u <user@email.com> -p <password>
     botengine --purchase com.yourname.Lesson3 -b <brand> -u <user@email.com> -p <password>
+
+Watch it run locally:
+
     botengine --run com.yourname.Lesson3 -b <brand> -u <user@email.com> -p <password>
     
 The lesson assumes your account will have lights and/or smart plugs connected at a minimum. Entry sensors are desirable as well.
