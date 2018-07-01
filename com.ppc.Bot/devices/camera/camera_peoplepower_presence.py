@@ -23,6 +23,56 @@ MOTION_SENSITIVITY_NORMAL = 20
 MOTION_SENSITIVITY_LARGE = 30
 MOTION_SENSITIVITY_HUGE = 40
 
+# Here are a list of .mp3 files that *should be* pre-installed on smartphone-as-camera devices:
+#
+#   * 30seconds_en.mp3
+#   * 60seconds_en.mp3
+#   * alarm.mp3
+#   * arming_en.mp3
+#   * armingrestart_en.mp3
+#   * beep.mp3
+#   * beep_07.mp3
+#   * camera_shutter.mp3
+#   * compliment_0_en.mp3
+#   * compliment_10_en.mp3
+#   * compliment_11_en.mp3
+#   * compliment_12_en.mp3
+#   * compliment_13_en.mp3
+#   * compliment_14_en.mp3
+#   * compliment_15_en.mp3
+#   * compliment_16_en.mp3
+#   * compliment_17_en.mp3
+#   * compliment_18_en.mp3
+#   * compliment_19_en.mp3
+#   * compliment_1_en.mp3
+#   * compliment_20_en.mp3
+#   * compliment_21_en.mp3
+#   * compliment_22_en.mp3
+#   * compliment_23_en.mp3
+#   * compliment_24_en.mp3
+#   * compliment_25_en.mp3
+#   * compliment_26_en.mp3
+#   * compliment_2_en.mp3
+#   * compliment_3_en.mp3
+#   * compliment_4_en.mp3
+#   * compliment_5_en.mp3
+#   * compliment_6_en.mp3
+#   * compliment_7_en.mp3
+#   * compliment_8_en.mp3
+#   * compliment_9_en.mp3
+#   * disarmed_en.mp3
+#   * dispatch_en.mp3
+#   * enteringtestmode_en.mp3
+#   * fullyarmed_en.mp3
+#   * incorrectcode_en.mp3
+#   * leak_en.mp3
+#   * leavingtestmode_en.mp3
+#   * low_beep.mp3
+#   * perimeterarmed_en.mp3
+#   * welcomehome_en.mp3
+#
+# Enjoy.
+
 
 class PeoplePowerPresenceCameraDevice(CameraDevice):
     """Camera Device"""
