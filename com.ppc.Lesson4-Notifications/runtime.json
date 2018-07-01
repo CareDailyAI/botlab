@@ -1,0 +1,23 @@
+# RUNTIME.JSON DESCRIPTION
+# The runtime.json file describes to the server how the bot should execute, what real-time data it needs to access,
+# how much memory to allocate to running the bot, how long the bot should run before killing it, and more.
+#
+# This particular runtime.json file in your base bot directory typically keeps track of version numbers and whats new information
+# It could optionally contain more runtime.json information about what data the bot needs to listen to and what
+# permissions are being requested from the user, but those are best left to the runtime.json files inside
+# individual microservices packages (directories) to describe exactly what each microservice needs to execute.
+# When generating or committing the bot, all runtime.json files are intelligently merged together from all the microservices
+# that are being referenced, to form a single runtime.json file that contains all information to run all microservices.
+
+{
+  "version": {
+
+    # Version numbers are strongly defined (follow this format) and always incrementing
+    "version": "1.0.0",
+
+    # Like putting an app on the app store, always describe whats new in the latest version of your bot
+    "whatsnew": {
+        "en": "Creation"
+    }
+  }
+}
