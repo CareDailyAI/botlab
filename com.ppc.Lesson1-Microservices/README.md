@@ -318,4 +318,7 @@ Watch it run locally:
     botengine --run com.yourname.Lesson1 -b <brand>
     (... do work editing the bot, then run it again to see how it changed ...)
     botengine --run com.yourname.Lesson1 -b <brand>
-    
+
+Pause it when you're ready to move on:
+
+    botengine --pause com.yourname.Lesson1 -b <brand> -u <user@email.com> -p <password>

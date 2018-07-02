@@ -107,4 +107,6 @@ Next, tap into HOME mode from your mobile app or web UI. The microservice will t
 
 If you open a door, the lights and smart plugs will turn on.  If you close the door, the lights and smart plugs will turn off.
 
-Enjoy.
+Pause it when you're ready to move on:
+
+    botengine --pause com.yourname.Lesson3 -b <brand> -u <user@email.com> -p <password>

@@ -92,3 +92,7 @@ Watch it run locally:
     botengine --run com.yourname.Lesson4 -b <brand> -u <user@email.com> -p <password>
     
 Toggle into AWAY mode. You will receive an email and push notification that you are now in AWAY mode. While in AWAY mode, open an entry sensor. You will receive another push notification that your door opened while you were away.
+
+Pause it when you're ready to move on:
+
+    botengine --pause com.yourname.Lesson4 -b <brand> -u <user@email.com> -p <password>

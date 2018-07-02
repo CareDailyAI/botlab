@@ -133,3 +133,6 @@ Toggle your user account into a different mode, and the alarm will be set for mi
 
 Open an entry sensor and leave it open for more than 10 seconds. The timer will fire if the door has been left open for too long, and you'll receive a push notification.
 
+Pause it when you're ready to move on:
+
+    botengine --pause com.yourname.Lesson5 -b <brand> -u <user@email.com> -p <password>
