@@ -173,7 +173,7 @@ class DeviceLightingMicroservice(Intelligence):
 
         # If this light is connected through the gateway where it is sunrise, then turn this light off.
         if self.parent.proxy_id == content['proxy_id']:
-            self.parent.off()
+            self.parent.off(botengine)
 
 
     def sunset_fired(self, botengine, content=None):
@@ -198,7 +198,7 @@ class DeviceLightingMicroservice(Intelligence):
 
         # If this light is connected through the gateway where it is sunrise, then turn this light on.
         if self.parent.proxy_id == content['proxy_id']:
-            self.parent.on()
+            self.parent.on(botengine)
 
 
 
