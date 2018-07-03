@@ -12,7 +12,9 @@ You'll run the 'botengine' from a command line interface. Windows users should i
 
 ## Setup your environment
 
+<div style="text-align:center">
 [![Installing the BotEngine](https://user-images.githubusercontent.com/1031168/42200555-acf1e37c-7e48-11e8-8f20-7896b4820f9d.gif)](https://www.youtube.com/watch?v=n2p5hQ68mIw)
+</div>
 
 ### Step 1 : Get a user account
 
