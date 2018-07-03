@@ -12,6 +12,8 @@ You'll run the 'botengine' from a command line interface. Windows users should i
 
 ## Setup your environment
 
+[![Installing the BotEngine](https://user-images.githubusercontent.com/1031168/42200555-acf1e37c-7e48-11e8-8f20-7896b4820f9d.gif)](https://www.youtube.com/watch?v=n2p5hQ68mIw)
+
 ### Step 1 : Get a user account
 
 You'll first need a user account with a smart home service that is powered by People Power's bot server.
