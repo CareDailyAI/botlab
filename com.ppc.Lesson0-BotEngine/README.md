@@ -10,11 +10,12 @@ By the end of this lesson, you will have done the following:
 
 You'll run the 'botengine' from a command line interface. Windows users should install Cygwin. Mac and Linux users can use the Terminal.
 
+<a href="https://www.youtube.com/watch?v=n2p5hQ68mIw"><img align="center" src="https://user-images.githubusercontent.com/1031168/42200555-acf1e37c-7e48-11e8-8f20-7896b4820f9d.gif" alt="Installing the BotEngine"></a>
+
 ## Setup your environment
 
-<div style="text-align:center">
 [![Installing the BotEngine](https://user-images.githubusercontent.com/1031168/42200555-acf1e37c-7e48-11e8-8f20-7896b4820f9d.gif)](https://www.youtube.com/watch?v=n2p5hQ68mIw)
-</div>
+
 
 ### Step 1 : Get a user account
 
