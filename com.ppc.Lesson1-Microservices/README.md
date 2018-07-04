@@ -23,6 +23,8 @@ You can also `--run` your bot locally, if you have the source code on your lapto
 
 We will explore the contents of the files in this lesson in a moment. For now, let's get it committed and running.
 
+[![Commit, Purchase, and Run bots](https://user-images.githubusercontent.com/1031168/42250532-61d235b0-7ee6-11e8-97a6-8ca1b38571e7.gif)](https://youtu.be/fbLv2KG7Xmw)
+
 ### Step 1 : Copy Lesson 1 into a new bot directory
 
 Every bot has a unique name in reverse domain name notation (com.yourname.YourService). Once you `--commit` your bot, you permanently own that unique name. Choose wisely.
