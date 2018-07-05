@@ -143,29 +143,6 @@ class Intelligence:
         :param longitude: Longitude
         """
         return
-    
-    #===============================================================================
-    # The sunrise_fired() and sunset_fired() event methods require your bot to include the 'daylight' microservice.
-    #===============================================================================
-    def sunrise_fired(self, botengine, proxy_object):
-        """
-        It is now sunrise.
-        To enable this event, include the 'com.ppc.Microservices/intelligence/daylight' microservice in your project.
-        You will need a gateway attached to the user's account to know approximately where they are located.
-        :param botengine: BotEngine environment
-        :param proxy_object: Proxy/gateway object where the sun is setting
-        """
-        return
-
-    def sunset_fired(self, botengine, proxy_object):
-        """
-        It is now sunset.
-        To enable this event, include the 'com.ppc.Microservices/intelligence/daylight' microservice in your project.
-        You will need a gateway attached to the user's account to know approximately where they are located.
-        :param botengine: BotEngine environment
-        :param proxy_object: Proxy/gateway object where the sun is setting
-        """
-        return
 
     #===============================================================================
     # Built-in Timer and Alarm methods.
