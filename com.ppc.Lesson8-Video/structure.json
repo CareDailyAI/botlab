@@ -4,6 +4,5 @@
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
   "microservices": [
-        "com.ppc.Microservices/intelligence/video"
   ]
 }
