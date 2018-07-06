@@ -12,6 +12,8 @@ It is assumed that you know some basic Python and object-oriented concepts (see 
 
 ## Run this lesson in your account
 
+[![Commit, Purchase, and Run Video](https://user-images.githubusercontent.com/1031168/42250532-61d235b0-7ee6-11e8-97a6-8ca1b38571e7.gif)](https://youtu.be/fbLv2KG7Xmw)
+
 The process of creating and running a bot is similar to the process of mobile app development:
 
 1. Develop code for a new bot on your local computer by copy/pasting an existing bot into a new directory and editing it. 
@@ -22,8 +24,6 @@ The process of creating and running a bot is similar to the process of mobile ap
 You can also `--run` your bot locally, if you have the source code on your laptop. Which you should, if you have cloned this 'botlab' repository.
 
 We will explore the contents of the files in this lesson in a moment. For now, let's get it committed and running.
-
-[![Commit, Purchase, and Run Video](https://user-images.githubusercontent.com/1031168/42250532-61d235b0-7ee6-11e8-97a6-8ca1b38571e7.gif)](https://youtu.be/fbLv2KG7Xmw)
 
 ### Step 1 : Copy Lesson 1 into a new bot directory
 
