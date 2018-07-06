@@ -1,0 +1,19 @@
+{
+  "app": {
+    "category": "S",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Pro Energy",
+        "author": "David Moss",
+        "copyright": "Copyright 2018 People Power Company",
+        "description": "Pro Energy",
+        "marketingUrl": "http://peoplepowerco.com",
+        "supportUrl": "http://presencepro.com/support",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": "video,camera,motion,detect,detection"
+      }
+    ]
+  }
+}
