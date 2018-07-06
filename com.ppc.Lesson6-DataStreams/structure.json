@@ -31,7 +31,6 @@
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
   "microservices": [
-        "com.ppc.Microservices/intelligence/daylight"
   ],
 
   # Locally install the following Python package dependencies when using this microservice
