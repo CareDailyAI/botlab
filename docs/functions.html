@@ -41,7 +41,9 @@ $(function() {
 
 <h3><a id="index__"></a>- _ -</h3><ul>
 <li>__init__()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#a063f0873add7561cfcb87b6461f5d76a">botengine.BotEngine</a>
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a30d3764ab67304f06b17c8f0da297ba8">botengine.BotEngine</a>
+, <a class="el" href="classbotengine_1_1_question.html#a281587fa87776da60af45f5428b5bcce">botengine.Question</a>
+, <a class="el" href="classbotengine_1_1_question_response_option.html#ab7d2a57b9f9e286b20f8f91476c0cab9">botengine.QuestionResponseOption</a>
 </li>
 </ul>
 
@@ -50,13 +52,28 @@ $(function() {
 <li>add_email_attachment()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a118ab211d37c72dfabecfb1516ff62b3">botengine.BotEngine</a>
 </li>
+<li>add_email_attachment_from_camera()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#acb371c6f404371745e6f2795a5069b8f">botengine.BotEngine</a>
+</li>
+<li>add_tag()
+: <a class="el" href="classbotengine_1_1_question_response_option.html#aa86887909ed5a58cc3d25e0a776d7edf">botengine.QuestionResponseOption</a>
+</li>
+<li>add_text()
+: <a class="el" href="classbotengine_1_1_question_response_option.html#a385af40bdb595eaee9ce9a5dd16edcb2">botengine.QuestionResponseOption</a>
+</li>
 <li>ask_question()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a49be9289d1ccd2e4640336b57e03e90a">botengine.BotEngine</a>
+</li>
+<li>auto_tag_user()
+: <a class="el" href="classbotengine_1_1_question.html#a76f4419f607b62b96deadd0248819753">botengine.Question</a>
 </li>
 </ul>
 
 
 <h3><a id="index_c"></a>- c -</h3><ul>
+<li>cancel_command()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a1b79af74fb0a6146969010e39de83beb">botengine.BotEngine</a>
+</li>
 <li>cancel_professional_monitoring_alert()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#ac280c296de46d798af53031d3e080812">botengine.BotEngine</a>
 </li>
@@ -97,6 +114,9 @@ $(function() {
 <li>delete_variable()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a664e226b93d3df6e8d5fbae7c769342d">botengine.BotEngine</a>
 </li>
+<li>download_file()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#ae7a57ebee63e3829841389fb67c476e9">botengine.BotEngine</a>
+</li>
 </ul>
 
 
@@ -119,12 +139,18 @@ $(function() {
 <li>form_command()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#aac01b9618ce93ea13522543d9333ff3c">botengine.BotEngine</a>
 </li>
+<li>frame_question()
+: <a class="el" href="classbotengine_1_1_question.html#a2cb0e69df7ddb9c35f33d675f7639079">botengine.Question</a>
+</li>
 </ul>
 
 
 <h3><a id="index_g"></a>- g -</h3><ul>
 <li>generate_question()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#aba19727e5c8c8cc720b60662fb357b7c">botengine.BotEngine</a>
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a1942c6d7bcbffe0d901514c1eb82f894">botengine.BotEngine</a>
+</li>
+<li>generate_response_option()
+: <a class="el" href="classbotengine_1_1_question.html#a239db1fd7e297c636ad74babf3148a5c">botengine.Question</a>
 </li>
 <li>get_access_block()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a788e2080e96d0c7d1c641a2adce38685">botengine.BotEngine</a>
@@ -150,8 +176,17 @@ $(function() {
 <li>get_datastream_block()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a47a21f0f0b983c9dfa14cf9f846f88cc">botengine.BotEngine</a>
 </li>
+<li>get_device_access_block()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#aa66bd9a9cbd9dc8856546fa11113f436">botengine.BotEngine</a>
+</li>
+<li>get_file_block()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#aa4fdd12db8f5ba93a4d3590d2360ffd2">botengine.BotEngine</a>
+</li>
 <li>get_inputs()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a5cd410f8f2dd6d876e3cd036c999ab6a">botengine.BotEngine</a>
+</li>
+<li>get_language()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a7b4f5348d10900ddd47cf3c5411cc4e7">botengine.BotEngine</a>
 </li>
 <li>get_list_of_asked_questions()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a46b83a262750d59757950b0f24e0892f">botengine.BotEngine</a>
@@ -162,14 +197,17 @@ $(function() {
 <li>get_location_info()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a465acb5d5197b634f808ad9f1a1f6017">botengine.BotEngine</a>
 </li>
-<li>get_location_scenes_history()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#ae6b50905c98156808db75703d2f74363">botengine.BotEngine</a>
-</li>
 <li>get_measurements()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a38e52adddd2952db4679c16867ac7bec">botengine.BotEngine</a>
 </li>
 <li>get_measures_block()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a483c8f586a92785f5e3d02908cbb98f9">botengine.BotEngine</a>
+</li>
+<li>get_mode()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#aa4bbbee4b2afc3ddd5b7cca76f594084">botengine.BotEngine</a>
+</li>
+<li>get_mode_history()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#adb37ae1462a7d72ea6dafae1ffdbcaf0">botengine.BotEngine</a>
 </li>
 <li>get_organization_challenge_participants()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a937bf1dd938027d8b7c78f2e90ca6292">botengine.BotEngine</a>
@@ -210,6 +248,9 @@ $(function() {
 <li>get_triggers()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#ace2be0a98e9537e1a4db948ddd6e2c73">botengine.BotEngine</a>
 </li>
+<li>get_user_brand()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a9a3033d4a17ed923ca3048a60a16ef3d">botengine.BotEngine</a>
+</li>
 <li>get_user_first_name()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a568be111ca05fcae4bd72e000bc1403a">botengine.BotEngine</a>
 </li>
@@ -226,10 +267,10 @@ $(function() {
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a053eb30b8974ccc0f9ea681f58d81aaf">botengine.BotEngine</a>
 </li>
 <li>get_weather_forecast_by_geocode()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#acdace8c1223ac63902454ba2d4cedcc9">botengine.BotEngine</a>
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a4eb8bcaab0adbfbbfe3b8e5e75d6adfd">botengine.BotEngine</a>
 </li>
 <li>get_weather_forecast_by_location()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#a51d80db29470470c47fa1b55a951c838">botengine.BotEngine</a>
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a60332e9493c12a1d7a9df474ea9c3776">botengine.BotEngine</a>
 </li>
 </ul>
 
@@ -245,6 +286,9 @@ $(function() {
 
 
 <h3><a id="index_i"></a>- i -</h3><ul>
+<li>is_executing_timer()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a8a5879f722f74f886ff6f81044472c5c">botengine.BotEngine</a>
+</li>
 <li>is_timer_running()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#ab235e04aa34b54cb6d651727354c4c87">botengine.BotEngine</a>
 </li>
@@ -263,7 +307,7 @@ $(function() {
 
 <h3><a id="index_n"></a>- n -</h3><ul>
 <li>notify()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#abc518de1b84ba93e576284a7ed64affb">botengine.BotEngine</a>
+: <a class="el" href="classbotengine_1_1_bot_engine.html#aec203426df4e9ceb167801b59cb34f02">botengine.BotEngine</a>
 </li>
 </ul>
 
@@ -282,6 +326,9 @@ $(function() {
 <li>raise_professional_monitoring_alert()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a88975737c2357127e0bb4eed83cd49e2">botengine.BotEngine</a>
 </li>
+<li>ready_to_ask()
+: <a class="el" href="classbotengine_1_1_question.html#ae194012a2f0b3ffe7e4d9b75e69aedc7">botengine.Question</a>
+</li>
 <li>retrieve_question()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#ada9451869492e5d771630a469d6c641c">botengine.BotEngine</a>
 </li>
@@ -296,10 +343,10 @@ $(function() {
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a692a8c1345a7802ca32e73a10403c571">botengine.BotEngine</a>
 </li>
 <li>send_command()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#a8184512e4e267f016c62d506aabbed10">botengine.BotEngine</a>
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a2c28228f038de4e8bfc50301e457048d">botengine.BotEngine</a>
 </li>
 <li>send_commands()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#a299a4292d78fbe263022977eb78694e2">botengine.BotEngine</a>
+: <a class="el" href="classbotengine_1_1_bot_engine.html#af061d8535ea9b4e478974e6c16c6541c">botengine.BotEngine</a>
 </li>
 <li>send_datastream_message()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#ab3ae21806f19c18f463484df4bbc4c7f">botengine.BotEngine</a>
@@ -308,22 +355,28 @@ $(function() {
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a1f971c4ac2d21401544b5d274e1475ed">botengine.BotEngine</a>
 </li>
 <li>set_mode()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#aee9526fb53fb4a611fcac13912fee976">botengine.BotEngine</a>
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a2561ba50ce572a34fef64f0da4acf1a6">botengine.BotEngine</a>
+</li>
+<li>set_placeholder_text()
+: <a class="el" href="classbotengine_1_1_question.html#a749fc7521176925da90bdcc92bd78f12">botengine.Question</a>
+</li>
+<li>set_section_title()
+: <a class="el" href="classbotengine_1_1_question.html#a8d3f60052076d9d9ac959fa8be3c11a0">botengine.Question</a>
 </li>
 <li>set_timer()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#ae33d4f29ec19222df5829437fd0784c5">botengine.BotEngine</a>
 </li>
+<li>slider_boundaries()
+: <a class="el" href="classbotengine_1_1_question.html#ab4e9889f16a5ad164433f113b4273937">botengine.Question</a>
+</li>
 <li>start_timer()
 : <a class="el" href="classbotengine_1_1_bot_engine.html#a0fc3bb6e8ebae6e6c3014480820f26ac">botengine.BotEngine</a>
 </li>
-<li>strftime()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#af782bab7dc1116b929fc9ee40b974a8b">botengine.BotEngine</a>
+<li>start_timer_ms()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#a1a55cf791705113cac06f737ca300454">botengine.BotEngine</a>
 </li>
-<li>strftimestamp()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#ae8b964bd4061a94af304eac76e536050">botengine.BotEngine</a>
-</li>
-<li>strptime()
-: <a class="el" href="classbotengine_1_1_bot_engine.html#ae535bda1467e8e4f4bc3c4fe2598b924">botengine.BotEngine</a>
+<li>start_timer_s()
+: <a class="el" href="classbotengine_1_1_bot_engine.html#ad8acc3fdd4b5630f9872c8474bc5aeeb">botengine.BotEngine</a>
 </li>
 </ul>
 
