@@ -63,6 +63,46 @@
         "reason": {
           "en": "Access Motion Sensors."
         }
+      },
+      {
+        "id": 23,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Android app cameras."
+        }
+      },
+      {
+        "id": 24,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access iOS app cameras."
+        }
+      },
+      {
+        "id": 9009,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access People Power Sirens."
+        }
+      },
+      {
+        "id": 9002,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Smartenit Sirens."
+        }
       }
     ],
 
@@ -101,7 +141,7 @@
         "read": true,
         "control": false,
         "reason": {
-          "en": "We want to access your modes."
+          "en": "We want to access your modes to protect your home while you're away."
         }
       }
     ],
