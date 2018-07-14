@@ -22,6 +22,7 @@ import logging
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
+_https_proxy = None
 
 def main(argv=None):
 
@@ -38,6 +39,7 @@ def main(argv=None):
     parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.presencepro.com)")
     parser.add_argument("-b", "--brand", dest="brand", help="Brand name partner to interact with the correct servers: 'myplace', 'origin', 'presence', etc.")
     parser.add_argument("--httpdebug", dest="httpdebug", action="store_true", help="HTTP debug logger output");
+    parser.add_argument("--https_proxy", dest="https_proxy", help="If your corporate network requires a proxy, type in the full HTTPS proxy address here (i.e. http://10.10.1.10:1080)")
 
     # Process arguments
     args = parser.parse_args()
@@ -75,6 +77,13 @@ def main(argv=None):
     if not deviceId:
         sys.stderr.write("Specify a device ID for this virtual device with the -d option. Use --help for more info.")
         return 1
+
+    global _https_proxy
+    _https_proxy = None
+    if args.https_proxy is not None:
+        _https_proxy = {
+            'https': args.https_proxy
+        }
 
     # Define the bot server
     if not server:
@@ -119,24 +128,22 @@ def main(argv=None):
     t = threading.Thread(target=_listen, args=(device_server, deviceId))
     t.start()
 
-
-
-
-
 def _listen(device_server, deviceId):
     """Listen for commands"""
+    global _https_proxy
+
     while True:
         try:
             print("\n[" + deviceId + "]: Listening for commands")
             http_headers = {"Content-Type": "application/json"}
-            r = requests.get(device_server + "/deviceio/mljson", params={"id":deviceId, "timeout":60}, headers=http_headers, timeout=60)
+            r = requests.get(device_server + "/deviceio/mljson", params={"id":deviceId, "timeout":60}, headers=http_headers, timeout=60, proxies=_https_proxy)
             command = json.loads(r.text)
             print("[" + deviceId + "]: Command received: " + str(command))
 
             # Ack the command
             commandId = command['commands'][0]['commandId']
             ackPayload = {"version":2, "proxyId": deviceId, "sequenceNumber": 1, "responses": [{"commandId":commandId, "result":1}]}
-            result = requests.post(device_server + "/deviceio/mljson", headers=http_headers, data=json.dumps(ackPayload))
+            result = requests.post(device_server + "/deviceio/mljson", headers=http_headers, data=json.dumps(ackPayload), proxies=_https_proxy)
 
         except Exception as e:
             print("Exception: " + str(e))
@@ -146,7 +153,7 @@ def _listen(device_server, deviceId):
 
 def _login(server, username, password):
     """Get an Bot API key and User Info by login with a username and password"""
-
+    global _https_proxy
     if not username:
         username = input('Email address: ')
 
@@ -159,14 +166,14 @@ def _login(server, username, password):
 
         # login by username and password
         http_headers = {"PASSWORD": password, "Content-Type": "application/json"}
-        r = requests.get(server + "/cloud/json/login", params={"username":username}, headers=http_headers)
+        r = requests.get(server + "/cloud/json/login", params={"username":username}, headers=http_headers, proxies=_https_proxy)
         j = json.loads(r.text)
         _check_for_errors(j)
         app_key = j['key']
 
         # get user info
         http_headers = {"PRESENCE_API_KEY": app_key, "Content-Type": "application/json"}
-        r = requests.get(server + "/cloud/json/user", headers=http_headers)
+        r = requests.get(server + "/cloud/json/user", headers=http_headers, proxies=_https_proxy)
         j = json.loads(r.text)
         _check_for_errors(j)
         return app_key, j
@@ -180,8 +187,9 @@ def _login(server, username, password):
 
 def _register_device(server, appKey, locationId, deviceId, deviceType, description):
     """Register a device to the user's account"""
+    global _https_proxy
     http_headers = {"API_KEY": appKey, "Content-Type": "application/json"}
-    r = requests.post(server + "/cloud/json/devices", params={"locationId":locationId, "deviceId":deviceId, "deviceType":deviceType, "desc":description}, headers=http_headers)
+    r = requests.post(server + "/cloud/json/devices", params={"locationId":locationId, "deviceId":deviceId, "deviceType":deviceType, "desc":description}, headers=http_headers, proxies=_https_proxy)
     j = json.loads(r.text)
     _check_for_errors(j)
     return j
@@ -190,6 +198,7 @@ def _register_device(server, appKey, locationId, deviceId, deviceType, descripti
 def _get_ensemble_server_url(server, device_id=None):
     """Get Ensemble server URL"""
     import requests
+    global _https_proxy
     http_headers = {"Content-Type": "application/json"}
     params = {"type": "deviceio", "ssl": True}
     if not device_id:
@@ -197,7 +206,7 @@ def _get_ensemble_server_url(server, device_id=None):
         params['deviceId'] = "nodeviceid"
     else:
         params['deviceId'] = device_id
-    r = requests.get(server + "/cloud/json/settingsServer", params=params, headers=http_headers)
+    r = requests.get(server + "/cloud/json/settingsServer", params=params, headers=http_headers, proxies=_https_proxy)
     return r.text
 
 
