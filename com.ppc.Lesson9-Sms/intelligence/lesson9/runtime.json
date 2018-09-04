@@ -139,7 +139,7 @@
         "category": 1,
         "trigger": true,
         "read": true,
-        "control": false,
+        "control": true,
         "reason": {
           "en": "We want to access your modes to protect your home while you're away."
         }
