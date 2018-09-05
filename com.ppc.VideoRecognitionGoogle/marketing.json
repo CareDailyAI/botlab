@@ -1,0 +1,19 @@
+{
+  "app": {
+    "category": "L",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Google Video Recognition",
+        "author": "Andre Huang",
+        "copyright": "Copyright 2018 People Power Company",
+        "description": "To utilize AI Video Analytics with our Presence Camera",
+        "marketingUrl": "http://peoplepowerco.com",
+        "supportUrl": "http://presencepro.com/support",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": "video,ai"
+      }
+    ]
+  }
+}

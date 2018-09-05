@@ -1,0 +1,11 @@
+{
+  # This bot extends a foundational bot framework for microservices
+  "extends": "com.ppc.Bot",
+
+  # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
+  "microservices": [
+        "com.ppc.Microservices/intelligence/videoai/microsoftvideo"
+
+  ]
+
+}
