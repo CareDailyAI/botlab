@@ -227,6 +227,6 @@ class DaylightMicroservice(Intelligence):
         else:
             # Sunset is next
             botengine.get_logger().info("Location: Setting sunset alarm for " + str(sunset_timestamp_ms))
-            self.set_alarm(botengine, sunrise_timestamp_ms, argument=SUNSET)
+            self.set_alarm(botengine, sunset_timestamp_ms, argument=SUNSET)
 
         return
