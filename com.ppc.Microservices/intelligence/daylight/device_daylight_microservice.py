@@ -12,6 +12,7 @@ file 'LICENSE.txt', which is part of this source code package.
 
 import importlib
 import datetime
+import utilities
 
 from intelligence.intelligence import Intelligence
 
@@ -126,11 +127,40 @@ class DaylightMicroservice(Intelligence):
         """
         if argument == SUNRISE:
             botengine.get_logger().info("SUNRISE timer fired")
-            self.parent.location_object.distribute_datastream_message(botengine, "sunrise_fired", {"proxy_id": self.parent.device_id, "proxy_object": self.parent}, internal=True, external=False)
+
+            self.parent.location_object.narrate(botengine,
+                                                title = _("Sunrise"),
+                                                description = _("It is sunrise where your '{}' is located.").format(self.parent.description),
+                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                icon = 'sunrise'
+                                                )
+
+            import importlib
+            try:
+                analytics = importlib.import_module('analytics')
+                analytics.get_analytics(botengine).track(botengine, 'sunrise', properties={"gateway_device_id": self.parent.device_id})
+            except ImportError:
+                pass
+
+            self.parent.location_object.distribute_datastream_message(botengine, "sunrise_fired", { "proxy_id": self.parent.device_id }, internal=True, external=False)
 
         elif argument == SUNSET:
             botengine.get_logger().info("SUNSET timer fired")
-            self.parent.location_object.distribute_datastream_message(botengine, "sunset_fired", {"proxy_id": self.parent.device_id, "proxy_object": self.parent}, internal=True, external=False)
+
+            self.parent.location_object.narrate(botengine,
+                                                title = _("Sunset"),
+                                                description = _("It is sunset where your '{}' is located.").format(self.parent.description),
+                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                icon = 'sunset'
+                                                )
+            import importlib
+            try:
+                analytics = importlib.import_module('analytics')
+                analytics.get_analytics(botengine).track(botengine, 'sunset', properties={"gateway_device_id": self.parent.device_id})
+            except ImportError:
+                pass
+
+            self.parent.location_object.distribute_datastream_message(botengine, "sunset_fired", { "proxy_id": self.parent.device_id }, internal=True, external=False)
 
         self._set_sunrise_sunset_alarm(botengine)
 
@@ -169,9 +199,8 @@ class DaylightMicroservice(Intelligence):
 
         if self.parent.longitude is None or self.parent.latitude is None or ephem is None:
             # Ya, we don't have any coordinate information. Call it 8 AM.
-            botengine.get_logger().warn("device_daylight_microservice : no coordinate information available")
-            dt = self.get_local_datetime(botengine).replace(hours=8)
-            now = datetime.datetime.now()
+            dt = self.parent.location_object.get_local_datetime(botengine).replace(hour=8)
+            now = datetime.datetime.now(dt.tzinfo)
             if dt < now:
                 dt = dt + datetime.timedelta(hours=24)
             return int(dt.strftime('%s')) * 1000
@@ -194,9 +223,8 @@ class DaylightMicroservice(Intelligence):
 
         if self.parent.longitude is None or self.parent.latitude is None or ephem is None:
             # We don't have any coordinate information. Call it 8 PM.
-            botengine.get_logger().warn("device_daylight_microservice : no coordinate information available")
-            dt = self.get_local_datetime(botengine).replace(hours=20)
-            now = datetime.datetime.now()
+            dt = self.parent.location_object.get_local_datetime(botengine).replace(hour=20)
+            now = datetime.datetime.now(dt.tzinfo)
             if dt < now:
                 dt = dt + datetime.timedelta(hours=24)
 
@@ -219,11 +247,34 @@ class DaylightMicroservice(Intelligence):
         sunset_timestamp_ms = self.next_sunset_timestamp_ms(botengine)
         sunrise_timestamp_ms = self.next_sunrise_timestamp_ms(botengine)
 
+        # We're getting double sunrise and double sunset events, and I believe it's from the ephem library not knowing that sunrise/sunset is right now.
+        # So we'll check to see if the sunrise and/or sunset happened before now, and then adjust it by 24 hours.
+        if sunrise_timestamp_ms - (utilities.ONE_MINUTE_MS * 5) < botengine.get_timestamp():
+            sunrise_timestamp_ms += utilities.ONE_DAY_MS
+
+        if sunset_timestamp_ms - (utilities.ONE_MINUTE_MS * 5) < botengine.get_timestamp():
+            sunset_timestamp_ms += utilities.ONE_DAY_MS
+
+        import importlib
+        try:
+            analytics = importlib.import_module('analytics')
+            analytics.get_analytics(botengine).people_set(botengine, {
+                'sunset_ms': sunset_timestamp_ms,
+                'sunrise_ms': sunrise_timestamp_ms,
+                'latitude': self.parent.latitude,
+                'longitude': self.parent.longitude,
+                'timezone': self.parent.location_object.get_local_timezone_string(botengine)
+            })
+
+        except ImportError:
+            pass
+
+
         if sunrise_timestamp_ms < sunset_timestamp_ms:
             # Sunrise is next
             botengine.get_logger().info("Location: Setting sunrise alarm for " + str(sunrise_timestamp_ms))
             self.set_alarm(botengine, sunrise_timestamp_ms, argument=SUNRISE)
-
+            
         else:
             # Sunset is next
             botengine.get_logger().info("Location: Setting sunset alarm for " + str(sunset_timestamp_ms))

@@ -11,4 +11,11 @@ MICROSERVICES = {
             {"module": "intelligence.daylight.device_daylight_microservice", "class": "DaylightMicroservice"},
             ]
         },
+
+    "LOCATION_MICROSERVICES": [
+        {
+            "module": "intelligence.daylight.location_midnight_microservice",
+            "class": "LocationMidnightMicroservice"
+        }
+    ]
 }
