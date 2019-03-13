@@ -54,6 +54,10 @@ The BotEngine uses the Python `requests` library to make HTTPS calls to the serv
 
 The BotEngine exclusively uses HTTPS and never uses HTTP communications. 
 
+For rapid transitions in and out of corporate network environments, check out the Envswitch tool developed by https://github.com/smarie
+
+https://smarie.github.io/develop-behind-proxy/switching/#envswitcher
+
 
 ## Documentation
 
