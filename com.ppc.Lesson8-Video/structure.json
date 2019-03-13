@@ -1,8 +1,55 @@
+# STRUCTURE.JSON DESCRIPTION
+# The structure.json file describes how to construct the bot (with 'extends' and 'microservices'), and also
+# describes what Python packages are required.
+#
+# Typically a structure.json file in the root directory of your bot is only responsible for 'extends' and 'microservices',
+# truly describing the structure of the bot from a file system perspective. When your bot B 'extends' another bot A,
+# then upon --generate or --commit, first all of the files from bot A are copied into a temporary directory and then
+# all the files from bot B are copied on top of that directory to override and extend bot A. You can do this an infinite
+# number of times, forming chains of bots that extend each other.
+#
+# A typical commercial architecture is this:
+#   A. Start with the foundational bot, com.ppc.Bot. Do not edit that foundational bot because its code is shared among all bots.
+#   B. Create a new bot directory and extend com.ppc.Bot. Make this bot implement all the business logic for a service.
+#   C. Finally, brand this bot by extending bot B. Make minor adjustments to files like domain.py to properly brand or customize.
+#      You can also add more microservices in a specific branded extension to differentiate from other brands.
+#
+# The 'microservices' list contains the paths to other microservice packages. Each microservice package is expected to
+# contain at least one microservice (a Python module that contains within it a class which extends the Intelligence class),
+# and should contain its own runtime.json, index.py, and optional structure.json files to fully self-describe how the microservice
+# should run.
+#
+# The 'pip_install' and 'pip_install_remotely' lists are typically populated inside the structure.json files found in specific
+# microservice packages, and describe the Python packages that are required to run those microservices.
+# You would use 'pip_install_remotely' when a Python package requires native libraries to be compiled, which you will
+# want to have compiled on the server environment instead of whatever random computer you happen to have in front of you.
+
+
 {
   # This bot extends a foundational bot framework for microservices
   "extends": "com.ppc.Bot",
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
   "microservices": [
+  ],
+
+  # Safely delete these microservice packages from the service, without resetting live bot instances
+  # Double check that the microservices listed here do not appear in the list of 'microservices' above.
+  "safe_delete_microservices": [
+  ],
+
+  # Locally install the following Python package dependencies when using this microservice
+  # Do not include any Python packages in this list that will compile .so/.dll library files natively
+  # because they may not be able to run on the Linux-based server environment.
+  "pip_install": [
+  ],
+
+  # Remotely install the following Python package dependencies
+  # This will compile library files at the server in a Linux environment.
+  # Note that when installed on Linux, some Python packages may get significantly inflated (like scipy and numpy)
+  # due to the addition of hidden .libs directories that end up exceeding the maximum size of a bot
+  # (50MB compressed / 250MB uncompressed).
+  "pip_install_remotely": [
   ]
+
 }

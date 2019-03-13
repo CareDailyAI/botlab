@@ -1,0 +1,54 @@
+{
+  "version": {
+    # TRIGGER
+    # Describe when this bot should trigger and execute. Add the trigger IDs together to combine triggers.
+    # For example, to trigger off of both a Schedule (1) and a Device Measurement (8): 1 + 8 ==math==> "trigger": 9
+    #
+    # 1 = Schedule (based off a cron schedule inside this runtime.json file)
+    # 2 = Switching modes (home / away / etc.)
+    # 4 = Device alert
+    # 8 = Device measurements or state change
+    # 16 = Question answered by the user
+    # 32 = New device file (like a video or picture)
+    # 64 = Reserved for timers
+    # 128 = Device configuration or metadata was updated
+    # 256 = Data Stream Message received,
+    # 512 = Command Response triggered when a command is completed or failed,
+    # 1024 = Location configuration, triggered when a user or space is added or remove from the location,
+    # 2048 = Data request, triggered in response to botengine.request_measurements_asynchronously(..)
+    "trigger": 2305,
+
+    # Memory in MB required for the bot.
+    # Default is 128 MB (minimum value).
+    # Increments must be multiples of 64 MB.
+    # Maximum value is 3008 MB.
+    # AWS Lambda uses this memory size in pricing calculations
+    "memory": 1536,
+
+    # Maximum time this bot is allowed to run, in seconds (maximum is 300 seconds)
+    "timeout": 300,
+
+    # Recalculate models
+    "schedules": {
+      "ML": "0 0 2 ? * SAT *"
+    },
+
+    "dataStreams": [
+      {
+        "address": "download_data"
+      }
+    ],
+
+    "access": [
+      {
+        "category": 1,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Capture modes."
+        }
+      }
+    ]
+  }
+}

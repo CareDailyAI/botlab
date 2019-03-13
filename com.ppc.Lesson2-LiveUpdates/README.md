@@ -94,6 +94,27 @@ will dynamically remove the microservice from memory.
 2. After the new bot has executed at least one time in everyone's account (wait a few weeks), the old microservice is now 
 gone from memory. You can safely delete or rename the microservice file if you'd like.
 
+### Deleting an entire microservice package
+
+If you are removing an entire microservice package, there's a safe and easy way to do this:
+
+In your bot's structure.json file, move the offending microservice package from list list of 'microservices' to the list of 'safe_delete_microservices':
+
+    
+      # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
+      "microservices": [
+        "com.ppc.Microsevices/intelligence/something_to_keep"
+      ],
+    
+      # Safely delete these microservice packages from the service, without resetting live bot instances
+      # Double check that the microservices listed here do not appear in the list of 'microservices' above.
+      "safe_delete_microservices": [
+        "com.ppc.Microservices/intelligence/something_to_delete"
+      ]
+     
+This will add the microservice package and its files to your bot project, while removing those
+microservices from actively playing a part in your service.
+ 
 
 ### Deleting class variables
 If you need to get rid of a class variable, you will improve the execution speed. Remove the initialization of the variable

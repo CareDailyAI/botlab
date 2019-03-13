@@ -31,6 +31,8 @@
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
   "microservices": [
+        "com.ppc.Microservices/intelligence/data_request",
+        "com.ppc.Microservices/intelligence/absent_ml_example"
   ],
 
   # Safely delete these microservice packages from the service, without resetting live bot instances

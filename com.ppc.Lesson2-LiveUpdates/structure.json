@@ -33,6 +33,11 @@
   "microservices": [
   ],
 
+  # Safely delete these microservice packages from the service, without resetting live bot instances
+  # Double check that the microservices listed here do not appear in the list of 'microservices' above.
+  "safe_delete_microservices": [
+  ],
+
   # Locally install the following Python package dependencies when using this microservice
   # Do not include any Python packages in this list that will compile .so/.dll library files natively
   # because they may not be able to run on the Linux-based server environment.
