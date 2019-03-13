@@ -23,6 +23,24 @@ class SmartplugDevice(Device):
     MEASUREMENT_NAME_POWER = 'power'
     MEASUREMENT_NAME_ENERGY = 'energy'
 
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_STATUS,
+        MEASUREMENT_NAME_POWER,
+        MEASUREMENT_NAME_ENERGY
+    ]
+
+    # Smart plug goals
+    GOAL_SMARTPLUG_SAVE_ENERGY = 80
+    GOAL_SMARTPLUG_LEAVE_LIGHTS_ON_FOR_PETS = 81
+    GOAL_SMARTPLUG_SECURITY = 82
+    GOAL_SMARTPLUG_ALWAYS_ON = 84
+    GOAL_SMARTPLUG_DEHUMIDIFIER = 85
+    GOAL_SMARTPLUG_FAN = 86
+    GOAL_SMARTPLUG_SPACEHEATER = 87
+
+    GOAL_SMARTPLUG_SKIP = 89
+
+
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
         
@@ -227,7 +245,23 @@ class SmartplugDevice(Device):
             botengine.send_command(self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "0") # TODO this should be able to say the keyword False, but that doesn't work. Needs a server fix.
 
         return True
-    
+
+    def toggle(self, botengine, reliably=False):
+        """
+        Toggle the smart plug on or off
+        :param botengine:
+        :param reliably: True to send the command reliably (default is False)
+        """
+        if not self.can_control:
+            return
+
+        if self.is_on(botengine):
+            self.off(botengine, reliably)
+
+        else:
+            self.on(botengine, reliably)
+
+
     def raw_command(self, botengine, name, value):
         """
         Send a command for the given local parameter name

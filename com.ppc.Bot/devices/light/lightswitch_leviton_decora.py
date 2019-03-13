@@ -22,7 +22,6 @@ class LevitonDecoraLightswitchDevice(LightDevice):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [9001]
     
-    
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         LightDevice.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
         

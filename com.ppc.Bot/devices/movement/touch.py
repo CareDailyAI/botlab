@@ -15,6 +15,13 @@ class TouchDevice(Device):
     
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [10019]
+
+    # Measurement name for the button status
+    MEASUREMENT_NAME_VIBRATION_STATUS = 'vibrationStatus'
+
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_VIBRATION_STATUS
+    ]
     
     def get_device_type_name(self, language):
         """
@@ -28,4 +35,17 @@ class TouchDevice(Device):
         :return: the font icon name of this device type
         """
         return "touch"
-    
+
+    def did_start_moving(self, botengine):
+        """
+        :param botengine: BotEngine environment
+        :return: True if the sensor started moving
+        """
+        return self.MEASUREMENT_NAME_VIBRATION_STATUS in self.last_updated_params and self.measurements[self.MEASUREMENT_NAME_VIBRATION_STATUS][0][0]
+
+    def did_stop_moving(self, botengine):
+        """
+        :param botengine:
+        :return: True if the sensor stopped moving
+        """
+        return self.MEASUREMENT_NAME_VIBRATION_STATUS in self.last_updated_params and not self.measurements[self.MEASUREMENT_NAME_VIBRATION_STATUS][0][0]

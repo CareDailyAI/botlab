@@ -19,9 +19,22 @@ class LightDevice(Device):
     MEASUREMENT_NAME_HUE = 'hue'
     MEASUREMENT_NAME_SATURATION = 'saturation'
 
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_STATUS,
+        MEASUREMENT_NAME_BRIGHTNESS,
+        MEASUREMENT_NAME_HUE,
+        MEASUREMENT_NAME_SATURATION
+    ]
+
     # Command Names
     COMMAND_NAME_STATUS = 'state'
     COMMAND_NAME_BRIGHTNESS = 'currentLevel'
+
+    # Lighting goals
+    GOAL_LIGHT_SAVE_ENERGY = 60
+    GOAL_LIGHT_LEAVE_LIGHTS_ON_FOR_PETS = 61
+    GOAL_LIGHT_SECURITY = 62
+    GOAL_LIGHT_OUTDOOR_SECURITY = 64
 
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [10036, 10071]

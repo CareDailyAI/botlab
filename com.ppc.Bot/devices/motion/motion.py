@@ -15,9 +15,17 @@ class MotionDevice(Device):
     # Motion status
     MEASUREMENT_NAME_STATUS = 'motionStatus'
 
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_STATUS
+    ]
+
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [10038]
-    
+
+    # Goals
+    GOAL_MOTION_PROTECT_HOME = 50
+    GOAL_MOTION_SKIP = 52
+
     # Low battery tag
     LOW_BATTERY_TAG = "lowbattery_2xAA"
     

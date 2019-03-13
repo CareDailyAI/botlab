@@ -35,6 +35,23 @@ MINIMUM_BATTERY_READINGS = 10
 # Total number of battery readings to maintain
 MAXIMUM_BATTERY_READINGS = MINIMUM_BATTERY_READINGS * 2
 
+# Space type language-neutral constants
+# Internal docs: https://presence.atlassian.net/wiki/spaces/BOTS/pages/656638178/Space+Constants+and+Definitions
+SPACE_TYPE = {
+    "kitchen": 1,
+    "bedroom": 2,
+    "bathroom": 3,
+    "hallway": 4,
+    "livingroom": 5,
+    "diningroom": 6,
+    "familyroom": 7,
+    "laundryroom": 8,
+    "office": 9,
+    "stairs": 10,
+    "garage": 11,
+    "basement": 12
+}
+
 
 class Device:
     """This is a base class for each of our devices"""
@@ -53,7 +70,7 @@ class Device:
     
     # List of Device Types this class is compatible with - Specify in sub-classes
     DEVICE_TYPES = []
-    
+
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor
@@ -77,6 +94,26 @@ class Device:
         
         # Measurements for each parameter, newest measurements at index 0
         self.measurements = {}
+
+        # Spaces this device is associated with. For example:
+        # "spaces": [
+        #               {
+        #                   "name": "Kitchen",
+        #                   "spaceId": 152,
+        #                   "spaceType": 1
+        #               },
+        #               {
+        #                   "name": "Hallway",
+        #                   "spaceId": 154,
+        #                   "spaceType": 4
+        #               },
+        #               {
+        #                   "name": "Living Room",
+        #                   "spaceId": 157,
+        #                   "spaceType": 5
+        #               }
+        #           ]
+        self.spaces = []
         
         # Last parameters that we updated
         self.last_updated_params = []
@@ -158,28 +195,9 @@ class Device:
         
         The correct behavior is to create the object, then initialize() it every time you want to use it in a new bot execution environment
         """
-        # Added March 28, 2018
-        if not hasattr(self, 'battery_levels'):
-            # List of battery measured battery levels over time
-            self.battery_levels = []
-
-        # Added March 28, 2018
-        if not hasattr(self, 'last_battery_update_ms'):
-            # Last update time in ms
-            self.last_battery_update_ms = 0
-
-        # Added March 28, 2018
-        if not hasattr(self, 'low_battery'):
-            # True if we have a low battery
-            self.low_battery = False
-
-        # Added April 14, 2018
-        if not hasattr(self, 'latitude'):
-            self.latitude = None
-
-        # Added April 14, 2018
-        if not hasattr(self, 'longitude'):
-            self.longitude = None
+        # Added January 27, 2019
+        if not hasattr(self, 'spaces'):
+            self.spaces = []
 
         if str(self.device_type) in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES']:
 
@@ -197,8 +215,8 @@ class Device:
                             botengine.get_logger().info("\tAdding device microservice: " + str(intelligence_info['module']))
                             intelligence_object = class_(botengine, self)
                             self.intelligence_modules[intelligence_info['module']] = intelligence_object
-                        except:
-                            botengine.get_logger().error("\tCould not add device microservice: " + str(intelligence_info))
+                        except Exception as e:
+                            botengine.get_logger().error("\tCould not add device microservice: " + str(intelligence_info) + ": " + str(e))
                             import traceback
                             traceback.print_exc()
 
@@ -237,7 +255,48 @@ class Device:
         :return: the font icon name of this device type
         """
         raise NotImplementedError
-    
+
+    def is_goal_id(self, target_goal_id):
+        """
+        This is the proper way to check for whether or not this device matches the given target goal ID,
+        because goal IDs can change by an order of 1000 for each different brand.
+        :param botengine: BotEngine environment
+        :return: True if the goal ID matches for this device
+        """
+        if self.goal_id is not None:
+            return self.goal_id % 1000 == target_goal_id
+        return False
+
+    #===========================================================================
+    # Microservice notification distribution methods
+    #===========================================================================
+    def device_measurements_updated(self, botengine):
+        """
+        Distribute notifications to all microservices that your measurements have been updated
+        :param botengine:
+        :return:
+        """
+        for intelligence_id in self.intelligence_modules:
+            self.intelligence_modules[intelligence_id].device_measurements_updated(botengine, self)
+
+    def device_metadata_updated(self, botengine):
+        """
+        Distribute notifications to all microservices that your metadata has been updated
+        :param botengine:
+        :return:
+        """
+        for intelligence_id in self.intelligence_modules:
+            self.intelligence_modules[intelligence_id].device_metadata_updated(botengine, self)
+
+    def device_alert(self, botengine, alert_type, alert_params):
+        """
+        Distribute notifications to all microservices that an alert has been generated from this device
+        :param botengine: BotEngine environment
+        :param alert_type: Type of alert
+        :param alert_params: Dictionary of alert parameters
+        """
+        for intelligence_id in self.intelligence_modules:
+            self.intelligence_modules[intelligence_id].device_alert(botengine, self, alert_type, alert_params)
 
     #===========================================================================
     # Measurement synchronization and updates
@@ -318,7 +377,6 @@ class Device:
                         # Update the battery_level
                         self.battery_level = int(measure['value'])
                         self.last_updated_params.append('batteryLevel')
-                        self.evaluate_battery(botengine)
                         
                     elif param_name not in self.measurements or measure['updated']:
                         if 'value' not in measure:
@@ -343,16 +401,10 @@ class Device:
         # Update all device intelligence modules 
         if len(self.last_updated_params) > 0:
             updated_devices.append(self)
-
-            # Measurements were updated
-            for intelligence_id in self.intelligence_modules:
-                self.intelligence_modules[intelligence_id].device_measurements_updated(botengine, self)
                 
         else:
             # Metadata was updated
             updated_metadata.append(self)
-            for intelligence_id in self.intelligence_modules:
-                self.intelligence_modules[intelligence_id].device_metadata_updated(botengine, self)
 
         # Make sure our proxy (gateway) gets pinged - it implicitly updated here and needs to trigger microservices
         if self.proxy_id is not None:
@@ -440,42 +492,6 @@ class Device:
     #===========================================================================
     # Device health
     #===========================================================================
-    def evaluate_battery(self, botengine):
-        """
-        This method is called automatically when we have an update that adjusts the battery level
-        :param botengine:
-        :return:
-        """
-        if not 'batteryLevel' in self.last_updated_params:
-            return
-
-        if self.last_battery_update_ms < botengine.get_timestamp() - BATTERY_MEASUREMENT_PERIODICITY_MS:
-            # Newly replaced battery
-            if self.low_battery and self.battery_level > 95:
-                botengine.get_logger().info("Newly replaced battery in {}!".format(self.description))
-                self.battery_levels = []
-                self.low_battery = False
-                botengine.delete_device_tag(self.LOW_BATTERY_TAG, self.device_id)
-
-            self.battery_levels.insert(0, self.battery_level)
-
-            # Remove the battery readings that are over our limit
-            if len(self.battery_levels) > MAXIMUM_BATTERY_READINGS:
-                self.battery_levels = self.battery_levels[:-1]
-
-            if len(self.battery_levels) > MINIMUM_BATTERY_READINGS:
-                average = int(sum(self.battery_levels)) / len(self.battery_levels)
-
-                if average <= self.LOW_BATTERY_THRESHOLD and not self.low_battery:
-                    # Tag it
-                    botengine.tag_device(self.LOW_BATTERY_TAG, self.device_id)
-                    self.low_battery = True
-
-                elif average > self.LOW_BATTERY_THRESHOLD and self.low_battery:
-                    # Remove the battery tag
-                    botengine.delete_device_tag(self.LOW_BATTERY_TAG, self.device_id)
-                    self.low_battery = False
-
     def update_rssi(self, botengine, rssi):
         """
         Update our RSSI readings
@@ -510,16 +526,6 @@ class Device:
         """
         if len(self._rssi_elements) > 0:
             self.update_rssi(botengine, self._rssi_elements[-1])
-
-    def device_alert(self, botengine, alert_type, alert_params):
-        """
-        Distribute an alert for this device to its intelligence modules
-        :param botengine: BotEngine environment
-        :param alert_type: Type of alert
-        :param alert_params: Dictionary of alert parameters
-        """
-        for intelligence_id in self.intelligence_modules:
-            self.intelligence_modules[intelligence_id].device_alert(botengine, self, alert_type, alert_params)
 
     def raw_command(self, name, value):
         """
@@ -600,6 +606,100 @@ class Device:
 
         return None
 
+    #===========================================================================
+    # Spaces
+    #===========================================================================
+    def is_in_space(self, botengine, space_description_or_type):
+        """
+        Determine if this device is associated with the given space description.
+        The description must be a word inside our SPACE_TYPE dictionary.
+        :param botengine: BotEngine environment
+        :param space_description_or_type: Space type number or description from our SPACE_TYPE dictionary
+        :return: True if the device is in the given space
+        """
+        space_type = None
+
+        if space_description_or_type.lower() in SPACE_TYPE:
+            space_type = SPACE_TYPE[space_description_or_type.lower()]
+
+        else:
+            try:
+                space_type = int(space_description_or_type)
+            except:
+                botengine.get_logger().error("device.is_in_space(): Couldn't identify what space type you're talking about - {}".format(space_description_or_type))
+                return False
+
+        for space in self.spaces:
+            if space['spaceType'] == space_type:
+                return True
+
+        return False
+
+    def is_in_spaces(self, botengine, space_descriptions_or_types_list):
+        """
+        Determine if this device is associated with any of the given spaces in the list.
+        If the list contains descriptive strings, the strings must be words inside of our SPACE_TYPE dictionary.
+        :param botengine: BotEngine environment
+        :param space_descriptions_or_types_list: List of space type numbers, or list of strings from our SPACE_TYPE dictionary
+        :return: True if the device is in any of the given spaces
+        """
+        space_types = []
+
+        for s in space_descriptions_or_types_list:
+            if s.lower() in SPACE_TYPE:
+                space_types.append(SPACE_TYPE[s.lower()])
+
+            else:
+                try:
+                    space_type = int(s)
+                    space_types.append(space_type)
+
+                except:
+                    botengine.get_logger().error("device.is_in_spaces(): Couldn't identify what space type you're talking about - {}".format(s))
+                    continue
+
+        comparison_types = []
+        for space in self.spaces:
+            comparison_types.append(space['spaceType'])
+
+        for t in space_types:
+            if t in comparison_types:
+                return True
+
+        return False
+
+    #===========================================================================
+    # Data request
+    #===========================================================================
+    def request_data(self, botengine, oldest_timestamp_ms=None, newest_timestamp_ms=None, param_name_list=None, reference=None, index=None, ordered=1):
+        """
+        Selecting a large amount of data from the database can take a significant amount of time and impact server
+        performance. To avoid this long waiting period while executing bots, a bot can submit a request for all the
+        data it wants from this location asynchronously. The server gathers all the data on its own time, and then
+        triggers the bot with trigger 2048. Your bot must include trigger 2048 to receive the trigger.
+
+        Selected data becomes available as a file in CSV format, compressed by LZ4, and stored for one day.
+        The bot receives direct access to this file.
+
+        You can call this multiple times to extract data out of multiple devices. The request will be queued up and
+        the complete set of requests will be flushed at the end of this bot execution.
+
+        :param botengine:
+        :param oldest_timestamp_ms:
+        :param newest_timestamp_ms:
+        :param param_name_list:
+        :param reference:
+        :param index:
+        :param ordered:
+        :return:
+        """
+        botengine.request_data(self.device_id,
+                               oldest_timestamp_ms=oldest_timestamp_ms,
+                               newest_timestamp_ms=newest_timestamp_ms,
+                               param_name_list=param_name_list,
+                               reference=reference,
+                               index=index,
+                               ordered=ordered)
 
     #===========================================================================
     # CSV methods for machine learning algorithm integrations
@@ -686,7 +786,7 @@ class Device:
 
         for timestamp_ms in sorted(processed_readings.keys()):
             dt = self.location_object.get_local_datetime_from_timestamp(botengine, timestamp_ms)
-            output += "{},{},{},{},{},".format(self.device_type, self.device_id, self.description, timestamp_ms, dt.isoformat())
+            output += "{},{},{},{},{},".format(self.device_type, self.device_id.replace(",","_"), self.description.replace(",","_"), timestamp_ms, utilities.iso_format(dt))
 
             for t in titles:
                 if t == processed_readings[timestamp_ms][0]:

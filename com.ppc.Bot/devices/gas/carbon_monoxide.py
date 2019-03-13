@@ -9,57 +9,52 @@ file 'LICENSE.txt', which is part of this source code package.
 
 from devices.device import Device
 
-class LeakDevice(Device):
-    """Water Leak Sensor"""
-    
-    # List of Device Types this class is compatible with
-    DEVICE_TYPES = [10017, 10076]
-        
-    # Low battery tag
-    LOW_BATTERY_TAG = "lowbattery_cr2450"
+class CarbonMonoxideDevice(Device):
+    """Entry Sensor"""
 
     # Measurement Names
-    MEASUREMENT_NAME_STATUS = 'waterLeak'
+    MEASUREMENT_NAME_TEST = 'alarmStatus.1'
 
-    MEASUREMENT_PARAMETERS_LIST = [
-        MEASUREMENT_NAME_STATUS
-    ]
-
+    # Low battery tag
+    LOW_BATTERY_TAG = "lowbattery_aaa"
+    
+    # List of Device Types this class is compatible with
+    DEVICE_TYPES = [9011]
+    
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
         
     def initialize(self, botengine):
         Device.initialize(self, botengine)
-    
+        
     def get_device_type_name(self, language):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Device type name
-        return _("Leak Sensor")
+        return _("Carbon Monoxide Sensor")
+    
+    
+    #===========================================================================
+    # Attributes
+    #===========================================================================
+    def is_testing(self, botengine=None):
+        """
+        :return: True if the carbon monoxide sensor is under test
+        """
+        if CarbonMonoxideDevice.MEASUREMENT_NAME_TEST in self.measurements:
+            return self.measurements[CarbonMonoxideDevice.MEASUREMENT_NAME_TEST][0][0]
+        
+        return False
+
+    def did_change_state(self, botengine=None):
+        """
+        :return: True if this entry sensor's state was updated just now
+        """
+        return CarbonMonoxideDevice.MEASUREMENT_NAME_TEST in self.last_updated_params
     
     def get_image_name(self, botengine):
         """
         :return: the font icon name of this device type
         """
-        return "water"
-    
-    
-    #===========================================================================
-    # Helper methods
-    #===========================================================================
-    def did_change_state(self, botengine=None):
-        """
-        :return: True if this entry sensor's state was updated just now
-        """
-        return LeakDevice.MEASUREMENT_NAME_STATUS in self.last_updated_params
-
-    def is_leak_detected(self):
-        """
-        :return: True if a leak is currently detected
-        """
-        if LeakDevice.MEASUREMENT_NAME_STATUS in self.measurements:
-            return self.measurements[LeakDevice.MEASUREMENT_NAME_STATUS][0][0]
-        
-        return False
-    
+        return "gas"

@@ -114,4 +114,4 @@ class LinkhighSirenDevice(SirenDevice):
                   "value": int(duration_sec)
                   }
 
-        botengine.send_commands(self.device_id, [param_sound, param_strobe, param_duration])
+        botengine.send_commands(self.device_id, [param_sound, param_strobe, param_duration], command_timeout_ms=5000)

@@ -12,8 +12,22 @@ from devices.device import Device
 class EntryDevice(Device):
     """Entry Sensor"""
 
+    # Goals
+    GOAL_PERIMETER_NORMAL = 0
+    GOAL_PERIMETER_ALERT_ALWAYS = 1
+    GOAL_DEPRECATED_MAKE_MY_OWN_RULES = 2
+    GOAL_DEPRECATED_ALERT_OPEN_AND_CLOSE = 3
+    GOAL_INSIDE_NORMAL = 4
+    GOAL_INSIDE_ALERT_ALWAYS = 5
+    GOAL_OUTSIDE_NORMAL = 6
+    GOAL_OUTSIDE_ALERT_ALWAYS = 7
+
     # Measurement Names
     MEASUREMENT_NAME_STATUS = 'doorStatus'
+
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_STATUS
+    ]
 
     # Low battery tag
     LOW_BATTERY_TAG = "lowbattery_cr2032"
@@ -58,12 +72,28 @@ class EntryDevice(Device):
         """
         return EntryDevice.MEASUREMENT_NAME_STATUS in self.last_updated_params
     
-    def get_image_name(self, botengine):
+    def get_image_name(self, botengine=None):
         """
         :return: the font icon name of this device type
         """
         return "entry"
-    
+
+    def did_open(self, botengine=None):
+        """
+        Did the door open right now?
+        :param botengine:
+        :return: True if the door opened right now
+        """
+        return self.did_change_state(botengine) and self.is_open(botengine)
+
+    def did_close(self, botengine=None):
+        """
+        Did the door close right now?
+        :param botengine:
+        :return: True if the door closed right now
+        """
+        return self.did_change_state(botengine) and not self.is_open(botengine)
+
     
     #===========================================================================
     # CSV methods for machine learning algorithm integrations

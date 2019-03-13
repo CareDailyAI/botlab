@@ -34,6 +34,11 @@ from devices.thermostat.thermostat_ecobee import ThermostatEcobeeDevice
 from devices.touchpad.touchpad_peoplepower import PeoplePowerTouchpadDevice
 from devices.button.button import ButtonDevice
 from devices.lock.lock import LockDevice
+from devices.gas.carbon_monoxide import CarbonMonoxideDevice
+from devices.pictureframe.pictureframe_peoplepower_ios import PeoplePowerPictureFrameIosDevice
+from devices.pictureframe.pictureframe_peoplepower_android import PeoplePowerPictureFrameAndroidDevice
+from devices.smartplug.smartplug_smartenit_largeload import SmartenitLargeLoadControllerDevice
+
 
 class Controller:
     """This is the main class that will coordinate all our sensors and behavior"""
@@ -104,6 +109,15 @@ class Controller:
                 location_id = item['device']['locationId']
                 
                 device_object = self.get_device(device_id)
+
+                if device_object is not None:
+                    if device_type != device_object.device_type:
+                        # The device type changed. We have to restart this device.
+                        # This happens when a device gets registered to our cloud and looks like some device type,
+                        # and then starts reporting extra information and features in later that make the cloud realize
+                        # it is actually a different device type than what was originally conceived.
+                        self.delete_device(botengine, device_id)
+                        device_object = None
                 
                 if device_object is None:
                     if device_type in PeoplePowerPresenceAndroidCameraDevice.DEVICE_TYPES:
@@ -171,6 +185,18 @@ class Controller:
 
                     elif device_type in LockDevice.DEVICE_TYPES:
                         device_object = LockDevice(botengine, device_id, device_type, device_desc)
+
+                    elif device_type in CarbonMonoxideDevice.DEVICE_TYPES:
+                        device_object = CarbonMonoxideDevice(botengine, device_id, device_type, device_desc)
+
+                    elif device_type in PeoplePowerPictureFrameIosDevice.DEVICE_TYPES:
+                        device_object = PeoplePowerPictureFrameIosDevice(botengine, device_id, device_type, device_desc)
+
+                    elif device_type in PeoplePowerPictureFrameAndroidDevice.DEVICE_TYPES:
+                        device_object = PeoplePowerPictureFrameAndroidDevice(botengine, device_id, device_type, device_desc)
+
+                    elif device_type in SmartenitLargeLoadControllerDevice.DEVICE_TYPES:
+                        device_object = SmartenitLargeLoadControllerDevice(botengine, device_id, device_type, device_desc)
 
                     else:
                         botengine.get_logger().warn("Unsupported device type: " + str(device_type) + " ('" + device_desc + "')")
@@ -319,6 +345,34 @@ class Controller:
         device_object.file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
         self.locations[location_id].file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
 
+    def user_role_updated(self, botengine, location_id, user_id, category, location_access, previous_category, previous_location_access):
+        """
+        A user changed roles
+        :param botengine: BotEngine environment
+        :param location_id: Location ID
+        :param user_id: User ID that changed roles
+        :param category: User's current alert/communications category (1=resident; 2=supporter)
+        :param location_access: User's current access to the location
+        :param previous_category: User's previous category, if any
+        :param previous_location_access: User's previous access to the location, if any
+        :return:
+        """
+        if location_id not in self.locations:
+            # The location isn't being tracked yet, add it
+            botengine.get_logger().info("\t=> Now tracking location " + str(location_id))
+            self.locations[location_id] = Location(botengine, location_id)
+
+        self.locations[location_id].user_role_updated(botengine, user_id, category, location_access, previous_category, previous_location_access)
+
+    def data_request_ready(self, botengine, reference, device_csv_dict):
+        """
+        A botengine.request_data() request is ready
+        :param botengine: BotEngine environment
+        :param reference: Optional reference passed into botengine.request_data(..)
+        :param device_csv_dict: { 'device_id': 'csv data string' }
+        """
+        for location_id in self.locations:
+            self.locations[location_id].data_request_ready(botengine, reference, device_csv_dict)
 
     def sync_mode(self, botengine, mode, location_id):
         """
@@ -356,8 +410,8 @@ class Controller:
         # Sync location intelligence
         for location_id in self.locations:
             self.locations[location_id].question_answered(botengine, question)
-        
-    
+
+
     def run_location_intelligence(self, botengine, intelligence_id, argument):
         """
         Because we don't know what location_id owns this intelligence module, we have to own the responsibility of discovering the intelligence module here.
@@ -377,8 +431,6 @@ class Controller:
                 if intelligence_id == self.locations[location_id].intelligence_modules[intelligence_module_name].intelligence_id:
                     self.locations[location_id].intelligence_modules[intelligence_module_name].timer_fired(botengine, argument)
                     return
-        
-        botengine.get_logger().error("controller.run_location_ingelligence: Could not find location intelligence module ID: " + str(intelligence_id))
 
     def run_device_intelligence(self, botengine, intelligence_id, argument):
         """
@@ -394,9 +446,7 @@ class Controller:
                     if intelligence_id == self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module_name].intelligence_id:
                         self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module_name].timer_fired(botengine, argument)
                         return
-        
-        botengine.get_logger().warn("controller.run_device_intelligence: Could not find device intelligence module ID: " + str(intelligence_id))
-        
+
     def run_intelligence_schedules(self, botengine, schedule_id):
         """
         Notify each location that the schedule fired. 

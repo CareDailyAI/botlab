@@ -24,3 +24,9 @@ DEFAULT_LANGUAGE = 'en'
 # Default timezone for this brand
 DEFAULT_TIMEZONE = 'US/Pacific'
 
+# True to allow Mixpanel.
+ALLOW_MIXPANEL = False
+
+# Mixpanel Token
+MIXPANEL_TOKEN = ''
+

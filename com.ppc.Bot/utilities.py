@@ -19,20 +19,25 @@ MODE_HOME = "HOME"
 MODE_AWAY = "AWAY"
 MODE_STAY = "STAY"
 MODE_TEST = "TEST"
-MODE_SLEEP = "SLEEP"
-MODE_VACATION = "VACATION"
 
 MODE_ATTRIBUTE_SILENT = "SILENT"
 MODE_ATTRIBUTE_DURESS = "DURESS"
 
+# Occupancy status
+OCCUPANCY_STATUS_PRESENT = "PRESENT"
+OCCUPANCY_STATUS_ABSENT = "ABSENT"
+OCCUPANCY_STATUS_H2S = "H2S"
+OCCUPANCY_STATUS_SLEEP = "SLEEP"
+OCCUPANCY_STATUS_S2H = "S2H"
+OCCUPANCY_STATUS_H2A = "H2A"
+OCCUPANCY_STATUS_A2H = "A2H"
+OCCUPANCY_STATUS_VACATION = "VACATION"
+
 # Modes to Ints
 MODE_HOME_INT = 0
 MODE_AWAY_INT = 1
-MODE_VACATION_INT = 2
-MODE_SLEEP_INT = 3
 MODE_STAY_INT = 4
 MODE_TEST_INT = 5
-MODE_SILENT_INT = 6
 
 # SMS Status
 SMS_SUBSCRIBED = 1
@@ -45,6 +50,12 @@ ALARM_CODE_PERIMETER_DOOR_BURGLARY = "E134"
 ALARM_CODE_LEAK = "E154"
 ALARM_CODE_RECENT_CLOSING = "E459"
 ALARM_CODE_DURESS = "E122"
+ALARM_CODE_HIGH_TEMPERATURE = "E158"
+ALARM_CODE_LOW_TEMPERATURE = "E159"
+ALARM_CODE_CARBON_MONOXIDE = "E162"
+ALARM_CODE_MEDICATION_DISPENCER = "E330"
+ALARM_CODE_SMOKE_DETECTOR = "E111"
+ALARM_CODE_GENERAL_MEDICAL_ALARM = "E102"
 
 # Professional Monitoring
 PROFESSIONAL_MONITORING_NEVER_PURCHASED = 0
@@ -91,38 +102,6 @@ def alarm_code_to_description(code):
     else:
         # NOTE: "The Moss family <may need some assistance>." - generic message
         return _("may need some assistance")
-    
-
-def mode_to_int(mode):
-    """
-    HOME => 0
-    AWAY => 1
-    VACATION => 2
-    SLEEP => 3
-    TEST => 4
-    STAY = 5
-    :param mode: String version of the mode
-    :return: Int version of the mode
-    """
-    if MODE_HOME in mode:
-        return MODE_HOME_INT
-    
-    elif MODE_AWAY in mode:
-        return MODE_AWAY_INT
-    
-    elif MODE_STAY in mode:
-        return MODE_STAY_INT
-    
-    elif MODE_TEST in mode:
-        return MODE_TEST_INT
-    
-    elif MODE_VACATION in mode:
-        return MODE_VACATION_INT
-    
-    elif MODE_SLEEP in mode:
-        return MODE_SLEEP_INT
-    
-    return -1
 
 
 def celsius_to_fahrenheit(celsius):
@@ -171,4 +150,62 @@ def normalize_measurement(measure):
 
         else:
             return measure
+
+def iso_format(dt):
+    """
+    Returns an ISO formatted datetime that matches the format the server (Java) gives us, which is in milliseconds and not microseconds.
+    :param dt: datetime to transform into an ISO formatted string
+    :return: ISO formatted string
+    """
+    return dt.strftime("%Y-%m-%dT%H:%M:%S." + '%03d' % (dt.microsecond / 1000) + "%z")
+
+def getsize(obj_0):
+    """
+    Recursively iterate to sum size of object & members.
+    https://stackoverflow.com/questions/449560/how-do-i-determine-the-size-of-an-object-in-python
+    """
+    import sys
+    from numbers import Number
+    from collections import Set, Mapping, deque
+
+    try: # Python 2
+        zero_depth_bases = (basestring, Number, xrange, bytearray)
+        iteritems = 'iteritems'
+    except NameError: # Python 3
+        zero_depth_bases = (str, bytes, Number, range, bytearray)
+        iteritems = 'items'
+
+    _seen_ids = set()
+    def inner(obj):
+        obj_id = id(obj)
+        if obj_id in _seen_ids:
+            return 0
+        _seen_ids.add(obj_id)
+        size = sys.getsizeof(obj)
+        if isinstance(obj, zero_depth_bases):
+            pass # bypass remaining control flow and return
+        elif isinstance(obj, (tuple, list, Set, deque)):
+            size += sum(inner(i) for i in obj)
+        elif isinstance(obj, Mapping) or hasattr(obj, iteritems):
+            size += sum(inner(k) + inner(v) for k, v in getattr(obj, iteritems)())
+        # Check for custom object instances - may subclass above too
+        if hasattr(obj, '__dict__'):
+            size += inner(vars(obj))
+        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
+            size += sum(inner(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s))
+        return size
+    return inner(obj_0)
+
+
+class MachineLearningError(Exception):
+    """
+    Machine learning exception class
+    """
+
+    def __init__(self, message):
+        """
+        Constructor
+        :param message: Message that describes what happened, for logging
+        """
+        self.message = message
 

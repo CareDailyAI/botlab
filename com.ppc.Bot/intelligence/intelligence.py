@@ -55,7 +55,18 @@ class Intelligence:
         :param current_timestamp: Current timestamp
         """
         return
-        
+
+    def occupancy_status_updated(self, botengine, status, reason, last_status, last_reason):
+        """
+        AI Occupancy Status updated
+        :param botengine: BotEngine
+        :param status: Current occupancy status
+        :param reason: Current occupancy reason
+        :param last_status: Last occupancy status
+        :param last_reason: Last occupancy reason
+        """
+        return
+
     def device_measurements_updated(self, botengine, device_object):
         """
         Device was updated
@@ -106,7 +117,8 @@ class Intelligence:
         :param address: Data Stream address
         :param content: Content of the message
         """
-        return
+        if hasattr(self, address):
+            getattr(self, address)(botengine, content)
     
     def schedule_fired(self, botengine, schedule_id):
         """
@@ -141,6 +153,45 @@ class Intelligence:
         Approximate coordinates of the parent proxy device object have been updated
         :param latitude: Latitude
         :param longitude: Longitude
+        """
+        return
+
+    def user_role_updated(self, botengine, user_id, alert_category, location_access, previous_alert_category, previous_location_access):
+        """
+        A user changed roles
+        :param botengine: BotEngine environment
+        :param user_id: User ID that changed roles
+        :param alert_category: User's current alert/communications category (1=resident; 2=supporter)
+        :param location_access: User's access to the location and devices. (0=None; 10=read location/device data; 20=control devices and modes; 30=update location info and manage devices)
+        :param previous_alert_category: User's previous category, if any
+        :param previous_location_access: User's previous access to the location, if any
+        """
+        return
+
+    def data_request_ready(self, botengine, reference, csv_dict):
+        """
+        A botengine.request_data() asynchronous request for CSV data is ready.
+
+        This is part of a very scalable method to extract large amounts of data from the server for the purpose of
+        machine learning services. If a service needs to extract a large amount of data for one or multiple devices,
+        the developer should call botengine.request_data(..) and also allow the bot to trigger off of trigger type 2048.
+        The bot can exit its current execution. The server will independently gather all the necessary data and
+        capture it into a LZ4-compressed CSV file on the server which is available for one day and accessible only by
+        the bot through a public HTTPS URL identified by a cryptographic token. The bot then gets triggered and
+        downloads the CSV data, passing the data throughout the environment with this data_request_ready()
+        event-driven method.
+
+        Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
+        reference is passed back out at the completion of the request, allowing the developer to ensure the
+        data request that is now available was truly destined for their microservice.
+
+        Your bots will need to include the following configuration for data requests to operate:
+        * runtime.json should include trigger 2048
+        * structure.json should include inside 'pip_install_remotely' a reference to the "lz4" Python package
+
+        :param botengine: BotEngine environment
+        :param reference: Optional reference passed into botengine.request_data(..)
+        :param csv_dict: { device_object: 'csv data string' }
         """
         return
 

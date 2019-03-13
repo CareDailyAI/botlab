@@ -22,6 +22,15 @@ class ButtonDevice(Device):
     # Measurement name for the button status
     MEASUREMENT_NAME_BUTTON_STATUS = 'alarmStatus'
 
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_BUTTON_STATUS
+    ]
+
+    # Goals
+    GOAL_BUTTON_ARM_DISARM = 110
+    GOAL_BUTTON_CALL_FOR_HELP = 111
+    GOAL_BUTTON_DOORBELL = 112
+
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
         

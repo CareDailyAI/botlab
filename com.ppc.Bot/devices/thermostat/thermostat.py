@@ -18,6 +18,8 @@ COMMAND_VALUE_INDEX = 0
 COMMAND_TIMESTAMP_INDEX = 1
 COMMAND_VERIFIED_INDEX = 2
 
+ONE_DEGREE_F_TO_C = 0.5556
+
 # TODO
 # We currently use the "preferred" setpoint as the offset for DR and EE events.
 # These offsets should become relative to the current setpoint that the user selected without any offsets applied.
@@ -49,6 +51,14 @@ class ThermostatDevice(Device):
     MEASUREMENT_NAME_FAN_MODE = 'fanMode'
     MEASUREMENT_NAME_MANUFACTURER = 'manufacturer'
     MEASUREMENT_NAME_MODEL = 'model'
+
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_AMBIENT_TEMPERATURE_C,
+        MEASUREMENT_NAME_SYSTEM_MODE,
+        MEASUREMENT_NAME_COOLING_SETPOINT_C,
+        MEASUREMENT_NAME_HEATING_SETPOINT_C,
+        MEASUREMENT_NAME_FAN_MODE
+    ]
     
     # systemMode values
     SYSTEM_MODE__OFF = 0
@@ -70,9 +80,6 @@ class ThermostatDevice(Device):
 
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
 
-        # Whether we've saved the state of this thermostat
-        self.ee_active = False
-
         # Saved system mode
         self.saved_system_mode = None
 
@@ -84,7 +91,8 @@ class ThermostatDevice(Device):
         # The act of having a policy stored implies the policy is active.
         # The most aggressive energy efficiency policy is applied.
         # Energy efficiency policies are additive to any current demand response event.
-        self.ee_stack = {}
+        self.ee_stack_cool = {}
+        self.ee_stack_heat = {}
 
         # Stack of demand response policies.
         # Each policy is a dictionary of the form:
@@ -94,7 +102,9 @@ class ThermostatDevice(Device):
         # The act of having a policy stored implies the policy is active.
         # The most aggressive demand response policy is applied.
         # Demand response policies are additive to any current energy efficiency policies.
-        self.dr_stack = {}
+        self.dr_stack_cool = {}
+        self.dr_stack_heat = {}
+
 
         # Tuple (value, timestamp, verified): the last system mode command we sent the thermostat
         self.last_system_mode_command = None
@@ -127,10 +137,21 @@ class ThermostatDevice(Device):
         self.preferred_cooling_offset_away_c = 2.4 # 5F
 
         # Preferred cooling offset when we're in away mode
-        self.preferred_heating_offset_sleep_c = 2.4  # 5F
+        self.preferred_heating_offset_sleep_c = 1.6 # 3F
 
         # Preferred heating offset when we're in away mode
-        self.preferred_cooling_offset_sleep_c = 2.4  # 5F
+        self.preferred_cooling_offset_sleep_c = 1.6  # 3F
+
+        # Start timestamp of DR events for tracking
+        self.dr_timestamp_ms = None
+
+        # Start timestamp of EE events for tracking
+        self.ee_timestamp_ms = None
+
+        # Last total offset applied, in C
+        self.last_offset_c = 0
+
+
 
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
@@ -140,61 +161,36 @@ class ThermostatDevice(Device):
         Initializer
         :param botengine: BotEngine
         '''
+        # Added November 7, 2018
+        if not hasattr(self, 'dr_timestamp_ms'):
+            self.dr_timestamp_ms = None
+
+        if not hasattr(self, 'ee_timestamp_ms'):
+            self.ee_timestamp_ms = None
+
+        if not hasattr(self, 'last_offset_c'):
+            self.last_offset_c = 0
+
+        # Added November 9, 2018
+        if not hasattr(self, 'ee_stack_cool'):
+            self.ee_stack_cool = {}
+            self.ee_stack_heat = {}
+            self.dr_stack_cool = {}
+            self.dr_stack_heat = {}
+
+        if self.preferred_heating_offset_away_c < ONE_DEGREE_F_TO_C:
+            self.preferred_heating_offset_away_c = ONE_DEGREE_F_TO_C
+
+        if self.preferred_cooling_offset_away_c < ONE_DEGREE_F_TO_C:
+            self.preferred_cooling_offset_away_c = ONE_DEGREE_F_TO_C
+
+        if self.preferred_heating_offset_sleep_c < ONE_DEGREE_F_TO_C:
+            self.preferred_heating_offset_sleep_c = ONE_DEGREE_F_TO_C
+
+        if self.preferred_cooling_offset_sleep_c < ONE_DEGREE_F_TO_C:
+            self.preferred_cooling_offset_sleep_c = ONE_DEGREE_F_TO_C
+
         Device.initialize(self, botengine)
-
-        if not hasattr(self, "ee_offset_c"):
-            self.ee_offset_c = None
-
-        if not hasattr(self, "absolute_max_cooling_offset_c"):
-            self.absolute_max_cooling_offset_c = 8.3
-
-        if not hasattr(self, 'absolute_max_heating_offset_c'):
-            self.absolute_max_heating_offset_c = 8.3
-
-        if not hasattr(self, 'dr_stack'):
-            self.dr_stack = {}
-
-        if not hasattr(self, 'ee_active'):
-            self.ee_active = False
-
-        if not hasattr(self, 'ee_offset_c'):
-            self.ee_offset_c = None
-
-        if not hasattr(self, 'ee_stack'):
-            self.ee_stack = {}
-
-        if not hasattr(self, 'last_cooling_setpoint_command'):
-            self.last_cooling_setpoint_command = None
-
-        if not hasattr(self, 'last_heating_setpoint_command'):
-            self.last_heating_setpoint_command = None
-
-        if not hasattr(self, 'last_system_mode_colmmand'):
-            self.last_system_mode_command = None
-
-        if not hasattr(self, 'preferred_cooling_offset_away_c'):
-            self.preferred_cooling_offset_away_c = 2.4
-
-        if not hasattr(self, 'preferred_heating_offset_away_c'):
-            self.preferred_heating_offset_away_c = 2.4
-
-        if not hasattr(self, 'preferred_cooling_setpoint_home_c'):
-            self.preferred_cooling_setpoint_home_c = 23.9
-
-        if not hasattr(self, 'preferred_heating_setpoint_home_c'):
-            self.preferred_heating_setpoint_home_c = 20.0
-
-        if not hasattr(self, 'preferred_cooling_offset_sleep_c'):
-            self.preferred_cooling_offset_sleep_c = 2.4
-
-        if not hasattr(self, 'preferred_heating_offset_sleep_c'):
-            self.preferred_heating_offset_sleep_c = 2.4
-
-        if not hasattr(self, 'saved_system_mode'):
-            self.saved_system_mode = None
-
-        if not hasattr(self, 'user_adjusted_timestamp'):
-            self.user_adjusted_timestamp = None
 
     def add_measurement(self, botengine, name, value, timestamp):
         """
@@ -219,11 +215,21 @@ class ThermostatDevice(Device):
             if name == ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE and self.last_system_mode_command is not None:
                 if self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0] != self.last_system_mode_command[COMMAND_VALUE_INDEX]:
                     # Latest measurement doesn't match up with the last command we sent.
-                    if self.last_system_mode_command[COMMAND_VERIFIED_INDEX] or (botengine.get_timestamp() - (utilities.ONE_MINUTE_MS * 2)) > self.last_system_mode_command[COMMAND_TIMESTAMP_INDEX]:
+                    if self.last_system_mode_command[COMMAND_VERIFIED_INDEX] or (botengine.get_timestamp() - (utilities.ONE_MINUTE_MS)) > self.last_system_mode_command[COMMAND_TIMESTAMP_INDEX]:
                         # Our last command was already verified, therefore this new measurement is an external adjustment.
                         # Or, our last command never got verified, but it's been over 2 minutes ago. The system mode is now adjusted from what we set it to.
                         self.user_adjusted_timestamp = botengine.get_timestamp()
                         self.last_system_mode_command = None
+
+                        if self.location_object is not None:
+                            self.location_object.narrate(botengine,
+                                                title = _("'{}' now set to {}").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
+                                                description = _("Your '{}' is set to {}.").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
+                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                icon = 'thermostat',
+                                                extra_json_dict={"device_id": self.device_id}
+                                                )
+                            self.location_object.track(botengine, 'thermostat_mode', properties={"device_id": self.device_id, "description": self.description, "ai": True, "thermostat_mode": self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])})
 
                     else:
                         # Our last command wasn't verified, and it's been under 2 minutes. Keep waiting.
@@ -236,11 +242,21 @@ class ThermostatDevice(Device):
 
             elif name == ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C and self.last_cooling_setpoint_command is not None:
                 if self.is_temperature_different(self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0], self.last_cooling_setpoint_command[COMMAND_VALUE_INDEX]):
-                    if self.last_cooling_setpoint_command[COMMAND_VERIFIED_INDEX] or (botengine.get_timestamp() - (utilities.ONE_MINUTE_MS * 2)) > self.last_cooling_setpoint_command[COMMAND_TIMESTAMP_INDEX]:
+                    if self.last_cooling_setpoint_command[COMMAND_VERIFIED_INDEX] or (botengine.get_timestamp() - (utilities.ONE_MINUTE_MS)) > self.last_cooling_setpoint_command[COMMAND_TIMESTAMP_INDEX]:
                         # Our last command was already verified, therefore this new measurement is an external adjustment.
                         # Or, our last command was delivered over 2 minutes ago, and the cooling setpoint is now adjusted from what we set it to.
                         self.user_adjusted_timestamp = botengine.get_timestamp()
                         self.last_cooling_setpoint_command = None
+
+                        if self.location_object is not None:
+                            self.location_object.narrate(botengine,
+                                                title = _("Cooling set point adjusted"),
+                                                description = _("Your '{}' cooling set point is set to {}C.").format(self.description, self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]),
+                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                icon = 'thermostat',
+                                                extra_json_dict={"device_id": self.device_id}
+                                                )
+                            self.location_object.track(botengine, 'thermostat_cooling_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": True, "cooling_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]})
 
                     else:
                         # Our last command wasn't verified, and it's been under 2 minutes. Keep waiting.
@@ -255,11 +271,21 @@ class ThermostatDevice(Device):
                 # Heating setpoint measurement received
                 if self.is_temperature_different(self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0], self.last_heating_setpoint_command[COMMAND_VALUE_INDEX]):
                     # The temperature is different from our most recent command.
-                    if self.last_heating_setpoint_command[COMMAND_VERIFIED_INDEX] or (botengine.get_timestamp() - (utilities.ONE_MINUTE_MS * 2)) > self.last_heating_setpoint_command[COMMAND_TIMESTAMP_INDEX]:
+                    if self.last_heating_setpoint_command[COMMAND_VERIFIED_INDEX] or (botengine.get_timestamp() - (utilities.ONE_MINUTE_MS)) > self.last_heating_setpoint_command[COMMAND_TIMESTAMP_INDEX]:
                         # Our last command was already verified, therefore this new measurement is an external adjustment.
                         # Or, our last command was delivered over 2 minutes ago, and the heating setpoint is now adjusted from what we set it to.
                         self.user_adjusted_timestamp = botengine.get_timestamp()
                         self.last_heating_setpoint_command = None
+
+                        if self.location_object is not None:
+                            self.location_object.narrate(botengine,
+                                                title = _("Heating set point adjusted"),
+                                                description = _("Your '{}' heating set point is set to {}C.").format(self.description, self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]),
+                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                icon = 'thermostat',
+                                                extra_json_dict={"device_id": self.device_id}
+                                                )
+                            self.location_object.track(botengine, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": True, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
 
                     else:
                         # Our last command wasn't verified, and it's been under 2 minutes. Keep waiting.
@@ -270,13 +296,47 @@ class ThermostatDevice(Device):
                     botengine.get_logger().info("[{} '{}'] Last heating setpoint command verified".format(self.device_id, self.description))
                     self.last_heating_setpoint_command = (self.last_heating_setpoint_command[COMMAND_VALUE_INDEX], self.last_heating_setpoint_command[COMMAND_TIMESTAMP_INDEX], True)
 
+            elif name == ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE and self.last_system_mode_command is None:
+                # User adjusted the mode - we didn't send a command recently
+                if self.location_object is not None:
+                    self.location_object.narrate(botengine,
+                                                title = _("'{}' now set to {}").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
+                                                description = _("Your '{}' is now set to {}.").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
+                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                icon = 'thermostat',
+                                                extra_json_dict={"device_id": self.device_id}
+                                                )
+                    self.location_object.track(botengine, 'thermostat_mode', properties={"device_id": self.device_id, "description": self.description, "ai": False, "thermostat_mode": self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])})
+
             elif name == ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C and self.last_cooling_setpoint_command is None:
                 # User adjusted the cooling setpoint - we didn't send a command recently.
                 self.user_adjusted_timestamp = botengine.get_timestamp()
 
+                if self.location_object is not None:
+                    self.location_object.narrate(botengine,
+                                                title = _("Cooling set point adjusted"),
+                                                description = _("Your '{}' cooling set point was manually adjusted to {}C.").format(self.description, self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]),
+                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                icon = 'thermostat',
+                                                extra_json_dict={"device_id": self.device_id}
+                                                )
+
+                    self.location_object.track(botengine, 'thermostat_cooling_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "cooling_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]})
+
             elif name == ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C and self.last_heating_setpoint_command is None:
                 # User adjusted the heating setpoint - we didn't send a command recently.
                 self.user_adjusted_timestamp = botengine.get_timestamp()
+
+                if self.location_object is not None:
+                    self.location_object.narrate(botengine,
+                                                title = _("Heating set point adjusted"),
+                                                description = _("Your '{}' heating set point was manually adjusted to {}C.").format(self.description, self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]),
+                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                icon = 'thermostat',
+                                                extra_json_dict={"device_id": self.device_id}
+                                                )
+                    self.location_object.track(botengine, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
+
 
     def get_device_type_name(self, language):
         '''
@@ -362,9 +422,13 @@ class ThermostatDevice(Device):
         :return: Float
         """
         dr_offset = 0.0
-        for d in self.dr_stack:
-            if self.dr_stack[d] > dr_offset:
-                dr_offset = self.dr_stack[d]
+        for d in self.dr_stack_heat:
+            if self.dr_stack_heat[d] > dr_offset:
+                dr_offset = self.dr_stack_heat[d]
+
+        for d in self.dr_stack_cool:
+            if self.dr_stack_cool[d] > dr_offset:
+                dr_offset = self.dr_stack_cool[d]
 
         return dr_offset
 
@@ -386,7 +450,7 @@ class ThermostatDevice(Device):
         # Because Dmitry says we might see specific errors better if we issue commands one-by-one, especially to cloud-connected thermostats.
         botengine.flush_commands()
 
-    def set_cooling_setpoint(self, botengine, setpoint_celsius, reliably=True):
+    def set_cooling_setpoint(self, botengine, setpoint_celsius, reliably=False):
         """
         Set the cooling setpoint
         :param botengine: BotEngine environment
@@ -411,7 +475,7 @@ class ThermostatDevice(Device):
             botengine.cancel_command(self.device_id, ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C)
             cancel_reliable_command(botengine, self.device_id, ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C)
 
-    def set_heating_setpoint(self, botengine, setpoint_celsius, reliably=True):
+    def set_heating_setpoint(self, botengine, setpoint_celsius, reliably=False):
         """
         Set the heating set-point
         :param botengine: BotEngine environmnet
@@ -436,6 +500,23 @@ class ThermostatDevice(Device):
             botengine.cancel_command(self.device_id, ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C)
             cancel_reliable_command(botengine, self.device_id, ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C)
 
+    def set_cooler(self, botengine, offset_c=ONE_DEGREE_F_TO_C, reliably=False):
+        """
+        Set the thermostat cooler by the given offset in degrees C.
+        May be useful for inducing the circadian rhythm to go to bed.
+        :param botengine: BotEngine environment
+        :param offset_c: Offset in degrees C to make the thermostat cooler. Default is 1 degree F.
+        :param reliably: Deliver the command reliably (multiple retries)
+        """
+        if ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C in self.measurements:
+            temperature_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0] - offset_c
+            self.set_cooling_setpoint(botengine, temperature_c, reliably)
+
+        if ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.measurements:
+            temperature_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0] - offset_c
+            self.set_heating_setpoint(botengine, temperature_c, reliably)
+
+
     def record_preferred_home_setpoint(self, botengine):
         """
         Record the preferred setpoint right now for the home mode set point
@@ -444,11 +525,47 @@ class ThermostatDevice(Device):
         botengine.get_logger().info("{} {}: Updating your preferred home set point".format(self.description, self.device_id))
         system_mode = self.get_system_mode(botengine)
         if system_mode is not None:
-            if system_mode == ThermostatDevice.SYSTEM_MODE__COOL and ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C in self.measurements:
+            if ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C in self.last_updated_params:
                 self.preferred_cooling_setpoint_home_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]
 
-            elif system_mode == ThermostatDevice.SYSTEM_MODE__HEAT and ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.measurements:
+                self.location_object.narrate(botengine,
+                                            title = _("'{}': Learned HOME cooling set point.").format(self.description),
+                                            description = _("Your '{}' learned you want the cooling set point set to {}C when you are home.").format(self.description, self.preferred_cooling_setpoint_home_c),
+                                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                            icon = 'thermostat',
+                                            extra_json_dict={"device_id": self.device_id}
+                                            )
+                self.location_object.track(botengine, 'thermostat_cooling_setpoint_learned', properties={"device_id": self.device_id, "description": self.description, "thermostat_mode": "COOL", "mode": "HOME", "setpoint_c": self.preferred_cooling_setpoint_home_c})
+
+            if ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.last_updated_params:
                 self.preferred_heating_setpoint_home_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]
+
+                self.location_object.narrate(botengine,
+                                            title = _("'{}': Learned HOME heating set point.").format(self.description),
+                                            description = _("Your '{}' learned you want the heating set point set to {}C when you are home.").format(self.description, self.preferred_heating_setpoint_home_c),
+                                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                            icon = 'thermostat',
+                                            extra_json_dict={"device_id": self.device_id}
+                                            )
+                self.location_object.track(botengine, 'thermostat_heating_setpoint_learned', properties={"device_id": self.device_id, "description": self.description, "thermostat_mode": "HEAT", "mode": "HOME", "setpoint_c": self.preferred_heating_setpoint_home_c})
+
+        import importlib
+        try:
+            analytics = importlib.import_module('analytics')
+
+            # This number will represent the total amount of time across ALL devices.
+            # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
+            # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
+            analytics.get_analytics(botengine).people_set(botengine, {
+                    self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                    self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                    self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                    self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                    self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                    self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+
+        except ImportError:
+            pass
 
     def record_preferred_sleep_offset(self, botengine):
         """
@@ -459,17 +576,99 @@ class ThermostatDevice(Device):
         system_mode = self.get_system_mode(botengine)
 
         if system_mode is not None:
-            if system_mode == ThermostatDevice.SYSTEM_MODE__COOL:
-                self.preferred_cooling_offset_sleep_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]- self.preferred_cooling_setpoint_home_c
-                botengine.get_logger().info("{} {}: Your preferred cooling setpoint while you're home is {}".format(self.description, self.device_id, self.preferred_cooling_setpoint_home_c))
-                botengine.get_logger().info("{} {}: This cooling setpoint while you're in SLEEP mode is {}".format(self.description, self.device_id, self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]))
-                botengine.get_logger().info("{} {}: So your preferred cooling offset in SLEEP mode is {}".format(self.description, self.device_id, self.preferred_cooling_offset_sleep_c))
+            if ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C in self.last_updated_params:
+                current_absolute_setpoint_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]
+                current_absolute_cooling_c = self.preferred_cooling_setpoint_home_c + self.preferred_cooling_offset_sleep_c
 
-            elif system_mode == ThermostatDevice.SYSTEM_MODE__HEAT:
-                self.preferred_heating_offset_sleep_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0] - self.preferred_heating_setpoint_home_c
-                botengine.get_logger().info("{} {}: Your preferred heating setpoint while you're home is {}".format(self.description, self.device_id, self.preferred_heating_setpoint_home_c))
-                botengine.get_logger().info("{} {}: This heating setpoint while you're in SLEEP mode is {}".format(self.description, self.device_id, self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]))
-                botengine.get_logger().info("{} {}: So your preferred heating offset in SLEEP mode is {}".format(self.description, self.device_id, self.preferred_heating_offset_sleep_c))
+                if current_absolute_setpoint_c > current_absolute_cooling_c:
+                    # More energy efficient.
+                    self.preferred_cooling_offset_sleep_c += ONE_DEGREE_F_TO_C
+                    botengine.get_logger().info("Sleep mode cooling offset is now more efficient (offset={}C)".format(self.preferred_cooling_offset_sleep_c))
+
+                elif current_absolute_setpoint_c < current_absolute_cooling_c:
+                    # Less energy efficient. Adjust it slightly, but don't hit 0 adjustment
+                    self.preferred_cooling_offset_sleep_c -= ONE_DEGREE_F_TO_C
+                    if self.preferred_cooling_offset_sleep_c < ONE_DEGREE_F_TO_C:
+                        self.preferred_cooling_offset_sleep_c = ONE_DEGREE_F_TO_C
+                    botengine.get_logger().info("Sleep mode cooling offset is now less efficient (offset={}C)".format(self.preferred_cooling_offset_sleep_c))
+
+                self.location_object.narrate(botengine,
+                                    title = _("'{}': Learned night time preferences.").format(self.description),
+                                    description = _("Your '{}' learned the night time cooling setpoint should be {}C from HOME mode.").format(self.description, "%.1f" % self.preferred_cooling_offset_sleep_c),
+                                    priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                    icon = 'thermostat',
+                                    extra_json_dict={
+                                        "device_id": self.device_id
+                                    }
+                                    )
+
+                self.location_object.track(botengine, 'thermostat_cooling_sleep_setpoint_learned', properties={
+                    "device_id": self.device_id,
+                    "description": self.description,
+                    "thermostat_mode": "COOL",
+                    "mode": "SLEEP",
+                    "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                    "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                    "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                    "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                    "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                    "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+
+            if ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.last_updated_params:
+                current_absolute_setpoint_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]
+                current_absolute_heating_c = self.preferred_heating_setpoint_home_c - self.preferred_heating_offset_sleep_c
+
+                if current_absolute_setpoint_c < current_absolute_heating_c:
+                    # More energy efficient. Set it directly.
+                    self.preferred_heating_offset_sleep_c += ONE_DEGREE_F_TO_C
+                    botengine.get_logger().info("Sleep mode heating offset is now more efficient (offset={}C)".format(self.preferred_heating_offset_sleep_c))
+
+                elif current_absolute_setpoint_c > current_absolute_heating_c:
+                    # Less energy efficient. Adjust it slightly, but don't hit 0 adjustment
+                    self.preferred_heating_offset_sleep_c -= ONE_DEGREE_F_TO_C
+                    if self.preferred_heating_offset_sleep_c < ONE_DEGREE_F_TO_C:
+                        self.preferred_heating_offset_sleep_c = ONE_DEGREE_F_TO_C
+                    botengine.get_logger().info("Sleep mode heating offset is now less efficient (offset={}C)".format(self.preferred_heating_offset_sleep_c))
+
+                self.location_object.narrate(botengine,
+                                    title = _("'{}': Learned night time preferences.").format(self.description),
+                                    description = _("Your '{}' learned the night time heating setpoint should be {}C from HOME mode.").format(self.description, "%.1f" % self.preferred_heating_offset_sleep_c),
+                                    priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                    icon = 'thermostat',
+                                    extra_json_dict={
+                                        "device_id": self.device_id
+                                    }
+                                    )
+
+                self.location_object.track(botengine, 'thermostat_heating_sleep_setpoint_learned', properties={
+                    "device_id": self.device_id,
+                    "description": self.description,
+                    "thermostat_mode": "HEAT",
+                    "mode": "SLEEP",
+                    "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                    "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                    "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                    "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                    "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                    "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+
+        import importlib
+        try:
+            analytics = importlib.import_module('analytics')
+
+            # This number will represent the total amount of time across ALL devices.
+            # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
+            # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
+            analytics.get_analytics(botengine).people_set(botengine, {
+                    self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                    self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                    self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                    self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                    self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                    self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+
+        except ImportError:
+            pass
 
     def record_preferred_away_offset(self, botengine):
         """
@@ -479,18 +678,111 @@ class ThermostatDevice(Device):
         botengine.get_logger().info("{} {}: Updating your preferred away offset".format(self.description, self.device_id))
         system_mode = self.get_system_mode(botengine)
         if system_mode is not None:
-            if system_mode == ThermostatDevice.SYSTEM_MODE__COOL:
-                self.preferred_cooling_offset_away_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0] - self.preferred_cooling_setpoint_home_c
-                botengine.get_logger().info("{} {}: Your preferred cooling setpoint while you're home is {}".format(self.description, self.device_id, self.preferred_cooling_setpoint_home_c))
-                botengine.get_logger().info("{} {}: This cooling setpoint while you're in AWAY mode is {}".format(self.description, self.device_id, self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]))
-                botengine.get_logger().info("{} {}: So your preferred cooling offset in AWAY mode is {}".format(self.description, self.device_id, self.preferred_cooling_offset_away_c))
+            if ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C in self.last_updated_params:
+                current_absolute_setpoint_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]
+                current_absolute_cooling_c = self.preferred_cooling_setpoint_home_c + self.preferred_cooling_offset_away_c
 
-            elif system_mode == ThermostatDevice.SYSTEM_MODE__HEAT:
-                self.preferred_heating_offset_away_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0] - self.preferred_heating_setpoint_home_c
-                botengine.get_logger().info("{} {}: Your preferred heating setpoint while you're home is {}".format(self.description, self.device_id, self.preferred_heating_setpoint_home_c))
-                botengine.get_logger().info("{} {}: This heating setpoint while you're in AWAY mode is {}".format(self.description, self.device_id, self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]))
-                botengine.get_logger().info("{} {}: So your preferred heating offset in AWAY mode is {}".format(self.description, self.device_id, self.preferred_heating_offset_away_c))
+                if current_absolute_setpoint_c > current_absolute_cooling_c:
+                    # More energy efficient.
+                    self.preferred_cooling_offset_away_c += ONE_DEGREE_F_TO_C
+                    botengine.get_logger().info("Away mode cooling offset is now more efficient (offset={}C)".format(self.preferred_cooling_offset_away_c))
 
+                elif current_absolute_setpoint_c < current_absolute_cooling_c:
+                    # Less energy efficient. Adjust it slightly, but don't hit 0 adjustment
+                    self.preferred_cooling_offset_away_c -= ONE_DEGREE_F_TO_C
+                    if self.preferred_cooling_offset_away_c < ONE_DEGREE_F_TO_C:
+                        self.preferred_cooling_offset_away_c = ONE_DEGREE_F_TO_C
+                    botengine.get_logger().info("Away mode cooling offset is now less efficient (offset={}C)".format(self.preferred_cooling_offset_away_c))
+
+                self.location_object.narrate(botengine,
+                                    title = _("'{}': Learned away preferences.").format(self.description),
+                                    description = _("Your '{}' learned the away cooling setpoint should be {}C from HOME mode.").format(self.description, "%.1f" % self.preferred_cooling_offset_away_c),
+                                    priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                    icon = 'thermostat',
+                                    extra_json_dict={
+                                        "device_id": self.device_id,
+                                        "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                                        "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                                        "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                                        "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                                        "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                                        "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c
+                                    }
+                                    )
+
+                self.location_object.track(botengine, 'thermostat_cooling_away_setpoint_learned', properties={
+                    "device_id": self.device_id,
+                    "description": self.description,
+                    "thermostat_mode": "COOL",
+                    "mode": "AWAY",
+                    "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                    "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                    "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                    "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                    "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                    "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+
+            if ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.last_updated_params:
+                current_absolute_setpoint_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]
+                current_absolute_heating_c = self.preferred_heating_setpoint_home_c - self.preferred_heating_offset_away_c
+
+                if current_absolute_setpoint_c < current_absolute_heating_c:
+                    # More energy efficient. Set it directly.
+                    self.preferred_heating_offset_away_c += ONE_DEGREE_F_TO_C
+                    botengine.get_logger().info("Away mode heating offset is now more efficient (offset={}C)".format(self.preferred_heating_offset_away_c))
+
+                elif current_absolute_setpoint_c > current_absolute_heating_c:
+                    # Less energy efficient. Adjust it slightly, but don't hit 0 adjustment
+                    self.preferred_heating_offset_away_c -= ONE_DEGREE_F_TO_C
+                    if self.preferred_heating_offset_away_c < ONE_DEGREE_F_TO_C:
+                        self.preferred_heating_offset_away_c = ONE_DEGREE_F_TO_C
+                    botengine.get_logger().info("Away mode heating offset is now less efficient (offset={}C)".format(self.preferred_heating_offset_away_c))
+
+                self.location_object.narrate(botengine,
+                                    title = _("'{}': Learned night time preferences.").format(self.description),
+                                    description = _("Your '{}' learned the away heating setpoint should be {}C from HOME mode.").format(self.description, "%.1f" % self.preferred_heating_offset_away_c),
+                                    priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                    icon = 'thermostat',
+                                    extra_json_dict={
+                                        "device_id": self.device_id,
+                                        "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                                        "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                                        "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                                        "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                                        "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                                        "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c
+                                    }
+                                    )
+
+                self.location_object.track(botengine, 'thermostat_heating_away_setpoint_learned', properties={
+                    "device_id": self.device_id,
+                    "description": self.description,
+                    "thermostat_mode": "HEAT",
+                    "mode": "AWAY",
+                    "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                    "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                    "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                    "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                    "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                    "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+
+        import importlib
+        try:
+            analytics = importlib.import_module('analytics')
+
+            # This number will represent the total amount of time across ALL devices.
+            # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
+            # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
+            analytics.get_analytics(botengine).people_set(botengine, {
+                    self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                    self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                    self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                    self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                    self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                    self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+
+        except ImportError:
+            pass
 
     def set_demand_response(self, botengine, active, identifier, offset_c):
         """
@@ -503,14 +795,19 @@ class ThermostatDevice(Device):
         """
         botengine.get_logger().info("thermostat.set_demand_response: active={}; id={}; offset_c={}".format(active, identifier, offset_c))
         if active:
-            self.dr_stack[identifier] = offset_c
+            self.dr_stack_heat[identifier] = offset_c
+            self.dr_stack_cool[identifier] = offset_c
 
-        elif identifier in self.dr_stack:
-            del(self.dr_stack[identifier])
+        else:
+            if identifier in self.dr_stack_cool:
+                del(self.dr_stack_cool[identifier])
+
+            if identifier in self.dr_stack_heat:
+                del(self.dr_stack_heat[identifier])
 
         return self.apply_offsets(botengine)
 
-    def set_energy_efficiency(self, botengine, active, identifier, offset_c=2.4):
+    def set_energy_efficiency(self, botengine, active, identifier, offset_c=2.4, change_temperature=True):
         """
         Adjusting the setpoint in a direction that saves energy by some statically defined offset relative to the preferred temperature while the user is home.
         Energy efficiency offset stack. Once you apply an EE offset, you must later remove it. The thermostat will apply the most aggressive active offset.
@@ -518,25 +815,46 @@ class ThermostatDevice(Device):
         :param active: True to make this energy efficiency setting active, False to deactivate it.
         :param offset_c: Temperature offset it Celsius relative to the preferred temperature when the user is home
         :param identifier: Unique name for this energy efficiency offset, so it can be later cancelled.
+        :param change_temperature: True to apply changes now
         :return: the system mode if the thermostat was paused successfully, None if the thermostat was not paused.
         """
         botengine.get_logger().info("thermostat.set_energy_efficiency: active={}; id={}; offset_c={}".format(active, identifier, offset_c))
         if active:
-            self.ee_stack[identifier] = offset_c
+            self.ee_stack_cool[identifier] = offset_c
+            self.ee_stack_heat[identifier] = offset_c
 
-        elif identifier in self.ee_stack:
-            del(self.ee_stack[identifier])
+            if change_temperature:
+                return self.apply_offsets(botengine)
 
-        return self.apply_offsets(botengine)
+        else:
+            found = False
+            if identifier in self.ee_stack_cool:
+                found = True
+                del(self.ee_stack_cool[identifier])
 
-    def cancel_all_energy_efficiency(self, botengine):
+            if identifier in self.ee_stack_heat:
+                found = True
+                del(self.ee_stack_heat[identifier])
+
+            if found and change_temperature:
+                return self.apply_offsets(botengine)
+
+        return None
+
+    def cancel_all_energy_efficiency(self, botengine, change_temperature=True):
         """
         Cancel all energy efficiency offsets
         :param botengine:
+        :param change_temperature: Forcefully change the temperature to apply the home mode offset.
         :return:
         """
-        self.ee_stack = {}
-        return self.apply_offsets(botengine)
+        self.ee_stack_cool = {}
+        self.ee_stack_heat = {}
+
+        if change_temperature:
+            return self.apply_offsets(botengine)
+
+        return None
 
     def apply_offsets(self, botengine):
         """
@@ -547,40 +865,180 @@ class ThermostatDevice(Device):
         """
         system_mode = self.get_system_mode(botengine)
 
-        dr_offset = None
-        for d in self.dr_stack:
-            if dr_offset is None:
-                dr_offset = self.dr_stack[d]
+        if system_mode is None:
+            return None
 
-            elif self.dr_stack[d] > dr_offset:
-                dr_offset = self.dr_stack[d]
+        policies = {}
 
-        if dr_offset is None:
-            dr_offset = 0.0
+        heat_dr_offset = None
+        for d in self.dr_stack_heat:
+            if heat_dr_offset is None:
+                heat_dr_offset = self.dr_stack_heat[d]
+
+            elif self.dr_stack_heat[d] > heat_dr_offset:
+                heat_dr_offset = self.dr_stack_heat[d]
+
+            policies["heat_dr_policy-" + str(d)] = self.dr_stack_heat[d]
+
+        if heat_dr_offset is None:
+            # No DR
+            heat_dr_offset = 0.0
 
 
-        ee_offset = None
-        for e in self.ee_stack:
-            if ee_offset is None:
-                ee_offset = self.ee_stack[e]
+        cool_dr_offset = None
+        for d in self.dr_stack_cool:
+            if cool_dr_offset is None:
+                cool_dr_offset = self.dr_stack_cool[d]
 
-            elif self.ee_stack[e] > ee_offset:
-                ee_offset = self.ee_stack[e]
+            elif self.dr_stack_cool[d] > cool_dr_offset:
+                cool_dr_offset = self.dr_stack_cool[d]
 
-        if ee_offset is None:
-            ee_offset = 0.0
+            policies["cool_dr_policy-" + str(d)] = self.dr_stack_cool[d]
 
-        botengine.get_logger().info("thermostat.apply_offsets(): Thermostat '{}' system mode is {}; preferred_cooling_setpoint_home_c={}; dr_offset={}; ee_offset={}".format(self.description, str(system_mode), self.preferred_cooling_setpoint_home_c, dr_offset, ee_offset))
-        if system_mode is not None:
-            if system_mode == ThermostatDevice.SYSTEM_MODE__COOL:
-                self.set_cooling_setpoint(botengine, self.preferred_cooling_setpoint_home_c + ee_offset + dr_offset)
-                return system_mode
+        if cool_dr_offset is None:
+            # No DR
+            cool_dr_offset = 0.0
 
-            elif system_mode == ThermostatDevice.SYSTEM_MODE__HEAT:
-                self.set_heating_setpoint(botengine, self.preferred_heating_setpoint_home_c - ee_offset - dr_offset)
+
+        heat_ee_offset = None
+        for e in self.ee_stack_heat:
+            if heat_ee_offset is None:
+                heat_ee_offset = self.ee_stack_heat[e]
+
+            elif self.ee_stack_heat[e] > heat_ee_offset:
+                heat_ee_offset = self.ee_stack_heat[e]
+
+            policies["heat_ee_policy-" + str(e)] = self.ee_stack_heat[e]
+
+        if heat_ee_offset is None:
+            heat_ee_offset = 0.0
+
+
+        cool_ee_offset = None
+        for e in self.ee_stack_cool:
+            if cool_ee_offset is None:
+                cool_ee_offset = self.ee_stack_cool[e]
+
+            elif self.ee_stack_cool[e] > cool_ee_offset:
+                cool_ee_offset = self.ee_stack_cool[e]
+
+            policies["cool_ee_policy-" + str(e)] = self.ee_stack_cool[e]
+
+        if cool_ee_offset is None:
+            cool_ee_offset = 0.0
+
+        policies["heat_ee_offset"] = heat_ee_offset
+        policies["heat_dr_offset"] = heat_dr_offset
+        policies["cool_ee_offset"] = heat_ee_offset
+        policies["cool_dr_offset"] = heat_dr_offset
+        policies["total_offset_c"] = heat_ee_offset + heat_dr_offset
+        policies["device_id"] = self.device_id
+        policies["device_description"] = self.description
+        policies["is_connected"] = self.is_connected
+        policies["thermostat_mode"] = self.thermostat_mode_to_string(system_mode)
+
+        if self.dr_timestamp_ms is not None:
+            policies["dr_start_timestamp_ms"] = self.dr_timestamp_ms
+
+        if self.ee_timestamp_ms is not None:
+            policies["ee_start_timestamp_ms"] = self.ee_timestamp_ms
+
+        if system_mode is not None and self.is_connected:
+            if abs(heat_ee_offset + heat_dr_offset + cool_ee_offset + cool_dr_offset) != self.last_offset_c:
+                cooling_setpoint_celsius = float(self.preferred_cooling_setpoint_home_c + cool_ee_offset + cool_dr_offset)
+                heating_setpoint_celsius = float(self.preferred_heating_setpoint_home_c - heat_ee_offset - heat_dr_offset)
+
+                self.set_cooling_setpoint(botengine, cooling_setpoint_celsius)
+                self.set_heating_setpoint(botengine, heating_setpoint_celsius)
+
+                policies["preferred_cooling_setpoint_home_c"] = self.preferred_cooling_setpoint_home_c
+                policies["cooling_temperature_c"] = cooling_setpoint_celsius
+                policies["preferred_heating_setpoint_home_c"] = self.preferred_heating_setpoint_home_c
+                policies["heating_temperature_c"] = heating_setpoint_celsius
+
+                self.location_object.narrate(botengine,
+                                            title = _("'{}': Applying energy policies").format(self.description),
+                                            description = _("Your new cooling set point is {}C and heating setpoint is {}C.").format(cooling_setpoint_celsius, heating_setpoint_celsius),
+                                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                            icon = 'thermostat',
+                                            extra_json_dict={"device_id": self.device_id}
+                                            )
+
+                if abs(heat_ee_offset + heat_dr_offset + cool_ee_offset + cool_dr_offset) > 0.0:
+                    self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
+                else:
+                    self.location_object.track(botengine, 'thermostat_policy_unset', properties=policies)
+
+                self.last_offset_c = abs(heat_ee_offset + heat_dr_offset + cool_ee_offset + cool_dr_offset)
+
+                if heat_ee_offset + cool_ee_offset > 0:
+                    # Some EE
+                    if self.ee_timestamp_ms is None:
+                        self.ee_timestamp_ms = botengine.get_timestamp()
+
+                else:
+                    # No EE
+                    if self.ee_timestamp_ms is not None:
+                        # End of all EE events
+                        duration_s = (botengine.get_timestamp() - self.ee_timestamp_ms) / 1000
+                        self.ee_timestamp_ms = None
+                        self.location_object.track(botengine, "ee_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
+                        import importlib
+                        try:
+                            analytics = importlib.import_module('analytics')
+
+                            # This number will represent the total amount of time across ALL devices.
+                            # For example, if you have 1 thermostat and a EE event for 10000s, then the total is 10000s.
+                            # But if you have 2 thermostats and a EE event for 10000s, then the total is 20000s
+                            analytics.get_analytics(botengine).people_increment(botengine, {'ee_total_s': duration_s})
+
+                        except ImportError:
+                            pass
+
+
+                if heat_dr_offset + cool_dr_offset > 0:
+                    # Some DR
+                    if self.dr_timestamp_ms is None:
+                        self.dr_timestamp_ms = botengine.get_timestamp()
+
+                else:
+                    # No DR
+                    if self.dr_timestamp_ms is not None:
+                        # End of all DR events
+                        duration_s = (botengine.get_timestamp() - self.dr_timestamp_ms) / 1000
+                        self.dr_timestamp_ms = None
+                        self.location_object.track(botengine, "dr_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
+                        import importlib
+                        try:
+                            analytics = importlib.import_module('analytics')
+
+                            # This number will represent the total amount of time across ALL devices.
+                            # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
+                            # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
+                            analytics.get_analytics(botengine).people_increment(botengine, {'dr_total_s': duration_s})
+
+                        except ImportError:
+                            pass
+
                 return system_mode
 
         return None
+
+    def increment_away_energy_efficiency(self, botengine):
+        """
+        Increment away mode energy efficiency
+        :param botengine:
+        :return:
+        """
+        self.increment_energy_efficiency(botengine, "away")
+
+    def increment_sleep_energy_efficiency(self, botengine):
+        """
+        Increment sleep mode energy efficiency
+        :param botengine:
+        :return:
+        """
+        self.increment_energy_efficiency(botengine, "sleep")
 
     def increment_energy_efficiency(self, botengine, identifier, max_offset_c=2.4):
         """
@@ -590,48 +1048,87 @@ class ThermostatDevice(Device):
         :param max_relative_offset_c: Maximum offset in degrees C to achieve relative to our preferred temperature while in HOME mode. The thermostat increments to this max level after 3 calls to this method.
         :return: the system mode if the thermostat was paused successfully, None if the thermostat was not paused.
         """
-        if identifier not in self.ee_stack:
-            self.ee_stack[identifier] = 0.0
+        if identifier not in self.ee_stack_cool:
+            self.ee_stack_cool[identifier] = 0.0
 
-        self.ee_stack[identifier] += (max_offset_c / 3)
-        if self.ee_stack[identifier] > max_offset_c:
-            self.ee_stack[identifier] = max_offset_c
+        if identifier not in self.ee_stack_heat:
+            self.ee_stack_heat[identifier] = 0.0
+
+        system_mode = self.get_system_mode(botengine)
+
+        # Correct the maximum offset
+        if "sleep" in identifier:
+            self.ee_stack_heat[identifier] += (self.preferred_heating_offset_sleep_c / 3)
+            if self.ee_stack_heat[identifier] > self.preferred_heating_offset_sleep_c:
+                self.ee_stack_heat[identifier] = self.preferred_heating_offset_sleep_c
+
+            self.ee_stack_cool[identifier] += (self.preferred_cooling_offset_sleep_c / 3)
+            if self.ee_stack_cool[identifier] > self.preferred_cooling_offset_sleep_c:
+                self.ee_stack_cool[identifier] = self.preferred_cooling_offset_sleep_c
+
+        elif "away" in identifier:
+            self.ee_stack_heat[identifier] += (self.preferred_heating_offset_away_c / 3)
+            if self.ee_stack_heat[identifier] > self.preferred_heating_offset_away_c:
+                self.ee_stack_heat[identifier] = self.preferred_heating_offset_away_c
+
+            self.ee_stack_cool[identifier] += (self.preferred_cooling_offset_away_c / 3)
+            if self.ee_stack_cool[identifier] > self.preferred_cooling_offset_away_c:
+                self.ee_stack_cool[identifier] = self.preferred_cooling_offset_away_c
+
+        else:
+            self.ee_stack_cool[identifier] += (max_offset_c / 3)
+            if self.ee_stack_cool[identifier] > max_offset_c:
+                self.ee_stack_cool[identifier] = max_offset_c
+
+            self.ee_stack_heat[identifier] += (max_offset_c / 3)
+            if self.ee_stack_heat[identifier] > max_offset_c:
+                self.ee_stack_heat[identifier] = max_offset_c
 
         return self.apply_offsets(botengine)
 
-    def set_energy_efficiency_away(self, botengine, identifier):
+    def set_energy_efficiency_away(self, botengine):
         """
         Add an energy efficiency policy for away mode
         :param botengine: BotEngine environment
         :param identifier: Identifier so we can cancel or modify this energy efficiency policy later.
         :return: The current system mode if the change went into effect, None if nothing happened.
         """
-        system_mode = self.get_system_mode(botengine)
-        if system_mode is not None:
-            if system_mode == ThermostatDevice.SYSTEM_MODE__COOL:
-                self.ee_stack[identifier] = self.preferred_cooling_offset_away_c
+        # Turn off Sleep mode policies
+        self.set_energy_efficiency(botengine, False, "sleep", change_temperature=False)
 
-            elif system_mode == ThermostatDevice.SYSTEM_MODE__HEAT:
-                self.ee_stack[identifier] = self.preferred_heating_offset_away_c
+        self.ee_stack_heat["away"] = self.preferred_heating_offset_away_c
+        self.ee_stack_cool["away"] = self.preferred_cooling_offset_away_c
 
         return self.apply_offsets(botengine)
 
-    def set_energy_efficiency_sleep(self, botengine, identifier):
+    def set_energy_efficiency_sleep(self, botengine):
         """
         Add an energy efficiency policy for sleep mode
         :param botengine: BotEngine environment
         :param identifier: Identifier so we can cancel or modify this energy efficiency policy later.
         :return: The current system mode if the change went into effect, Nothing if nothing happened
         """
-        system_mode = self.get_system_mode(botengine)
-        if system_mode is not None:
-            if system_mode == ThermostatDevice.SYSTEM_MODE__COOL:
-                self.ee_stack[identifier] = self.preferred_cooling_offset_sleep_c
+        # Turn off Away mode policies
+        self.set_energy_efficiency(botengine, False, "away", change_temperature=False)
 
-            elif system_mode == ThermostatDevice.SYSTEM_MODE__HEAT:
-                self.ee_stack[identifier] = self.preferred_heating_offset_sleep_c
+        self.ee_stack_heat["sleep"] = self.preferred_heating_offset_sleep_c
+        self.ee_stack_cool["sleep"] = self.preferred_cooling_offset_sleep_c
 
         return self.apply_offsets(botengine)
+
+    def set_energy_efficiency_home(self, botengine):
+        """
+        Turn off all away and sleep energy efficiency policies
+        :param botengine: BotEngine environment
+        """
+        botengine.get_logger().info("{}: set_energy_efficiency_home".format(self.device_id))
+        away_result = self.set_energy_efficiency(botengine, False, "away")
+        sleep_result = self.set_energy_efficiency(botengine, False, "sleep")
+
+        if away_result is None and sleep_result is None:
+            # Nothing else applied offsets, so make sure we sync up at least once.
+            self.apply_offsets(botengine)
+
         
     def thermostat_mode_to_string(self, mode):
         """
@@ -639,6 +1136,9 @@ class ThermostatDevice(Device):
         :param mode: The mode
         :returns: String
         """
+        if mode is None:
+            return "UNKNOWN"
+
         mode = int(mode)
         if mode == ThermostatDevice.SYSTEM_MODE__OFF:
             return "OFF"

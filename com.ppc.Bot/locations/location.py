@@ -27,7 +27,7 @@ class Location:
         # Born on date
         self.born_on = botengine.get_timestamp()
         
-        # Mode of this location (i.e. "HOME", "AWAY", etc.)
+        # Mode of this location (i.e. "HOME", "AWAY", etc.). This is the mode of the security system.
         self.mode = botengine.get_mode(self.location_id)
 
         # Timestamp of the last time we did a garbage collection
@@ -39,23 +39,28 @@ class Location:
         # Try to update our current mode
         self.update_mode(botengine)
 
+        # Conversational UI
+        self.conversational_ui = None
+
+        # Occupancy status as determined by AI occupancy detection algorithms.
+        self.occupancy_status = ""
+
+        # Reason for the current occupancy status. For example: "ML.MOTION" or "USER".
+        self.occupancy_reason = ""
+
 
         
     def initialize(self, botengine):
         """Mandatory to run with every execution"""
         # Refresh this with every execution
 
-        # Removed May 5, 2018
-        if hasattr(self, 'latitude'):
-            del(self.latitude)
+        if not hasattr(self, 'conversational_ui'):
+            self.conversational_ui = None
 
-        # Removed May 5, 2018
-        if hasattr(self, 'longitude'):
-            del(self.longitude)
-
-        # Removed May 5, 2018
-        if hasattr(self, 'sunrise_sunset_enabled'):
-            del(self.sunrise_sunset_enabled)
+        # Added November 29, 2018
+        if not hasattr(self, 'occupancy_status'):
+            self.occupancy_status = ""
+            self.occupancy_reason = ""
 
         for d in self.devices:
             self.devices[d].initialize(botengine)
@@ -74,7 +79,7 @@ class Location:
                         intelligence_object = class_(botengine, self)
                         self.intelligence_modules[intelligence_info['module']] = intelligence_object
                     except Exception as e:
-                        botengine.get_logger().error("Could not add location microservice: " + str(intelligence_info))
+                        botengine.get_logger().error("Could not add location microservice: " + str(intelligence_info) + ": " + str(e))
                         import traceback
                         traceback.print_exc()
                         
@@ -137,7 +142,7 @@ class Location:
         Update this location's mode
         """
         self.mode = mode
-        botengine.get_logger().info(self.mode + " mode.")
+        botengine.get_logger().info("location mode_updated(): " + self.mode + " mode.")
         
         for intelligence_id in self.intelligence_modules:
             self.intelligence_modules[intelligence_id].mode_updated(botengine, mode)
@@ -200,13 +205,23 @@ class Location:
         :param content: Data Stream content
         """
         for intelligence_id in self.intelligence_modules:
-            self.intelligence_modules[intelligence_id].datastream_updated(botengine, address, content)
+            try:
+                self.intelligence_modules[intelligence_id].datastream_updated(botengine, address, content)
+            except Exception as e:
+                botengine.get_logger().warn("location.py - Error delivering datastream message to location microservice (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
         
         # Device intelligence modules
         for device_id in self.devices:
             if hasattr(self.devices[device_id], "intelligence_modules"):
                 for intelligence_id in self.devices[device_id].intelligence_modules:
-                    self.devices[device_id].intelligence_modules[intelligence_id].datastream_updated(botengine, address, content)
+                    try:
+                        self.devices[device_id].intelligence_modules[intelligence_id].datastream_updated(botengine, address, content)
+                    except Exception as e:
+                        botengine.get_logger().warn("location.py - Error delivering datastream message to device microservice (continuing execution): " + str(e))
+                        import traceback
+                        botengine.get_logger().error(traceback.format_exc())
                     
             
     def schedule_fired(self, botengine, schedule_id):
@@ -251,6 +266,124 @@ class Location:
         for intelligence_id in self.intelligence_modules:
             self.intelligence_modules[intelligence_id].file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
 
+    def user_role_updated(self, botengine, user_id, category, location_access, previous_category, previous_location_access):
+        """
+        A user changed roles
+        :param botengine: BotEngine environment
+        :param location_id: Location ID
+        :param user_id: User ID that changed roles
+        :param category: User's current alert/communications category (1=resident; 2=supporter)
+        :param location_access: User's access to the location and devices. (0=None; 10=read location/device data; 20=control devices and modes; 30=update location info and manage devices)
+        :param previous_category: User's previous category, if any
+        :param previous_location_access: User's previous access to the location, if any
+        """
+        # Location intelligence modules
+        for intelligence_id in self.intelligence_modules:
+            self.intelligence_modules[intelligence_id].user_role_updated(botengine, user_id, category, location_access, previous_category, previous_location_access)
+
+        # Device intelligence modules
+        for device_id in self.devices:
+            if hasattr(self.devices[device_id], "intelligence_modules"):
+                for intelligence_id in self.devices[device_id].intelligence_modules:
+                    self.devices[device_id].intelligence_modules[intelligence_id].user_role_updated(botengine, user_id, category, location_access, previous_category, previous_location_access)
+
+    def data_request_ready(self, botengine, reference, device_csv_dict):
+        """
+        A botengine.request_data() asynchronous request for CSV data is ready.
+        :param botengine: BotEngine environment
+        :param reference: Optional reference passed into botengine.request_data(..)
+        :param device_csv_dict: { 'device_id': 'csv data string' }
+        """
+        # Location intelligence modules
+        for intelligence_id in self.intelligence_modules:
+            self.intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
+
+        # Device intelligence modules
+        for device_id in self.devices:
+            if hasattr(self.devices[device_id], "intelligence_modules"):
+                for intelligence_id in self.devices[device_id].intelligence_modules:
+                    self.devices[device_id].intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
+
+    #===========================================================================
+    # General location information
+    #===========================================================================
+    def get_location_nickname(self, botengine):
+        """
+        Get the nickname of this location
+        :param botengine: BotEngine environment
+        :return: Nickname
+        """
+        location_info = botengine.get_location_info(self.location_id)
+        if ('location' not in location_info) or 'name' not in location_info['location']:
+            return "Home"
+
+        return location_info['location']['name']
+
+    #===========================================================================
+    # Mode
+    #===========================================================================
+    def set_mode(self, botengine, mode, comment=None):
+        """
+        Set the mode for this location
+        :param botengine: BotEngine environment
+        :param comment: Optional comment about why the mode was set
+        """
+        self.track(botengine, 'set_mode_{}'.format(mode), properties={"comment": comment, "mode": mode})
+        botengine.set_mode(self.location_id, mode, comment)
+        self.mode_updated(botengine, mode)
+
+
+    def distribute_occupancy_status(self, botengine, status, reason, last_status, last_reason):
+        """
+        Distribute the newest occupancy status from AI occupancy algorithms
+        :param botengine: BotEngine environment
+        :param status: Current status
+        :param reason: Current reason
+        :param last_status: Last status
+        :param last_reason: Last reason
+        :return:
+        """
+        for intelligence_id in self.intelligence_modules:
+            try:
+                self.intelligence_modules[intelligence_id].occupancy_status_updated(botengine, status, reason, last_status, last_reason)
+            except Exception as e:
+                botengine.get_logger().warn("location.py - Error delivering occupancy_status_updated to location microservice (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+
+        # Device intelligence modules
+        for device_id in self.devices:
+            if hasattr(self.devices[device_id], "intelligence_modules"):
+                for intelligence_id in self.devices[device_id].intelligence_modules:
+                    try:
+                        self.devices[device_id].intelligence_modules[intelligence_id].occupancy_status_updated(botengine, status, reason, last_status, last_reason)
+                    except Exception as e:
+                        botengine.get_logger().warn("location.py - Error delivering occupancy_status_updated message to device microservice (continuing execution): " + str(e))
+                        import traceback
+                        botengine.get_logger().error(traceback.format_exc())
+
+    #===========================================================================
+    # Bot-to-UI content delivery
+    #===========================================================================
+    def set_ui_content(self, botengine, address, json_content):
+        """
+        Set information to be consumed by user interfaces through a known address.
+
+        Application-layer developers first collectively agree upon the data
+        that needs to be produced by the bot to be rendered on a UI. Then the UI
+        can read the address to extract the JSON information to render natively.
+
+        It is therefore possible for the bot to also produce new addressable content,
+        as long as the addresses are retrievable from a well known base address. For example,
+        you could save some UI content that includes a list of reports, each report saved under
+        a unique address. Then, save UI content for each report under their unique addresses.
+
+        :param botengine: BotEngine environment
+        :param address: Address to save information into, in a way that can be recalled by an app.
+        :param json_content: Raw JSON content to deliver to an app/UI.
+        """
+        botengine.set_ui_content(self.location_id, address, json_content)
+
     #===========================================================================
     # Data Stream Message delivery
     #===========================================================================
@@ -270,6 +403,178 @@ class Location:
         if external:
             botengine.send_datastream_message(address, content)
 
+
+
+    #===========================================================================
+    # Conversations
+    #===========================================================================
+    def get_conversation_types(self, botengine):
+        """
+        Return the module that documents the conversation types. Or None if the conversation microservice package is not included in this build.
+        :param botengine:
+        :return: Conversations module documenting the conversation types.
+        """
+        try:
+            import intelligence.conversations.conversations as conversations
+            return conversations
+
+        except:
+            botengine.get_logger().info("location.get_conversation_types(): No conversations microservice package in this build.")
+            return None
+
+    def start_conversation(self, botengine, conversation_type, homeowner_message, supporter_message, professional_monitoring_code=None, sms_callback_method=None, next_conversation_object=None, force=False):
+        """
+        Start a new conversation by creating the conversation and adding it to the queue.
+        :param botengine: BotEngine environment
+        :param conversation_type: Conversation type
+        :param homeowner_message: Homeowner message / question
+        :param supporter_message: Supporter message
+        :param professional_monitoring_code: Override the default professional monitoring code, if any.
+        :param sms_callback_method: Method to call back when the question is answered. def some_method(self, botengine, question_object)
+        :param next_conversation_object: Conversation to link and execute immediately after this conversation ends.
+        :param force: True to force the conversation, even if the conversation is disabled (for testing)
+        :return: conversation_object for reference in update_conversation(..). Or None if this conversation will not be active.
+        """
+        # Try to add the conversational UI, which would be captured in one of our microservices.
+        for module_name in self.intelligence_modules:
+            if 'location_conversation_microservice' in module_name:
+                return self.intelligence_modules[module_name].start_conversation(botengine,
+                                                                                 conversation_type,
+                                                                                 homeowner_message,
+                                                                                 supporter_message,
+                                                                                 professional_monitoring_code=professional_monitoring_code,
+                                                                                 sms_callback_method=sms_callback_method,
+                                                                                 next_conversation_object=next_conversation_object,
+                                                                                 force=force)
+
+        return None
+
+    def create_conversation(self, botengine, conversation_type, homeowner_message, supporter_message, professional_monitoring_code=None, sms_callback_method=None, next_conversation_object=None, force=False):
+        """
+        Create and return a new conversation without executing on it or putting it into the queue.
+        This does not start the conversation.
+        This allows us to create a conversation and link it to another with ConversationType.next_conversation_object.
+        :param botengine: BotEngine environment
+        :param conversation_type: Conversation type
+        :param homeowner_message: Homeowner message / question
+        :param supporter_message: Supporter message
+        :param professional_monitoring_code: Override the default professional monitoring code, if any.
+        :param sms_callback_method: Method to call back when the question is answered. def some_method(self, botengine, question_object)
+        :param next_conversation_object: Conversation to link and execute immediately after this conversation ends.
+        :param force: True to force the conversation, even if the conversation is disabled (for testing)
+        :return: conversation_object for reference in update_conversation(..). Or None if this conversation will not be active.
+        """
+        # Try to add the conversational UI, which would be captured in one of our microservices.
+        for module_name in self.intelligence_modules:
+            if 'location_conversation_microservice' in module_name:
+                return self.intelligence_modules[module_name].create_conversation(botengine,
+                                                                                  conversation_type,
+                                                                                  homeowner_message,
+                                                                                  supporter_message,
+                                                                                  professional_monitoring_code=professional_monitoring_code,
+                                                                                  sms_callback_method=sms_callback_method,
+                                                                                  next_conversation_object=next_conversation_object,
+                                                                                  force=force)
+
+        return None
+
+    def update_conversation(self, botengine, conversation_object, message, resolved=False):
+        """
+        Update a conversation
+        :param botengine: BotEngine environment
+        :param conversation_object: Conversation object to update
+        :param message: Message to send out to either homeowners or supporters
+        :param resolved: True to resolve and end the conversation (default is False)
+        :return conversation_object for reference in update_conversation(..). Or None if this conversation will no longer be active.
+        """
+        if conversation_object is None:
+            return None
+
+        for module_name in self.intelligence_modules:
+            if 'location_conversation_microservice' in module_name:
+                return self.intelligence_modules[module_name].update_conversation(botengine, conversation_object, message, resolved)
+
+        return None
+
+
+    def total_sms_recipients(self, botengine, to_residents=True, to_supporters=True):
+        """
+        Get the total number of SMS recipients
+        :param botengine: BotEngine environment
+        :param residents: True to count the total homeowners
+        :param supporters: True to count the total supporters
+        :return: Integer number of recipients
+        """
+        return len(botengine.get_location_user_names(to_residents=to_residents, to_supporters=to_supporters, sms_only=True))
+
+    #===========================================================================
+    # Narration
+    #===========================================================================
+    def narrate(self, botengine, title, description, priority, icon, timestamp_ms=None, file_ids=None, extra_json_dict=None, update_narrative_id=None, update_narrative_timestamp=None):
+        """
+        Narrate some activity
+        :param botengine: BotEngine environment
+        :param title: Title of the event
+        :param description: Description of the event
+        :param priority: 0=debug; 1=info; 2=warning; 3=critical
+        :param icon: Icon name, like 'motion' or 'phone-alert'. See http://peoplepowerco.com/icons
+        :param timestamp_ms: Optional timestamp for this event. Can be in the future. If not set, the current timestamp is used.
+        :param file_ids: List of file ID's (media) to reference and show as part of the record in the UI
+        :param extra_json_dict: Any extra JSON dictionary content we want to communicate with the UI
+        :param update_narrative_id: Specify a narrative ID to update an existing record.
+        :param update_narrative_timestamp: Specify a narrative timestamp to update an existing record. This is a double-check to make sure we're not overwriting the wrong record.
+        :return: { "narrativeId": id, "narrativeTime": timestamp_ms } if successful, otherwise None.
+        """
+        if priority == botengine.NARRATIVE_PRIORITY_ADMIN:
+            import importlib
+            try:
+                analytics = importlib.import_module('analytics')
+                from copy import copy
+
+                if extra_json_dict is None:
+                    properties = {}
+                else:
+                    properties = copy(extra_json_dict)
+
+                if description is not None:
+                    properties['description'] = description
+
+                analytics.get_analytics(botengine).track(botengine,
+                                                         event_name=title,
+                                                         properties=properties)
+
+            except ImportError:
+                pass
+            except Exception as e:
+                botengine.get_logger().error("location.py : " + str(e))
+
+        return botengine.narrate(self.location_id, title, description, priority, icon, timestamp_ms=timestamp_ms, file_ids=file_ids, extra_json_dict=extra_json_dict, update_narrative_id=update_narrative_id, update_narrative_timestamp=update_narrative_timestamp)
+
+    def track(self, botengine, identifier, properties=None):
+        """
+        Track analytics
+        :param botengine: BotEngine environment
+        :param identifier: Unique identifier for this analytic
+        :param properties: JSON dictionary of properties
+        :return: { "narrativeId": id, "narrativeTime": timestamp_ms } if successful, otherwise None.
+        """
+        return self.narrate(botengine,
+                     title=identifier,
+                     description=None,
+                     priority=botengine.NARRATIVE_PRIORITY_ADMIN,
+                     icon=None,
+                     extra_json_dict=properties)
+
+    def delete_narration(self, botengine, narrative_id, narrative_timestamp):
+        """
+        Delete a narrative record
+        :param botengine: BotEngine environment
+        :param narrative_id: ID of the record to delete
+        :param narrative_timestamp: Timestamp of the record to delete
+        """
+        botengine.delete_narration(self.location_id, narrative_id, narrative_timestamp)
+
+
     #===========================================================================
     # Mode helper methods
     #===========================================================================
@@ -278,14 +583,29 @@ class Location:
         Is the person likely physically present in the home?
         :return: True if the person is in HOME, STAY, SLEEP, or TEST mode. False for all others.
         """
-        return utilities.MODE_HOME in self.mode or utilities.MODE_TEST in self.mode or utilities.MODE_STAY in self.mode or utilities.MODE_SLEEP in self.mode
+        return "ABSENT" not in self.occupancy_status \
+               and "A2H" not in self.occupancy_status \
+               and "H2A" not in self.occupancy_status \
+               and "AWAY" not in self.occupancy_status \
+               and "VACATION" not in self.occupancy_status
     
     def is_present_and_protected(self, botengine=None):
         """
         Is the person at home and wants to be alerted if the perimeter is breached?
         :return: True if the person is in STAY or SLEEP mode
         """
-        return utilities.MODE_STAY in self.mode or utilities.MODE_SLEEP in self.mode
+        return utilities.MODE_STAY in self.mode \
+               or "SLEEP" in self.occupancy_status \
+               or "H2S" in self.occupancy_status \
+               or "S2H" in self.occupancy_status
+
+    def is_sleeping(self, botengine=None):
+        """
+        :return: True if the person is about to go to sleep, or they're sleeping, or about to wake up.
+        """
+        return "SLEEP" in self.occupancy_status \
+               or "H2S" in self.occupancy_status \
+               or "S2H" in self.occupancy_status
     
     def update_mode(self, botengine):
         """
@@ -461,8 +781,9 @@ class Location:
             return None
 
         if 'events' not in modes:
-            botengine.get_logger().warning("No history of changing modes in location {}".format(self.location_id))
             return None
+
+        botengine.get_logger().info("{} mode changes captured".format(len(modes['events'])))
 
         for event in modes['events']:
             timestamp_ms = event['eventDateMs']
@@ -471,7 +792,9 @@ class Location:
             if 'sourceAgent' in event:
                 source_agent = event['sourceAgent'].replace(",","_")
 
-            output += "{},{},{},{},{},{}".format(self.location_id, timestamp_ms, dt.isoformat(), event['event'], event['sourceType'], source_agent)
+            event_name = event['event'].replace(",",".")
+
+            output += "{},{},{},{},{},{}".format(self.location_id, timestamp_ms, utilities.iso_format(dt), event_name, event['sourceType'], source_agent)
             output += "\n"
 
         return output
