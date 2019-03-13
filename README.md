@@ -6,6 +6,7 @@ These bots run 24/7 in the background of your life, making products do things th
 
 **You do not need to host your own server to run bot microservices.** We host and run them for you on our servers. Of course, you can also run them live on your local computer and watch them execute against real-time data from the real world.
 
+
 ## Setup Python
 
 BotEngine prefers Python 2.7, because AWS Lambda - one of the execution environments this runs within - had exclusively supported 2.7 only until recently.
@@ -21,11 +22,11 @@ Once you have your Python environment established, install these python package 
 
 ## Get Started with the BotEngine
 
-To install the BotEngine framework on your local machine, copy and paste the following line of code in your terminal:
+Clone this repository to your computer. The 'botengine' file is a Python application which serves a dual purpose: it is the command line interface which provides access for the developer to create and manage bots, and it is also the software execution environment for which provides access for a running bot to securely interact with the outside world.
 
-`curl -s https://raw.githubusercontent.com/peoplepower/botlab/master/installer.sh | sudo /bin/bash`
+Most developers simply type "./botengine" to execute commands on the command line interface. For example, "./botengine --help"
 
-The installer file will download the BotEngine framework and all the dependencies needed to run botengine.
+If you're running Windows, we recommend using Cygwin to run the 'botengine' application. You can also try "python botengine".
 
 When you clone the botengine repository, be sure to add its location to your PYTHONPATH variable.
 
@@ -58,13 +59,3 @@ The BotEngine exclusively uses HTTPS and never uses HTTP communications.
 
 Each Lesson contains documentation. Open each lesson to review the documentation, and then drill down into the individual microservices inside the intelligence directories.
 
-
-## Connecting products 
-
-Explore this store of already-connected devices and sensors from one of our partners:
-
-* MyPlace by Florida Power and Light Smart Services : http://myplace.com
-* Home HQ by Origin Energy : http://originhomehq.com.au
-* Presence by People Power : http://presencepro.com/store.
-
-Or connect your own smart home and IoT devices at http://presto.peoplepowerco.com.
