@@ -59,6 +59,9 @@ class LambdaLogger():
     def warning(self, message):
         self.logs.append("{}: [{}] {}".format(time.time(), "WARNING", message))
 
+    def warn(self, message):
+        self.logs.append("{}: [{}] {}".format(time.time(), "WARNING", message))
+
     def error(self, message):
         self.logs.append("{}: [{}] {}".format(time.time(), "ERROR", message))
 
