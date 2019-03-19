@@ -40,7 +40,10 @@ def get_analytics(botengine):
     :return: Analytics object
     """
     import domain
-    if not domain.ALLOW_MIXPANEL:
+    if hasattr(domain, "ALLOW_MIXPANEL"):
+        if not domain.ALLOW_MIXPANEL:
+            raise ImportError
+    else:
         raise ImportError
 
     analytics_object = botengine.load_variable(ANALYTICS_VARIABLE)
