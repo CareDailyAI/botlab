@@ -789,7 +789,6 @@ class Location:
         :param botengine: BotEngine environment
         :param title: Unique identifier for this analytic
         :param properties: JSON dictionary of properties
-        :return: { "narrativeId": id, "narrativeTime": timestamp_ms } if successful, otherwise None.
         """
         import importlib
         try:
@@ -805,14 +804,15 @@ class Location:
         except Exception as e:
             botengine.get_logger().error("location.py : " + str(e))
 
-        return self.narrate(botengine,
-                     title=title,
-                     description=None,
-                     priority=botengine.NARRATIVE_PRIORITY_DETAIL,
-                     icon="analytics",
-                     extra_json_dict=properties,
-                     to_admin=True,
-                     to_user=False)
+        # Option to capture analytics details into the server database.
+        # return self.narrate(botengine,
+        #              title=title,
+        #              description=None,
+        #              priority=botengine.NARRATIVE_PRIORITY_DETAIL,
+        #              icon="analytics",
+        #              extra_json_dict=properties,
+        #              to_admin=True,
+        #              to_user=False)
 
     def delete_narration(self, botengine, narrative_id, narrative_timestamp):
         """
