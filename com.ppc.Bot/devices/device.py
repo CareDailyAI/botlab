@@ -49,7 +49,8 @@ SPACE_TYPE = {
     "office": 9,
     "stairs": 10,
     "garage": 11,
-    "basement": 12
+    "basement": 12,
+    "other": 13
 }
 
 
@@ -93,6 +94,7 @@ class Device:
         self.location_object = None
         
         # Measurements for each parameter, newest measurements at index 0
+        # self.measurements["parameterName"] = [ ( newest_value, newest_timestamp ), ( value, timestamp ), ... ]
         self.measurements = {}
 
         # Spaces this device is associated with. For example:
@@ -243,7 +245,7 @@ class Device:
             botengine.get_logger().info("\tDeleting all device microservices")
             self.intelligence_modules = {}
 
-    def get_device_type_name(self, language):
+    def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """

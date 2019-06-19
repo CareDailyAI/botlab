@@ -33,14 +33,14 @@ class LockDevice(Device):
     GOAL_STATIC_AUTO_LOCK = 102
 
 
-    def get_device_type_name(self, language):
+    def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
         return _("Lock")
     
-    def get_image_name(self, botengine):
+    def get_image_name(self):
         """
         :return: the font icon name of this device type
         """

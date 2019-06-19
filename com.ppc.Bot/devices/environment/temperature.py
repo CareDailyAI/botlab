@@ -29,14 +29,14 @@ class TemperatureDevice(Device):
     ]
 
     
-    def get_device_type_name(self, language):
+    def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Device type name
         return _("Temperature Sensor")
     
-    def get_image_name(self, botengine):
+    def get_image_name(self):
         """
         :return: the font icon name of this device type
         """

@@ -16,7 +16,7 @@ class PeoplePowerPictureFrameIosDevice(PeoplePowerPictureFrameDevice):
 
     DEVICE_TYPES = [26]
 
-    def get_device_type_name(self, language):
+    def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """

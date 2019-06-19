@@ -338,7 +338,7 @@ class ThermostatDevice(Device):
                     self.location_object.track(botengine, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
 
 
-    def get_device_type_name(self, language):
+    def get_device_type_name(self):
         '''
         Return the human-friendly name of this device
         :param language: Language, like 'en'

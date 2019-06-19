@@ -20,7 +20,7 @@ class Location:
     def __init__(self, botengine, location_id):
         """Constructor"""
         self.location_id = int(location_id)
-        
+
         # Dictionary of all device objects. { 'device_id': <device_object> }
         self.devices = {}
         
@@ -48,12 +48,22 @@ class Location:
         # Reason for the current occupancy status. For example: "ML.MOTION" or "USER".
         self.occupancy_reason = ""
 
+        # Last time our location properties were sync'd
+        self.properties_timestamp_ms = 0
+
+        # Latest copy of our location properties
+        self.location_properties = {}
+
+        # Narratives we're tracking from various microservices for your location.  { "unique_id" : ( narrative_id, narrative_time ) }.
+        self.location_narratives = {}
+
+        # Narratives we're tracking from various microservices for your organization. { "unique_id" : ( narrative_id, narrative_time ) }.
+        self.org_narratives = {}
 
         
     def initialize(self, botengine):
         """Mandatory to run with every execution"""
         # Refresh this with every execution
-
         if not hasattr(self, 'conversational_ui'):
             self.conversational_ui = None
 
@@ -61,6 +71,19 @@ class Location:
         if not hasattr(self, 'occupancy_status'):
             self.occupancy_status = ""
             self.occupancy_reason = ""
+
+        # Added June 1, 2019
+        if not hasattr(self, 'properties_timestamp_ms'):
+            self.properties_timestamp_ms = 0
+            self.location_properties = {}
+
+        # Added June 14, 2019
+        if not hasattr(self, 'location_narratives'):
+            self.location_narratives = {}
+
+        # Added June 14, 2019
+        if not hasattr(self, 'org_narratives'):
+            self.org_narratives = {}
 
         for d in self.devices:
             self.devices[d].initialize(botengine)
@@ -94,6 +117,7 @@ class Location:
                     
                 if not found:
                     botengine.get_logger().info("Deleting location microservice: " + str(module_name))
+                    self.intelligence_modules[module_name].destroy(botengine)
                     del self.intelligence_modules[module_name]
                     
         # Location intelligence execution
@@ -118,7 +142,14 @@ class Location:
         :param device_object: Device object to track
         """
         self.devices[device_object.device_id] = device_object
-    
+
+        if hasattr(device_object, "intelligence_modules"):
+            for intelligence_id in device_object.intelligence_modules:
+                device_object.intelligence_modules[intelligence_id].device_added(botengine, device_object)
+
+        for intelligence_id in self.intelligence_modules:
+            self.intelligence_modules[intelligence_id].device_added(botengine, device_object)
+
     def delete_device(self, botengine, device_id):
         """
         Delete the given device ID
@@ -294,30 +325,54 @@ class Location:
         :param reference: Optional reference passed into botengine.request_data(..)
         :param device_csv_dict: { 'device_id': 'csv data string' }
         """
-        # Location intelligence modules
+        # Location microservices
         for intelligence_id in self.intelligence_modules:
-            self.intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
+            try:
+                self.intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
+            except Exception as e:
+                botengine.get_logger().warn("location.py - Error delivering data_request_ready to location microservice : " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
 
-        # Device intelligence modules
+
+        # Device microservices
         for device_id in self.devices:
             if hasattr(self.devices[device_id], "intelligence_modules"):
                 for intelligence_id in self.devices[device_id].intelligence_modules:
-                    self.devices[device_id].intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
+                    try:
+                        self.devices[device_id].intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
+                    except Exception as e:
+                        botengine.get_logger().warn("location.py - Error delivering data_request_ready to device microservice : " + str(e))
+                        import traceback
+                        botengine.get_logger().error(traceback.format_exc())
 
     #===========================================================================
     # General location information
     #===========================================================================
-    def get_location_nickname(self, botengine):
+    def get_location_name(self, botengine):
         """
         Get the nickname of this location
         :param botengine: BotEngine environment
         :return: Nickname
         """
-        location_info = botengine.get_location_info(self.location_id)
-        if ('location' not in location_info) or 'name' not in location_info['location']:
-            return "Home"
+        return botengine.get_location_name()
 
-        return location_info['location']['name']
+    def get_location_latitude(self, botengine):
+        """
+        Get the latitude of this location
+        :param botengine: BotEngine environment
+        :return: Latitude, or None if it doesn't exist
+        """
+        return botengine.get_location_latitude()
+
+    def get_location_longitude(self, botengine):
+        """
+        Get the longitude of this location
+        :param botengine: BotEngine environment
+        :return: Longitude, or None if it doesn't exist
+        """
+        return botengine.get_location_longitude()
+
 
     #===========================================================================
     # Mode
@@ -330,7 +385,7 @@ class Location:
         """
         self.track(botengine, 'set_mode_{}'.format(mode), properties={"comment": comment, "mode": mode})
         botengine.set_mode(self.location_id, mode, comment)
-        self.mode_updated(botengine, mode)
+        # Allow the bot to trigger again and set the mode from a single unified action.
 
 
     def distribute_occupancy_status(self, botengine, status, reason, last_status, last_reason):
@@ -385,9 +440,134 @@ class Location:
         botengine.set_ui_content(self.location_id, address, json_content)
 
     #===========================================================================
+    # Location Properties
+    #===========================================================================
+    def set_location_property(self, botengine, property_name, property_value):
+        """
+        Set a location property
+        :param botengine: BotEngine environment
+        :param property_name: Property name
+        :param property_value: Property value
+        """
+        self._sync_location_properties(botengine)
+        self.location_properties[property_name] = property_value
+        botengine.set_ui_content(self.location_id, 'location_properties', self.location_properties)
+
+        import importlib
+        try:
+            analytics = importlib.import_module('analytics')
+            analytics.get_analytics(botengine).people_set(botengine, {property_name: property_value})
+
+        except ImportError:
+            pass
+
+    def update_location_properties(self, botengine, properties_dict):
+        """
+        Update multiple location properties simultaneously from a dictionary.
+        If the properties don't exist yet, they will be added.
+
+        :param botengine: BotEngine environment
+        :param properties_dict: Properties dictionary with key/values to update
+        """
+        self._sync_location_properties(botengine)
+        self.location_properties.update(properties_dict)
+        botengine.set_ui_content(self.location_id, 'location_properties', self.location_properties)
+
+        import importlib
+        try:
+            analytics = importlib.import_module('analytics')
+            analytics.get_analytics(botengine).people_set(botengine, properties_dict)
+
+        except ImportError:
+            pass
+
+    def increment_location_property(self, botengine, property_name, increment_amount=1):
+        """
+        Increment a location property integer by the amount given.
+
+        If the property doesn't exist, it will be initialized to 0 and then incremented by the amount given.
+        An existing property must be numeric to increment.
+
+        :param botengine: BotEngine environment
+        :param property_name: Property name to increment
+        :param increment_amount: Incremental amount to add (default is 1)
+        """
+        self._sync_location_properties(botengine)
+        if property_name not in self.location_properties:
+            self.location_properties[property_name] = 0
+
+        self.location_properties[property_name] += increment_amount
+        botengine.set_ui_content(self.location_id, 'location_properties', self.location_properties)
+
+        import importlib
+        try:
+            analytics = importlib.import_module('analytics')
+            analytics.get_analytics(botengine).people_increment(botengine, {property_name: increment_amount})
+
+        except ImportError:
+            pass
+
+    def get_location_property(self, botengine, property_name):
+        """
+        Retrieve a location property
+        :param botengine: BotEngine environment
+        :param property_name: Property name to retrieve
+        :return: The property value, or None if it doesn't exist
+        """
+        self._sync_location_properties(botengine)
+        if property_name in self.location_properties:
+            return self.location_properties[property_name]
+        return None
+
+    def delete_location_property(self, botengine, property_name):
+        """
+        Delete a location property
+        :param botengine: BotEngine environment
+        :param property_name: Property name to delete
+        """
+        self._sync_location_properties(botengine)
+        if property_name in self.location_properties:
+            del(self.location_propertyes[property_name])
+            botengine.set_ui_content(self.location_id, 'location_properties', self.location_properties)
+
+    def set_location_property_separately(self, botengine, additional_property_name, additional_property_json):
+        """
+        Set a large location property. The name is referenced by our 'location_properties' but stored separately
+        and referenced in the location_properties as 'additional_properties'.
+        :param botengine: BotEngine environment
+        :param additional_property_name: Property name to store separately and reference in our location_properties
+        :param additional_property_json: Property JSON value
+        :return:
+        """
+        additional_properties = self.get_location_property(botengine, 'additional_properties')
+        if additional_properties is None:
+            additional_properties = []
+
+        if additional_property_name not in additional_properties:
+            additional_properties.append(additional_property_name)
+            self.set_location_property(botengine, 'additional_properties', additional_properties)
+
+        botengine.set_ui_content(self.location_id, additional_property_name, additional_property_json)
+
+    def _sync_location_properties(self, botengine):
+        """
+        Internal method to synchornize our local copy of location properties with the server
+        :param botengine: BotEngine environment
+        """
+        if self.properties_timestamp_ms != botengine.get_timestamp():
+            properties = botengine.get_ui_content(self.location_id, 'location_properties')
+            if properties is not None:
+                self.location_properties = properties
+
+            else:
+                self.location_properties = {}
+
+            self.properties_timestamp_ms = botengine.get_timestamp()
+
+    #===========================================================================
     # Data Stream Message delivery
     #===========================================================================
-    def distribute_datastream_message(self, botengine, address, content, internal=True, external=True):
+    def distribute_datastream_message(self, botengine, address, content=None, internal=True, external=True):
         """
         Distribute a data stream message both internally to any intelligence module within this bot,
         and externally to any other bots that might be listening.
@@ -478,7 +658,7 @@ class Location:
 
         return None
 
-    def update_conversation(self, botengine, conversation_object, message, resolved=False):
+    def update_conversation(self, botengine, conversation_object, message=None, resolved=False):
         """
         Update a conversation
         :param botengine: BotEngine environment
@@ -510,7 +690,7 @@ class Location:
     #===========================================================================
     # Narration
     #===========================================================================
-    def narrate(self, botengine, title, description, priority, icon, timestamp_ms=None, file_ids=None, extra_json_dict=None, update_narrative_id=None, update_narrative_timestamp=None):
+    def narrate(self, botengine, title=None, description=None, priority=None, icon=None, timestamp_ms=None, file_ids=None, extra_json_dict=None, update_narrative_id=None, update_narrative_timestamp=None, user_id=None, users=None, device_id=None, devices=None, goal_id=None, question_key=None, comment=None, status=None, microservice_identifier=None, to_user=True, to_admin=False):
         """
         Narrate some activity
         :param botengine: BotEngine environment
@@ -523,47 +703,116 @@ class Location:
         :param extra_json_dict: Any extra JSON dictionary content we want to communicate with the UI
         :param update_narrative_id: Specify a narrative ID to update an existing record.
         :param update_narrative_timestamp: Specify a narrative timestamp to update an existing record. This is a double-check to make sure we're not overwriting the wrong record.
+        :param admin: True to deliver to an administrator History
+        :param location: True to deliver to end user History
         :return: { "narrativeId": id, "narrativeTime": timestamp_ms } if successful, otherwise None.
         """
-        if priority == botengine.NARRATIVE_PRIORITY_ADMIN:
-            import importlib
-            try:
-                analytics = importlib.import_module('analytics')
-                from copy import copy
+        payload = {}
 
-                if extra_json_dict is None:
-                    properties = {}
-                else:
-                    properties = copy(extra_json_dict)
+        if user_id is not None:
+            payload['user_id'] = user_id
 
-                if description is not None:
-                    properties['description'] = description
+        if users is not None:
+            payload['users'] = users
 
-                analytics.get_analytics(botengine).track(botengine,
-                                                         event_name=title,
-                                                         properties=properties)
+        if device_id is not None:
+            payload['device_id'] = device_id
 
-            except ImportError:
-                pass
-            except Exception as e:
-                botengine.get_logger().error("location.py : " + str(e))
+        if devices is not None:
+            payload['devices'] = devices
 
-        return botengine.narrate(self.location_id, title, description, priority, icon, timestamp_ms=timestamp_ms, file_ids=file_ids, extra_json_dict=extra_json_dict, update_narrative_id=update_narrative_id, update_narrative_timestamp=update_narrative_timestamp)
+        if goal_id is not None:
+            payload['goal_id'] = goal_id
 
-    def track(self, botengine, identifier, properties=None):
+        if question_key is not None:
+            payload['question_key'] = question_key
+
+        if comment is not None:
+            payload['comment'] = comment
+
+        if status is not None:
+            payload['status'] = int(status)
+
+        if extra_json_dict is None:
+            extra_json_dict = payload
+
+        else:
+            extra_json_dict.update(payload)
+
+        if to_admin:
+            response_dict = botengine.narrate(self.location_id, title, description, priority, icon, timestamp_ms=timestamp_ms, file_ids=file_ids, extra_json_dict=extra_json_dict, update_narrative_id=update_narrative_id, update_narrative_timestamp=update_narrative_timestamp, admin=True)
+
+            if response_dict is not None:
+                if microservice_identifier is not None:
+                    self.org_narratives[microservice_identifier] = ( response_dict['narrativeId'], response_dict['narrativeTime'] )
+
+        else:
+            if microservice_identifier is not None:
+                if microservice_identifier in self.org_narratives:
+                    del(self.org_narratives[microservice_identifier])
+
+        if to_user:
+            response_dict = botengine.narrate(self.location_id, title, description, priority, icon, timestamp_ms=timestamp_ms, file_ids=file_ids, extra_json_dict=extra_json_dict, update_narrative_id=update_narrative_id, update_narrative_timestamp=update_narrative_timestamp, admin=False)
+
+            if response_dict is not None:
+                if microservice_identifier is not None:
+                    self.location_narratives[microservice_identifier] = (response_dict['narrativeId'], response_dict['narrativeTime'])
+
+        else:
+            if microservice_identifier is not None:
+                if microservice_identifier in self.location_narratives:
+                    del(self.location_narratives[microservice_identifier])
+
+        return response_dict
+
+    def resolve_narrative(self, botengine, microservice_identifier):
         """
-        Track analytics
+        Resolve a narrative entry
         :param botengine: BotEngine environment
-        :param identifier: Unique identifier for this analytic
+        :param microservice_identifier: The same microservice identifier used to create the narrative
+        :param admin: True to update the admin status on this narrative
+        :return:  { "narrativeId": id, "narrativeTime": timestamp_ms } if successful, otherwise None.
+        """
+        if microservice_identifier in self.org_narratives:
+            narrative_id, narrative_timestamp = self.org_narratives[microservice_identifier]
+            self.narrate(botengine, self.location_id, update_narrative_id=narrative_id, update_narrative_timestamp=narrative_timestamp, status=2, to_admin=True, to_user=False)
+            del(self.org_narratives[microservice_identifier])
+
+        if microservice_identifier in self.location_narratives:
+            narrative_id, narrative_timestamp = self.location_narratives[microservice_identifier]
+            self.narrate(botengine, self.location_id, update_narrative_id=narrative_id, update_narrative_timestamp=narrative_timestamp, status=2, to_admin=False, to_user=True)
+            del(self.location_narratives[microservice_identifier])
+
+    def track(self, botengine, title, properties=None):
+        """
+        Track analytics both in Maestro and in the 3rd party analytics package
+        :param botengine: BotEngine environment
+        :param title: Unique identifier for this analytic
         :param properties: JSON dictionary of properties
         :return: { "narrativeId": id, "narrativeTime": timestamp_ms } if successful, otherwise None.
         """
+        import importlib
+        try:
+            analytics = importlib.import_module('analytics')
+            from copy import copy
+
+            analytics.get_analytics(botengine).track(botengine,
+                                                     event_name=title,
+                                                     properties=properties)
+
+        except ImportError:
+            pass
+        except Exception as e:
+            botengine.get_logger().error("location.py : " + str(e))
+
         return self.narrate(botengine,
-                     title=identifier,
+                     title=title,
                      description=None,
-                     priority=botengine.NARRATIVE_PRIORITY_ADMIN,
-                     icon=None,
-                     extra_json_dict=properties)
+                     priority=botengine.NARRATIVE_PRIORITY_DETAIL,
+                     icon="analytics",
+                     extra_json_dict=properties,
+                     to_admin=True,
+                     to_user=False)
 
     def delete_narration(self, botengine, narrative_id, narrative_timestamp):
         """
@@ -573,7 +822,6 @@ class Location:
         :param narrative_timestamp: Timestamp of the record to delete
         """
         botengine.delete_narration(self.location_id, narrative_id, narrative_timestamp)
-
 
     #===========================================================================
     # Mode helper methods
@@ -612,7 +860,7 @@ class Location:
         Extract this location's current mode from our botengine environment
         :param botengine: BotEngine environment
         """
-        location_block = botengine.get_location_info(self.location_id)
+        location_block = botengine.get_location_info()
         if location_block is not None:
             if 'event' in location_block['location']:
                 self.mode = str(location_block['location']['event'])
@@ -643,7 +891,7 @@ class Location:
         :param botengine: BotEngine environment
         :return: timezone string
         """
-        location_block = botengine.get_location_info(self.location_id)
+        location_block = botengine.get_location_info()
 
         # Try to get the user's location's timezone string
         if 'timezone' in location_block['location']:
@@ -771,7 +1019,7 @@ class Location:
         :param newest_timestamp_ms: newest timestamp in milliseconds
         :return: .csv string, largely matching the .csv data you would receive from the "botengine --download_device [device_id]" command line interface. Or None if this device doesn't have data.
         """
-        output = "location_id,timestamp_ms,timestamp_iso,event,source_type,source_agent\n"
+        output = "location_id,timestamp_ms,timestamp_iso,event,source_type\n"
 
         try:
             modes = botengine.get_mode_history(self.location_id, oldest_timestamp_ms=oldest_timestamp_ms, newest_timestamp_ms=newest_timestamp_ms)
@@ -788,13 +1036,10 @@ class Location:
         for event in modes['events']:
             timestamp_ms = event['eventDateMs']
             dt = self.get_local_datetime_from_timestamp(botengine, timestamp_ms)
-            source_agent = ""
-            if 'sourceAgent' in event:
-                source_agent = event['sourceAgent'].replace(",","_")
 
             event_name = event['event'].replace(",",".")
 
-            output += "{},{},{},{},{},{}".format(self.location_id, timestamp_ms, utilities.iso_format(dt), event_name, event['sourceType'], source_agent)
+            output += "{},{},{},{},{}".format(self.location_id, timestamp_ms, utilities.iso_format(dt), event_name, event['sourceType'])
             output += "\n"
 
         return output

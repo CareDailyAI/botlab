@@ -36,17 +36,7 @@ class Intelligence:
         :param botengine: BotEngine environment
         """
         return
-        
-    def get_html_summary(self, botengine, oldest_timestamp_ms, newest_timestamp_ms, test_mode=False):
-        """
-        Return a human-friendly HTML summary of insights or status of this intelligence module to report in weekly and test mode emails
-        :param botengine: BotEngine environment
-        :param oldest_timestamp_ms: Oldest timestamp in milliseconds to summarize
-        :param newest_timestamp_ms: Newest timestamp in milliseconds to summarize
-        :param test_mode: True to add or modify details for test mode, instead of a general weekly summary
-        """
-        return ""
-        
+
     def mode_updated(self, botengine, current_mode):
         """
         Mode was updated
@@ -94,6 +84,14 @@ class Intelligence:
         """
         return
 
+    def device_added(self, botengine, device_object):
+        """
+        A new Device was added to this Location
+        :param botengine: BotEngine environment
+        :param device_object: Device object that is getting added
+        """
+        return
+
     def device_deleted(self, botengine, device_object):
         """
         Device is getting deleted
@@ -102,11 +100,11 @@ class Intelligence:
         """
         return
     
-    def question_answered(self, botengine, question):
+    def question_answered(self, botengine, question_object):
         """
         The user answered a question
         :param botengine: BotEngine environment
-        :param question: Question object
+        :param question_object: Question object
         """
         return
     
@@ -258,7 +256,7 @@ class Intelligence:
         :param reference: Cancel all timers with the given reference
         """
         botengine.cancel_timers(self.intelligence_id + str(reference))
-    
+
     def set_alarm(self, botengine, timestamp_ms, argument=None, reference=""):
         """
         Set an absolute alarm

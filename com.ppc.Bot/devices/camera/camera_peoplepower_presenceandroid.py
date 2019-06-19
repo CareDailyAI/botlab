@@ -14,7 +14,7 @@ class PeoplePowerPresenceAndroidCameraDevice(PeoplePowerPresenceCameraDevice):
     
     DEVICE_TYPES = [23]
     
-    def get_device_type_name(self, language):
+    def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
@@ -22,7 +22,7 @@ class PeoplePowerPresenceAndroidCameraDevice(PeoplePowerPresenceCameraDevice):
         return _("Android Camera")
     
     
-    def get_image_name(self, botengine):
+    def get_image_name(self):
         """
         :return: the font icon name of this device type
         """

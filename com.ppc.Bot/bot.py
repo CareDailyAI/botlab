@@ -133,7 +133,11 @@ def run(botengine):
             
         else:
             address = data_stream['address']
-            content = data_stream['feed']
+
+            if 'feed' in data_stream:
+                content = data_stream['feed']
+            else:
+                content = None
             
             if address != "schedule":
                 controller.sync_datastreams(botengine, address, content)
@@ -226,6 +230,9 @@ def run(botengine):
 
             for reference in events:
                 controller.data_request_ready(botengine, reference, events[reference])
+
+        # DO NOT SAVE CORE VARIABLES HERE.
+        return
 
     else:
         botengine.get_logger().error("bot.py: Unknown trigger {}".format(trigger_type))

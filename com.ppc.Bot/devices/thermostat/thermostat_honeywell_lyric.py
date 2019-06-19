@@ -30,7 +30,7 @@ class ThermostatHoneywellLyricDevice(ThermostatDevice):
     MAX_SETPOINT_C = 29.0
     
     
-    def get_device_type_name(self, language):
+    def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """

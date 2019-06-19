@@ -118,6 +118,7 @@ class Controller:
                         # it is actually a different device type than what was originally conceived.
                         self.delete_device(botengine, device_id)
                         device_object = None
+                        continue
                 
                 if device_object is None:
                     if device_type in PeoplePowerPresenceAndroidCameraDevice.DEVICE_TYPES:
@@ -201,13 +202,12 @@ class Controller:
                     else:
                         botengine.get_logger().warn("Unsupported device type: " + str(device_type) + " ('" + device_desc + "')")
                         continue
-
-                    self.sync_device(botengine, location_id, device_id, device_object)
-                
                 
                 device_object.is_connected = item['device']['connected']
                 device_object.can_read = item['read']
                 device_object.can_control = item['control']
+                device_object.device_id = device_id.encode('utf-8')
+                device_object.description = device_desc.encode('utf-8').strip()
                 
                 if 'remoteAddrHash' in item['device']:
                     device_object.remote_addr_hash = item['device']['remoteAddrHash']
@@ -221,15 +221,14 @@ class Controller:
                 if 'startDate' in item['device']:
                     device_object.born_on = item['device']['startDate']
 
+                self.sync_device(botengine, location_id, device_id, device_object)
+
                 if hasattr(device_object, "latitude") and hasattr(device_object, "longitude"):
                     if 'latitude' in item['device'] and 'longitude' in item['device']:
                         if float(item['device']['latitude']) != device_object.latitude or float(item['device']['longitude']) != device_object.longitude:
                             device_object.update_coordinates(botengine, float(item['device']['latitude']), float(item['device']['longitude']))
-                
-                device_object.device_id = device_id.encode('utf-8')
-                device_object.description = device_desc.encode('utf-8').strip()
-                
-        
+
+
         # Maintenance: Prune out deleted locations
         if len(locations_list) > 0:
             for location_id in self.locations.keys():

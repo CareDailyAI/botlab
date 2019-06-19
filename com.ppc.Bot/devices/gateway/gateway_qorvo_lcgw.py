@@ -16,7 +16,7 @@ class QorvoLcgwGatewayDevice(GatewayDevice):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [10031]
         
-    def get_device_type_name(self, language):
+    def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """

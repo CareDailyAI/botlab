@@ -8,7 +8,8 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 # Time conversions to ms
-ONE_MINUTE_MS = 60000
+ONE_SECOND_MS = 1000
+ONE_MINUTE_MS = 60 * ONE_SECOND_MS
 ONE_HOUR_MS = ONE_MINUTE_MS * 60
 ONE_DAY_MS = ONE_HOUR_MS * 24
 ONE_WEEK_MS = ONE_DAY_MS * 7
@@ -55,7 +56,9 @@ ALARM_CODE_LOW_TEMPERATURE = "E159"
 ALARM_CODE_CARBON_MONOXIDE = "E162"
 ALARM_CODE_MEDICATION_DISPENCER = "E330"
 ALARM_CODE_SMOKE_DETECTOR = "E111"
+ALARM_CODE_MEDICAL_ALARM = "E100"
 ALARM_CODE_GENERAL_MEDICAL_ALARM = "E102"
+ALARM_CODE_WELLNESS_NO_DISPATCH = "E103"
 
 # Professional Monitoring
 PROFESSIONAL_MONITORING_NEVER_PURCHASED = 0
@@ -77,15 +80,15 @@ def alarm_code_to_description(code):
     """
     if ALARM_CODE_GENERAL_BURGLARY in code:
         # NOTE: "The Moss family <burglary alarm tripped>."
-        return _("burglar alarm tripped")
+        return _("has a burglar alarm")
     
     elif ALARM_CODE_PERIMETER_WINDOW_BURGLARY in code:
         # NOTE: "The Moss family <burglary alarm tripped because a window opened>."
-        return _("burglar alarm tripped because a window opened")
+        return _("has a burglar alarm because a window opened")
     
     elif ALARM_CODE_PERIMETER_DOOR_BURGLARY in code:
         # NOTE: "The Moss family <burglary alarm tripped because a door opened>."
-        return _("burglar alarm tripped because a door opened")
+        return _("has a burglar alarm because a door opened")
     
     elif ALARM_CODE_LEAK in code:
         # NOTE: "The Moss family <is experiencing a water leak>."
@@ -93,7 +96,7 @@ def alarm_code_to_description(code):
     
     elif ALARM_CODE_RECENT_CLOSING in code:
         # NOTE: "The Moss family <burglary alarm tripped shortly after arming>."
-        return _("burglar alarm tripped shortly after arming")
+        return _("has a burglar alarm, shortly after arming")
     
     elif ALARM_CODE_DURESS in code:
         # NOTE: "The Moss family <typed a Duress code into the Touchpad>."
