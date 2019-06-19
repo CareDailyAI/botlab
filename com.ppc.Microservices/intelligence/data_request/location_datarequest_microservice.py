@@ -13,6 +13,15 @@ import utilities
 # Reference to use when requesting data so we know the response is ours
 DATA_REQUEST_REFERENCE = "all"
 
+# For debugging, export CSV data to local files
+EXPORT_CSV_TO_LOCAL_FILES = False
+
+# Number of weeks upon initialization that data should be downloaded daily - to improve ML models rapidly during the first few weeks of service.
+NUMBER_OF_WEEKS_TO_DOWNLOAD_DATA_DAILY = 4
+
+# Timer reference to avoid overlapping timers
+TIMER_REFERENCE = "dr"
+
 class LocationDataRequestMicroservice(Intelligence):
     """
     This module is responsible for waking up at least once weekly, downloading data, and distributing the shared data
@@ -32,14 +41,19 @@ class LocationDataRequestMicroservice(Intelligence):
         # Last recalculation timestamp
         self.last_download = 0
 
+        # When was this microservice born on
+        self.born_on = botengine.get_timestamp()
+
+        # Download data
+        self.download_data(botengine)
+
     def initialize(self, botengine):
         """
         Initialize
         :param botengine: BotEngine environment
         """
-        if self.last_download == 0:
-            self.request_all_data(botengine)
-
+        if not hasattr(self, 'born_on'):
+            self.born_on = botengine.get_timestamp()
         return
 
     def datastream_updated(self, botengine, address, content):
@@ -60,7 +74,11 @@ class LocationDataRequestMicroservice(Intelligence):
         """
         if schedule_id == "ML":
             import random
-            self.start_timer_ms(botengine, random.randint(0, utilities.ONE_HOUR_MS * 6))
+            self.start_timer_ms(botengine, random.randint(0, utilities.ONE_HOUR_MS * 6), reference=TIMER_REFERENCE)
+
+            if self.born_on > botengine.get_timestamp() - (utilities.ONE_WEEK_MS * NUMBER_OF_WEEKS_TO_DOWNLOAD_DATA_DAILY):
+                import random
+                self.start_timer_ms(botengine, random.randint(utilities.ONE_DAY_MS, utilities.ONE_DAY_MS + (utilities.ONE_HOUR_MS * 6)), reference=TIMER_REFERENCE)
 
     def timer_fired(self, botengine, argument):
         """
@@ -68,7 +86,7 @@ class LocationDataRequestMicroservice(Intelligence):
         :param botengine: Current botengine environment
         :param argument: Argument applied when setting the timer
         """
-        self.request_all_data(botengine)
+        self.download_data(botengine)
 
     def download_data(self, botengine, content=None):
         """
@@ -79,6 +97,7 @@ class LocationDataRequestMicroservice(Intelligence):
         :param content:
         :return:
         """
+        self.last_download = botengine.get_timestamp()
         self.last_recalculation = botengine.get_timestamp()
         botengine.get_logger().info("location_datarequest_microservice.download_data() - Requesting data")
 
@@ -114,10 +133,17 @@ class LocationDataRequestMicroservice(Intelligence):
         :param csv_dict: { device_object: 'csv data string' }
         """
         if reference == DATA_REQUEST_REFERENCE:
-            botengine.get_logger().info("Data request received. reference={}".format(reference))
+            botengine.get_logger().info("location_datarequest_microservice: Data request received. reference={}".format(reference))
 
             for d in csv_dict:
                 botengine.get_logger().info("{} = {} bytes".format(d, len(csv_dict[d])))
+
+                filename = "{}_{}.csv".format(d.device_id, d.device_type)
+                if EXPORT_CSV_TO_LOCAL_FILES:
+                    with open(filename, "w") as text_file:
+                        botengine.get_logger().info("Saving CSV data to {} ...".format(filename))
+                        text_file.write(csv_dict[d])
+
 
         # It is up to the developer to capture the data_request_ready(..) event in their own microservice
         # and verify the reference is 'all', then do something with all this data.

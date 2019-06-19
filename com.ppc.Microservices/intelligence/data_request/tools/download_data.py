@@ -43,6 +43,7 @@ def main(argv=None):
     parser.add_argument("-u", "--username", dest="username", help="Username")
     parser.add_argument("-p", "--password", dest="password", help="Password")
     parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.presencepro.com)")
+    parser.add_argument("-l", "--location", dest="location_id", help="Location ID")
     parser.add_argument("-a", "--api_key", dest="apikey", help="User's API key instead of a username/password")
     parser.add_argument("--httpdebug", dest="httpdebug", action="store_true", help="HTTP debug logger output");
     
@@ -55,8 +56,12 @@ def main(argv=None):
     server = args.server
     httpdebug = args.httpdebug
     app_key = args.apikey
+    location_id = args.location_id
 
-    
+    if location_id is not None:
+        location_id = int(location_id)
+        print(Color.BOLD + "Location ID: {}".format(location_id) + Color.END)
+
     # Define the bot server
     if not server:
         server = "https://app.presencepro.com"
@@ -85,18 +90,17 @@ def main(argv=None):
     if app_key is None:
         app_key, user_info = _login(server, username, password)
 
-    send_datastream_message(server, app_key, DATASTREAM_ADDRESS, DATASTREAM_CONTENT)
+    send_datastream_message(server, app_key, location_id, DATASTREAM_ADDRESS, DATASTREAM_CONTENT)
     print("Done!")
     
     
-    
-    
-def send_datastream_message(server, app_key, address, content):
+def send_datastream_message(server, app_key, location_id, address, content):
     http_headers = {"API_KEY": app_key, "Content-Type": "application/json"}
     
     params = {
               "address": address,
-              "organizational": 1
+              "scope": 1,
+              "locationId": location_id
               }
     
     body = {
@@ -116,7 +120,7 @@ def _login(server, username, password):
     """Get an Bot API key and User Info by login with a username and password"""
 
     if not username:
-        username = input('Email address: ')
+        username = raw_input('Email address: ')
         
     if not password:
         import getpass
@@ -175,6 +179,22 @@ class BotError(Exception):
     def __unicode__(self):
         return self.msg
 
+
+#===============================================================================
+# Color Class for CLI
+#===============================================================================
+class Color:
+    """Color your command line output text with Color.WHATEVER and Color.END"""
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
 
 if __name__ == "__main__":
     sys.exit(main())
