@@ -274,6 +274,10 @@ class LightDevice(Device):
         ]
 
         botengine.send_commands(self.device_id, commands)
+
+        # We cannot send brightness and on/off commands in the same command on some gateways.
+        botengine.flush_commands()
+
         return True
 
     def off(self, botengine):
@@ -309,10 +313,14 @@ class LightDevice(Device):
 
         # Adjusting the brightness requires 2 parameters for compatibility with our partners gateways
         commands = [
-            botengine.form_command(LightDevice.COMMAND_NAME_BRIGHTNESS, percent)
+            botengine.form_command("currentLevel", int((percent / 100.0) * 254)),
+            botengine.form_command("commandName", "setLevel")
         ]
 
         botengine.send_commands(self.device_id, commands)
+
+        # We cannot send brightness and on/off commands in the same command on some gateways.
+        botengine.flush_commands()
 
     def set_saturation(self, botengine, saturation):
         """
