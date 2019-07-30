@@ -120,12 +120,8 @@ class LightDevice(Device):
         :return: True if we can control brightness on this device
         """
         if self.MEASUREMENT_NAME_BRIGHTNESS in self.measurements:
-            # ASYMMETRIC NON-SENSE.
-            # The measurements are raw, 0-254.
-            # The display formula is math:ceil(math:sqrt(39.37*value)).intValue()
-            # This applies to the currentLevel parameter in general, apparently.
-            import math
-            return int(math.ceil(math.sqrt(self.measurements[self.MEASUREMENT_NAME_BRIGHTNESS][0][0] * 39.37)))
+            # Brightness here is available from the server in units of %
+            return self.measurements[self.MEASUREMENT_NAME_BRIGHTNESS][0][0]
 
         return 100
 
