@@ -24,9 +24,9 @@ Once you have your Python environment established, install these python package 
 
 Clone this repository to your computer. The 'botengine' file is a Python application which serves a dual purpose: it is the command line interface which provides access for the developer to create and manage bots, and it is also the software execution environment for which provides access for a running bot to securely interact with the outside world.
 
-Most developers simply type "./botengine" to execute commands on the command line interface. For example, "./botengine --help"
+Most developers simply type `./botengine` to execute commands on the command line interface. For example, `./botengine --help`
 
-If you're running Windows, we recommend using Cygwin to run the 'botengine' application. You can also try "python botengine".
+If you're running Windows, we recommend using Windows Terminal to run the 'botengine' application. You can also try `python botengine`. Please keep in mind that although Python is meant to be operating system independent, some differences do exist between OS's and bot commercial code runs in a Linux environment on the cloud or on the edge.
 
 When you clone the botengine repository, be sure to add its location to your PYTHONPATH variable.
 
