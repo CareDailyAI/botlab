@@ -16,6 +16,12 @@
   # due to the addition of hidden .libs directories that end up exceeding the maximum size of a bot
   # (50MB compressed / 250MB uncompressed).
   "pip_install_remotely": [
+        "pytz",
+        "python-dateutil",
+        "lz4",
+        "dill",
+        "tzlocal",
+        "requests"
   ],
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory

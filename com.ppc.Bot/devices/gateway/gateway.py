@@ -23,7 +23,7 @@ class GatewayDevice(Device):
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Abstract device type name
-        return _("Gateway")
+        return _("Smart Home Center")
     
     def get_image_name(self):
         """

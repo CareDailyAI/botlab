@@ -13,10 +13,14 @@ import utilities
 import intelligence.index
 import importlib
 import domain
+from narrative import Narrative
 
 
 class Location:
-    """This class simply keeps track of our location and figures out the state of the location's security system"""
+    """
+    Provide tools and information to manage the Location.
+    """
+
     def __init__(self, botengine, location_id):
         """Constructor"""
         self.location_id = int(location_id)
@@ -54,24 +58,27 @@ class Location:
         # Latest copy of our location properties
         self.location_properties = {}
 
-        # Narratives we're tracking from various microservices for your location.  { "unique_id" : ( narrative_id, narrative_time ) }.
+        # Narratives we're tracking from various microservices for your location.  { "unique_id" : narrative_object }.
         self.location_narratives = {}
 
-        # Narratives we're tracking from various microservices for your organization. { "unique_id" : ( narrative_id, narrative_time ) }.
+        # Narratives we're tracking from various microservices for your organization. { "unique_id" : narrative_object }.
         self.org_narratives = {}
+
+        # Latitude
+        self.latitude = None
+
+        # Longitude
+        self.longitude = None
+
+        # Daylight setting, populated by the 'daylight' microservice package
+        self.is_daylight = None
 
         
     def initialize(self, botengine):
-        """Mandatory to run with every execution"""
-        # Refresh this with every execution
-        if not hasattr(self, 'conversational_ui'):
-            self.conversational_ui = None
-
-        # Added November 29, 2018
-        if not hasattr(self, 'occupancy_status'):
-            self.occupancy_status = ""
-            self.occupancy_reason = ""
-
+        """
+        Initialize
+        :param botengine: BotEngine environment
+        """
         # Added June 1, 2019
         if not hasattr(self, 'properties_timestamp_ms'):
             self.properties_timestamp_ms = 0
@@ -84,6 +91,18 @@ class Location:
         # Added June 14, 2019
         if not hasattr(self, 'org_narratives'):
             self.org_narratives = {}
+
+        # Added August 21, 2019 - but these class variables should have been here a long time ago.
+        if not hasattr(self, 'latitude'):
+            self.latitude = None
+
+        # Added August 21, 2019 - but these class variables should have been here a long time ago.
+        if not hasattr(self, 'longitude'):
+            self.longitude = None
+
+        # Added August 22, 2019
+        if not hasattr(self, 'is_daylight'):
+            self.is_daylight = None
 
         for d in self.devices:
             self.devices[d].initialize(botengine)
@@ -102,13 +121,12 @@ class Location:
                         intelligence_object = class_(botengine, self)
                         self.intelligence_modules[intelligence_info['module']] = intelligence_object
                     except Exception as e:
-                        botengine.get_logger().error("Could not add location microservice: " + str(intelligence_info) + ": " + str(e))
                         import traceback
-                        traceback.print_exc()
+                        botengine.get_logger().error("Could not add location microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
                         
                     
             # Remove microservices that no longer exist
-            for module_name in self.intelligence_modules.keys():
+            for module_name in dict(self.intelligence_modules).keys():
                 found = False
                 for intelligence_info in intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']:
                     if intelligence_info['module'] == module_name:
@@ -124,7 +142,6 @@ class Location:
         for i in self.intelligence_modules:
             self.intelligence_modules[i].parent = self
             self.intelligence_modules[i].initialize(botengine)
-        
         
     
     def garbage_collect(self, botengine):
@@ -158,16 +175,18 @@ class Location:
         device_object = None
         if device_id in self.devices:
             device_object = self.devices[device_id]
-            
+
             if hasattr(device_object, "intelligence_modules"):
                 for intelligence_id in device_object.intelligence_modules:
                     device_object.intelligence_modules[intelligence_id].destroy(botengine)
-            
+
+            device_object.destroy(botengine)
+
             del self.devices[device_id]
-            
+
             for intelligence_id in self.intelligence_modules:
                 self.intelligence_modules[intelligence_id].device_deleted(botengine, device_object)
-    
+
     def mode_updated(self, botengine, mode):
         """
         Update this location's mode
@@ -253,7 +272,6 @@ class Location:
                         botengine.get_logger().warn("location.py - Error delivering datastream message to device microservice (continuing execution): " + str(e))
                         import traceback
                         botengine.get_logger().error(traceback.format_exc())
-                    
             
     def schedule_fired(self, botengine, schedule_id):
         """
@@ -282,7 +300,6 @@ class Location:
         :param argument: Optional argument
         """
         return
-
 
     def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
         """
@@ -346,6 +363,30 @@ class Location:
                         import traceback
                         botengine.get_logger().error(traceback.format_exc())
 
+    def update_coordinates(self, botengine, latitude, longitude):
+        """
+        Attempt to update coordinates
+        :param botengine: BotEngine environment
+        :param latitude: Current latitude
+        :param longitude: Current longitude
+        """
+        # Added June 26, 2019
+        if not hasattr(self, 'latitude'):
+            self.latitude = None
+            self.longitude = None
+
+        if self.latitude != latitude or self.longitude != longitude:
+            self.latitude = latitude
+            self.longitude = longitude
+
+            for intelligence_id in self.intelligence_modules:
+                try:
+                    self.intelligence_modules[intelligence_id].coordinates_updated(botengine, self.latitude, self.longitude)
+                except Exception as e:
+                    botengine.get_logger().warn("location.py - Error delivering coordinates_updated to location microservice : " + str(e))
+                    import traceback
+                    botengine.get_logger().error(traceback.format_exc())
+
     #===========================================================================
     # General location information
     #===========================================================================
@@ -356,23 +397,6 @@ class Location:
         :return: Nickname
         """
         return botengine.get_location_name()
-
-    def get_location_latitude(self, botengine):
-        """
-        Get the latitude of this location
-        :param botengine: BotEngine environment
-        :return: Latitude, or None if it doesn't exist
-        """
-        return botengine.get_location_latitude()
-
-    def get_location_longitude(self, botengine):
-        """
-        Get the longitude of this location
-        :param botengine: BotEngine environment
-        :return: Longitude, or None if it doesn't exist
-        """
-        return botengine.get_location_longitude()
-
 
     #===========================================================================
     # Mode
@@ -387,6 +411,28 @@ class Location:
         botengine.set_mode(self.location_id, mode, comment)
         # Allow the bot to trigger again and set the mode from a single unified action.
 
+    def get_user_facing_mode(self, botengine, mode):
+        """
+        The modes recognized by most services include "HOME", "AWAY", "STAY", "TEST".
+
+        The user-facing representation of these modes may be different. For example,
+        some brands prefer the user to see "OFF" instead of "HOME".
+
+        This method will transform a mode name into the user-facing representation
+        for interaction with the user. Use the domain.py file at the root of your bot
+        to specify this mapping.
+
+        :param botengine: BotEngine environment
+        :param mode: Internal mode name, including "HOME", "AWAY", "STAY", "TEST".
+        :return: User-facing text representation of that mode
+        """
+        if hasattr(domain, 'USER_FACING_MODES'):
+            if mode in domain.USER_FACING_MODES:
+                return domain.USER_FACING_MODES[mode]
+            else:
+                botengine.get_logger().warning("location.py: Mode '{}' not found in the domain.USER_FACING_MODES".format(mode))
+
+        return mode
 
     def distribute_occupancy_status(self, botengine, status, reason, last_status, last_reason):
         """
@@ -418,28 +464,6 @@ class Location:
                         botengine.get_logger().error(traceback.format_exc())
 
     #===========================================================================
-    # Bot-to-UI content delivery
-    #===========================================================================
-    def set_ui_content(self, botengine, address, json_content):
-        """
-        Set information to be consumed by user interfaces through a known address.
-
-        Application-layer developers first collectively agree upon the data
-        that needs to be produced by the bot to be rendered on a UI. Then the UI
-        can read the address to extract the JSON information to render natively.
-
-        It is therefore possible for the bot to also produce new addressable content,
-        as long as the addresses are retrievable from a well known base address. For example,
-        you could save some UI content that includes a list of reports, each report saved under
-        a unique address. Then, save UI content for each report under their unique addresses.
-
-        :param botengine: BotEngine environment
-        :param address: Address to save information into, in a way that can be recalled by an app.
-        :param json_content: Raw JSON content to deliver to an app/UI.
-        """
-        botengine.set_ui_content(self.location_id, address, json_content)
-
-    #===========================================================================
     # Location Properties
     #===========================================================================
     def set_location_property(self, botengine, property_name, property_value):
@@ -451,7 +475,7 @@ class Location:
         """
         self._sync_location_properties(botengine)
         self.location_properties[property_name] = property_value
-        botengine.set_ui_content(self.location_id, 'location_properties', self.location_properties)
+        botengine.set_ui_content('location_properties', self.location_properties)
 
         import importlib
         try:
@@ -471,7 +495,7 @@ class Location:
         """
         self._sync_location_properties(botengine)
         self.location_properties.update(properties_dict)
-        botengine.set_ui_content(self.location_id, 'location_properties', self.location_properties)
+        botengine.set_ui_content('location_properties', self.location_properties)
 
         import importlib
         try:
@@ -497,7 +521,7 @@ class Location:
             self.location_properties[property_name] = 0
 
         self.location_properties[property_name] += increment_amount
-        botengine.set_ui_content(self.location_id, 'location_properties', self.location_properties)
+        botengine.set_ui_content('location_properties', self.location_properties)
 
         import importlib
         try:
@@ -528,7 +552,7 @@ class Location:
         self._sync_location_properties(botengine)
         if property_name in self.location_properties:
             del(self.location_propertyes[property_name])
-            botengine.set_ui_content(self.location_id, 'location_properties', self.location_properties)
+            botengine.set_ui_content('location_properties', self.location_properties)
 
     def set_location_property_separately(self, botengine, additional_property_name, additional_property_json):
         """
@@ -547,7 +571,7 @@ class Location:
             additional_properties.append(additional_property_name)
             self.set_location_property(botengine, 'additional_properties', additional_properties)
 
-        botengine.set_ui_content(self.location_id, additional_property_name, additional_property_json)
+        botengine.set_ui_content(additional_property_name, additional_property_json)
 
     def _sync_location_properties(self, botengine):
         """
@@ -555,7 +579,7 @@ class Location:
         :param botengine: BotEngine environment
         """
         if self.properties_timestamp_ms != botengine.get_timestamp():
-            properties = botengine.get_ui_content(self.location_id, 'location_properties')
+            properties = botengine.get_ui_content('location_properties')
             if properties is not None:
                 self.location_properties = properties
 
@@ -584,6 +608,151 @@ class Location:
             botengine.send_datastream_message(address, content)
 
 
+    #===========================================================================
+    # Rules
+    #===========================================================================
+    def set_rule_phrase(self, botengine, phrase_id, phrase_object):
+        """
+        Declare a rule phrase to be dynamically added (or removed) from our rules engine.
+        If the phrase_object is None, then the rule phrase gets removed.
+
+        The phrase_id is a globally unique name for the phrase.
+
+        The phrase_object should contain a dictionary with this type of content:
+
+        {
+            # 'type' field can be 0 (trigger), 1 (state), or 2 (action)
+            "type": TYPE_TRIGGER,
+
+            # If we evaluate a device: the device type of the device so we could summarize actions for specific types of devices.
+            "device_types": self.parent.device_type,
+
+            # Description of the phrase in the user's native language. Fill in the ___:
+            # [If my] ____
+            # [and my] ____
+            # [then] ____
+            "description": "'{}' is pressed",
+
+            # Past-tense of the description, for notifications. Fill in the ___:
+            # [Your] ____
+            # [while your] ___
+            "past": "'{}' was pressed",
+
+            # Evaluation function for triggers and states.
+            # If dealing with a device, the function is responsible for checking if the device ID is the object that made an update,
+            # and then testing to see if that device is in the triggered state.
+            # Function arguments are action_function(botengine, rules_engine, location_object, device_object, rule_id)
+            # Functions should return a tuple: ( True|False to execute, "past-tense comment describing why" )
+            # Any time the function changes, we need to update the rule phrase.
+            "eval": evaluation_function,
+
+            # Evaluation function for any timer fires related to this rule / trigger
+            # Function arguments are timer_function(botengine, rules_engine, location_object, device_object, rule_id)
+            # Functions should return a tuple: ( True|False to execute, "past-tense comment describing why" )
+            # Any time the function changes, we need to update the rule phrase.
+            "timer_eval": trigger_button_held_timer_fired,
+
+            # Action function for actions.
+            # Function arguments are action_function(botengine, rules_engine, location_object, device_object, rule_id)
+            # Any time the function changes, we need to update the rule phrase.
+            "action": action_function,
+
+            # Icon to apply at the application layer
+            "icon": "button"
+
+            # List of dynamic parameters that need to be captured in the rule
+            # Each parameter has a globally unique name.
+            # See the "Rule Phrase Parameters" table at https://iotapps.docs.apiary.io/#reference/rules-engine
+            "parameters": [
+
+                {
+                    # Name of this parameter. The application should save the parameter into the rule data stream message with "unique_rule_phrase_id-parameter_name": "final_value"
+                    "name": "unique_rule_phrase_id-parameter_name",
+
+                    # Optional. Know what order to fill out parameters when dealing with multiple parameters.
+                    # Higher numbers are filled out later than lower numbers.
+                    "order": 0,
+
+                    # Type of input desired
+                    #  0 = Device ID
+                    #  1 = Text input
+                    #  2 = Absolute time-of-day (seconds from the start of the day)
+                    #  3 = Day-of-the-week multiple-choice multi-select (0 = Sunday). Remember in Python, Monday = 0 so we have to offset.
+                    #  4 = Relative time from when the rule was created (seconds from now) - "Alexa turn off the lights in 5 minutes"
+                    #  5 = Multiple-choice single-select (see the list of values below).
+                    #  6 = Mode "HOME", "AWAY", "STAY"
+                    #  7 = Security system state integer (from the security state enumerator)
+                    #  8 = Occupancy status "PRESENT", "ABSENT", "H2A", "A2H", "SLEEP", "H2S", "S2H", "VACATION"
+                    "category": parameter_categories_type,
+
+                    "description": "A short user friendly question or brief instruction to display to the user to get them to correctly fill out this parameter.",
+
+                    "values": [
+                        "list",
+                        "of",
+                        "choices",
+                        "if",
+                        "applicable"
+                    ],
+
+                    # Default value of the parameter, if applicable
+                    "value": "Default Value",
+
+                    # For UI slider type category
+                    "min_value": 0,
+
+                    # For UI slider type category
+                    "max_value": 10,
+
+                    # 1=int, 2=float
+                    "value_type": 1,
+
+                    # Unit of measurements
+                    "unit": "Hours"
+                }
+            ]
+        }
+
+        :param botengine:
+        :param phrase_id:
+        :param phrase_object:
+        :return:
+        """
+        botengine.save_shared_variable(phrase_id, phrase_object)
+        self.distribute_datastream_message(botengine, "set_rule_phrase", { "phrase_id" : phrase_id }, internal=True, external=True)
+
+    def set_behaviors(self, botengine, device_types, behaviors):
+        """
+        Set behaviors.
+
+        Each behavior dictionary is defined as:
+
+            {
+                "id": 123,
+                "weight": 0,
+                "name": "Protect my home (default)",
+                "description": "The motion sensor will recognize movement patterns to help protect your home and reduce energy consumption.",
+
+                # Optional arguments:
+                "icon": "home",
+                "media_url": "s3://some_url"
+                "media_content_type": "image/png"
+            }
+
+        :param botengine: BotEngine environment
+        :param device_types: List of device types this set of behaviors applies to
+        :param behaviors: List of behavior dictionaries
+        """
+        menu = {}
+        for device_type in device_types:
+            if behaviors is None:
+                menu[device_type] = None
+            else:
+                menu[device_type] = "behaviors_{}".format(device_type)
+            botengine.save_shared_variable("behaviors_{}".format(device_type), behaviors)
+
+        self.distribute_datastream_message(botengine, "set_behaviors", menu, internal=True, external=True)
+
 
     #===========================================================================
     # Conversations
@@ -602,7 +771,7 @@ class Location:
             botengine.get_logger().info("location.get_conversation_types(): No conversations microservice package in this build.")
             return None
 
-    def start_conversation(self, botengine, conversation_type, homeowner_message, supporter_message, professional_monitoring_code=None, sms_callback_method=None, next_conversation_object=None, force=False):
+    def start_conversation(self, botengine, conversation_type, homeowner_message, supporter_message, professional_monitoring_code=None, sms_callback_method=None, next_conversation_object=None, narrative_objects=None, force=False):
         """
         Start a new conversation by creating the conversation and adding it to the queue.
         :param botengine: BotEngine environment
@@ -612,6 +781,7 @@ class Location:
         :param professional_monitoring_code: Override the default professional monitoring code, if any.
         :param sms_callback_method: Method to call back when the question is answered. def some_method(self, botengine, question_object)
         :param next_conversation_object: Conversation to link and execute immediately after this conversation ends.
+        :param narrative_objects: Narrative objects to add details as the conversation happens { "user": narrative_object, "admin": narrative_object }
         :param force: True to force the conversation, even if the conversation is disabled (for testing)
         :return: conversation_object for reference in update_conversation(..). Or None if this conversation will not be active.
         """
@@ -625,11 +795,12 @@ class Location:
                                                                                  professional_monitoring_code=professional_monitoring_code,
                                                                                  sms_callback_method=sms_callback_method,
                                                                                  next_conversation_object=next_conversation_object,
+                                                                                 narrative_objects=narrative_objects,
                                                                                  force=force)
 
         return None
 
-    def create_conversation(self, botengine, conversation_type, homeowner_message, supporter_message, professional_monitoring_code=None, sms_callback_method=None, next_conversation_object=None, force=False):
+    def create_conversation(self, botengine, conversation_type, homeowner_message, supporter_message, professional_monitoring_code=None, sms_callback_method=None, next_conversation_object=None, narrative_objects=None, force=False):
         """
         Create and return a new conversation without executing on it or putting it into the queue.
         This does not start the conversation.
@@ -641,6 +812,7 @@ class Location:
         :param professional_monitoring_code: Override the default professional monitoring code, if any.
         :param sms_callback_method: Method to call back when the question is answered. def some_method(self, botengine, question_object)
         :param next_conversation_object: Conversation to link and execute immediately after this conversation ends.
+        :param narrative_objects: Narrative objects to add details as the conversation happens { "user": narrative_object, "admin": narrative_object }
         :param force: True to force the conversation, even if the conversation is disabled (for testing)
         :return: conversation_object for reference in update_conversation(..). Or None if this conversation will not be active.
         """
@@ -654,6 +826,7 @@ class Location:
                                                                                   professional_monitoring_code=professional_monitoring_code,
                                                                                   sms_callback_method=sms_callback_method,
                                                                                   next_conversation_object=next_conversation_object,
+                                                                                  narrative_objects=narrative_objects,
                                                                                   force=force)
 
         return None
@@ -705,7 +878,7 @@ class Location:
         :param update_narrative_timestamp: Specify a narrative timestamp to update an existing record. This is a double-check to make sure we're not overwriting the wrong record.
         :param admin: True to deliver to an administrator History
         :param location: True to deliver to end user History
-        :return: { "narrativeId": id, "narrativeTime": timestamp_ms } if successful, otherwise None.
+        :return:  { "user": narrative_object, "admin": narrative_object }. The narrative_object may be None. See com.ppc.Bot/narrative.py
         """
         payload = {}
 
@@ -730,21 +903,24 @@ class Location:
         if comment is not None:
             payload['comment'] = comment
 
-        if status is not None:
-            payload['status'] = int(status)
-
         if extra_json_dict is None:
             extra_json_dict = payload
 
         else:
             extra_json_dict.update(payload)
 
-        if to_admin:
-            response_dict = botengine.narrate(self.location_id, title, description, priority, icon, timestamp_ms=timestamp_ms, file_ids=file_ids, extra_json_dict=extra_json_dict, update_narrative_id=update_narrative_id, update_narrative_timestamp=update_narrative_timestamp, admin=True)
+        response_dict = {
+            "user": None,
+            "admin": None
+        }
 
-            if response_dict is not None:
+        if to_admin:
+            response = botengine.narrate(title, description, priority, icon, status=status, timestamp_ms=timestamp_ms, file_ids=file_ids, extra_json_dict=extra_json_dict, update_narrative_id=update_narrative_id, update_narrative_timestamp=update_narrative_timestamp, admin=True)
+
+            if response is not None:
+                response_dict['admin'] = Narrative(response['narrativeId'], response['narrativeTime'], admin=True)
                 if microservice_identifier is not None:
-                    self.org_narratives[microservice_identifier] = ( response_dict['narrativeId'], response_dict['narrativeTime'] )
+                    self.org_narratives[microservice_identifier] = response_dict['admin']
 
         else:
             if microservice_identifier is not None:
@@ -752,11 +928,12 @@ class Location:
                     del(self.org_narratives[microservice_identifier])
 
         if to_user:
-            response_dict = botengine.narrate(self.location_id, title, description, priority, icon, timestamp_ms=timestamp_ms, file_ids=file_ids, extra_json_dict=extra_json_dict, update_narrative_id=update_narrative_id, update_narrative_timestamp=update_narrative_timestamp, admin=False)
+            response = botengine.narrate(title, description, priority, icon, status=status, timestamp_ms=timestamp_ms, file_ids=file_ids, extra_json_dict=extra_json_dict, update_narrative_id=update_narrative_id, update_narrative_timestamp=update_narrative_timestamp, admin=False)
 
-            if response_dict is not None:
+            if response is not None:
+                response_dict['user'] = Narrative(response['narrativeId'], response['narrativeTime'], admin=False)
                 if microservice_identifier is not None:
-                    self.location_narratives[microservice_identifier] = (response_dict['narrativeId'], response_dict['narrativeTime'])
+                    self.location_narratives[microservice_identifier] = response_dict['user']
 
         else:
             if microservice_identifier is not None:
@@ -774,14 +951,28 @@ class Location:
         :return:  { "narrativeId": id, "narrativeTime": timestamp_ms } if successful, otherwise None.
         """
         if microservice_identifier in self.org_narratives:
-            narrative_id, narrative_timestamp = self.org_narratives[microservice_identifier]
-            self.narrate(botengine, self.location_id, update_narrative_id=narrative_id, update_narrative_timestamp=narrative_timestamp, status=2, to_admin=True, to_user=False)
-            del(self.org_narratives[microservice_identifier])
+            if self.org_narratives[microservice_identifier] is not None:
+                if isinstance(self.org_narratives[microservice_identifier], Narrative):
+                    self.org_narratives[microservice_identifier].resolve(botengine)
+
+                else:
+                    # TODO You can delete this else statement after December 1, 2019
+                    narrative_id, narrative_timestamp = self.org_narratives[microservice_identifier]
+                    self.narrate(botengine, update_narrative_id=narrative_id, update_narrative_timestamp=narrative_timestamp, status=2, to_admin=True, to_user=False)
+
+                del(self.org_narratives[microservice_identifier])
 
         if microservice_identifier in self.location_narratives:
-            narrative_id, narrative_timestamp = self.location_narratives[microservice_identifier]
-            self.narrate(botengine, self.location_id, update_narrative_id=narrative_id, update_narrative_timestamp=narrative_timestamp, status=2, to_admin=False, to_user=True)
-            del(self.location_narratives[microservice_identifier])
+            if self.location_narratives[microservice_identifier] is not None:
+                if isinstance(self.location_narratives[microservice_identifier], Narrative):
+                    self.location_narratives[microservice_identifier].resolve(botengine)
+
+                else:
+                    # TODO You can delete this else statement after December 1, 2019
+                    narrative_id, narrative_timestamp = self.location_narratives[microservice_identifier]
+                    self.narrate(botengine, update_narrative_id=narrative_id, update_narrative_timestamp=narrative_timestamp, status=2, to_admin=False, to_user=True)
+
+                del(self.location_narratives[microservice_identifier])
 
     def track(self, botengine, title, properties=None):
         """
@@ -821,7 +1012,7 @@ class Location:
         :param narrative_id: ID of the record to delete
         :param narrative_timestamp: Timestamp of the record to delete
         """
-        botengine.delete_narration(self.location_id, narrative_id, narrative_timestamp)
+        botengine.delete_narration(narrative_id, narrative_timestamp)
 
     #===========================================================================
     # Mode helper methods
@@ -836,6 +1027,16 @@ class Location:
                and "H2A" not in self.occupancy_status \
                and "AWAY" not in self.occupancy_status \
                and "VACATION" not in self.occupancy_status
+
+    def is_definitely_absent(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if the occupants are definitely away
+        """
+        return "ABSENT" in self.occupancy_status \
+               or "A2H" in self.occupancy_status \
+               or "AWAY" in self.occupancy_status \
+               or "VACATION" in self.occupancy_status
     
     def is_present_and_protected(self, botengine=None):
         """
@@ -944,11 +1145,11 @@ class Location:
 
         reference = self.get_local_datetime(botengine)
         hour, minute = divmod(hours, 1)
-        minute *= 60
+        minute = round(minute * 60)
         days = reference.weekday() - weekday
         target_dt = (reference - timedelta(days=days)).replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
         timestamp_ms = self.timezone_aware_datetime_to_unix_timestamp(botengine, target_dt)
-        if timestamp_ms < botengine.get_timestamp():
+        if timestamp_ms <= botengine.get_timestamp():
             timestamp_ms += utilities.ONE_WEEK_MS
 
         return timestamp_ms
@@ -1021,11 +1222,17 @@ class Location:
         """
         output = "location_id,timestamp_ms,timestamp_iso,event,source_type\n"
 
+        # This number happens to be the oldest timestamp
+        if oldest_timestamp_ms < 1262304000000:
+            oldest_timestamp_ms = 1262304000000
+
         try:
             modes = botengine.get_mode_history(self.location_id, oldest_timestamp_ms=oldest_timestamp_ms, newest_timestamp_ms=newest_timestamp_ms)
-        except:
+        except Exception as e:
             # This can happen because this bot may not have read permissions for this device.
-            botengine.get_logger().warning("Cannot synchronize modes history for location {}".format(self.location_id))
+            botengine.get_logger().error("Could not download modes history for location {}: {}".format(self.location_id, str(e)))
+            import traceback
+            botengine.get_logger().error(traceback.format_exc())
             return None
 
         if 'events' not in modes:

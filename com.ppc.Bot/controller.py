@@ -16,8 +16,10 @@ from devices.camera.camera_peoplepower_presenceios import PeoplePowerPresenceIos
 from devices.entry.entry import EntryDevice
 from devices.environment.temperature import TemperatureDevice
 from devices.environment.temperaturehumidity import TemperatureHumidityDevice
-from devices.gateway.gateway_peoplepower_iotgateway import PeoplePowerIotGatewayDevice
+from devices.gateway.gateway_peoplepower_xseries import PeoplePowerXSeriesDevice
+from devices.gateway.gateway_peoplepower_mseries import PeoplePowerMSeriesDevice
 from devices.gateway.gateway_qorvo_lcgw import QorvoLcgwGatewayDevice
+from devices.gateway.gateway_develco_squidlink import DevelcoSquidlinkDevice
 from devices.leak.leak import LeakDevice
 from devices.light.light import LightDevice
 from devices.light.lightswitch_ge import LightswitchGeDevice
@@ -39,7 +41,6 @@ from devices.pictureframe.pictureframe_peoplepower_ios import PeoplePowerPicture
 from devices.pictureframe.pictureframe_peoplepower_android import PeoplePowerPictureFrameAndroidDevice
 from devices.smartplug.smartplug_smartenit_largeload import SmartenitLargeLoadControllerDevice
 
-
 class Controller:
     """This is the main class that will coordinate all our sensors and behavior"""
     
@@ -59,7 +60,6 @@ class Controller:
         Initialize the controller.
         This is mandatory to call once for each new execution of the bot
         """
-        #self.print_status(botengine)
         for key in self.locations:
             self.locations[key].initialize(botengine)
             
@@ -82,20 +82,24 @@ class Controller:
         :param botengine: Execution environment
         :param controller: Controller object managing all locations and devices
         """
+        location_id = botengine.get_location_id()
+        if location_id not in self.locations:
+            # The location isn't being tracked yet, add it
+            botengine.get_logger().info("\t=> Now tracking location " + str(location_id))
+            self.locations[location_id] = Location(botengine, location_id)
+
         access = botengine.get_access_block()
-        
+
         if access is None:
             botengine.get_logger().error("Bot Server error: No 'access' block in our inputs!")
             return
-        
-        locations_list = []
-        
+
         # Maintenance: Add new devices
         for item in access:
             if item['category'] == botengine.ACCESS_CATEGORY_MODE:
                 if 'location' in item:
-                    if 'locationId' in item['location']:
-                        locations_list.append(item['location']['locationId'])
+                    if 'latitude' in item['location'] and 'longitude' in item['location']:
+                        self.locations[location_id].update_coordinates(botengine, item['location']['latitude'], item['location']['longitude'])
                 
             elif item['category'] == botengine.ACCESS_CATEGORY_DEVICE:
                 if 'device' not in item:
@@ -103,10 +107,10 @@ class Controller:
                     botengine.get_logger().warn("Got a Device Category in our access block, but there was no 'device' element:\n" + json.dumps(access, indent=2, sort_keys=True))
                     continue
                 
-                device_id = item['device']['deviceId']
-                device_type = item['device']['deviceType']
-                device_desc = item['device']['description']
-                location_id = item['device']['locationId']
+                device_id = str(item['device']['deviceId'])
+                device_type = int(item['device']['deviceType'])
+                device_desc = str(item['device']['description']).strip()
+                location_id = int(item['device']['locationId'])
                 
                 device_object = self.get_device(device_id)
 
@@ -136,9 +140,15 @@ class Controller:
                     elif device_type in TemperatureHumidityDevice.DEVICE_TYPES:
                         device_object = TemperatureHumidityDevice(botengine, device_id, device_type, device_desc)
                         
-                    elif device_type in PeoplePowerIotGatewayDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerIotGatewayDevice(botengine, device_id, device_type, device_desc)
-                    
+                    elif device_type in PeoplePowerMSeriesDevice.DEVICE_TYPES:
+                        device_object = PeoplePowerMSeriesDevice(botengine, device_id, device_type, device_desc)
+
+                    elif device_type in PeoplePowerXSeriesDevice.DEVICE_TYPES:
+                        device_object = PeoplePowerXSeriesDevice(botengine, device_id, device_type, device_desc)
+
+                    elif device_type in DevelcoSquidlinkDevice.DEVICE_TYPES:
+                        device_object = DevelcoSquidlinkDevice(botengine, device_id, device_type, device_desc)
+
                     elif device_type in QorvoLcgwGatewayDevice.DEVICE_TYPES:
                         device_object = QorvoLcgwGatewayDevice(botengine, device_id, device_type, device_desc)
                         
@@ -206,20 +216,20 @@ class Controller:
                 device_object.is_connected = item['device']['connected']
                 device_object.can_read = item['read']
                 device_object.can_control = item['control']
-                device_object.device_id = device_id.encode('utf-8')
-                device_object.description = device_desc.encode('utf-8').strip()
+                device_object.device_id = str(device_id)
+                device_object.description = str(device_desc).strip()
                 
                 if 'remoteAddrHash' in item['device']:
-                    device_object.remote_addr_hash = item['device']['remoteAddrHash']
+                    device_object.remote_addr_hash = str(item['device']['remoteAddrHash'])
                 
                 if 'proxyId' in item['device']:
-                    device_object.proxy_id = item['device']['proxyId']
+                    device_object.proxy_id = str(item['device']['proxyId'])
                 
                 if 'goalId' in item['device']:
-                    device_object.goal_id = item['device']['goalId']
+                    device_object.goal_id = int(item['device']['goalId'])
 
                 if 'startDate' in item['device']:
-                    device_object.born_on = item['device']['startDate']
+                    device_object.born_on = int(item['device']['startDate'])
 
                 self.sync_device(botengine, location_id, device_id, device_object)
 
@@ -228,13 +238,6 @@ class Controller:
                         if float(item['device']['latitude']) != device_object.latitude or float(item['device']['longitude']) != device_object.longitude:
                             device_object.update_coordinates(botengine, float(item['device']['latitude']), float(item['device']['longitude']))
 
-
-        # Maintenance: Prune out deleted locations
-        if len(locations_list) > 0:
-            for location_id in self.locations.keys():
-                if location_id not in locations_list:
-                    self.delete_location(botengine, location_id)
-            
         # Maintenance: Prune out old devices
         for device_id in copy.copy(self.location_devices):
             found = False

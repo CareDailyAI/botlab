@@ -15,10 +15,6 @@ DATASTREAM_CONTENT = {
 }
 
 
-
-
-
-
 # input function behaves differently in Python 2.x and 3.x. And there is no raw_input in 3.x.
 if hasattr(__builtins__, 'raw_input'):
     input=raw_input
@@ -48,7 +44,7 @@ def main(argv=None):
     parser.add_argument("--httpdebug", dest="httpdebug", action="store_true", help="HTTP debug logger output");
     
     # Process arguments
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
     
     # Extract the arguments
     username = args.username
@@ -201,9 +197,4 @@ if __name__ == "__main__":
 
 
 
-
-
-
-    
-    
 

@@ -14,6 +14,7 @@ ONE_HOUR_MS = ONE_MINUTE_MS * 60
 ONE_DAY_MS = ONE_HOUR_MS * 24
 ONE_WEEK_MS = ONE_DAY_MS * 7
 ONE_MONTH_MS = ONE_DAY_MS * 30
+ONE_YEAR_MS = ONE_DAY_MS * 365
 
 # Modes
 MODE_HOME = "HOME"
@@ -59,6 +60,7 @@ ALARM_CODE_SMOKE_DETECTOR = "E111"
 ALARM_CODE_MEDICAL_ALARM = "E100"
 ALARM_CODE_GENERAL_MEDICAL_ALARM = "E102"
 ALARM_CODE_WELLNESS_NO_DISPATCH = "E103"
+ALARM_CODE_WELLNESS_DISPATCH = "E106"
 
 # Professional Monitoring
 PROFESSIONAL_MONITORING_NEVER_PURCHASED = 0
@@ -73,6 +75,15 @@ PROFESSIONAL_MONITORING_ALERT_STATUS_QUIET = 0
 PROFESSIONAL_MONITORING_ALERT_STATUS_RAISED = 1
 PROFESSIONAL_MONITORING_ALERT_STATUS_CANCELLED = 2
 PROFESSIONAL_MONITORING_ALERT_STATUS_REPORTED = 3
+
+# Official Collection Names
+SECURITY_COLLECTION_NAME = "Security Settings"
+CARE_COLLECTION_NAME = "Care Settings"
+ENERGY_COLLECTION_NAME = "Energy Settings"
+HOME_AUTOMATION_COLLECTION_NAME = "Home Automation Settings"
+ECC_COLLECTION_NAME = "Emergency Call Center Settings"
+DEMO_COLLECTION_NAME = "Demo Settings"
+
 
 def alarm_code_to_description(code):
     """
@@ -134,6 +145,31 @@ def relative_f_to_c_degree(fahrenheit_degree):
     """
     return float(fahrenheit_degree) * 0.555556
 
+def calculate_heat_index(degrees_c, humidity):
+    """
+    Get the heat index in Celsius using a Rothfusz regression.
+    This is generally valid for a heat index above 80F
+    https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
+    :param degrees_c: Degrees C
+    :param humidity: Humidity
+    :return: Heat index in degrees C
+    """
+    from math import sqrt
+    T = celsius_to_fahrenheit(degrees_c)
+    RH = humidity
+
+    adjustment_f = 0
+
+    if RH < 13 and 80 < T < 112:
+        adjustment_f = -(((13 - RH) / 4) * sqrt((17 - abs(T - 95.)) / 17))
+
+    elif RH > 85 and 80 < T < 87:
+        adjustment_f = ((RH - 85) / 10) * ((87 - T) / 5)
+
+    hi_f = -42.379 + 2.04901523 * T + 10.14333127 * RH - .22475541 * T * RH - .00683783 * T * T - .05481717 * RH * RH + .00122874 * T * T * RH + .00085282 * T * RH * RH - .00000199 * T * T * RH * RH
+
+    return fahrenheit_to_celsius(hi_f + adjustment_f)
+
 
 def normalize_measurement(measure):
     """
@@ -153,6 +189,22 @@ def normalize_measurement(measure):
 
         else:
             return measure
+
+def get_answer(question_object):
+    """
+    Easily extract an answer from a question object and normalize it.
+    If the question hasn't been answered by the user, then this will return the default answer.
+
+    :param question_object: Question object to extract a normalized answer for
+    :return: Normalized answer
+    """
+    # ANSWER_STATUS_ANSWERED = 4
+    if question_object is None:
+        return None
+
+    if question_object.answer_status == 4:
+        return normalize_measurement(question_object.answer)
+    return normalize_measurement(question_object.default_answer)
 
 def iso_format(dt):
     """
@@ -212,3 +264,19 @@ class MachineLearningError(Exception):
         """
         self.message = message
 
+
+#===============================================================================
+# Color Class for CLI
+#===============================================================================
+class Color:
+    """Color your command line output text with Color.WHATEVER and Color.END"""
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'

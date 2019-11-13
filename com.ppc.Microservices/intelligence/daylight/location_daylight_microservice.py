@@ -23,7 +23,22 @@ SUNRISE = "sunrise"
 SUNSET = "sunset"
 
 
-class DaylightMicroservice(Intelligence):
+class LocationDaylightMicroservice(Intelligence):
+    """
+    Determine sunrise and sunset times for the location
+    """
+    def __init__(self, botengine, parent):
+        """
+        Instantiate this object
+        :param parent: Parent object, either a location or a device object.
+        """
+        Intelligence.__init__(self, botengine, parent)
+
+        if self.parent.latitude is not None and self.parent.longitude is not None:
+            self._set_sunrise_sunset_alarm(botengine)
+
+        # Initialize the 'is_daylight' class variable in the Location object.
+        self.parent.is_daylight = self.is_daylight(botengine)
 
     def initialize(self, botengine):
         """
@@ -33,6 +48,7 @@ class DaylightMicroservice(Intelligence):
         if not self.is_timer_running(botengine) and not botengine.is_executing_timer():
             if self.parent.latitude is not None and self.parent.longitude is not None:
                 self._set_sunrise_sunset_alarm(botengine)
+
         return
 
     def destroy(self, botengine):
@@ -41,16 +57,6 @@ class DaylightMicroservice(Intelligence):
         :param botengine: BotEngine environment
         """
         return
-
-    def get_html_summary(self, botengine, oldest_timestamp_ms, newest_timestamp_ms, test_mode=False):
-        """
-        Return a human-friendly HTML summary of insights or status of this intelligence module to report in weekly and test mode emails
-        :param botengine: BotEngine environment
-        :param oldest_timestamp_ms: Oldest timestamp in milliseconds to summarize
-        :param newest_timestamp_ms: Newest timestamp in milliseconds to summarize
-        :param test_mode: True to add or modify details for test mode, instead of a general weekly summary
-        """
-        return ""
 
     def mode_updated(self, botengine, current_mode):
         """
@@ -128,39 +134,30 @@ class DaylightMicroservice(Intelligence):
         if argument == SUNRISE:
             botengine.get_logger().info("SUNRISE timer fired")
 
-            self.parent.location_object.narrate(botengine,
-                                                title = _("Sunrise"),
-                                                description = _("It is sunrise where your '{}' is located.").format(self.parent.description),
-                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                                icon = 'sunrise'
-                                                )
+            self.parent.narrate(botengine,
+                                title = _("Sunrise"),
+                                description = _("It is sunrise at '{}'.").format(self.parent.get_location_name(botengine)),
+                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                icon = 'sunrise'
+                                )
 
-            import importlib
-            try:
-                analytics = importlib.import_module('analytics')
-                analytics.get_analytics(botengine).track(botengine, 'sunrise', properties={"gateway_device_id": self.parent.device_id})
-            except ImportError:
-                pass
-
-            self.parent.location_object.distribute_datastream_message(botengine, "sunrise_fired", { "proxy_id": self.parent.device_id }, internal=True, external=False)
+            self.parent.track(botengine, 'sunrise')
+            self.parent.is_daylight = True
+            self.parent.distribute_datastream_message(botengine, "sunrise_fired", None, internal=True, external=False)
 
         elif argument == SUNSET:
             botengine.get_logger().info("SUNSET timer fired")
 
-            self.parent.location_object.narrate(botengine,
+            self.parent.narrate(botengine,
                                                 title = _("Sunset"),
-                                                description = _("It is sunset where your '{}' is located.").format(self.parent.description),
+                                                description = _("It is sunset at '{}'.").format(self.parent.get_location_name(botengine)),
                                                 priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                                 icon = 'sunset'
                                                 )
-            import importlib
-            try:
-                analytics = importlib.import_module('analytics')
-                analytics.get_analytics(botengine).track(botengine, 'sunset', properties={"gateway_device_id": self.parent.device_id})
-            except ImportError:
-                pass
 
-            self.parent.location_object.distribute_datastream_message(botengine, "sunset_fired", { "proxy_id": self.parent.device_id }, internal=True, external=False)
+            self.parent.track(botengine, 'sunset')
+            self.parent.is_daylight = False
+            self.parent.distribute_datastream_message(botengine, "sunset_fired", None, internal=True, external=False)
 
         self._set_sunrise_sunset_alarm(botengine)
 
@@ -170,7 +167,8 @@ class DaylightMicroservice(Intelligence):
         :param latitude: Latitude
         :param longitude: Longitude
         """
-        return
+        botengine.get_logger().info("location_daylight_microservice: Lat/Long updated - recalculating sunrise/sunset times")
+        self._set_sunrise_sunset_alarm(botengine)
 
 
 
@@ -199,7 +197,7 @@ class DaylightMicroservice(Intelligence):
 
         if self.parent.longitude is None or self.parent.latitude is None or ephem is None:
             # Ya, we don't have any coordinate information. Call it 8 AM.
-            dt = self.parent.location_object.get_local_datetime(botengine).replace(hour=8)
+            dt = self.parent.get_local_datetime(botengine).replace(hour=8)
             now = datetime.datetime.now(dt.tzinfo)
             if dt < now:
                 dt = dt + datetime.timedelta(hours=24)
@@ -223,7 +221,7 @@ class DaylightMicroservice(Intelligence):
 
         if self.parent.longitude is None or self.parent.latitude is None or ephem is None:
             # We don't have any coordinate information. Call it 8 PM.
-            dt = self.parent.location_object.get_local_datetime(botengine).replace(hour=20)
+            dt = self.parent.get_local_datetime(botengine).replace(hour=20)
             now = datetime.datetime.now(dt.tzinfo)
             if dt < now:
                 dt = dt + datetime.timedelta(hours=24)
@@ -255,20 +253,13 @@ class DaylightMicroservice(Intelligence):
         if sunset_timestamp_ms - (utilities.ONE_MINUTE_MS * 5) < botengine.get_timestamp():
             sunset_timestamp_ms += utilities.ONE_DAY_MS
 
-        import importlib
-        try:
-            analytics = importlib.import_module('analytics')
-            analytics.get_analytics(botengine).people_set(botengine, {
+        self.parent.update_location_properties(botengine, {
                 'sunset_ms': sunset_timestamp_ms,
                 'sunrise_ms': sunrise_timestamp_ms,
                 'latitude': self.parent.latitude,
                 'longitude': self.parent.longitude,
-                'timezone': self.parent.location_object.get_local_timezone_string(botengine)
+                'timezone': self.parent.get_local_timezone_string(botengine)
             })
-
-        except ImportError:
-            pass
-
 
         if sunrise_timestamp_ms < sunset_timestamp_ms:
             # Sunrise is next

@@ -19,7 +19,7 @@ class LocationMidnightMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :param schedule_id: Schedule ID that is executing from our list of runtime schedules
         """
-        self.parent.track(botengine, "midnight")
 
         if schedule_id == "MIDNIGHT":
+            self.parent.track(botengine, "midnight")
             self.parent.distribute_datastream_message(botengine, "midnight_fired", None, internal=True, external=False)

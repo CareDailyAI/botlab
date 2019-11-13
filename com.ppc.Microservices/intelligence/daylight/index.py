@@ -1,18 +1,9 @@
 MICROSERVICES = {
-    # Map specific device types to a list of microservices
-    "DEVICE_MICROSERVICES": {
-        # Gateways
-        10031: [
-            {"module": "intelligence.daylight.device_daylight_microservice", "class": "DaylightMicroservice"},
-            ],
-
-        # Gateways
-        31: [
-            {"module": "intelligence.daylight.device_daylight_microservice", "class": "DaylightMicroservice"},
-            ]
-        },
-
     "LOCATION_MICROSERVICES": [
+        {
+            "module": "intelligence.daylight.location_daylight_microservice",
+            "class": "LocationDaylightMicroservice"
+        },
         {
             "module": "intelligence.daylight.location_midnight_microservice",
             "class": "LocationMidnightMicroservice"

@@ -32,6 +32,11 @@ class LockDevice(Device):
     GOAL_INTELLIGENT_AUTO_LOCK = 101
     GOAL_STATIC_AUTO_LOCK = 102
 
+    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+
+        # Default behavior
+        self.goal_id = LockDevice.GOAL_INTELLIGENT_AUTO_LOCK
 
     def get_device_type_name(self):
         """

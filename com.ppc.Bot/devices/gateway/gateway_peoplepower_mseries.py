@@ -1,5 +1,5 @@
 '''
-Created on June 28, 2016
+Created on July 31, 2016
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
@@ -10,7 +10,7 @@ file 'LICENSE.txt', which is part of this source code package.
 from devices.gateway.gateway import GatewayDevice
 
 
-class PeoplePowerIotGatewayDevice(GatewayDevice):
+class PeoplePowerMSeriesDevice(GatewayDevice):
     """
     M-Series Gateway
     """
@@ -23,6 +23,6 @@ class PeoplePowerIotGatewayDevice(GatewayDevice):
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Device type name
-        return _("Smart Home Center")
+        return _("M-Series Smart Home Center")
     
     

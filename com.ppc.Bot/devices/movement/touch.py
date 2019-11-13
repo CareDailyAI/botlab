@@ -22,7 +22,17 @@ class TouchDevice(Device):
     MEASUREMENT_PARAMETERS_LIST = [
         MEASUREMENT_NAME_VIBRATION_STATUS
     ]
-    
+
+    # Goals / Behaviors
+    GOAL_ALERT_ON_EVERY_TOUCH = 20
+    GOAL_ALART_WHEN_AWAY = 21
+
+    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+
+        # Default behavior
+        self.goal_id = TouchDevice.GOAL_ALART_WHEN_AWAY
+
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"

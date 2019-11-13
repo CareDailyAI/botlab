@@ -42,7 +42,7 @@ def get_analytics(botengine):
     import domain
     if not hasattr(domain, 'ALLOW_MIXPANEL'):
         raise ImportError
-    
+
     if not domain.ALLOW_MIXPANEL:
         raise ImportError
 
@@ -196,18 +196,11 @@ class Analytics():
             })
 
         else:
-            try:
-                self.mp.people_set(self._get_distinct_id(botengine), {
-                    'location_id': botengine.get_location_id(),
-                    '$first_name': botengine.get_location_users()[0]['firstName'],
-                    '$last_name': botengine.get_location_users()[0]['lastName']
-                })
-
-            except:
-                # This can get removed after January 10, 2019
-                self.mp.people_set(self._get_distinct_id(botengine), {
-                    'location_id': botengine.get_location_id()
-                })
+            self.mp.people_set(self._get_distinct_id(botengine), {
+                'location_id': botengine.get_location_id(),
+                '$first_name': botengine.get_location_name(),
+                '$last_name': ""
+            })
 
     def _get_distinct_id(self, botengine):
         """

@@ -62,4 +62,17 @@ class LeakDevice(Device):
             return self.measurements[LeakDevice.MEASUREMENT_NAME_STATUS][0][0]
         
         return False
-    
+
+    def did_start_leak(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if a leak just started
+        """
+        return self.did_change_state(botengine) and self.is_leak_detected()
+
+    def did_stop_leak(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if a leak just stopped
+        """
+        return self.did_change_state(botengine) and not self.is_leak_detected()

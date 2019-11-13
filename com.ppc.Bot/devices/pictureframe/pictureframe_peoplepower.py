@@ -107,7 +107,7 @@ class PeoplePowerPictureFrameDevice(Device):
         return _("Picture Frame")
     
     
-    def get_image_name(self, botengine=None):
+    def get_image_name(self):
         """
         :return: the font icon name of this device type
         """

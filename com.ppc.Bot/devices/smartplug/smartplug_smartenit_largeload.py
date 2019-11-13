@@ -21,6 +21,7 @@ class SmartenitLargeLoadControllerDevice(SmartplugDevice):
     GOAL_LLC_HOT_WATER_HEATER = 120
     GOAL_LLC_POOL_PUMP_TIMER = 121
     GOAL_LLC_ELECTRIC_VEHICLE = 122
+    GOAL_LLC_DRYER = 123
 
     def get_device_type_name(self):
         """

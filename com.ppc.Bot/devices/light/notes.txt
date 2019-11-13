@@ -1,0 +1,11 @@
+CLOUD-1346
+
+The command to adjust hue and saturation should have the following parameters.
+
+commandName = "ccc.moveToHueSaturation"
+hue = (int)(254.0f * hue / 360.0f)
+saturation = (int)254.0f * saturation)
+timeout = timeoutSec * 10
+
+So it looks like hue here is from 0 to 360 and saturation is in %
+

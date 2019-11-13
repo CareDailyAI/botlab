@@ -20,7 +20,7 @@ class QorvoLcgwGatewayDevice(GatewayDevice):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
-        # NOTE: Device type name. This is made by several manufacturers, just call it the "Low Cost Gateway"
-        return _("Low Cost Gateway")
+        # NOTE: Device type name.
+        return _("Smart Home Center")
     
     

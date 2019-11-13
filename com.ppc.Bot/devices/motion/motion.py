@@ -28,14 +28,29 @@ class MotionDevice(Device):
 
     # Low battery tag
     LOW_BATTERY_TAG = "lowbattery_2xAA"
-    
+
+    # Type of battery
+    BATTERY_TYPE = "AA"
+
     # Number of seconds that elapses before the motion detector sends a second packet saying motion is no longer detected
     MOTION_AUTO_OFF_SECONDS = 15
-    
+
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+
+        # Default behavior
+        self.goal_id = MotionDevice.GOAL_MOTION_PROTECT_HOME
             
     def initialize(self, botengine):
+        """
+        Initialize
+        :param botengine:
+        :return:
+        """
+        # Remove after January 1, 2020
+        if self.goal_id is None:
+            self.goal_id = MotionDevice.GOAL_MOTION_PROTECT_HOME
+
         Device.initialize(self, botengine)
         
     def get_device_type_name(self):

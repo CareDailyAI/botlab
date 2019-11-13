@@ -82,13 +82,13 @@ class Device:
         :param precache_measurements: True (default) to download historical measurements to cache them locally, the length of time of which is defined by device.TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS
         """
         # Device ID
-        self.device_id = device_id.encode('utf-8')
+        self.device_id = device_id
         
         # Device type
         self.device_type = int(device_type)
         
         # Device description
-        self.description = device_description.encode('utf-8').strip()
+        self.description = device_description.strip()
         
         # This is set by the controller object after init during synchronization with the location
         self.location_object = None
@@ -218,9 +218,8 @@ class Device:
                             intelligence_object = class_(botengine, self)
                             self.intelligence_modules[intelligence_info['module']] = intelligence_object
                         except Exception as e:
-                            botengine.get_logger().error("\tCould not add device microservice: " + str(intelligence_info) + ": " + str(e))
                             import traceback
-                            traceback.print_exc()
+                            botengine.get_logger().error("Could not add device microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
 
 
                 # Remove microservices that no longer exist
@@ -245,6 +244,13 @@ class Device:
             botengine.get_logger().info("\tDeleting all device microservices")
             self.intelligence_modules = {}
 
+    def destroy(self, botengine):
+        """
+        Destroy this device
+        :param botengine: BotEngine environment
+        """
+        return
+
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
@@ -252,7 +258,7 @@ class Device:
         # NOTE: Super abstract device type name
         return _("Device")
     
-    def get_image_name(self, botengine=None):
+    def get_image_name(self):
         """
         :return: the font icon name of this device type
         """
@@ -322,7 +328,7 @@ class Device:
 
         except:
             # This can happen because this bot may not have read permissions for this device.
-            botengine.get_logger().warning("Cannot synchronize measurements for device: " + str(self.description))
+            botengine.get_logger().warning("Cannot synchronize measurements for device {}; device ID {}".format(self.description, self.device_id))
             return
 
         botengine.get_logger().info("Synchronizing measurements for device: " + str(self.description))
@@ -529,6 +535,12 @@ class Device:
         if len(self._rssi_elements) > 0:
             self.update_rssi(botengine, self._rssi_elements[-1])
 
+    def low_signal_strength(self):
+        """
+        :return: True if this device has a low wireless signal strength
+        """
+        return self.LOW_SIGNAL_STRENGTH_TAG in self.tags
+
     def raw_command(self, name, value):
         """
         Send a command for the given local measurement name
@@ -577,36 +589,6 @@ class Device:
             if self.location_object.devices[device_id].proxy_id == self.device_id:
                 for intelligence_id in self.location_object.devices[device_id].intelligence_modules:
                     self.location_object.devices[device_id].intelligence_modules[intelligence_id].coordinates_updated(botengine, latitude, longitude)
-
-
-    #===========================================================================
-    # Daylight
-    #===========================================================================
-    def is_daylight(self, botengine):
-        """
-        REQUIRES THE 'daylight' MICROSERVICE.
-
-        This is a convenience method that requires you to attach the 'daylight' microservice.
-        It will then seek out this microservice for your device and ask it whether it's daylight outside or not.
-
-        :param botengine:
-        :return: True/False if daylight information can be accessed from the 'daylight' microservice; None if there is no information.
-        """
-        proxy_object = self.get_proxy_object(botengine)
-        if proxy_object is not None:
-            for intelligence_id in proxy_object.intelligence_modules:
-                try:
-                    daylight = proxy_object.intelligence_modules[intelligence_id].is_daylight(botengine)
-                    if daylight:
-                        botengine.get_logger().info("It is day time")
-                    else:
-                        botengine.get_logger().info("It is night time")
-
-                    return daylight
-                except:
-                    pass
-
-        return None
 
     #===========================================================================
     # Spaces

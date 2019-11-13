@@ -21,6 +21,7 @@ class EntryDevice(Device):
     GOAL_INSIDE_ALERT_ALWAYS = 5
     GOAL_OUTSIDE_NORMAL = 6
     GOAL_OUTSIDE_ALERT_ALWAYS = 7
+    GOAL_MEDICINE_STORAGE = 8
 
     # Measurement Names
     MEASUREMENT_NAME_STATUS = 'doorStatus'
@@ -31,14 +32,29 @@ class EntryDevice(Device):
 
     # Low battery tag
     LOW_BATTERY_TAG = "lowbattery_cr2032"
+
+    # Type of battery
+    BATTERY_TYPE = "CR2032"
     
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [10014, 10074]
     
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+
+        # Default behavior
+        self.goal_id = EntryDevice.GOAL_PERIMETER_NORMAL
         
     def initialize(self, botengine):
+        """
+        Initialize
+        :param botengine:
+        :return:
+        """
+        # Remove after January 1, 2020
+        if self.goal_id is None:
+            self.goal_id = EntryDevice.GOAL_PERIMETER_NORMAL
+
         Device.initialize(self, botengine)
         
     def get_device_type_name(self):
@@ -72,7 +88,7 @@ class EntryDevice(Device):
         """
         return EntryDevice.MEASUREMENT_NAME_STATUS in self.last_updated_params
     
-    def get_image_name(self, botengine=None):
+    def get_image_name(self):
         """
         :return: the font icon name of this device type
         """

@@ -1,0 +1,9 @@
+{
+  "version": {
+    "triggerParameters": [
+      "outletStatus",
+      "power",
+      "energy"
+    ]
+  }
+}

@@ -38,6 +38,7 @@ def run(botengine):
         schedule_id = "DEFAULT"
         if 'scheduleId' in botengine.get_inputs():
             schedule_id = botengine.get_inputs()['scheduleId']
+            botengine.get_logger().info("Schedule fired: {}".format(schedule_id))
 
         controller.run_intelligence_schedules(botengine, schedule_id)
         
@@ -114,7 +115,9 @@ def run(botengine):
         botengine.get_logger().info("File: " + json.dumps(file, indent=2, sort_keys=True))
         if file is not None:
             device_object = controller.get_device(file['deviceId'])
-            controller.file_uploaded(botengine, device_object, file)
+
+            if device_object is not None:
+                controller.file_uploaded(botengine, device_object, file)
         
     # QUESTIONS ANSWERED
     elif trigger_type & botengine.TRIGGER_QUESTION_ANSWER != 0:
@@ -143,7 +146,12 @@ def run(botengine):
                 controller.sync_datastreams(botengine, address, content)
             else:
                 controller.run_intelligence_schedules(botengine)
-    
+
+    # COMMAND RESPONSES
+    elif trigger_type & botengine.TRIGGER_COMMAND_RESPONSE != 0:
+        # TODO responses to commands delivered by the bot are available to build out reliable command delivery infrastructure
+        pass
+
     # GOAL / SCENARIO CHANGES
     elif trigger_type & botengine.TRIGGER_METADATA != 0:
         # The user changed the goal / scenario for a single sensor
@@ -289,7 +297,13 @@ def _location_intelligence_fired(botengine, argument_tuple):
     """
     botengine.get_logger().info("\n\nTRIGGER : _location_intelligence_fired()")
     controller = load_controller(botengine)
-    controller.run_location_intelligence(botengine, argument_tuple[0], argument_tuple[1])
+
+    try:
+        controller.run_location_intelligence(botengine, argument_tuple[0], argument_tuple[1])
+    except Exception as e:
+        import traceback
+        botengine.get_logger().error("{}; {}".format(str(e), traceback.format_exc()))
+
     botengine.save_variable("controller", controller, required_for_each_execution=True)
     botengine.get_logger().info("<< bot (location timer)")
 
@@ -364,7 +378,13 @@ def _device_intelligence_fired(botengine, argument_tuple):
     """
     botengine.get_logger().info("\n\nTRIGGER : _device_intelligence_fired()")
     controller = load_controller(botengine)
-    controller.run_device_intelligence(botengine, argument_tuple[0], argument_tuple[1])
+
+    try:
+        controller.run_device_intelligence(botengine, argument_tuple[0], argument_tuple[1])
+    except Exception as e:
+        import traceback
+        botengine.get_logger().error("{}; {}".format(str(e), traceback.format_exc()))
+
     botengine.save_variable("controller", controller, required_for_each_execution=True)
     botengine.get_logger().info("<< bot (device timer)")
     

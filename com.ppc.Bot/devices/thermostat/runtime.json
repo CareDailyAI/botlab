@@ -1,0 +1,11 @@
+{
+  "version": {
+    "triggerParameters": [
+      "degC",
+      "systemMode",
+      "coolingSetpoint",
+      "heatingSetpoint",
+      "fanMode"
+    ]
+  }
+}

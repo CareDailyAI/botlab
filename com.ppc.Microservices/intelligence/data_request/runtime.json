@@ -18,19 +18,9 @@
     # 2048 = Data request, triggered in response to botengine.request_measurements_asynchronously(..)
     "trigger": 2305,
 
-    # Memory in MB required for the bot.
-    # Default is 128 MB (minimum value).
-    # Increments must be multiples of 64 MB.
-    # Maximum value is 3008 MB.
-    # AWS Lambda uses this memory size in pricing calculations
-    "memory": 1536,
-
-    # Maximum time this bot is allowed to run, in seconds (maximum is 300 seconds)
-    "timeout": 300,
-
     # Recalculate models
     "schedules": {
-      "ML": "0 0 2 ? * SAT *"
+      "ML": "0 0 0 1/1 * ? *"
     },
 
     "dataStreams": [

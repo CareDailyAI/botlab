@@ -113,6 +113,8 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         if not self.ee_only:
             return ThermostatDevice.increment_energy_efficiency(self, botengine, identifier, max_offset_c)
 
+        self.location_object.increment_location_property(botengine, "{}_total_ee_policies_applied".format(self.device_id))
+        self.location_object.increment_location_property(botengine, "{}_total_ee_incremental_policies_applied".format(self.device_id))
         if identifier == "sleep":
             if self.ee_timestamp_ms is None:
                 self.ee_timestamp_ms = botengine.get_timestamp()
@@ -135,7 +137,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
                 'ee_start_timestamp_ms': self.ee_timestamp_ms
             }
 
-            self.location_object.track(botengine, 'thermostat_policy', properties=policies)
+            self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
 
         elif identifier == "away":
             if self.ee_timestamp_ms is None:
@@ -159,7 +161,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
                 'ee_start_timestamp_ms': self.ee_timestamp_ms
             }
 
-            self.location_object.track(botengine, 'thermostat_policy', properties=policies)
+            self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
 
         else:
             return ThermostatDevice.increment_energy_efficiency(self, botengine, identifier, max_offset_c)
@@ -179,6 +181,8 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         if self.ee_timestamp_ms is None:
             self.ee_timestamp_ms = botengine.get_timestamp()
 
+        self.location_object.increment_location_property(botengine, "{}_total_ee_policies_applied".format(self.device_id))
+        self.location_object.increment_location_property(botengine, "{}_total_ee_away_policies_applied".format(self.device_id))
         botengine.send_command(self.device_id, self.COMMAND_CLIMATE_MODE, "away")
         self.location_object.narrate(botengine,
                                         title = _("'{}': Away mode").format(self.description),
@@ -196,7 +200,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             'ee_start_timestamp_ms': self.ee_timestamp_ms
         }
 
-        self.location_object.track(botengine, 'thermostat_policy', properties=policies)
+        self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
 
     def set_energy_efficiency_sleep(self, botengine):
         """
@@ -211,6 +215,8 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         if self.ee_timestamp_ms is None:
             self.ee_timestamp_ms = botengine.get_timestamp()
 
+        self.location_object.increment_location_property(botengine, "{}_total_ee_policies_applied".format(self.device_id))
+        self.location_object.increment_location_property(botengine, "{}_total_ee_sleep_policies_applied".format(self.device_id))
         botengine.send_command(self.device_id, self.COMMAND_CLIMATE_MODE, "sleep")
         self.location_object.narrate(botengine,
                                         title = _("'{}': Sleep mode").format(self.description),
@@ -228,7 +234,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             'ee_start_timestamp_ms': self.ee_timestamp_ms
         }
 
-        self.location_object.track(botengine, 'thermostat_policy', properties=policies)
+        self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
 
     def set_energy_efficiency_home(self, botengine):
         """
@@ -237,6 +243,8 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         """
         if not self.ee_only:
             return ThermostatDevice.set_energy_efficiency_home(self, botengine)
+
+        self.location_object.increment_location_property(botengine, "{}_total_ee_home_policies_applied".format(self.device_id))
 
         if self.ee_timestamp_ms is not None:
             # End of all EE events
@@ -272,4 +280,4 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             'ecobee_climate': "home"
         }
 
-        self.location_object.track(botengine, 'thermostat_policy', properties=policies)
+        self.location_object.track(botengine, 'thermostat_policy_unset', properties=policies)

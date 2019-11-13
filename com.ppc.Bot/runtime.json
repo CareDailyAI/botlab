@@ -5,6 +5,12 @@
         "en": "Creation"
     },
 
-    "runtime": 1
+    # Runtime values
+    #   1 = Python 2.7
+    #   2 = Python 3.7
+    "runtime": 1,
+
+    # Maximum time this bot is allowed to run, in seconds (maximum is 300 seconds)
+    "timeout": 60
   }
 }

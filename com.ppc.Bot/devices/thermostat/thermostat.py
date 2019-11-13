@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Created on March 27, 2017
 
@@ -38,6 +39,13 @@ ONE_DEGREE_F_TO_C = 0.5556
 # If the temperature read back from the thermostat is different than the temperature it was previously at and different from the target temperature we wanted to go to, then the user adjusted it.
 #
 # What if demand response is really about lowering the average thermostat temperature across the entire user base
+
+# Maximum and Minimum cooling and heating setpoint values for DR and EE programs
+# Maximum cooling setpoint = 84 degrees F
+MAXIMUM_COOLING_SETPOINT_C = 28.9
+
+# Minimum heating setpoint = 60 degrees F
+MINIMUM_HEATING_SETPOINT_C = 15.6
 
 class ThermostatDevice(Device):
     '''
@@ -151,8 +159,6 @@ class ThermostatDevice(Device):
         # Last total offset applied, in C
         self.last_offset_c = 0
 
-
-
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
 
@@ -161,23 +167,6 @@ class ThermostatDevice(Device):
         Initializer
         :param botengine: BotEngine
         '''
-        # Added November 7, 2018
-        if not hasattr(self, 'dr_timestamp_ms'):
-            self.dr_timestamp_ms = None
-
-        if not hasattr(self, 'ee_timestamp_ms'):
-            self.ee_timestamp_ms = None
-
-        if not hasattr(self, 'last_offset_c'):
-            self.last_offset_c = 0
-
-        # Added November 9, 2018
-        if not hasattr(self, 'ee_stack_cool'):
-            self.ee_stack_cool = {}
-            self.ee_stack_heat = {}
-            self.dr_stack_cool = {}
-            self.dr_stack_heat = {}
-
         if self.preferred_heating_offset_away_c < ONE_DEGREE_F_TO_C:
             self.preferred_heating_offset_away_c = ONE_DEGREE_F_TO_C
 
@@ -251,7 +240,7 @@ class ThermostatDevice(Device):
                         if self.location_object is not None:
                             self.location_object.narrate(botengine,
                                                 title = _("Cooling set point adjusted"),
-                                                description = _("Your '{}' cooling set point is set to {}C.").format(self.description, self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]),
+                                                description = _("Your '{}' cooling set point is set to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0])),
                                                 priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
@@ -280,7 +269,7 @@ class ThermostatDevice(Device):
                         if self.location_object is not None:
                             self.location_object.narrate(botengine,
                                                 title = _("Heating set point adjusted"),
-                                                description = _("Your '{}' heating set point is set to {}C.").format(self.description, self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]),
+                                                description = _("Your '{}' heating set point is set to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0])),
                                                 priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
@@ -315,7 +304,7 @@ class ThermostatDevice(Device):
                 if self.location_object is not None:
                     self.location_object.narrate(botengine,
                                                 title = _("Cooling set point adjusted"),
-                                                description = _("Your '{}' cooling set point was manually adjusted to {}C.").format(self.description, self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]),
+                                                description = _("Your '{}' cooling set point was manually adjusted to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0])),
                                                 priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
@@ -330,7 +319,7 @@ class ThermostatDevice(Device):
                 if self.location_object is not None:
                     self.location_object.narrate(botengine,
                                                 title = _("Heating set point adjusted"),
-                                                description = _("Your '{}' heating set point was manually adjusted to {}C.").format(self.description, self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]),
+                                                description = _("Your '{}' heating set point was manually adjusted to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0])),
                                                 priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
@@ -346,7 +335,7 @@ class ThermostatDevice(Device):
         '''
         raise NotImplementedError
     
-    def get_image_name(self, botengine=None):
+    def get_image_name(self):
         """
         :return: the font icon name of this device type
         """
@@ -530,7 +519,7 @@ class ThermostatDevice(Device):
 
                 self.location_object.narrate(botengine,
                                             title = _("'{}': Learned HOME cooling set point.").format(self.description),
-                                            description = _("Your '{}' learned you want the cooling set point set to {}C when you are home.").format(self.description, self.preferred_cooling_setpoint_home_c),
+                                            description = _("Your '{}' learned you want the cooling set point set to {} when you are home.").format(self.description, self._celsius_to_narrative(self.preferred_cooling_setpoint_home_c)),
                                             priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                             icon = 'thermostat',
                                             extra_json_dict={"device_id": self.device_id}
@@ -542,7 +531,7 @@ class ThermostatDevice(Device):
 
                 self.location_object.narrate(botengine,
                                             title = _("'{}': Learned HOME heating set point.").format(self.description),
-                                            description = _("Your '{}' learned you want the heating set point set to {}C when you are home.").format(self.description, self.preferred_heating_setpoint_home_c),
+                                            description = _("Your '{}' learned you want the heating set point set to {} when you are home.").format(self.description, self._celsius_to_narrative(self.preferred_heating_setpoint_home_c)),
                                             priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                             icon = 'thermostat',
                                             extra_json_dict={"device_id": self.device_id}
@@ -594,7 +583,7 @@ class ThermostatDevice(Device):
 
                 self.location_object.narrate(botengine,
                                     title = _("'{}': Learned night time preferences.").format(self.description),
-                                    description = _("Your '{}' learned the night time cooling setpoint should be {}C from HOME mode.").format(self.description, "%.1f" % self.preferred_cooling_offset_sleep_c),
+                                    description = _("Your '{}' learned the night time cooling setpoint.").format(self.description),
                                     priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                     icon = 'thermostat',
                                     extra_json_dict={
@@ -632,7 +621,7 @@ class ThermostatDevice(Device):
 
                 self.location_object.narrate(botengine,
                                     title = _("'{}': Learned night time preferences.").format(self.description),
-                                    description = _("Your '{}' learned the night time heating setpoint should be {}C from HOME mode.").format(self.description, "%.1f" % self.preferred_heating_offset_sleep_c),
+                                    description = _("Your '{}' learned the night time heating setpoint.").format(self.description),
                                     priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                     icon = 'thermostat',
                                     extra_json_dict={
@@ -696,7 +685,7 @@ class ThermostatDevice(Device):
 
                 self.location_object.narrate(botengine,
                                     title = _("'{}': Learned away preferences.").format(self.description),
-                                    description = _("Your '{}' learned the away cooling setpoint should be {}C from HOME mode.").format(self.description, "%.1f" % self.preferred_cooling_offset_away_c),
+                                    description = _("Your '{}' learned the away cooling setpoint should be {} from HOME mode.").format(self.description, self._celsius_to_narrative(self.preferred_cooling_offset_away_c)),
                                     priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                     icon = 'thermostat',
                                     extra_json_dict={
@@ -740,7 +729,7 @@ class ThermostatDevice(Device):
 
                 self.location_object.narrate(botengine,
                                     title = _("'{}': Learned night time preferences.").format(self.description),
-                                    description = _("Your '{}' learned the away heating setpoint should be {}C from HOME mode.").format(self.description, "%.1f" % self.preferred_heating_offset_away_c),
+                                    description = _("Your '{}' learned the away heating setpoint should be {} from HOME mode.").format(self.description, self._celsius_to_narrative(self.preferred_heating_offset_away_c)),
                                     priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                     icon = 'thermostat',
                                     extra_json_dict={
@@ -784,7 +773,7 @@ class ThermostatDevice(Device):
         except ImportError:
             pass
 
-    def set_demand_response(self, botengine, active, identifier, offset_c):
+    def set_demand_response(self, botengine, active, identifier="dr", offset_c=0):
         """
         Activate demand response, preventing the maximum setpoint from going above the desired DR setpoint if one is defined
         :param botengine: BotEngine environment
@@ -795,6 +784,7 @@ class ThermostatDevice(Device):
         """
         botengine.get_logger().info("thermostat.set_demand_response: active={}; id={}; offset_c={}".format(active, identifier, offset_c))
         if active:
+            self.location_object.increment_location_property(botengine, "{}_total_dr_policies_applied".format(self.device_id))
             self.dr_stack_heat[identifier] = offset_c
             self.dr_stack_cool[identifier] = offset_c
 
@@ -820,6 +810,7 @@ class ThermostatDevice(Device):
         """
         botengine.get_logger().info("thermostat.set_energy_efficiency: active={}; id={}; offset_c={}".format(active, identifier, offset_c))
         if active:
+            self.location_object.increment_location_property(botengine, "{}_total_ee_policies_applied".format(self.device_id))
             self.ee_stack_cool[identifier] = offset_c
             self.ee_stack_heat[identifier] = offset_c
 
@@ -839,7 +830,7 @@ class ThermostatDevice(Device):
             if found and change_temperature:
                 return self.apply_offsets(botengine)
 
-        return None
+        return self.get_system_mode(botengine) != self.SYSTEM_MODE__OFF
 
     def cancel_all_energy_efficiency(self, botengine, change_temperature=True):
         """
@@ -948,6 +939,12 @@ class ThermostatDevice(Device):
                 cooling_setpoint_celsius = float(self.preferred_cooling_setpoint_home_c + cool_ee_offset + cool_dr_offset)
                 heating_setpoint_celsius = float(self.preferred_heating_setpoint_home_c - heat_ee_offset - heat_dr_offset)
 
+                if cooling_setpoint_celsius > MAXIMUM_COOLING_SETPOINT_C:
+                    cooling_setpoint_celsius = MAXIMUM_COOLING_SETPOINT_C
+
+                if heating_setpoint_celsius < MINIMUM_HEATING_SETPOINT_C:
+                    heating_setpoint_celsius = MINIMUM_HEATING_SETPOINT_C
+
                 self.set_cooling_setpoint(botengine, cooling_setpoint_celsius)
                 self.set_heating_setpoint(botengine, heating_setpoint_celsius)
 
@@ -958,7 +955,7 @@ class ThermostatDevice(Device):
 
                 self.location_object.narrate(botengine,
                                             title = _("'{}': Applying energy policies").format(self.description),
-                                            description = _("Your new cooling set point is {}C and heating setpoint is {}C.").format(cooling_setpoint_celsius, heating_setpoint_celsius),
+                                            description = _("Your new cooling set point is {} and heating setpoint is {}.").format(self._celsius_to_narrative(cooling_setpoint_celsius), self._celsius_to_narrative(heating_setpoint_celsius)),
                                             priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                             icon = 'thermostat',
                                             extra_json_dict={"device_id": self.device_id}
@@ -1055,6 +1052,7 @@ class ThermostatDevice(Device):
             self.ee_stack_heat[identifier] = 0.0
 
         system_mode = self.get_system_mode(botengine)
+        self.location_object.increment_location_property(botengine, "{}_total_ee_incremental_policies_applied".format(self.device_id))
 
         # Correct the maximum offset
         if "sleep" in identifier:
@@ -1095,6 +1093,7 @@ class ThermostatDevice(Device):
         """
         # Turn off Sleep mode policies
         self.set_energy_efficiency(botengine, False, "sleep", change_temperature=False)
+        self.location_object.increment_location_property(botengine, "{}_total_ee_away_policies_applied".format(self.device_id))
 
         self.ee_stack_heat["away"] = self.preferred_heating_offset_away_c
         self.ee_stack_cool["away"] = self.preferred_cooling_offset_away_c
@@ -1111,6 +1110,8 @@ class ThermostatDevice(Device):
         # Turn off Away mode policies
         self.set_energy_efficiency(botengine, False, "away", change_temperature=False)
 
+        self.location_object.increment_location_property(botengine, "{}_total_ee_sleep_policies_applied".format(self.device_id))
+
         self.ee_stack_heat["sleep"] = self.preferred_heating_offset_sleep_c
         self.ee_stack_cool["sleep"] = self.preferred_cooling_offset_sleep_c
 
@@ -1124,6 +1125,8 @@ class ThermostatDevice(Device):
         botengine.get_logger().info("{}: set_energy_efficiency_home".format(self.device_id))
         away_result = self.set_energy_efficiency(botengine, False, "away")
         sleep_result = self.set_energy_efficiency(botengine, False, "sleep")
+
+        self.location_object.increment_location_property(botengine, "{}_total_ee_home_policies_applied".format(self.device_id))
 
         if away_result is None and sleep_result is None:
             # Nothing else applied offsets, so make sure we sync up at least once.
@@ -1176,3 +1179,5 @@ class ThermostatDevice(Device):
         return abs(a - b) > tolerance
 
 
+    def _celsius_to_narrative(self, temperature_c):
+        return "{}°F / {}°C".format(str("%.1f" % float(utilities.celsius_to_fahrenheit(temperature_c))), str("%.1f" % float(temperature_c)))

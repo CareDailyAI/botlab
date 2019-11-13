@@ -1,5 +1,5 @@
 '''
-Created on June 28, 2016
+Created on October 1, 2019
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
@@ -10,13 +10,13 @@ file 'LICENSE.txt', which is part of this source code package.
 from devices.gateway.gateway import GatewayDevice
 
 
-class PeoplePowerIotGatewayDevice(GatewayDevice):
+class DevelcoSquidlinkDevice(GatewayDevice):
     """
-    M-Series Gateway
+    Develco Squid.link Gateway
     """
         
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [31]
+    DEVICE_TYPES = [35]
         
     def get_device_type_name(self):
         """

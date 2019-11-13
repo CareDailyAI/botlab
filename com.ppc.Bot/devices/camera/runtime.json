@@ -1,0 +1,14 @@
+{
+  "version": {
+    "triggerParameters": [
+      "motionStatus",
+      "batteryLevel",
+      "ppc.motionSensitivity",
+      "ppc.motionActivity",
+      "ppc.captureImage",
+      "ppc.cameraName",
+      "ppc.charging",
+      "ppc.flashOn"
+    ]
+  }
+}

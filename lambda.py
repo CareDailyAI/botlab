@@ -33,6 +33,25 @@ def lambda_handler(data, context):
         import sys
         (t, v, tb) = sys.exc_info()
         logger.tracebacks = traceback.format_exception(t, v, tb)
+
+    # Check for asynchronous data request triggers which handle errors differently than synchronous executions of the bot.
+    if 'inputs' in data:
+        for i in data['inputs']:
+            if i['trigger'] == 2048:
+                import sys
+
+                if len(logger.logs) > 0:
+                    sys.stdout.write("logs: ")
+                    for log in logger.logs:
+                        sys.stdout.write(log + "; ")
+
+                if len(logger.tracebacks) > 0:
+                    sys.stdout.write("tracebacks: ")
+                    for tb in logger.tracebacks:
+                        sys.stdout.write(tb + "; ")
+
+                sys.stdout.flush()
+                break
     
     return logger.get_lambda_return()
     

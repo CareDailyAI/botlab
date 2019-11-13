@@ -1,0 +1,12 @@
+{
+  "version": {
+    "triggerParameters": [
+      "numberOfChildren",
+      "reboot",
+      "firmware",
+      "cellQuality",
+      "cellStatus",
+      "simStatus"
+    ]
+  }
+}

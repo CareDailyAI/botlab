@@ -37,6 +37,7 @@ class SmartplugDevice(Device):
     GOAL_SMARTPLUG_DEHUMIDIFIER = 85
     GOAL_SMARTPLUG_FAN = 86
     GOAL_SMARTPLUG_SPACEHEATER = 87
+    GOAL_SMARTPLUG_WINDOW_AC = 88
 
     GOAL_SMARTPLUG_SKIP = 89
 
@@ -153,7 +154,7 @@ class SmartplugDevice(Device):
         if self.MEASUREMENT_NAME_POWER in self.measurements:
             return self.measurements[self.MEASUREMENT_NAME_POWER][0][0]
 
-        return None
+        return 0
 
     def current_energy(self, botengine=None):
         """
@@ -163,7 +164,7 @@ class SmartplugDevice(Device):
         if self.MEASUREMENT_NAME_ENERGY in self.measurements:
             return self.measurements[self.MEASUREMENT_NAME_ENERGY][0][0]
 
-        return None
+        return 0
 
     #===========================================================================
     # Commands

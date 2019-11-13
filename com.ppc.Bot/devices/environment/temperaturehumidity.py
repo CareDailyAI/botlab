@@ -8,6 +8,7 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from devices.device import Device
+import utilities
 
 
 class TemperatureHumidityDevice(Device):
@@ -25,6 +26,7 @@ class TemperatureHumidityDevice(Device):
     GOAL_FREEZER = 33
     GOAL_DEPRECATED_FREEZER_DOOR_CRACKED_OPEN = 34
     GOAL_INSTRUMENT_TEMP = 35
+    GOAL_COOL_AND_DRY_MEDICATION = 36
     GOAL_STOVETOP_MONITORING = 37
     GOAL_HVAC_MONITORING = 38
     GOAL_SKIP_TEMP = 39
@@ -83,6 +85,21 @@ class TemperatureHumidityDevice(Device):
 
         return None
 
+    def get_heat_index(self, botengine=None):
+        """
+        Get the heat index in Celsius.
+        :param botengine: BotEngine environment
+        :return: Heat index in degrees Celsius
+        """
+        degrees_c = self.get_temperature_c(botengine)
+        if degrees_c is None:
+            return None
+
+        humidity = self.get_relative_humidity(botengine)
+        if humidity is None:
+            return None
+
+        return utilities.calculate_heat_index(degrees_c, humidity)
 
     def did_change_state(self, botengine=None):
         """

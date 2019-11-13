@@ -14,34 +14,11 @@
     # 64 = Reserved for timers
     # 128 = Device configuration or metadata was updated
     # 256 = Data Stream Message received
-    "trigger": 9,
+    "trigger": 1,
 
     # Midnight scheduler
     "schedules": {
       "MIDNIGHT": "0 0 0 1/1 * ? *"
-    },
-
-    "deviceTypes": [
-      {
-        "id": 10031,
-        "minOccurrence": 0,
-        "trigger": true,
-        "read": true,
-        "control": false,
-        "reason": {
-          "en": "Manage gateways."
-        }
-      },
-      {
-        "id": 31,
-        "minOccurrence": 0,
-        "trigger": true,
-        "read": true,
-        "control": true,
-        "reason": {
-          "en": "Manage gateways."
-        }
-      }
-    ]
+    }
   }
 }

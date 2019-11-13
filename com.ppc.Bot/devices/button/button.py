@@ -30,9 +30,40 @@ class ButtonDevice(Device):
     GOAL_BUTTON_CALL_FOR_HELP_PANIC = 113
     GOAL_BUTTON_DOORBELL = 115
 
+    # Low battery tag
+    LOW_BATTERY_TAG = "lowbattery_cr2032"
+
+    # Type of battery
+    BATTERY_TYPE = "CR2032"
+
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+        """
+        Constructor
+        :param botengine:
+        :param device_id:
+        :param device_type:
+        :param device_description:
+        :param precache_measurements:
+        """
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
-        
+
+        # Default behavior
+        self.goal_id = ButtonDevice.GOAL_BUTTON_ARM_DISARM
+
+    def initialize(self, botengine):
+        """
+        Initialization
+        :param botengine: BotEngine environment
+        """
+        return
+
+    def destroy(self, botengine):
+        """
+        Destroy this device
+        :param botengine: BotEngine environment
+        """
+        return
+
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"

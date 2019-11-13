@@ -197,7 +197,7 @@ class SmartenitZbalarmDevice(SirenDevice):
             botengine.get_logger().info("Siren: LOCKING SIREN TO MICROSERVICE {}".format(microservice_identifier))
             self.locked_microservice = microservice_identifier
         else:
-            botengine.get_logger().warn("siren_smartenit_zbalarm: Cannot lock siren again - siren is currently locked by {}".format(self.locked_microservice))
+            botengine.get_logger().info("siren_smartenit_zbalarm: Cannot lock siren again - siren is currently locked by {}".format(self.locked_microservice))
 
     def unlock(self, botengine):
         """
