@@ -2,7 +2,9 @@
   "version": {
     "triggerParameters": [
       "doorStatus",
-      "batteryLevel"
+      "batteryLevel",
+      "degC",
+      "tamper"
     ]
   }
 }

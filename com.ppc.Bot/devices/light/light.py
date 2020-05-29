@@ -81,11 +81,19 @@ class LightDevice(Device):
         # NOTE: Device type name
         return _("Light")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
-        return "bulb"
+        return "lightbulb"
+
+    def get_icon_font(self):
+        """
+        Get the icon font package from which to render an icon
+        :return: The name of the icon font package
+        """
+        import utilities.utilities as utilities
+        return utilities.ICON_FONT_FONTAWESOME_REGULAR
     
     def is_command(self, measurement_name):
         """

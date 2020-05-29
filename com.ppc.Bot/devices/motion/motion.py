@@ -40,18 +40,6 @@ class MotionDevice(Device):
 
         # Default behavior
         self.goal_id = MotionDevice.GOAL_MOTION_PROTECT_HOME
-            
-    def initialize(self, botengine):
-        """
-        Initialize
-        :param botengine:
-        :return:
-        """
-        # Remove after January 1, 2020
-        if self.goal_id is None:
-            self.goal_id = MotionDevice.GOAL_MOTION_PROTECT_HOME
-
-        Device.initialize(self, botengine)
         
     def get_device_type_name(self):
         """
@@ -60,12 +48,19 @@ class MotionDevice(Device):
         # NOTE: Device type name
         return _("Motion Sensor")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "motion"
 
+    def did_tamper(self, botengine):
+        """
+        Did someone tamper with this device
+        :param botengine:
+        :return:
+        """
+        return False
 
     #===========================================================================
     # Measurements

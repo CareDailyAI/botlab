@@ -12,7 +12,8 @@ file 'LICENSE.txt', which is part of this source code package.
 
 import importlib
 import datetime
-import utilities
+import utilities.utilities as utilities
+import utilities.analytics as analytics
 
 from intelligence.intelligence import Intelligence
 
@@ -110,15 +111,6 @@ class LocationDaylightMicroservice(Intelligence):
         """
         return
 
-    def datastream_updated(self, botengine, address, content):
-        """
-        Data Stream Message Received
-        :param botengine: BotEngine environment
-        :param address: Data Stream address
-        :param content: Content of the message
-        """
-        return
-
     def schedule_fired(self, botengine, schedule_id):
         """
         The bot executed on a hard coded schedule specified by our runtime.json file
@@ -141,7 +133,7 @@ class LocationDaylightMicroservice(Intelligence):
                                 icon = 'sunrise'
                                 )
 
-            self.parent.track(botengine, 'sunrise')
+            analytics.track(botengine, self.parent, 'sunrise')
             self.parent.is_daylight = True
             self.parent.distribute_datastream_message(botengine, "sunrise_fired", None, internal=True, external=False)
 
@@ -149,13 +141,13 @@ class LocationDaylightMicroservice(Intelligence):
             botengine.get_logger().info("SUNSET timer fired")
 
             self.parent.narrate(botengine,
-                                                title = _("Sunset"),
-                                                description = _("It is sunset at '{}'.").format(self.parent.get_location_name(botengine)),
-                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                                icon = 'sunset'
-                                                )
+                                title = _("Sunset"),
+                                description = _("It is sunset at '{}'.").format(self.parent.get_location_name(botengine)),
+                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                icon = 'sunset'
+                                )
 
-            self.parent.track(botengine, 'sunset')
+            analytics.track(botengine, self.parent, 'sunset')
             self.parent.is_daylight = False
             self.parent.distribute_datastream_message(botengine, "sunset_fired", None, internal=True, external=False)
 

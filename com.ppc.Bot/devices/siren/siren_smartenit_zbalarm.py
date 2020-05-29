@@ -73,16 +73,6 @@ class SmartenitZbalarmDevice(SirenDevice):
         # Microservice this siren is locked to
         self.locked_microservice = None
 
-    def initialize(self, botengine):
-        """
-        Initialize
-        :param botengine:
-        :return:
-        """
-        # Added June 18, 2019
-        if not hasattr(self, 'locked_microservice'):
-            self.locked_microservice = None
-
     #===========================================================================
     # Commands
     #===========================================================================

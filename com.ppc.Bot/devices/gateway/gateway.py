@@ -25,9 +25,73 @@ class GatewayDevice(Device):
         # NOTE: Abstract device type name
         return _("Smart Home Center")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "gateway"
-    
+
+    # Gateway methods
+    def did_switch_to_battery_power(self, botengine):
+        """
+        Did the gateway get unplugged from power and we're running on battery
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def did_switch_to_external_power(self, botengine):
+        """
+        Did the gateway get plugged back into power
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def is_on_battery(self, botengine):
+        """
+        Is the gateway plugged into battery power
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def did_connect_cellular(self, botengine):
+        """
+        Did the gateway's primary network interface switch to a cellular connection
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def did_connect_broadband(self, botengine):
+        """
+        Did the gateway's primary network interface switch to a broadband connection
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def is_broadband_connected(self, botengine):
+        """
+        Is the gateway's primary network interface a broadband connection
+        :param botengine:
+        :return:
+        """
+        return self.is_connected
+
+    def is_cellular_connected(self, botengine):
+        """
+        Is the gateway's primary network interface a cellular connection
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def get_battery_level(self, botengine):
+        """
+        Get the current battery level in units of percentage (i.e. 0 - 100)
+        :param botengine:
+        :return:
+        """
+        return 100

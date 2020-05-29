@@ -2,7 +2,10 @@
   "version": {
     "triggerParameters": [
       "motionStatus",
-      "batteryLevel"
+      "batteryLevel",
+      "degC",
+      "tamper",
+      "occupancy"
     ]
   }
 }

@@ -21,5 +21,4 @@ class LocationMidnightMicroservice(Intelligence):
         """
 
         if schedule_id == "MIDNIGHT":
-            self.parent.track(botengine, "midnight")
             self.parent.distribute_datastream_message(botengine, "midnight_fired", None, internal=True, external=False)

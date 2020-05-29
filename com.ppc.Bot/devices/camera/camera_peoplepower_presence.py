@@ -99,12 +99,6 @@ class PeoplePowerPresenceCameraDevice(CameraDevice):
     #===========================================================================
     # Commands
     #===========================================================================
-    def is_audible(self, botengine):
-        """
-        :return: True, this is an audible device
-        """
-        return True
-    
     def play_sound(self, botengine, sound):
         """
         :param sound: Play the given sound file, for example "beep.mp3" or "alarm.mp3"

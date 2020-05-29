@@ -9,9 +9,9 @@ These bots run 24/7 in the background of your life, making products do things th
 
 ## Setup Python
 
-BotEngine prefers Python 3.7.
+BotEngine prefers Python 3.8.
 
-We *strongly recommend* setting up Python 3.7 on your local machine inside a virtual environment, which helps keep things clean. See https://www.youtube.com/watch?v=N5vscPTWKOk.  This is also a good tutorial for Mac users: https://hackercodex.com/guide/python-development-environment-on-mac-osx/. After setting up a virtual environment, you can activate it each time you open the terminal with a strategically placed command in one of your startup scripts, like ~/.profile or ~/.bashrc. Here's an example out of my environment's startup scripts:
+We *strongly recommend* setting up Python 3.x on your local machine inside a virtual environment, which helps keep things clean. See https://www.youtube.com/watch?v=N5vscPTWKOk.  This is also a good tutorial for Mac users: https://hackercodex.com/guide/python-development-environment-on-mac-osx/. After setting up a virtual environment, you can activate it each time you open the terminal with a strategically placed command in one of your startup scripts, like ~/.profile or ~/.bashrc. Here's an example out of my environment's startup scripts:
 
 `source ~/workspace/botengine/bots/bin/activate`
 

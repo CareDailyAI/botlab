@@ -34,7 +34,7 @@ class CarbonMonoxideDevice(Device):
         # NOTE: Device type name
         return _("Carbon Monoxide Sensor")
 
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """

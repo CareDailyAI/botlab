@@ -21,7 +21,7 @@ class PeoplePowerPresenceIosCameraDevice(PeoplePowerPresenceCameraDevice):
         # NOTE: Device type name
         return _("iOS Camera")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """

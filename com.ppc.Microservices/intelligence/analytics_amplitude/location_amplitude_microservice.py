@@ -1,0 +1,245 @@
+'''
+Created on May 14, 2020
+
+This file is subject to the terms and conditions defined in the
+file 'LICENSE.txt', which is part of this source code package.
+
+@author: David Moss
+'''
+
+from intelligence.intelligence import Intelligence
+
+# Variable name for tracking people
+AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME = "amplitude_user"
+
+# HTTP timeout
+AMPLITUDE_HTTP_TIMEOUT_S = 2
+
+class LocationAmplitudeMicroservice(Intelligence):
+
+    def __init__(self, botengine, parent):
+        """
+        Instantiate this object
+        :param parent: Parent object, either a location or a device object.
+        """
+        Intelligence.__init__(self, botengine, parent)
+
+        self.analytics_track(botengine, {'event_name': 'reset', 'properties': None})
+
+    def analytics_track(self, botengine, content):
+        """
+        Track an event.
+        This will buffer your events and flush them to the server altogether at the end of all bot executions,
+        and before variables get saved.
+
+        :param botengine: BotEngine environment
+        :param event_name: (string) A name describing the event
+        :param properties: (dict) Additional data to record; keys should be strings and values should be strings, numbers, or booleans
+        """
+        if botengine.is_test_location():
+            return
+
+        event_name = content['event_name']
+        properties = content['properties']
+
+        botengine.get_logger().info("Analytics: Tracking {}".format(event_name))
+
+        if properties is None:
+            properties = {}
+
+        properties["locationId"] = botengine.get_location_id()
+        properties["organizationId"] = botengine.get_organization_id()
+
+        self._flush(botengine,
+                   [
+                        {
+                            "user_id": self._get_user_id(botengine),
+                            "device_id": self._get_device_id(botengine),
+                            "time": botengine.get_timestamp(),
+                            "event_type": event_name,
+                            "event_properties": properties,
+                            "user_properties": {
+                                "locationId": botengine.get_location_id(),
+                                "organizationId": botengine.get_organization_id()
+                            }
+                        }
+                   ])
+
+    def analytics_people_set(self, botengine, content):
+        """
+        Set some key/value attributes for this user
+        :param botengine: BotEngine environment
+        :param properties_dict: Dictionary of key/value pairs to track
+        """
+        if botengine.is_test_location():
+            return
+
+        properties_dict = content['properties_dict']
+
+        botengine.get_logger().info("analytics.py: Setting user info - {}".format(properties_dict))
+
+        focused_properties = botengine.load_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME)
+        if focused_properties is None:
+            focused_properties = properties_dict
+        focused_properties.update(properties_dict)
+        focused_properties["locationId"] = botengine.get_location_id()
+        focused_properties["organizationId"] = botengine.get_organization_id()
+        botengine.save_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME, focused_properties, required_for_each_execution=False)
+
+        self._flush(botengine,
+                    [
+                        {
+                            "user_id": self._get_user_id(botengine),
+                            "device_id": self._get_device_id(botengine),
+                            "time": botengine.get_timestamp(),
+                            "user_properties": focused_properties
+                        }
+                    ])
+
+    def analytics_people_increment(self, botengine, content):
+        """
+        Adds numerical values to properties of a people record. Nonexistent properties on the record default to zero. Negative values in properties will decrement the given property.
+        :param botengine: BotEngine environment
+        :param properties_dict: Dictionary of key/value pairs. The value is numeric, either positive or negative. Default record is 0. The value will increment or decrement the property by that amount.
+        """
+        if botengine.is_test_location():
+            return
+
+        properties_dict = content['properties_dict']
+
+        botengine.get_logger().info("Analytics: Incrementing user info - {}".format(properties_dict))
+
+        focused_properties = botengine.load_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME)
+
+        if focused_properties is None:
+            focused_properties = properties_dict
+
+        for p in properties_dict:
+            if p not in focused_properties:
+                focused_properties[p] = 0
+            focused_properties[p] += properties_dict[p]
+
+        focused_properties["locationId"] = botengine.get_location_id()
+        focused_properties["organizationId"] = botengine.get_organization_id()
+        botengine.save_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME, focused_properties, required_for_each_execution=False)
+
+        self._flush(botengine,
+                    [
+                        {
+                            "user_id": self._get_user_id(botengine),
+                            "device_id": self._get_device_id(botengine),
+                            "time": botengine.get_timestamp(),
+                            "user_properties": focused_properties
+                        }
+                    ])
+
+    def analytics_people_unset(self, botengine, content):
+        """
+        Delete a property from a user
+        :param botengine: BotEngine
+        :param properties_dict: Key/Value dictionary pairs to remove from a people record.
+        """
+        if botengine.is_test_location():
+            return
+
+        properties_list = content['properties_list']
+
+        botengine.get_logger().info("Analytics: Removing user info - {}".format(properties_list))
+
+        focused_properties = botengine.load_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME)
+
+        if focused_properties is None:
+            # Nothing to unset
+            return
+
+        for p in properties_list:
+            if p in focused_properties:
+                del focused_properties[p]
+
+        focused_properties["locationId"] = botengine.get_location_id()
+        focused_properties["organizationId"] = botengine.get_organization_id()
+        botengine.save_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME, focused_properties, required_for_each_execution=False)
+
+        self._flush(botengine,
+                    [
+                        {
+                            "user_id": self._get_user_id(botengine),
+                            "device_id": self._get_device_id(botengine),
+                            "time": botengine.get_timestamp(),
+                            "user_properties": focused_properties
+                        }
+                    ])
+
+    def _flush(self, botengine, data):
+        """
+        Required. Implement the mechanisms to flush your analytics.
+        :param botengine: BotEngine
+        """
+        if botengine.is_test_location():
+            botengine.get_logger().info("Analytics: This test location will not record analytics.")
+            return
+
+        import domain
+        import json
+        import requests
+        import bundle
+
+        token = None
+        for cloud_address in domain.AMPLITUDE_TOKENS:
+            if cloud_address in bundle.CLOUD_ADDRESS:
+                token = domain.AMPLITUDE_TOKENS[cloud_address]
+
+        if token is None:
+            # Nothing to do
+            botengine.get_logger().info("analytics_amplitude.flush(): No analytics token for {}".format(bundle.CLOUD_ADDRESS))
+            return
+
+        if token == "":
+            # Nothing to do
+            botengine.get_logger().info("analytics_amplitude.flush(): No analytics token for {}".format(bundle.CLOUD_ADDRESS))
+            return
+
+        http_headers = {"Content-Type": "application/json"}
+
+        body = {
+            "api_key": token,
+            "events": data
+        }
+
+        url = "https://api.amplitude.com/2/httpapi"
+
+        try:
+            requests.post(url, headers=http_headers, data=json.dumps(body), timeout=AMPLITUDE_HTTP_TIMEOUT_S)
+            botengine.get_logger().info("location_amplitude_microservice: Flushed()")
+
+        except self.requests.HTTPError:
+            self.get_logger().info("Generic HTTP error calling POST " + url)
+
+        except self.requests.ConnectionError:
+            self.get_logger().info("Connection HTTP error calling POST " + url)
+
+        except self.requests.Timeout:
+            self.get_logger().info(str(AMPLITUDE_HTTP_TIMEOUT_S) + " second HTTP Timeout calling POST " + url)
+
+        except self.requests.TooManyRedirects:
+            self.get_logger().info("Too many redirects HTTP error calling POST " + url)
+
+        except Exception as e:
+            return
+
+
+    def _get_user_id(self, botengine):
+        """
+        Generate an Amplitude User ID
+        To us, this user ID will always have a "bot_" prefix, followed by the bot instance ID.
+        :return:
+        """
+        return "bot_{}".format(botengine.bot_instance_id)
+
+    def _get_device_id(self, botengine):
+        """
+        Get the Device ID
+        :param botengine:
+        :return:
+        """
+        return botengine.get_bundle_id()

@@ -1,0 +1,12 @@
+{
+  "version": {
+    "triggerParameters": [
+      "batteryLevel",
+      "tamper",
+      "codeId",
+      "codeType",
+      "armMode",
+      "event"
+    ]
+  }
+}

@@ -22,7 +22,7 @@ class PeoplePowerPresenceAndroidCameraDevice(PeoplePowerPresenceCameraDevice):
         return _("Android Camera")
     
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """

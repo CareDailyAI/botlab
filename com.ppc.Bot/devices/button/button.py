@@ -24,6 +24,9 @@ class ButtonDevice(Device):
     ]
 
     # Goals
+    GOAL_BUTTON_SIGNAL_PEOPLE_WHO_LIVE_HERE = 100
+    GOAL_BUTTON_SIGNAL_FAMILY_FRIENDS = 105
+    GOAL_BUTTON_TOOK_MEDICINE = 109
     GOAL_BUTTON_ARM_DISARM = 110
     GOAL_BUTTON_CALL_FOR_HELP_MEDICAL = 111
     GOAL_BUTTON_CALL_FOR_HELP_SECURITY = 112
@@ -48,21 +51,7 @@ class ButtonDevice(Device):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
-        self.goal_id = ButtonDevice.GOAL_BUTTON_ARM_DISARM
-
-    def initialize(self, botengine):
-        """
-        Initialization
-        :param botengine: BotEngine environment
-        """
-        return
-
-    def destroy(self, botengine):
-        """
-        Destroy this device
-        :param botengine: BotEngine environment
-        """
-        return
+        self.goal_id = ButtonDevice.GOAL_BUTTON_SIGNAL_PEOPLE_WHO_LIVE_HERE
 
     def get_device_type_name(self):
         """
@@ -71,11 +60,11 @@ class ButtonDevice(Device):
         # NOTE: Abstract device type name, doesn't show up in end user documentation
         return _("Button")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
-        return "button"
+        return "push-button"
 
     def is_currently_pressed(self, botengine=None):
         """

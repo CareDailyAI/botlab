@@ -38,13 +38,20 @@ class LeakDevice(Device):
         # NOTE: Device type name
         return _("Leak Sensor")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "water"
-    
-    
+
+    def did_tamper(self, botengine):
+        """
+        Did someone tamper with this device
+        :param botengine:
+        :return:
+        """
+        return False
+
     #===========================================================================
     # Helper methods
     #===========================================================================

@@ -9,7 +9,14 @@ file 'LICENSE.txt', which is part of this source code package.
 
 class Narrative:
     """
-    This class is instantiated as a narrative object that can be updated later.
+    December 3, 2019 - Deprecated.
+
+    SHOULD BE SAFE TO DELETE THIS FILE AFTER MARCH, 2020. TEST BY RUNNING YOUR BOT.
+
+    This file remains active for now while its object is still being referenced by existing bots with dill/pickle.
+
+    We've updated the location.py file to reference utilities.narrative for future narrative object creation,
+    but expect it will take awhile for everyone's current bots to clear out those old references.
     """
 
     def __init__(self, narrative_id, narrative_time, admin):

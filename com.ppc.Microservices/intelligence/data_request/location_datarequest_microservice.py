@@ -8,8 +8,13 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from intelligence.intelligence import Intelligence
-import utilities
+import utilities.utilities as utilities
+import utilities.analytics as analytics
 import domain
+
+from devices.entry.entry import EntryDevice
+from devices.motion.motion import MotionDevice
+from devices.pressure.pressure import PressurePadDevice
 
 # Reference to use when requesting data so we know the response is ours
 DATA_REQUEST_REFERENCE = "all"
@@ -25,6 +30,9 @@ TIMER_REFERENCE = "dr"
 
 # Version
 VERSION = 1.0
+
+# Only download device types that our machine learning services currently do something with.
+DOWNLOAD_FOCUSED_DEVICES_ONLY = True
 
 class LocationDataRequestMicroservice(Intelligence):
     """
@@ -135,20 +143,25 @@ class LocationDataRequestMicroservice(Intelligence):
             if 'force' in content:
                 force = content['force']
 
-        self.parent.track(botengine, "download_data_requested", properties={"force": force})
         if self.last_download < botengine.get_timestamp() - utilities.ONE_HOUR_MS or force:
-            self.parent.track(botengine, "download_data_accepted", properties={"force": force})
             self.last_download = botengine.get_timestamp()
             botengine.get_logger().info("location_datarequest_microservice.download_data() - Requesting data")
 
             # Request all data from devices that capture interesting information
             for device_id in self.parent.devices:
                 focused_object = self.parent.devices[device_id]
-                if hasattr(focused_object, 'MEASUREMENT_PARAMETERS_LIST'):
-                    focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, reference=DATA_REQUEST_REFERENCE)
+
+                if DOWNLOAD_FOCUSED_DEVICES_ONLY:
+                    # Download focused devices only based on the list below.
+                    if isinstance(focused_object, MotionDevice) or isinstance(focused_object, EntryDevice) or isinstance(focused_object, PressurePadDevice):
+                        focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, reference=DATA_REQUEST_REFERENCE)
+
+                else:
+                    # Download any device with a focused measurements parameters list.
+                    if hasattr(focused_object, 'MEASUREMENT_PARAMETERS_LIST'):
+                        focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, reference=DATA_REQUEST_REFERENCE)
 
         else:
-            self.parent.track(botengine, "download_data_rejected", properties={"force": force})
             botengine.get_logger().info("location_datarequest_microservice: Attempted to download_data(), but we just did so recently so skipping this request.")
 
     def data_request_ready(self, botengine, reference, csv_dict):
@@ -194,7 +207,7 @@ class LocationDataRequestMicroservice(Intelligence):
                                 extra_json_dict={ "timestamp_ms": botengine.get_timestamp() },
                                 icon="brain")
 
-            self.parent.track(botengine, "data_request_ready", properties={"reference": reference})
+            analytics.track(botengine, self.parent, "data_request_ready", properties={"reference": reference})
 
             botengine.get_logger().info("location_datarequest_microservice: Data request received. reference={}".format(reference))
 

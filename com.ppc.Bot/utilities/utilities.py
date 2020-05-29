@@ -16,6 +16,18 @@ ONE_WEEK_MS = ONE_DAY_MS * 7
 ONE_MONTH_MS = ONE_DAY_MS * 30
 ONE_YEAR_MS = ONE_DAY_MS * 365
 
+# Icon Font types
+# Use http://FontAwesome.com to discover FontAwesome icons
+# Use https://peoplepowerco.com/icons/ to discover People Power and Weather icons
+ICON_FONT_FONTAWESOME_REGULAR = "far"
+ICON_FONT_FONTAWESOME_BOLD = "fab"
+ICON_FONT_FONTAWESOME_LIGHT = "fal"
+ICON_FONT_FONTAWESOME_SOLID = "fas"
+ICON_FONT_PEOPLEPOWER_REGULAR = "iotr"
+ICON_FONT_PEOPLEPOWER_LIGHT = "iotl"
+ICON_FONT_WEATHER_REGULAR = "wir"
+ICON_FONT_WEATHER_LIGHT = "wil"
+
 # Modes
 MODE_HOME = "HOME"
 MODE_AWAY = "AWAY"
@@ -49,6 +61,7 @@ SMS_OPT_OUT = 2
 ALARM_CODE_GENERAL_BURGLARY = "E130"
 ALARM_CODE_PERIMETER_WINDOW_BURGLARY = "E131"
 ALARM_CODE_PERIMETER_DOOR_BURGLARY = "E134"
+ALARM_CODE_BURGLARY_NO_DISPATCH = "E136"
 ALARM_CODE_LEAK = "E154"
 ALARM_CODE_RECENT_CLOSING = "E459"
 ALARM_CODE_DURESS = "E122"
@@ -76,14 +89,29 @@ PROFESSIONAL_MONITORING_ALERT_STATUS_RAISED = 1
 PROFESSIONAL_MONITORING_ALERT_STATUS_CANCELLED = 2
 PROFESSIONAL_MONITORING_ALERT_STATUS_REPORTED = 3
 
-# Official Collection Names
-SECURITY_COLLECTION_NAME = "Security Settings"
-CARE_COLLECTION_NAME = "Care Settings"
-ENERGY_COLLECTION_NAME = "Energy Settings"
-HOME_AUTOMATION_COLLECTION_NAME = "Home Automation Settings"
-ECC_COLLECTION_NAME = "Emergency Call Center Settings"
-DEMO_COLLECTION_NAME = "Demo Settings"
-
+# Push notification sound library
+PUSH_SOUND_ALARM = "alarm.wav"
+PUSH_SOUND_BEEP = "beep.wav"
+PUSH_SOUND_BELL = "bell.wav"
+PUSH_SOUND_BIRD = "bird.wav"
+PUSH_SOUND_BLING = "bling.wav"
+PUSH_SOUND_CAMERA = "camera_shutter.wav"
+PUSH_SOUND_CLICK = "click.wav"
+PUSH_SOUND_DOG = "dog.wav"
+PUSH_SOUND_DROID = "droid.wav"
+PUSH_SOUND_ENTRY_DELAY = "entry_delay.wav"
+PUSH_SOUND_FULLY_ARMED = "fullyarmed.wav"
+PUSH_SOUND_GUN_COCK = "guncock.wav"
+PUSH_SOUND_GUN_SHOT = "gunshot.wav"
+PUSH_SOUND_LOCK = "lock.wav"
+PUSH_SOUND_PHASER = "phaser.wav"
+PUSH_SOUND_PONG = "pong.wav"
+PUSH_SOUND_SILENCE = "silence.wav"
+PUSH_SOUND_TOGGLE = "toggle.wav"
+PUSH_SOUND_TRUMPET = "trumpet.wav"
+PUSH_SOUND_WARNING = "warning.wav"
+PUSH_SOUND_WHISTLE = "whistle.wav"
+PUSH_SOUND_WHOOPS = "whoops.wav"
 
 def alarm_code_to_description(code):
     """
@@ -170,6 +198,40 @@ def calculate_heat_index(degrees_c, humidity):
 
     return fahrenheit_to_celsius(hi_f + adjustment_f)
 
+def ms_to_human_readable_string(ms, include_seconds=False):
+    """
+    Transform milliseconds to human-readable minutes and seconds string
+    :param ms: Milliseconds
+    :param include_seconds: True to specify seconds granularity (default False)
+    :return: String "1 hour 30 minutes 26 seconds"
+    """
+    import time
+    ts = time.gmtime(ms/1000)
+    hour = ts.tm_hour
+    min = ts.tm_min
+    sec = ts.tm_sec
+
+    str = ""
+    if hour == 1:
+        str += _("1 hour")
+    elif hour > 1:
+        str += _("{} hours").format(hour)
+
+    if min == 1:
+        str += " " + _("1 minute")
+    elif min > 1:
+        str += " " + _("{} minutes").format(min)
+
+    if include_seconds or (hour == 0 and min == 0):
+        if sec == 1:
+            str += " " + _("1 second")
+        elif sec > 1:
+            str += " " + _("{} seconds").format(sec)
+
+        elif hour == 0 and min == 0:
+            str += " " + _("0 seconds")
+
+    return str.strip()
 
 def normalize_measurement(measure):
     """

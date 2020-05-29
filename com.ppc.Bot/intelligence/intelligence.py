@@ -37,6 +37,13 @@ class Intelligence:
         """
         return
 
+    def new_version(self, botengine):
+        """
+        Upgraded to a new bot version
+        :param botengine: BotEngine environment
+        """
+        return
+
     def mode_updated(self, botengine, current_mode):
         """
         Mode was updated
@@ -163,6 +170,23 @@ class Intelligence:
         :param location_access: User's access to the location and devices. (0=None; 10=read location/device data; 20=control devices and modes; 30=update location info and manage devices)
         :param previous_alert_category: User's previous category, if any
         :param previous_location_access: User's previous access to the location, if any
+        """
+        return
+
+    def call_center_updated(self, botengine, user_id, status):
+        """
+        Emergency call center status has changed.
+
+            0 = Unavailable
+            1 = Available, but the user does not have enough information to activate
+            2 = Registration pending
+            3 = Registered and activated
+            4 = Cancellation pending
+            5 = Cancelled
+
+        :param botengine: BotEngine environment
+        :param user_id: User ID that made the change
+        :param status: Current call center status
         """
         return
 

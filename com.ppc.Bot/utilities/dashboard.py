@@ -33,7 +33,7 @@ COMMAND_SET_STATUS_WARNING = 1
 COMMAND_SET_STATUS_CRITICAL = 2
 
 
-def set_status(botengine, location_object, unique_identifier, comment, status=STATUS_GOOD, comment_weight=50, device_id=None, section_title=CARD_TITLE_NOW, section_weight=CARD_TYPE_NOW_WEIGHT, set_status_good_timestamp_ms=None, set_status_warning_timestamp_ms=None, set_status_critical_timestamp_ms=None, delete_timestamp_ms=None):
+def set_status(botengine, location_object, unique_identifier, comment, status=STATUS_GOOD, comment_weight=50, device_id=None, icon=None, icon_font=None, section_title=CARD_TITLE_NOW, section_weight=CARD_TYPE_NOW_WEIGHT, set_status_good_timestamp_ms=None, set_status_warning_timestamp_ms=None, set_status_critical_timestamp_ms=None, delete_timestamp_ms=None):
     """
     Set content for a status-style card.
     :param botengine: BotEngine environment
@@ -43,6 +43,8 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
     :param status: Status for color-coding the content
     :param comment_weight: Weight of the comment relative to other comments inside this card.
     :param device_id: Optional device ID to create a link to a device that is having a problem
+    :param icon: Optional icon for the content
+    :param icon_font: Optional style for the icon font. Default is FontAwesome Regular. See the ICON_FONT_* descriptions in com.ppc.Bot/utilities/utilities.py
     :param section_title: Title of the section, in case we want multiple NOW-style cards
     :param section_weight: Weight of the section, in case we want to change it
     """
@@ -53,14 +55,18 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
         "comment": comment,
         "weight": comment_weight,
         "id": unique_identifier,
+        "icon": icon,
         "alarms": alarms
     }
+
+    if icon_font is not None:
+        element['icon_font'] = icon_font
 
     if device_id is not None:
         element["device_id"] = device_id
 
     content = {
-        "type": 0,
+        "type": CARD_TYPE_NOW,
         "title": section_title,
         "weight": section_weight,
         "content": element
@@ -102,7 +108,7 @@ def delete_status(botengine, location_object, unique_identifier, section_title=C
     location_object.distribute_datastream_message(botengine, "update_dashboard_content", content, internal=True, external=False)
 
 
-def set_service(botengine, location_object, unique_identifier, title, comment, icon, status=STATUS_GOOD, percent=100.0, active=True, description=None, question_id=None, collection_id=None, section_id=None, comment_weight=50, section_title=CARD_TITLE_SERVICES, section_weight=CARD_TYPE_SERVICES_WEIGHT):
+def set_service(botengine, location_object, unique_identifier, title, comment, icon, icon_font=None, status=STATUS_GOOD, percent=100.0, active=True, description=None, question_id=None, collection_id=None, section_id=None, comment_weight=50, section_title=CARD_TITLE_SERVICES, section_weight=CARD_TYPE_SERVICES_WEIGHT):
     """
     Set content for a service-style card.
     :param botengine: BotEngine environment
@@ -110,7 +116,8 @@ def set_service(botengine, location_object, unique_identifier, title, comment, i
     :param unique_identifier: Unique identifier for this content
     :param title: Title of the content
     :param comment: Comment to display. If None then this content gets deleted
-    :param icon: Icon name to render from fontawesome.com
+    :param icon: Icon name to render from http://peoplepowerco.com/icons or http://fontawesome.com
+    :param icon: Icon font package to use. See the ICON_FONT_* descriptions in com.ppc.Bot/utilities/utilities.py
     :param status: Status for color-coding the content
     :param percent: Percent complete
     :param active: True if this element is active, False if it is disabled
@@ -131,6 +138,9 @@ def set_service(botengine, location_object, unique_identifier, title, comment, i
             "id": unique_identifier,
             "weight": comment_weight
         }
+
+        if icon_font is not None:
+            element['icon_font'] = icon_font
 
         if question_id is not None:
             element["question_id"] = question_id

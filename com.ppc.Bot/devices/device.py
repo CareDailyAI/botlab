@@ -7,7 +7,7 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 '''
 
-import utilities
+import utilities.utilities as utilities
 import intelligence.index
 import importlib
 
@@ -23,7 +23,7 @@ TIME_BETWEEN_ATTEMPTS_SEC = 30
 # Reliability variable name so we prevent typos
 RELIABILITY_VARIABLE_NAME = "reliability"
 
-# Total duration of time in which we should cache measurements here locally. Larger = slower to download, faster to execute.
+# Total duration of time in which we should cache measurements here locally.
 TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS = utilities.ONE_HOUR_MS
 
 # Take a battery reading every 4 hours
@@ -53,6 +53,10 @@ SPACE_TYPE = {
     "other": 13
 }
 
+# Helper enums
+NEWEST_MEASUREMENT = 0
+VALUE = 0
+TIMESTAMP = 1
 
 class Device:
     """This is a base class for each of our devices"""
@@ -197,10 +201,6 @@ class Device:
         
         The correct behavior is to create the object, then initialize() it every time you want to use it in a new bot execution environment
         """
-        # Added January 27, 2019
-        if not hasattr(self, 'spaces'):
-            self.spaces = []
-
         if str(self.device_type) in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES']:
 
             # Synchronize microservice capabilities
@@ -223,6 +223,7 @@ class Device:
 
 
                 # Remove microservices that no longer exist
+                delete = []
                 for module_name in self.intelligence_modules.keys():
                     found = False
                     for intelligence_info in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]:
@@ -232,7 +233,10 @@ class Device:
 
                     if not found:
                         botengine.get_logger().info("\tDeleting device microservice: " + str(module_name))
-                        del self.intelligence_modules[module_name]
+                        delete.append(module_name)
+
+                for d in delete:
+                    del self.intelligence_modules[d]
 
 
             for i in self.intelligence_modules:
@@ -258,11 +262,21 @@ class Device:
         # NOTE: Super abstract device type name
         return _("Device")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
+        Get the name of an icon
         :return: the font icon name of this device type
         """
         raise NotImplementedError
+
+    def get_icon_font(self):
+        """
+        Get the icon font package from which to render an icon
+        As most of the device icons come from the "People Power Regular" icon font, this is currently the default.
+        You can override this method in a specific device class.
+        :return: The name of the icon font package
+        """
+        return utilities.ICON_FONT_PEOPLEPOWER_REGULAR
 
     def is_goal_id(self, target_goal_id):
         """
@@ -328,7 +342,7 @@ class Device:
 
         except:
             # This can happen because this bot may not have read permissions for this device.
-            botengine.get_logger().warning("Cannot synchronize measurements for device {}; device ID {}".format(self.description, self.device_id))
+            # botengine.get_logger().warning("Cannot synchronize measurements for device {}; device ID {}".format(self.description, self.device_id))
             return
 
         botengine.get_logger().info("Synchronizing measurements for device: " + str(self.description))
@@ -346,7 +360,7 @@ class Device:
                 # If there's an index number, we just augment the parameter name with the index number to make it a unique parameter name.  param_name.index
                 if 'index' in measure:
                     if measure['index'] is not None:
-                        if measure['index'].lower() != "none":
+                        if str(measure['index']).lower() != "none":
                             param_name = "{}.{}".format(param_name, measure['index'])
 
                 if param_name in self.measurements:
@@ -355,7 +369,6 @@ class Device:
                         continue
 
                 self.add_measurement(botengine, param_name, value, time)
-
 
     def update(self, botengine):
         """
@@ -366,7 +379,29 @@ class Device:
         botengine.get_logger().info("Updating: " + self.description)
 
         measures = botengine.get_measures_block()
-        
+
+        # # Handy debug tool.
+        # if measures is not None:
+        #     for measure in measures:
+        #         if measure['deviceId'] == self.device_id and 'value' in measure:
+        #             param_name = measure['name']
+        #             if 'index' in measure:
+        #                 if measure['index'] is not None:
+        #                     param_name = "{}.{}".format(measure['name'], measure['index'])
+        #
+        #             if param_name in self.measurements:
+        #                 if len(self.measurements[param_name]) > 0:
+        #                     if 'time' in measure:
+        #                         if not measure['updated'] and measure['time'] == self.measurements[param_name][NEWEST_MEASUREMENT][TIMESTAMP]:
+        #                             # Nothing to update
+        #                             botengine.get_logger().info(utilities.Color.GREEN + "\tSAME:      {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
+        #                             continue
+        #
+        #             if measure['updated']:
+        #                 botengine.get_logger().info(utilities.Color.GREEN + "\tUPDATED:   {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
+        #             else:
+        #                 botengine.get_logger().info(utilities.Color.GREEN + "\tTIME DIFF: {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
+
         if measures is not None:
             for measure in measures:
                 if measure['deviceId'] == self.device_id:
@@ -396,7 +431,7 @@ class Device:
                         # If there's an index number, we just augment the parameter name with the index number to make it a unique parameter name.  param_name.index
                         if 'index' in measure:
                             if measure['index'] is not None:
-                                if measure['index'].lower() != "none":
+                                if str(measure['index']).lower() != "none":
                                     param_name = "{}.{}".format(param_name, measure['index'])
 
                         self.add_measurement(botengine, param_name, value, measure['time'])
@@ -455,25 +490,9 @@ class Device:
         self.measurements[name].insert(0, (value, timestamp))
 
         # Auto garbage-collect
-        if self.enforce_cache_size and len(self.measurements[name]) > 1:
-            if self.measurements[name][-1][1] <= botengine.get_timestamp() - TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS:
+        if self.enforce_cache_size:
+            while (len(self.measurements[name]) > 1) and self.measurements[name][-1][1] <= botengine.get_timestamp() - TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS:
                 del(self.measurements[name][-1])
-
-
-    def garbage_collect(self, botengine):
-        """
-        Clean up the garbage
-        :param current_timestamp: Current timestamp in ms
-        """
-        current_timestamp = botengine.get_timestamp()
-        for name in self.measurements:
-            i = 0
-            if len(self.measurements[name]) > 1:
-                for (value, timestamp) in self.measurements[name]:
-                    i += 1
-                    if timestamp <= current_timestamp - TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS:
-                        del self.measurements[name][i:]
-                        break
 
     def communicated(self, timestamp):
         """
@@ -563,6 +582,19 @@ class Device:
                 return self.location_object.devices[self.proxy_id]
 
         return None
+
+    def did_tamper(self, botengine):
+        """
+        Did someone tamper with this device
+        :param botengine:
+        :return:
+        """
+        if 'tamper' in self.last_updated_params:
+            if 'tamper' in self.measurements:
+                if len(self.measurements['tamper']) > 0:
+                    return self.measurements['tamper'][0][0]
+
+        return False
 
     #===========================================================================
     # Coordinates
@@ -741,7 +773,7 @@ class Device:
 
         except:
             # This can happen because this bot may not have read permissions for this device.
-            botengine.get_logger().warning("Cannot synchronize measurements for device: " + str(self.description))
+            # botengine.get_logger().warning("Cannot synchronize measurements for device: " + str(self.description))
             return None
 
         processed_readings = {}
@@ -757,7 +789,7 @@ class Device:
                 # If there's an index number, we just augment the parameter name with the index number to make it a unique parameter name.  param_name.index
                 if 'index' in measure:
                     if measure['index'] is not None:
-                        if measure['index'].lower() != "none":
+                        if str(measure['index']).lower() != "none":
                             param_name = "{}.{}".format(param_name, measure['index'])
 
                 processed_readings[time] = (param_name, value)

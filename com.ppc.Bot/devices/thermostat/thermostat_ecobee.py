@@ -11,6 +11,7 @@ file 'LICENSE.txt', which is part of this source code package.
 # https://presence.atlassian.net/wiki/display/devices/Thermostat
 
 from devices.thermostat.thermostat import ThermostatDevice
+import utilities.analytics as analytics
 
 # Set the default rounding to 3 numbers.
 from decimal import *
@@ -137,7 +138,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
                 'ee_start_timestamp_ms': self.ee_timestamp_ms
             }
 
-            self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
+            analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
 
         elif identifier == "away":
             if self.ee_timestamp_ms is None:
@@ -161,7 +162,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
                 'ee_start_timestamp_ms': self.ee_timestamp_ms
             }
 
-            self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
+            analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
 
         else:
             return ThermostatDevice.increment_energy_efficiency(self, botengine, identifier, max_offset_c)
@@ -200,7 +201,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             'ee_start_timestamp_ms': self.ee_timestamp_ms
         }
 
-        self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
+        analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
 
     def set_energy_efficiency_sleep(self, botengine):
         """
@@ -234,7 +235,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             'ee_start_timestamp_ms': self.ee_timestamp_ms
         }
 
-        self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
+        analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
 
     def set_energy_efficiency_home(self, botengine):
         """
@@ -250,18 +251,12 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             # End of all EE events
             duration_s = (botengine.get_timestamp() - self.ee_timestamp_ms) / 1000
             self.ee_timestamp_ms = None
-            self.location_object.track(botengine, "ee_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
-            import importlib
-            try:
-                analytics = importlib.import_module('analytics')
+            analytics.track(botengine, self.location_object, "ee_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
 
-                # This number will represent the total amount of time across ALL devices.
-                # For example, if you have 1 thermostat and a EE event for 10000s, then the total is 10000s.
-                # But if you have 2 thermostats and a EE event for 10000s, then the total is 20000s
-                analytics.get_analytics(botengine).people_increment(botengine, {'ee_total_s': duration_s})
-
-            except ImportError:
-                pass
+            # This number will represent the total amount of time across ALL devices.
+            # For example, if you have 1 thermostat and a EE event for 10000s, then the total is 10000s.
+            # But if you have 2 thermostats and a EE event for 10000s, then the total is 20000s
+            analytics.people_increment(botengine, self.location_object, {'ee_total_s': duration_s})
 
         botengine.send_command(self.device_id, self.COMMAND_CLIMATE_MODE, "home")
 
@@ -280,4 +275,4 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             'ecobee_climate': "home"
         }
 
-        self.location_object.track(botengine, 'thermostat_policy_unset', properties=policies)
+        analytics.track(botengine, self.location_object, 'thermostat_policy_unset', properties=policies)

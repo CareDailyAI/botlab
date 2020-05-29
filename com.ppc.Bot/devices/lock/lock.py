@@ -45,12 +45,11 @@ class LockDevice(Device):
         # NOTE: Abstract device type name, doesn't show up in end user documentation
         return _("Lock")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "lock"
-
 
     def did_unlock(self, botengine=None):
         """

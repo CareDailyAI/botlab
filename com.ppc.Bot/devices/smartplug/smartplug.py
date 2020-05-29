@@ -38,8 +38,10 @@ class SmartplugDevice(Device):
     GOAL_SMARTPLUG_FAN = 86
     GOAL_SMARTPLUG_SPACEHEATER = 87
     GOAL_SMARTPLUG_WINDOW_AC = 88
-
     GOAL_SMARTPLUG_SKIP = 89
+    GOAL_SMARTPLUG_COFFEE_AUTO_ON = 90
+    GOAL_SMARTPLUG_APPLIANCE_MONITORING = 91
+    GOAL_SMARTPLUG_MICROWAVE = 92
 
 
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
@@ -62,7 +64,7 @@ class SmartplugDevice(Device):
         # NOTE: Device type name - abstract smart plug
         return _("Smart Plug")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """

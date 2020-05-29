@@ -25,13 +25,14 @@ class TouchDevice(Device):
 
     # Goals / Behaviors
     GOAL_ALERT_ON_EVERY_TOUCH = 20
-    GOAL_ALART_WHEN_AWAY = 21
+    GOAL_ALERT_WHEN_AWAY = 21
+    GOAL_TOILET = 22
 
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
-        self.goal_id = TouchDevice.GOAL_ALART_WHEN_AWAY
+        self.goal_id = TouchDevice.GOAL_ALERT_WHEN_AWAY
 
     def get_device_type_name(self):
         """
@@ -40,11 +41,19 @@ class TouchDevice(Device):
         # NOTE: Device type name
         return _("Touch Sensor")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "touch"
+
+    def did_tamper(self, botengine):
+        """
+        Did someone tamper with this device
+        :param botengine:
+        :return:
+        """
+        return False
 
     def did_start_moving(self, botengine):
         """

@@ -28,7 +28,7 @@ class TemperatureDevice(Device):
         MEASUREMENT_DEG_C
     ]
 
-    
+
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
@@ -36,11 +36,19 @@ class TemperatureDevice(Device):
         # NOTE: Device type name
         return _("Temperature Sensor")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "temp-humidity"
+
+    def did_tamper(self, botengine):
+        """
+        Did someone tamper with this device
+        :param botengine:
+        :return:
+        """
+        return False
 
 
     def get_temperature_c(self, botengine=None):

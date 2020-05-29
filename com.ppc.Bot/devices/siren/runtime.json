@@ -1,6 +1,9 @@
 {
   "version": {
     "triggerParameters": [
+      "ppc.alarmStrobe",
+      "ppc.alarmDuration",
+      "ppc.alarmLevel"
     ]
   }
 }

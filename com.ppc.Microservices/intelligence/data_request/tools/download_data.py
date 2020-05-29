@@ -114,7 +114,6 @@ def send_datastream_message(server, app_key, location_id, address, content):
     
 def _login(server, username, password):
     """Get an Bot API key and User Info by login with a username and password"""
-
     if not username:
         username = raw_input('Email address: ')
         
@@ -133,10 +132,15 @@ def _login(server, username, password):
         app_key = j['key']
 
         # get user info
-        http_headers = {"PRESENCE_API_KEY": app_key, "Content-Type": "application/json"}
+        http_headers = {"API_KEY": app_key, "Content-Type": "application/json"}
         r = requests.get(server + "/cloud/json/user", headers=http_headers)
         j = json.loads(r.text)
-        _check_for_errors(j)
+        try:
+            _check_for_errors(j)
+        except Exception as e:
+            print("Couldn't download user info: {}".format(json.dumps(j, indent=2, sort_keys=True)))
+            exit(-1)
+
         return app_key, j
 
     except BotError as e:

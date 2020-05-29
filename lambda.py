@@ -12,6 +12,7 @@ import botengine
 import importlib
 import time
 
+
 def lambda_handler(data, context):
     """
     Execution wrapper on AWS Lambda
@@ -26,7 +27,7 @@ def lambda_handler(data, context):
     
     try:
         bot = importlib.import_module('bot')
-        botengine._run(bot, data, logger)
+        botengine._run(bot, data, logger, context)
         
     except:
         import traceback
@@ -52,9 +53,31 @@ def lambda_handler(data, context):
 
                 sys.stdout.flush()
                 break
-    
+
+    if 'sqsQueue' in data:
+        import json
+        send_sqs_message(data.get('sqsQueue'), json.dumps(logger.get_lambda_return()), data.get('clientContext'))
+
     return logger.get_lambda_return()
-    
+
+
+def send_sqs_message(queue_name, msg_body, client_context):
+    """
+    Method to deliver back to the server the logs and tracebacks during asynchronous parallel processed machine learning data request triggers
+    :param queue_name:
+    :param msg_body:
+    :param client_context:
+    :return:
+    """
+    import boto3
+    sqs = boto3.resource('sqs')
+    queue = sqs.get_queue_by_name(QueueName=queue_name)
+    queue.send_message(MessageBody=msg_body, MessageAttributes={
+        'ClientContext': {
+            'StringValue': client_context,
+            'DataType': 'String'
+        }
+    })
 
 
 class LambdaLogger():
@@ -65,6 +88,9 @@ class LambdaLogger():
 
         # Logs
         self.logs = []
+
+        # Start Code - provided by the server in response to the Start API
+        self.start_code = 0
 
     def log(self, level, message):
         pass
@@ -101,6 +127,8 @@ class LambdaLogger():
         
         if len(self.logs):
             response['logs'] = self.logs
+
+        response['startCode'] = self.start_code
         
         return response
     

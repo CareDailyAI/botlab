@@ -23,7 +23,7 @@ class CameraDevice(Device):
         # NOTE: Abstract device type name, doeesn't show up in end user documentation
         return _("Camera")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """

@@ -14,9 +14,11 @@ from locations.location import Location
 from devices.camera.camera_peoplepower_presenceandroid import PeoplePowerPresenceAndroidCameraDevice
 from devices.camera.camera_peoplepower_presenceios import PeoplePowerPresenceIosCameraDevice
 from devices.entry.entry import EntryDevice
+from devices.entry.entry_develco import DevelcoEntryDevice
 from devices.environment.temperature import TemperatureDevice
 from devices.environment.temperaturehumidity import TemperatureHumidityDevice
 from devices.gateway.gateway_peoplepower_xseries import PeoplePowerXSeriesDevice
+from devices.gateway.gateway_peoplepower_edge import PeoplePowerEdgeDevice
 from devices.gateway.gateway_peoplepower_mseries import PeoplePowerMSeriesDevice
 from devices.gateway.gateway_qorvo_lcgw import QorvoLcgwGatewayDevice
 from devices.gateway.gateway_develco_squidlink import DevelcoSquidlinkDevice
@@ -24,15 +26,18 @@ from devices.leak.leak import LeakDevice
 from devices.light.light import LightDevice
 from devices.light.lightswitch_ge import LightswitchGeDevice
 from devices.motion.motion import MotionDevice
+from devices.motion.motion_develco import DevelcoMotionDevice
 from devices.movement.touch import TouchDevice
 from devices.siren.siren_linkhigh import LinkhighSirenDevice
 from devices.siren.siren_smartenit_zbalarm import SmartenitZbalarmDevice
+from devices.siren.siren_develco import DevelcoSirenDevice
 from devices.smartplug.smartplug import SmartplugDevice
 from devices.smartplug.smartplug_centralite_3series import Centralite3SeriesSmartplugDevice  # TODO how do we cast objects that are already created with this into a different class?
 from devices.thermostat.thermostat_centralite_pearl import ThermostatCentralitePearlDevice
 from devices.thermostat.thermostat_honeywell_lyric import ThermostatHoneywellLyricDevice
 from devices.thermostat.thermostat_sensibo_sky import ThermostatSensiboSkyDevice
 from devices.thermostat.thermostat_ecobee import ThermostatEcobeeDevice
+from devices.thermostat.thermostat_emerson_thermostat import ThermostatEmersonDevice
 from devices.touchpad.touchpad_peoplepower import PeoplePowerTouchpadDevice
 from devices.button.button import ButtonDevice
 from devices.lock.lock import LockDevice
@@ -40,6 +45,10 @@ from devices.gas.carbon_monoxide import CarbonMonoxideDevice
 from devices.pictureframe.pictureframe_peoplepower_ios import PeoplePowerPictureFrameIosDevice
 from devices.pictureframe.pictureframe_peoplepower_android import PeoplePowerPictureFrameAndroidDevice
 from devices.smartplug.smartplug_smartenit_largeload import SmartenitLargeLoadControllerDevice
+from devices.pressure.pressure import PressurePadDevice
+from devices.keypad.keypad_develco import DevelcoKeypadDevice
+from devices.leak.leak_develco import DevelcoLeakDevice
+from devices.smartplug.smartplug_develco import DevelcoSmartplugDevice
 
 class Controller:
     """This is the main class that will coordinate all our sensors and behavior"""
@@ -53,16 +62,35 @@ class Controller:
             
         # A map of device_id : locationId
         self.location_devices = {}
+
+        # Last execution timestamp for debugging support
+        self.exec_timestamp = 0
         
         
-    def initialize(self, botengine):
+    def initialize(self, botengine, initialize_everything=True):
         """
         Initialize the controller.
         This is mandatory to call once for each new execution of the bot
+        :param botengine: BotEngine environment
+        :param initialize_everything: Default is True. False is used for advance machine learning edge computing services.
         """
+        if len(self.locations) > 1:
+            botengine.get_logger().error("Bot instance {} is tracking multiple locations: {}; Only keeping location ID {}.".format(botengine.get_bot_instance_id(), self.locations.keys(), botengine.get_location_id()))
+            for key in list(self.locations.keys()):
+                if int(key) == int(botengine.get_location_id()):
+                    continue
+
+                else:
+                    del self.locations[key]
+
+        if not hasattr(self, 'exec_timestamp'):
+            self.exec_timestamp = 0
+
+        botengine.get_logger().info("controller: Last execution={}; Current execution={}".format(self.exec_timestamp, botengine.get_timestamp()))
+        self.exec_timestamp = botengine.get_timestamp()
+
         for key in self.locations:
-            self.locations[key].initialize(botengine)
-            
+            self.locations[key].initialize(botengine, initialize_everything)
     
     def print_status(self, botengine):
         """
@@ -76,17 +104,19 @@ class Controller:
         logger.info("-----")
             
     
-    def track_new_and_deleted_devices(self, botengine):
+    def track_new_and_deleted_devices(self, botengine, precache_measurements=True):
         """
         Track any new or deleted devices
         :param botengine: Execution environment
         :param controller: Controller object managing all locations and devices
+        :param precache_measurements: True to pre-cache measurements for each new device
         """
         location_id = botengine.get_location_id()
-        if location_id not in self.locations:
-            # The location isn't being tracked yet, add it
-            botengine.get_logger().info("\t=> Now tracking location " + str(location_id))
-            self.locations[location_id] = Location(botengine, location_id)
+        if len(self.locations) == 0:
+            if location_id not in self.locations:
+                # The location isn't being tracked yet, add it
+                botengine.get_logger().info("\t=> Now tracking location " + str(location_id))
+                self.locations[location_id] = Location(botengine, location_id)
 
         access = botengine.get_access_block()
 
@@ -106,12 +136,20 @@ class Controller:
                     import json
                     botengine.get_logger().warn("Got a Device Category in our access block, but there was no 'device' element:\n" + json.dumps(access, indent=2, sort_keys=True))
                     continue
-                
+
+                if 'description' in item['device']:
+                    device_desc = str(item['device']['description']).strip()
+                else:
+                    device_desc = ""
+
                 device_id = str(item['device']['deviceId'])
                 device_type = int(item['device']['deviceType'])
-                device_desc = str(item['device']['description']).strip()
                 location_id = int(item['device']['locationId'])
-                
+
+                if len(self.locations) > 0 and location_id not in self.locations:
+                    botengine.get_logger().warning("Device ID {} is being accessed by bot instance {} in location {}, but its location is {}.".format(device_id, botengine.get_bot_instance_id(), list(self.locations.keys()), location_id))
+                    continue
+
                 device_object = self.get_device(device_id)
 
                 if device_object is not None:
@@ -126,94 +164,125 @@ class Controller:
                 
                 if device_object is None:
                     if device_type in PeoplePowerPresenceAndroidCameraDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPresenceAndroidCameraDevice(botengine, device_id, device_type, device_desc)
+                        device_object = PeoplePowerPresenceAndroidCameraDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in PeoplePowerPresenceIosCameraDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPresenceIosCameraDevice(botengine, device_id, device_type, device_desc)
+                        device_object = PeoplePowerPresenceIosCameraDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in EntryDevice.DEVICE_TYPES:
-                        device_object = EntryDevice(botengine, device_id, device_type, device_desc)
+                        device_object = EntryDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                     
                     elif device_type in TemperatureDevice.DEVICE_TYPES:
-                        device_object = TemperatureDevice(botengine, device_id, device_type, device_desc)
+                        device_object = TemperatureDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in TemperatureHumidityDevice.DEVICE_TYPES:
-                        device_object = TemperatureHumidityDevice(botengine, device_id, device_type, device_desc)
+                        device_object = TemperatureHumidityDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in PeoplePowerMSeriesDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerMSeriesDevice(botengine, device_id, device_type, device_desc)
+                        device_object = PeoplePowerMSeriesDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in PeoplePowerXSeriesDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerXSeriesDevice(botengine, device_id, device_type, device_desc)
+                        device_object = PeoplePowerXSeriesDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in PeoplePowerEdgeDevice.DEVICE_TYPES:
+                        device_object = PeoplePowerEdgeDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoSquidlinkDevice.DEVICE_TYPES:
-                        device_object = DevelcoSquidlinkDevice(botengine, device_id, device_type, device_desc)
+                        device_object = DevelcoSquidlinkDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in QorvoLcgwGatewayDevice.DEVICE_TYPES:
-                        device_object = QorvoLcgwGatewayDevice(botengine, device_id, device_type, device_desc)
+                        device_object = QorvoLcgwGatewayDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in LeakDevice.DEVICE_TYPES:
-                        device_object = LeakDevice(botengine, device_id, device_type, device_desc)
+                        device_object = LeakDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in LightDevice.DEVICE_TYPES:
-                        device_object = LightDevice(botengine, device_id, device_type, device_desc)
+                        device_object = LightDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in LightswitchGeDevice.DEVICE_TYPES:
-                        device_object = LightswitchGeDevice(botengine, device_id, device_type, device_desc)
+                        device_object = LightswitchGeDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in MotionDevice.DEVICE_TYPES:
-                        device_object = MotionDevice(botengine, device_id, device_type, device_desc)
+                        device_object = MotionDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in TouchDevice.DEVICE_TYPES:
-                        device_object = TouchDevice(botengine, device_id, device_type, device_desc)
+                        device_object = TouchDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in SmartenitZbalarmDevice.DEVICE_TYPES:
-                        device_object = SmartenitZbalarmDevice(botengine, device_id, device_type, device_desc)
+                        device_object = SmartenitZbalarmDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in LinkhighSirenDevice.DEVICE_TYPES:
-                        device_object = LinkhighSirenDevice(botengine, device_id, device_type, device_desc)
+                        device_object = LinkhighSirenDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in SmartplugDevice.DEVICE_TYPES:
-                        device_object = SmartplugDevice(botengine, device_id, device_type, device_desc)
+                        device_object = SmartplugDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in ThermostatCentralitePearlDevice.DEVICE_TYPES:
-                        device_object = ThermostatCentralitePearlDevice(botengine, device_id, device_type, device_desc)
+                        device_object = ThermostatCentralitePearlDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                     
                     elif device_type in ThermostatHoneywellLyricDevice.DEVICE_TYPES:
-                        device_object = ThermostatHoneywellLyricDevice(botengine, device_id, device_type, device_desc)
+                        device_object = ThermostatHoneywellLyricDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in ThermostatSensiboSkyDevice.DEVICE_TYPES:
-                        device_object = ThermostatSensiboSkyDevice(botengine, device_id, device_type, device_desc)
+                        device_object = ThermostatSensiboSkyDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in ThermostatEcobeeDevice.DEVICE_TYPES:
-                        device_object = ThermostatEcobeeDevice(botengine, device_id, device_type, device_desc)
+                        device_object = ThermostatEcobeeDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in PeoplePowerTouchpadDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerTouchpadDevice(botengine, device_id, device_type, device_desc)
+                        device_object = PeoplePowerTouchpadDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in ButtonDevice.DEVICE_TYPES:
-                        device_object = ButtonDevice(botengine, device_id, device_type, device_desc)
+                        device_object = ButtonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in LockDevice.DEVICE_TYPES:
-                        device_object = LockDevice(botengine, device_id, device_type, device_desc)
+                        device_object = LockDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in CarbonMonoxideDevice.DEVICE_TYPES:
-                        device_object = CarbonMonoxideDevice(botengine, device_id, device_type, device_desc)
+                        device_object = CarbonMonoxideDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in PeoplePowerPictureFrameIosDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPictureFrameIosDevice(botengine, device_id, device_type, device_desc)
+                        device_object = PeoplePowerPictureFrameIosDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in PeoplePowerPictureFrameAndroidDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPictureFrameAndroidDevice(botengine, device_id, device_type, device_desc)
+                        device_object = PeoplePowerPictureFrameAndroidDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in SmartenitLargeLoadControllerDevice.DEVICE_TYPES:
-                        device_object = SmartenitLargeLoadControllerDevice(botengine, device_id, device_type, device_desc)
+                        device_object = SmartenitLargeLoadControllerDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoMotionDevice.DEVICE_TYPES:
+                        device_object = DevelcoMotionDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoEntryDevice.DEVICE_TYPES:
+                        device_object = DevelcoEntryDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in PressurePadDevice.DEVICE_TYPES:
+                        device_object = PressurePadDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in ThermostatEmersonDevice.DEVICE_TYPES:
+                        device_object = ThermostatEmersonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoSirenDevice.DEVICE_TYPES:
+                        device_object = DevelcoSirenDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoKeypadDevice.DEVICE_TYPES:
+                        device_object = DevelcoKeypadDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoLeakDevice.DEVICE_TYPES:
+                        device_object = DevelcoLeakDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoSmartplugDevice.DEVICE_TYPES:
+                        device_object = DevelcoSmartplugDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     else:
                         botengine.get_logger().warn("Unsupported device type: " + str(device_type) + " ('" + device_desc + "')")
                         continue
-                
-                device_object.is_connected = item['device']['connected']
+
+                if 'connected' in item['device']:
+                    device_object.is_connected = item['device']['connected']
+                else:
+                    device_object.is_connected = False
+
                 device_object.can_read = item['read']
                 device_object.can_control = item['control']
                 device_object.device_id = str(device_id)
@@ -268,6 +337,9 @@ class Controller:
         :param device_object: Device object
         """
         # Make sure the location exists
+        if len(self.locations) > 0 and location_id not in self.locations:
+            return
+
         if location_id not in self.locations:
             # The location isn't being tracked yet, add it
             botengine.get_logger().info("\t=> Now tracking location " + str(location_id))
@@ -365,6 +437,21 @@ class Controller:
             self.locations[location_id] = Location(botengine, location_id)
 
         self.locations[location_id].user_role_updated(botengine, user_id, category, location_access, previous_category, previous_location_access)
+
+    def call_center_updated(self, botengine, location_id, user_id, status):
+        """
+        Emergency call center status has changed
+        :param botengine: BotEngine environment
+        :param location_id: Location ID
+        :param user_id: User ID that made the change
+        :param status: Current call center status
+        """
+        if location_id not in self.locations:
+            # The location isn't being tracked yet, add it
+            botengine.get_logger().info("\t=> Now tracking location " + str(location_id))
+            self.locations[location_id] = Location(botengine, location_id)
+
+        self.locations[location_id].call_center_updated(botengine, user_id, status)
 
     def data_request_ready(self, botengine, reference, device_csv_dict):
         """
@@ -465,7 +552,8 @@ class Controller:
         :return: the device object represented by the device ID, or return None if the device does not yet exist
         """
         try:
-            return self.locations[self.location_devices[device_id]].devices[device_id]
+            if self.location_devices[device_id] in self.locations:
+                return self.locations[self.location_devices[device_id]].devices[device_id]
             
         except:
             return None
@@ -477,8 +565,9 @@ class Controller:
         """
         botengine.get_logger().info("Deleting device: " + str(device_id))
         if device_id in self.location_devices:
-            location = self.locations[self.location_devices[device_id]]
-            location.delete_device(botengine, device_id)
+            if self.location_devices[device_id] in self.locations:
+                location = self.locations[self.location_devices[device_id]]
+                location.delete_device(botengine, device_id)
             del self.location_devices[device_id]
         
     def delete_location(self, botengine, location_id):
@@ -493,5 +582,12 @@ class Controller:
                     self.delete_device(botengine, device_id)
             
             del self.locations[location_id]
-        
+
+    def new_version(self, botengine):
+        """
+        New bot version detected
+        :param botengine: BotEngine environment
+        """
+        for location_id in self.locations:
+            self.locations[location_id].new_version(botengine)
         

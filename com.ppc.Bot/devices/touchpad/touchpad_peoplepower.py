@@ -76,7 +76,7 @@ class PeoplePowerTouchpadDevice(Device):
         return _("Touchpad")
     
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """

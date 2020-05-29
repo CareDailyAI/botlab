@@ -41,12 +41,20 @@ class LevitonDecoraLightswitchDevice(LightDevice):
         # NOTE: Device type name
         return _("Leviton Decora In-Wall Switch")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
-        return "switch"
-    
+        return "light-switch"
+
+    def get_icon_font(self):
+        """
+        Get the icon font package from which to render an icon
+        :return: The name of the icon font package
+        """
+        import utilities.utilities as utilities
+        return utilities.ICON_FONT_FONTAWESOME_REGULAR
+
     def is_command(self, measurement_name):
         """
         :param measurement_name: Name of a local measurement name

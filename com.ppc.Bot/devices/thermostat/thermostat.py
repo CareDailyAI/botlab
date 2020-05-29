@@ -12,7 +12,8 @@ from devices.device import Device
 from devices.device import send_command_reliably
 from devices.device import cancel_reliable_command
 
-import utilities
+import utilities.utilities as utilities
+import utilities.analytics as analytics
 
 # Element index numbers for our last_command_* tuples
 COMMAND_VALUE_INDEX = 0
@@ -181,6 +182,27 @@ class ThermostatDevice(Device):
 
         Device.initialize(self, botengine)
 
+    def did_change_cooling_setpoint(self, botengine=None):
+        """
+        :param botengine: BotEngine environment
+        :return: True if the cooling set point changed
+        """
+        return ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C in self.last_updated_params
+
+    def did_change_heating_setpoint(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if the heating set point changed
+        """
+        return ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.last_updated_params
+
+    def did_change_ambient_temperature(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if the ambient temperature changed
+        """
+        return ThermostatDevice.MEASUREMENT_NAME_AMBIENT_TEMPERATURE_C in self.last_updated_params
+
     def add_measurement(self, botengine, name, value, timestamp):
         """
         Overriding the method from the parent to add a measurement,
@@ -218,7 +240,7 @@ class ThermostatDevice(Device):
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
                                                 )
-                            self.location_object.track(botengine, 'thermostat_mode', properties={"device_id": self.device_id, "description": self.description, "ai": True, "thermostat_mode": self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])})
+                            analytics.track(botengine, self.location_object, 'thermostat_mode', properties={"device_id": self.device_id, "description": self.description, "ai": True, "thermostat_mode": self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])})
 
                     else:
                         # Our last command wasn't verified, and it's been under 2 minutes. Keep waiting.
@@ -245,7 +267,7 @@ class ThermostatDevice(Device):
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
                                                 )
-                            self.location_object.track(botengine, 'thermostat_cooling_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": True, "cooling_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]})
+                            analytics.track(botengine, self.location_object, 'thermostat_cooling_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": True, "cooling_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]})
 
                     else:
                         # Our last command wasn't verified, and it's been under 2 minutes. Keep waiting.
@@ -274,7 +296,7 @@ class ThermostatDevice(Device):
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
                                                 )
-                            self.location_object.track(botengine, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": True, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
+                            analytics.track(botengine, self.location_object, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": True, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
 
                     else:
                         # Our last command wasn't verified, and it's been under 2 minutes. Keep waiting.
@@ -295,7 +317,7 @@ class ThermostatDevice(Device):
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
                                                 )
-                    self.location_object.track(botengine, 'thermostat_mode', properties={"device_id": self.device_id, "description": self.description, "ai": False, "thermostat_mode": self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])})
+                    analytics.track(botengine, self.location_object, 'thermostat_mode', properties={"device_id": self.device_id, "description": self.description, "ai": False, "thermostat_mode": self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])})
 
             elif name == ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C and self.last_cooling_setpoint_command is None:
                 # User adjusted the cooling setpoint - we didn't send a command recently.
@@ -310,7 +332,7 @@ class ThermostatDevice(Device):
                                                 extra_json_dict={"device_id": self.device_id}
                                                 )
 
-                    self.location_object.track(botengine, 'thermostat_cooling_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "cooling_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]})
+                    analytics.track(botengine, self.location_object, 'thermostat_cooling_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "cooling_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]})
 
             elif name == ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C and self.last_heating_setpoint_command is None:
                 # User adjusted the heating setpoint - we didn't send a command recently.
@@ -324,7 +346,7 @@ class ThermostatDevice(Device):
                                                 icon = 'thermostat',
                                                 extra_json_dict={"device_id": self.device_id}
                                                 )
-                    self.location_object.track(botengine, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
+                    analytics.track(botengine, self.location_object, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
 
 
     def get_device_type_name(self):
@@ -335,7 +357,7 @@ class ThermostatDevice(Device):
         '''
         raise NotImplementedError
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
@@ -524,7 +546,7 @@ class ThermostatDevice(Device):
                                             icon = 'thermostat',
                                             extra_json_dict={"device_id": self.device_id}
                                             )
-                self.location_object.track(botengine, 'thermostat_cooling_setpoint_learned', properties={"device_id": self.device_id, "description": self.description, "thermostat_mode": "COOL", "mode": "HOME", "setpoint_c": self.preferred_cooling_setpoint_home_c})
+                analytics.track(botengine, self.location_object, 'thermostat_cooling_setpoint_learned', properties={"device_id": self.device_id, "description": self.description, "thermostat_mode": "COOL", "mode": "HOME", "setpoint_c": self.preferred_cooling_setpoint_home_c})
 
             if ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.last_updated_params:
                 self.preferred_heating_setpoint_home_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]
@@ -536,25 +558,18 @@ class ThermostatDevice(Device):
                                             icon = 'thermostat',
                                             extra_json_dict={"device_id": self.device_id}
                                             )
-                self.location_object.track(botengine, 'thermostat_heating_setpoint_learned', properties={"device_id": self.device_id, "description": self.description, "thermostat_mode": "HEAT", "mode": "HOME", "setpoint_c": self.preferred_heating_setpoint_home_c})
+                analytics.track(botengine, self.location_object, 'thermostat_heating_setpoint_learned', properties={"device_id": self.device_id, "description": self.description, "thermostat_mode": "HEAT", "mode": "HOME", "setpoint_c": self.preferred_heating_setpoint_home_c})
 
-        import importlib
-        try:
-            analytics = importlib.import_module('analytics')
-
-            # This number will represent the total amount of time across ALL devices.
-            # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
-            # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
-            analytics.get_analytics(botengine).people_set(botengine, {
-                    self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                    self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                    self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                    self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                    self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                    self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
-
-        except ImportError:
-            pass
+        # This number will represent the total amount of time across ALL devices.
+        # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
+        # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
+        analytics.people_set(botengine, self.location_object, {
+                self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
 
     def record_preferred_sleep_offset(self, botengine):
         """
@@ -591,17 +606,17 @@ class ThermostatDevice(Device):
                                     }
                                     )
 
-                self.location_object.track(botengine, 'thermostat_cooling_sleep_setpoint_learned', properties={
-                    "device_id": self.device_id,
-                    "description": self.description,
-                    "thermostat_mode": "COOL",
-                    "mode": "SLEEP",
-                    "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                    "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                    "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                    "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                    "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                    "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+                # analytics.track(botengine, self.location_object, 'thermostat_cooling_sleep_setpoint_learned', properties={
+                #     "device_id": self.device_id,
+                #     "description": self.description,
+                #     "thermostat_mode": "COOL",
+                #     "mode": "SLEEP",
+                #     "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                #     "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                #     "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                #     "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                #     "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                #     "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
 
             if ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.last_updated_params:
                 current_absolute_setpoint_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]
@@ -629,35 +644,28 @@ class ThermostatDevice(Device):
                                     }
                                     )
 
-                self.location_object.track(botengine, 'thermostat_heating_sleep_setpoint_learned', properties={
-                    "device_id": self.device_id,
-                    "description": self.description,
-                    "thermostat_mode": "HEAT",
-                    "mode": "SLEEP",
-                    "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                    "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                    "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                    "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                    "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                    "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+                # analytics.track(botengine, self.location_object, 'thermostat_heating_sleep_setpoint_learned', properties={
+                #     "device_id": self.device_id,
+                #     "description": self.description,
+                #     "thermostat_mode": "HEAT",
+                #     "mode": "SLEEP",
+                #     "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                #     "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                #     "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                #     "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                #     "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                #     "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
 
-        import importlib
-        try:
-            analytics = importlib.import_module('analytics')
-
-            # This number will represent the total amount of time across ALL devices.
-            # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
-            # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
-            analytics.get_analytics(botengine).people_set(botengine, {
-                    self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                    self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                    self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                    self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                    self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                    self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
-
-        except ImportError:
-            pass
+        # This number will represent the total amount of time across ALL devices.
+        # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
+        # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
+        analytics.people_set(botengine, self.location_object, {
+                self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
 
     def record_preferred_away_offset(self, botengine):
         """
@@ -699,17 +707,17 @@ class ThermostatDevice(Device):
                                     }
                                     )
 
-                self.location_object.track(botengine, 'thermostat_cooling_away_setpoint_learned', properties={
-                    "device_id": self.device_id,
-                    "description": self.description,
-                    "thermostat_mode": "COOL",
-                    "mode": "AWAY",
-                    "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                    "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                    "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                    "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                    "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                    "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+                # analytics.track(botengine, self.location_object, 'thermostat_cooling_away_setpoint_learned', properties={
+                #     "device_id": self.device_id,
+                #     "description": self.description,
+                #     "thermostat_mode": "COOL",
+                #     "mode": "AWAY",
+                #     "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                #     "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                #     "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                #     "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                #     "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                #     "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
 
             if ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.last_updated_params:
                 current_absolute_setpoint_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]
@@ -743,35 +751,28 @@ class ThermostatDevice(Device):
                                     }
                                     )
 
-                self.location_object.track(botengine, 'thermostat_heating_away_setpoint_learned', properties={
-                    "device_id": self.device_id,
-                    "description": self.description,
-                    "thermostat_mode": "HEAT",
-                    "mode": "AWAY",
-                    "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                    "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                    "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                    "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                    "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                    "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
+                # analytics.track(botengine, self.location_object, 'thermostat_heating_away_setpoint_learned', properties={
+                #     "device_id": self.device_id,
+                #     "description": self.description,
+                #     "thermostat_mode": "HEAT",
+                #     "mode": "AWAY",
+                #     "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                #     "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                #     "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                #     "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                #     "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                #     "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
 
-        import importlib
-        try:
-            analytics = importlib.import_module('analytics')
-
-            # This number will represent the total amount of time across ALL devices.
-            # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
-            # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
-            analytics.get_analytics(botengine).people_set(botengine, {
-                    self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                    self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                    self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                    self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                    self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                    self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
-
-        except ImportError:
-            pass
+        # This number will represent the total amount of time across ALL devices.
+        # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
+        # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
+        analytics.people_set(botengine, self.location_object, {
+                self.device_id + "_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                self.device_id + "_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                self.device_id + "_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                self.device_id + "_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                self.device_id + "_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                self.device_id + "_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c})
 
     def set_demand_response(self, botengine, active, identifier="dr", offset_c=0):
         """
@@ -962,9 +963,9 @@ class ThermostatDevice(Device):
                                             )
 
                 if abs(heat_ee_offset + heat_dr_offset + cool_ee_offset + cool_dr_offset) > 0.0:
-                    self.location_object.track(botengine, 'thermostat_policy_set', properties=policies)
+                    analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
                 else:
-                    self.location_object.track(botengine, 'thermostat_policy_unset', properties=policies)
+                    analytics.track(botengine, self.location_object, 'thermostat_policy_unset', properties=policies)
 
                 self.last_offset_c = abs(heat_ee_offset + heat_dr_offset + cool_ee_offset + cool_dr_offset)
 
@@ -979,18 +980,12 @@ class ThermostatDevice(Device):
                         # End of all EE events
                         duration_s = (botengine.get_timestamp() - self.ee_timestamp_ms) / 1000
                         self.ee_timestamp_ms = None
-                        self.location_object.track(botengine, "ee_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
-                        import importlib
-                        try:
-                            analytics = importlib.import_module('analytics')
+                        analytics.track(botengine, self.location_object, "ee_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
 
-                            # This number will represent the total amount of time across ALL devices.
-                            # For example, if you have 1 thermostat and a EE event for 10000s, then the total is 10000s.
-                            # But if you have 2 thermostats and a EE event for 10000s, then the total is 20000s
-                            analytics.get_analytics(botengine).people_increment(botengine, {'ee_total_s': duration_s})
-
-                        except ImportError:
-                            pass
+                        # This number will represent the total amount of time across ALL devices.
+                        # For example, if you have 1 thermostat and a EE event for 10000s, then the total is 10000s.
+                        # But if you have 2 thermostats and a EE event for 10000s, then the total is 20000s
+                        analytics.people_increment(botengine, self.location_object, {'ee_total_s': duration_s})
 
 
                 if heat_dr_offset + cool_dr_offset > 0:
@@ -1004,18 +999,12 @@ class ThermostatDevice(Device):
                         # End of all DR events
                         duration_s = (botengine.get_timestamp() - self.dr_timestamp_ms) / 1000
                         self.dr_timestamp_ms = None
-                        self.location_object.track(botengine, "dr_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
-                        import importlib
-                        try:
-                            analytics = importlib.import_module('analytics')
+                        analytics.track(botengine, self.location_object, "dr_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
 
-                            # This number will represent the total amount of time across ALL devices.
-                            # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
-                            # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
-                            analytics.get_analytics(botengine).people_increment(botengine, {'dr_total_s': duration_s})
-
-                        except ImportError:
-                            pass
+                        # This number will represent the total amount of time across ALL devices.
+                        # For example, if you have 1 thermostat and a DR event for 10000s, then the total is 10000s.
+                        # But if you have 2 thermostats and a DR event for 10000s, then the total is 20000s
+                        analytics.people_increment(botengine, self.location_object, {'dr_total_s': duration_s})
 
                 return system_mode
 

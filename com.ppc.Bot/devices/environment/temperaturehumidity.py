@@ -8,7 +8,7 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from devices.device import Device
-import utilities
+import utilities.utilities as utilities
 
 
 class TemperatureHumidityDevice(Device):
@@ -33,6 +33,7 @@ class TemperatureHumidityDevice(Device):
 
     GOAL_MOLD_MILDEW = 40
     GOAL_HUMIDOR = 41
+    GOAL_SHOWER = 42
     GOAL_SKIP_HUM = 44
 
     # Low battery tag
@@ -56,12 +57,19 @@ class TemperatureHumidityDevice(Device):
         # NOTE: Device type name
         return _("Temperature and Humidity Sensor")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "temp-humidity"
 
+    def did_tamper(self, botengine):
+        """
+        Did someone tamper with this device
+        :param botengine:
+        :return:
+        """
+        return False
 
     def get_temperature_c(self, botengine=None):
         """

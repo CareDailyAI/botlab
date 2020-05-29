@@ -22,6 +22,7 @@ class EntryDevice(Device):
     GOAL_OUTSIDE_NORMAL = 6
     GOAL_OUTSIDE_ALERT_ALWAYS = 7
     GOAL_MEDICINE_STORAGE = 8
+    GOAL_REFRIGERATOR = 9
 
     # Measurement Names
     MEASUREMENT_NAME_STATUS = 'doorStatus'
@@ -51,10 +52,6 @@ class EntryDevice(Device):
         :param botengine:
         :return:
         """
-        # Remove after January 1, 2020
-        if self.goal_id is None:
-            self.goal_id = EntryDevice.GOAL_PERIMETER_NORMAL
-
         Device.initialize(self, botengine)
         
     def get_device_type_name(self):
@@ -63,8 +60,13 @@ class EntryDevice(Device):
         """
         # NOTE: Device type name
         return _("Entry Sensor")
-    
-    
+
+    def get_icon(self):
+        """
+        :return: the font icon name of this device type
+        """
+        return "entry"
+
     #===========================================================================
     # Attributes
     #===========================================================================
@@ -87,12 +89,6 @@ class EntryDevice(Device):
         :return: True if this entry sensor's state was updated just now
         """
         return EntryDevice.MEASUREMENT_NAME_STATUS in self.last_updated_params
-    
-    def get_image_name(self):
-        """
-        :return: the font icon name of this device type
-        """
-        return "entry"
 
     def did_open(self, botengine=None):
         """
@@ -109,6 +105,14 @@ class EntryDevice(Device):
         :return: True if the door closed right now
         """
         return self.did_change_state(botengine) and not self.is_open(botengine)
+
+    def did_tamper(self, botengine):
+        """
+        Did someone tamper with this device
+        :param botengine:
+        :return:
+        """
+        return False
 
     
     #===========================================================================

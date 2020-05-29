@@ -11,7 +11,22 @@ from devices.device import Device
 
 
 class SirenDevice(Device):
-    """Siren"""
+    """
+    Siren
+    """
+    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+        """
+        Constructor
+        :param botengine:
+        :param device_id:
+        :param device_type:
+        :param device_description:
+        :param precache_measurements:
+        """
+        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+
+        # Microservice this siren is locked to
+        self.locked_microservice = None
 
     def get_device_type_name(self):
         """
@@ -20,36 +35,42 @@ class SirenDevice(Device):
         # NOTE: Device type name
         return _("Siren")
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "siren"
-    
+
+    def get_icon_font(self):
+        """
+        Get the icon font package from which to render an icon
+        :return: The name of the icon font package
+        """
+        import utilities.utilities as utilities
+        return utilities.ICON_FONT_FONTAWESOME_REGULAR
+
+    #===========================================================================
+    # Capabilities
+    #===========================================================================
+    def has_dogbark(self, botengine):
+        """
+        Determine if this siren supports a dog bark sound
+        :param botengine:
+        :return: True if this siren supports a dog bark sound
+        """
+        return False
+
+    def has_doorbell(self, botengine):
+        """
+        Determine if this siren supports a doorbell sound
+        :param botengine:
+        :return:
+        """
+        return False
+
     #===========================================================================
     # Commands
     #===========================================================================
-    def is_audible(self, botengine):
-        """
-        :return: True, this is an audible device
-        """
-        return True
-    
-    def squawk(self, botengine, warning=False, microservice_identifier=""):
-        """
-        Squawk
-        :param warning: True for a little warning squawk, False for a more alarming squawk
-        """
-        raise NotImplementedError
-    
-    def alarm(self, botengine, on, microservice_identifier=""):
-        """
-        Sound the alarm
-        :param on: True for on, False for off
-        """
-        raise NotImplementedError
-    
-        
     def play_sound(self, botengine, sound_id, strobe, duration_sec, microservice_identifier=""):
         """
         Squawk the given sound ID
@@ -60,10 +81,82 @@ class SirenDevice(Device):
         """
         raise NotImplementedError
 
-    def doorbell(self, botengine):
+    def silence(self, botengine, microservice_identifier=""):
         """
-        Doorbell noise
-        :param botengine: BotEngine
+        Silence
+        :param botengine:
+        :return:
+        """
+        raise NotImplementedError
+
+    def squawk(self, botengine, warning=False, microservice_identifier=""):
+        """
+        Squawk
+        :param warning: True for a little warning squawk, False for a more alarming squawk
+        """
+        raise NotImplementedError
+
+    def alarm(self, botengine, on, microservice_identifier=""):
+        """
+        Sound the alarm
+        :param on: True for on, False for off
+        """
+        raise NotImplementedError
+
+    def disarmed(self, botengine, microservice_identifier=""):
+        """
+        Make a sound that the home is disarmed
+        :param botengine:
+        :return:
+        """
+        raise NotImplementedError
+
+    def short_warning(self, botengine, microservice_identifier=""):
+        """
+        Make a sound that the home is disarmed
+        :param botengine:
+        :return:
+        """
+        raise NotImplementedError
+
+    def about_to_arm(self, botengine, seconds_left, microservice_identifier=""):
+        """
+        Make a unique aggressive warning noise for the amount of time remaining
+        :param botengine:
+        :return:
+        """
+        raise NotImplementedError
+
+    def armed(self, botengine, microservice_identifier=""):
+        """
+        Make a sound that the home is disarmed
+        :param botengine:
+        :return:
+        """
+        raise NotImplementedError
+
+    def doorbell(self, botengine, microservice_identifier=""):
+        """
+        Doorbell sound
+        :param botengine:
+        :return:
+        """
+        raise NotImplementedError
+
+    def bark(self, botengine, duration_sec, microservice_identifier=""):
+        """
+        Dog bark
+        :param botengine:
+        :param duration_sec
+        :return:
+        """
+        raise NotImplementedError
+
+    def door_opened(self, botengine, microservice_identifier=""):
+        """
+        Door opened chime
+        :param botengine:
+        :return:
         """
         raise NotImplementedError
 
@@ -74,7 +167,11 @@ class SirenDevice(Device):
         :param microservice_identifier:
         :return:
         """
-        raise NotImplementedError
+        if self.locked_microservice is None:
+            botengine.get_logger().info("Siren: LOCKING SIREN TO MICROSERVICE {}".format(microservice_identifier))
+            self.locked_microservice = microservice_identifier
+        else:
+            botengine.get_logger().info("Siren: Cannot lock siren again - siren is currently locked by {}".format(self.locked_microservice))
 
     def unlock(self, botengine):
         """
@@ -83,4 +180,5 @@ class SirenDevice(Device):
         :param microservice_identifier:
         :return:
         """
-        raise NotImplementedError
+        self.locked_microservice = None
+

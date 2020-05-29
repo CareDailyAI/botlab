@@ -1,0 +1,20 @@
+{
+  # Locally install the following Python package dependencies when using this bot
+  # Do not include any Python packages in this list that will compile .so/.dll library files natively
+  # because they may not be able to run on the Linux-based server environment.
+  "pip_install": [
+  ],
+
+  # Remotely install the following Python package dependencies
+  # This will compile library files at the server in a Linux environment.
+  # Note that when installed on Linux, some Python packages may get significantly inflated (like scipy and numpy)
+  # due to the addition of hidden .libs directories that end up exceeding the maximum size of a bot
+  # (50MB compressed / 250MB uncompressed).
+  "pip_install_remotely": [
+  ],
+
+  # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
+  "microservices": [
+        "com.ppc.Microservices/intelligence/sms_delivery"
+  ]
+}

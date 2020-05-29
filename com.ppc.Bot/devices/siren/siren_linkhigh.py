@@ -41,79 +41,36 @@ class LinkhighSirenDevice(SirenDevice):
         "whistle": 14
     }
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def did_tamper(self, botengine):
         """
-        Constructor
-        :param botengine:
-        :param device_id:
-        :param device_type:
-        :param device_description:
-        :param precache_measurements:
-        """
-        SirenDevice.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
-
-        # Last sound played
-        self.last_sound = None
-
-        # Microservice this siren is locked to
-        self.locked_microservice = None
-
-    def initialize(self, botengine):
-        """
-        Initialize
+        Did someone tamper with this device
         :param botengine:
         :return:
         """
-        # Added June 18, 2019
-        if not hasattr(self, 'locked_microservice'):
-            self.locked_microservice = None
+        return False
 
-    def get_device_type_name(self):
+    #===========================================================================
+    # Capabilities
+    #===========================================================================
+    def has_dogbark(self, botengine):
         """
-        :return: the name of this device type in the given language, for example, "Entry Sensor"
+        Determine if this siren supports a dog bark sound
+        :param botengine:
+        :return: True if this siren supports a dog bark sound
         """
-        # NOTE: Device type name
-        return _("Siren")
+        return True
 
-    def get_image_name(self):
+    def has_doorbell(self, botengine):
         """
-        :return: the font icon name of this device type
+        Determine if this siren supports a doorbell sound
+        :param botengine:
+        :return:
         """
-        return "siren"
+        return True
 
     #===========================================================================
     # Commands
     #===========================================================================
-    def squawk(self, botengine, warning=False, microservice_identifier=""):
-        """
-        Squawk
-        :param warning: True for a little warning squawk, False for a more alarming squawk
-        """
-        if self.locked_microservice is not None:
-            if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
-                return
-
-        style = self.SOUNDS['warning']
-        self.play_sound(botengine, style, False, 1, microservice_identifier=microservice_identifier)
-
-    def alarm(self, botengine, on, microservice_identifier=""):
-        """
-        Sound the alarm
-        :param on: True for on, False for off
-        """
-        if self.locked_microservice is not None:
-            if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
-                return
-
-        if on:
-            self.last_sound = self.SOUNDS['alarm']
-            self.play_sound(botengine, self.SOUNDS['alarm'], True, 900, microservice_identifier=microservice_identifier)
-
-        else:
-            self.play_sound(botengine, self.SOUNDS['alarm'], False, 0, microservice_identifier=microservice_identifier)
-
     def play_sound(self, botengine, sound_id, strobe, duration_sec, microservice_identifier=""):
         """
         Squawk the given sound ID
@@ -144,33 +101,98 @@ class LinkhighSirenDevice(SirenDevice):
 
         botengine.send_commands(self.device_id, [param_sound, param_strobe, param_duration], command_timeout_ms=5000)
 
-    def doorbell(self, botengine):
+    def silence(self, botengine, microservice_identifier=""):
+        """
+        Silence
+        :param botengine:
+        :return:
+        """
+        self.play_sound(botengine, self.SOUNDS['silence'], False, 0, microservice_identifier)
+
+    def squawk(self, botengine, warning=False, microservice_identifier=""):
+        """
+        Squawk
+        :param warning: True for a little warning squawk, False for a more alarming squawk
+        """
+        if self.locked_microservice is not None:
+            if self.locked_microservice != microservice_identifier:
+                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                return
+
+        style = self.SOUNDS['warning']
+        self.play_sound(botengine, style, False, 1, microservice_identifier=microservice_identifier)
+
+    def alarm(self, botengine, on, microservice_identifier=""):
+        """
+        Sound the alarm
+        :param on: True for on, False for off
+        """
+        if self.locked_microservice is not None:
+            if self.locked_microservice != microservice_identifier:
+                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                return
+
+        if on:
+            self.play_sound(botengine, self.SOUNDS['alarm'], True, 900, microservice_identifier=microservice_identifier)
+
+        else:
+            self.play_sound(botengine, self.SOUNDS['alarm'], False, 0, microservice_identifier=microservice_identifier)
+
+    def disarmed(self, botengine, microservice_identifier=""):
+        """
+        Make a sound that the home is disarmed
+        :param botengine:
+        :return:
+        """
+        self.play_sound(botengine, LinkhighSirenDevice.SOUNDS['trumpet'], False, 1, microservice_identifier)
+
+    def short_warning(self, botengine, microservice_identifier=""):
+        """
+        Make a sound that the home is disarmed
+        :param botengine:
+        :return:
+        """
+        self.play_sound(botengine, LinkhighSirenDevice.SOUNDS['bling'], True, 1, microservice_identifier)
+
+    def about_to_arm(self, botengine, seconds_left, microservice_identifier=""):
+        """
+        Make a unique aggressive warning noise the amount of time remaining
+        :param botengine:
+        :param seconds_left: Seconds left before arming
+        :return:
+        """
+        self.play_sound(botengine, LinkhighSirenDevice.SOUNDS['warning'], True, seconds_left, microservice_identifier)
+
+    def armed(self, botengine, microservice_identifier=""):
+        """
+        Make a sound that the home is disarmed
+        :param botengine:
+        :return:
+        """
+        self.play_sound(botengine, LinkhighSirenDevice.SOUNDS['lock'], False, 1, microservice_identifier)
+
+    def bark(self, botengine, duration_sec, microservice_identifier=""):
+        """
+        Dog bark
+        :param botengine:
+        :param duration_sec
+        :return:
+        """
+        self.play_sound(botengine, LinkhighSirenDevice.SOUNDS['dog'], True, duration_sec, microservice_identifier)
+
+    def doorbell(self, botengine, microservice_identifier=""):
         """
         Make a doorbell sound.
         :param botengine:
         :return:
         """
         if self.locked_microservice is None:
-            self.play_sound(botengine, self.SOUNDS['doorbell'], True, 1)
+            self.play_sound(botengine, self.SOUNDS['doorbell'], True, 1, microservice_identifier)
 
-    def lock(self, botengine, microservice_identifier):
+    def door_opened(self, botengine, microservice_identifier=""):
         """
-        Lock the siren to some microservice - for example to use the siren exclusively for security purposes.
+        Door opened chime
         :param botengine:
-        :param microservice_identifier:
         :return:
         """
-        if self.locked_microservice is None:
-            botengine.get_logger().info("Siren: LOCKING SIREN TO MICROSERVICE {}".format(microservice_identifier))
-            self.locked_microservice = microservice_identifier
-        else:
-            botengine.get_logger().info("Siren: Cannot lock siren again - siren is currently locked by {}".format(self.locked_microservice))
-
-    def unlock(self, botengine):
-        """
-        Unlock the siren
-        :param botengine:
-        :param microservice_identifier:
-        :return:
-        """
-        self.locked_microservice = None
+        self.play_sound(botengine, LinkhighSirenDevice.SOUNDS['bird'], False, 1, microservice_identifier)

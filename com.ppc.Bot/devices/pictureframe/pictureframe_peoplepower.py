@@ -8,7 +8,7 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from devices.device import Device
-import utilities
+import utilities.utilities as utilities
 
 # Here are a list of .mp3 files that *should be* pre-installed on smartphone-as-camera devices:
 #
@@ -107,7 +107,7 @@ class PeoplePowerPictureFrameDevice(Device):
         return _("Picture Frame")
     
     
-    def get_image_name(self):
+    def get_icon(self):
         """
         :return: the font icon name of this device type
         """
