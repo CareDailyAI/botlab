@@ -47,7 +47,6 @@ class LocationMixpanelMicroservice(Intelligence):
         event_name = content['event_name']
         properties = content['properties']
 
-        botengine.get_logger().info("Analytics: Tracking {} => {}".format(self.total, event_name))
         mp = mixpanel.Mixpanel(domain.MIXPANEL_TOKEN, consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
         mp.track(self._get_distinct_id(botengine), event_name, properties)
         self._flush(botengine, mp)
