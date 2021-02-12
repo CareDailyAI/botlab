@@ -18,6 +18,10 @@
     # 2048 = Data request, triggered in response to botengine.request_measurements_asynchronously(..)
     "trigger": 2305,
 
+    # The amount of memory, in megabytes divisible by 64, to allocate for this bot.
+    # Default is 128 MB. Data request triggers may dynamically max out the memory.
+    # "memory": 1024,
+
     # Recalculate models
     "schedules": {
       "ML": "0 0 0 1/1 * ? *"

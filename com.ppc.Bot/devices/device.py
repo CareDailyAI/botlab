@@ -194,34 +194,29 @@ class Device:
 
         # initialize(...) gets called in controller.py, after this device is finished syncing with the system.
 
-        
     def initialize(self, botengine):
         """
         Initialize this object
-        
+
+        NOTE: YOU CANNOT CHANGE THE CLASS NAME OF A MICROSERVICE AT THIS TIME.
+        Microservice changes will be identified through different 'module' names only. If you change the class name, it is currently ignored.
+        This can be revisited in future architecture changes, noted below.
+
         The correct behavior is to create the object, then initialize() it every time you want to use it in a new bot execution environment
         """
         if str(self.device_type) in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES']:
+            # Synchronize microservices
+            changed = False
 
-            # Synchronize microservice capabilities
-            if len(self.intelligence_modules) != len(intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]):
+            module_names = [x['module'] for x in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]]
 
-                # Add more microservices
-                # Example of an element in the DEVICE_MICROSERVICES dictionary:
-                # 10014: [{"module": "intelligence.rules.device_entry_microservice", "class": "EntryRulesMicroservice"}],
-                for intelligence_info in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]:
-                    if intelligence_info['module'] not in self.intelligence_modules:
-                        try:
-                            intelligence_module = importlib.import_module(intelligence_info['module'])
-                            class_ = getattr(intelligence_module, intelligence_info['class'])
-                            botengine.get_logger().info("\tAdding device microservice: " + str(intelligence_info['module']))
-                            intelligence_object = class_(botengine, self)
-                            self.intelligence_modules[intelligence_info['module']] = intelligence_object
-                        except Exception as e:
-                            import traceback
-                            botengine.get_logger().error("Could not add device microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
+            for m in module_names:
+                changed |= m not in self.intelligence_modules
 
+            for m in list(self.intelligence_modules.keys()):
+                changed |= m not in module_names
 
+            if changed:
                 # Remove microservices that no longer exist
                 delete = []
                 for module_name in self.intelligence_modules.keys():
@@ -238,6 +233,18 @@ class Device:
                 for d in delete:
                     del self.intelligence_modules[d]
 
+                # Add more microservices
+                for intelligence_info in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]:
+                    if intelligence_info['module'] not in self.intelligence_modules:
+                        try:
+                            intelligence_module = importlib.import_module(intelligence_info['module'])
+                            class_ = getattr(intelligence_module, intelligence_info['class'])
+                            botengine.get_logger().info("\tAdding device microservice: " + str(intelligence_info['module']))
+                            intelligence_object = class_(botengine, self)
+                            self.intelligence_modules[intelligence_info['module']] = intelligence_object
+                        except Exception as e:
+                            import traceback
+                            botengine.get_logger().error("Could not add device microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
 
             for i in self.intelligence_modules:
                 self.intelligence_modules[i].parent = self
@@ -370,15 +377,13 @@ class Device:
 
                 self.add_measurement(botengine, param_name, value, time)
 
-    def update(self, botengine):
+    def update(self, botengine, measures):
         """
         Attempt to parse the inputs to update this object
+        :param measures: Full or partial measurement block from bot inputs
         """
         self.last_updated_params = []
         self.communicated(botengine.get_timestamp())
-        botengine.get_logger().info("Updating: " + self.description)
-
-        measures = botengine.get_measures_block()
 
         # # Handy debug tool.
         # if measures is not None:
@@ -452,10 +457,11 @@ class Device:
         # Make sure our proxy (gateway) gets pinged - it implicitly updated here and needs to trigger microservices
         if self.proxy_id is not None:
             if self.proxy_id in self.location_object.devices:
-                d, m = self.location_object.devices[self.proxy_id].update(botengine)
+                d, m = self.location_object.devices[self.proxy_id].update(botengine, measures)
                 updated_devices += d
                 updated_metadata += m
 
+        botengine.get_logger().info("Updated '{}' with params: {}".format(self.description, self.last_updated_params))
         return (updated_devices, updated_metadata)
 
     def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
@@ -515,6 +521,17 @@ class Device:
         self.communications_odometer = 0
         self.measurement_odometer = 0
 
+    def get_measurement_history(self, botengine, param_name):
+        """
+        Get the measurement history for this parameter, newest measurements first
+        [ ( value, timestamp), (value, timestamp) ]
+        :param botengine: BotEngine environment
+        :param param_name: Parameter name
+        :return: List of measurements history tuples, or None if the measurement doesn't exist
+        """
+        if param_name in self.measurements:
+            return self.measurements[param_name]
+        return None
 
     #===========================================================================
     # Device health
@@ -709,6 +726,9 @@ class Device:
         :param ordered:
         :return:
         """
+        if oldest_timestamp_ms is None:
+            oldest_timestamp_ms = botengine.get_timestamp() - utilities.ONE_MONTH_MS * 6
+
         botengine.request_data(self.device_id,
                                oldest_timestamp_ms=oldest_timestamp_ms,
                                newest_timestamp_ms=newest_timestamp_ms,

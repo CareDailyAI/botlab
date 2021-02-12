@@ -44,6 +44,7 @@ class DevelcoSirenDevice(SirenDevice):
         :param sound_id: Sound ID to play
         :param strobe: True to activate the strobe light
         :param duration_sec: 1 = play once; 2+ = play this many seconds.
+        :param volume: Volume level: 0=softest; 1=medium; 2=high; 3=loudest
         """
         if self.locked_microservice is not None:
             if self.locked_microservice != microservice_identifier:
@@ -93,7 +94,7 @@ class DevelcoSirenDevice(SirenDevice):
                           "value": int(sound_id)
                           })
 
-        botengine.send_commands(self.device_id, all_params, command_timeout_ms=5000)
+        botengine.send_commands(self.device_id, all_params)
 
     def squawk(self, botengine, warning=False, microservice_identifier=""):
         """
@@ -137,6 +138,14 @@ class DevelcoSirenDevice(SirenDevice):
         if self.locked_microservice is None:
             self.play_sound(botengine, self.SOUNDS['panic_e'], True, 1)
 
+    def force_silence(self, botengine):
+        """
+        Force silence, even if this is locked by some other service.
+        :param botengine:
+        :return:
+        """
+        self.play_sound(botengine, self.SOUNDS['silence'], False, 0, microservice_identifier=self.locked_microservice)
+
     def silence(self, botengine, microservice_identifier=""):
         """
         Silence
@@ -178,14 +187,6 @@ class DevelcoSirenDevice(SirenDevice):
         """
         botengine.get_logger().info("siren_develco '{}': armed() for microservice '{}'".format(self.device_id, microservice_identifier))
         self.play_sound(botengine, self.SOUNDS['panic_p'], True, 1, microservice_identifier=microservice_identifier)
-
-    def doorbell(self, botengine, microservice_identifier=""):
-        """
-        Doorbell sound
-        :param botengine:
-        :return:
-        """
-        raise NotImplementedError
 
     def bark(self, botengine, duration_sec, microservice_identifier=""):
         """

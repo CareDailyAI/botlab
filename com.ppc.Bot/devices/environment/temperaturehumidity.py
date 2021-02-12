@@ -114,3 +114,32 @@ class TemperatureHumidityDevice(Device):
         :return: True if this sensor's state was updated just now
         """
         return (TemperatureHumidityDevice.MEASUREMENT_DEG_C in self.last_updated_params) or (TemperatureHumidityDevice.MEASUREMENT_HUMIDITY in self.last_updated_params)
+
+    def did_detect_shower(self, botengine, minutes=15):
+        """
+        If this temperature/humidity sensor is configured for a shower, then this method will tell us if we've detected a shower recently.
+        This is powered by another microservice (rules/device_environmental_rules_intelligence.py) which adds a synthetic measurement 'shower' into our representative model when a shower is detected.
+
+        :param botengine: BotEngine environment
+        :param minutes: Minutes to go back in time and look for shower activity. This is limited by the amount of cache we have available.
+        :return: True if a shower was detected recently
+        """
+        if not self.is_goal_id(TemperatureHumidityDevice.GOAL_SHOWER):
+            return False
+
+        if "shower" not in self.measurements:
+            return False
+
+        for m in self.measurements["shower"]:
+            # measurement = (value, timestamp)
+            if m[1] <= botengine.get_timestamp() - (utilities.ONE_MINUTE_MS * minutes):
+                # Out of measurements
+                return False
+
+            elif m[0]:
+                # Found a shower recently
+                return True
+
+        return False
+
+

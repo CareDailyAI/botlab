@@ -56,9 +56,9 @@ def lambda_handler(data, context):
 
     if 'sqsQueue' in data:
         import json
-        send_sqs_message(data.get('sqsQueue'), json.dumps(logger.get_lambda_return()), data.get('clientContext'))
+        send_sqs_message(data.get('sqsQueue'), json.dumps(logger.get_lambda_return(data)), data.get('clientContext'))
 
-    return logger.get_lambda_return()
+    return logger.get_lambda_return(data)
 
 
 def send_sqs_message(queue_name, msg_body, client_context):
@@ -116,20 +116,54 @@ class LambdaLogger():
     def exception(self, message):
         self.logs.append("{}: [{}] {}".format(time.time(), "EXCEPTION", message))
 
-    def get_lambda_return(self):
+    def get_lambda_return(self, data):
         """
+        :param data: Raw JSON data input to the botengine
         :return: JSON dictionary of execution details, only if we have info to share
         """
         response = {}
         
         if len(self.tracebacks):
             response['tracebacks'] = self.tracebacks
-        
+
+        if len(self.logs) > 0:
+            self.logs.append(self._form_admin_url(data))
+
         if len(self.logs):
             response['logs'] = self.logs
 
         response['startCode'] = self.start_code
         
         return response
-    
-    
+
+    def _form_admin_url(self, data):
+        """
+        Form a URL that an administrator can click on
+        :param data: Raw JSON data input to the botengine
+        :return: Formatted URL
+        """
+        if 'apiHost' not in data:
+            return "<No apiHost>"
+
+        if 'inputs' not in data:
+            return "<No inputs>"
+
+        base_url = "https://maestro.peoplepowerco.com"
+
+        # Add specific command center URLs here
+        try:
+            # This bundle.py is generated automatically by the botengine CLI when we create or upload a bot.
+            # It includes a variable called CLOUD_ADDRESS that describes what cloud we uploaded the bot to.
+            import bundle
+            if 'sbox' in bundle.CLOUD_ADDRESS:
+                base_url = "https://cc.presencepro.com"
+
+            location_id = "NoLocationId"
+            for i in data['inputs']:
+                if 'locationId' in i:
+                    location_id = i['locationId']
+
+            return "{}/#!/main/locations/edit/{}".format(base_url, location_id)
+
+        except:
+            return "<Error importing auto-generated bundle.py>"

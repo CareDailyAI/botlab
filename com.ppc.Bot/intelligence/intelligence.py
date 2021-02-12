@@ -53,17 +53,6 @@ class Intelligence:
         """
         return
 
-    def occupancy_status_updated(self, botengine, status, reason, last_status, last_reason):
-        """
-        AI Occupancy Status updated
-        :param botengine: BotEngine
-        :param status: Current occupancy status
-        :param reason: Current occupancy reason
-        :param last_status: Last occupancy status
-        :param last_reason: Last occupancy reason
-        """
-        return
-
     def device_measurements_updated(self, botengine, device_object):
         """
         Device was updated

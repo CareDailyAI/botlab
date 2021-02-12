@@ -7,6 +7,8 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 '''
 
+import utilities.utilities as utilities
+
 def track(botengine, location_object, event_name, properties={}):
     """
     Track an event.
@@ -17,6 +19,22 @@ def track(botengine, location_object, event_name, properties={}):
     :param event_name: (string) A name describing the event
     :param properties: (dict) Additional data to record; keys should be strings and values should be strings, numbers, or booleans
     """
+    if properties is not None:
+        properties.update({
+            "test": botengine.is_test_location()
+        })
+
+    location_object.narrate(botengine,
+                            title=event_name,
+                            description=str(properties),
+                            priority=botengine.NARRATIVE_PRIORITY_ANALYTIC,
+                            icon="cogs",
+                            icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
+                            timestamp_ms=None,
+                            extra_json_dict=properties,
+                            to_user=True,
+                            to_admin=False)
+
     if botengine.is_test_location():
         return
 

@@ -2,6 +2,7 @@
   "version": {
     "triggerParameters": [
       "lockStatus",
+      "lockStatusAlarm",
       "batteryLevel"
     ]
   }

@@ -54,13 +54,31 @@ class MotionDevice(Device):
         """
         return "motion"
 
-    def did_tamper(self, botengine):
+    def is_in_bedroom(self, botengine):
         """
-        Did someone tamper with this device
         :param botengine:
-        :return:
+        :return: True if this device is in a bedroom
         """
-        return False
+        bedroom_names = ['bed', 'bett', 'bdrm', 'moms room', 'dads room', 'mom\'s room', 'dad\'s room']
+
+        for name in bedroom_names:
+            if name in self.description.lower():
+                return True
+
+        return self.is_in_space(botengine, 'bedroom')
+
+    def is_in_bathroom(self, botengine):
+        """
+        :param botengine:
+        :return: True if this device is in a bathroom
+        """
+        bathroom_names = ['schlaf', 'bath', 'toilet', 'shower', 'powder']
+
+        for name in bathroom_names:
+            if name in self.description.lower():
+                return True
+
+        return self.is_in_space(botengine, 'bathroom')
 
     #===========================================================================
     # Measurements

@@ -1,0 +1,9 @@
+{
+  "version": {
+    "triggerParameters": [
+      "input",
+      "output",
+      "reversePolarity"
+    ]
+  }
+}

@@ -8,6 +8,7 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from devices.device import Device
+import utilities.utilities as utilities
 
 class KeypadDevice(Device):
     """
@@ -23,6 +24,14 @@ class KeypadDevice(Device):
     DEVICE_TYPES = []
 
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+        """
+        Constructor
+        :param botengine:
+        :param device_id:
+        :param device_type:
+        :param device_description:
+        :param precache_measurements:
+        """
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
     def initialize(self, botengine):
@@ -45,6 +54,15 @@ class KeypadDevice(Device):
         :return: the font icon name of this device type
         """
         return "keypad-circle"
+
+    def get_icon_font(self):
+        """
+        Get the icon font package from which to render an icon
+        As most of the device icons come from the "People Power Regular" icon font, this is currently the default.
+        You can override this method in a specific device class.
+        :return: The name of the icon font package
+        """
+        return utilities.ICON_FONT_PEOPLEPOWER_REGULAR
 
     # Keypad Methods
     def did_disarm(self, botengine):

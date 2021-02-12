@@ -7,18 +7,13 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 """
 
-# Task colors
-TASK_COLOR_NORMAL = "2A2A2A"
-TASK_COLOR_GOOD = "67BD45"
-TASK_COLOR_WARNING = "F8890C"
-TASK_COLOR_CRITICAL = "D0021B"
+# Task priorities
+TASK_PRIORITY_DETAIL = 0
+TASK_PRIORITY_INFO = 1
+TASK_PRIORITY_WARNING = 2
+TASK_PRIORITY_CRITICAL = 3
 
-# Light vs. Dark mode
-TASK_UI_STYLE_LIGHT = "light" # Light background, dark text
-TASK_UI_STYLE_DARK  = "dark" # Dark background, light text
-
-
-def update_task(botengine, location_object, task_id, title, comment="", color=None, icon=None, icon_font=None, ui_style=None, url=None, editable=True):
+def update_task(botengine, location_object, task_id, title, comment="", priority=TASK_PRIORITY_INFO, icon=None, icon_font=None, url=None, editable=True):
     """
     Add or update a task
     :param botengine: BotEngine environment
@@ -26,10 +21,9 @@ def update_task(botengine, location_object, task_id, title, comment="", color=No
     :param task_id: Unique Task ID for later reference
     :param title: Title of the task
     :param comment: Comment of the task
-    :param color: Optional color of the task
+    :param priority: Priority of the task: 0=detail; 1=info; 2=warning; 3=critical
     :param icon: Optional task icon
     :param icon_font: Icon font package to render the icon. See the ICON_FONT_* descriptions in com.ppc.Bot/utilities/utilities.py
-    :param ui_style: Default is "light". "light" = light background, dark text. "dark" = dark background, light text.
     :param url: Instead of tapping into the task, jump straight to this URL when the user taps on the task from their Dashboard.
     :param editable: True if this task can be edited.
     """
@@ -40,17 +34,14 @@ def update_task(botengine, location_object, task_id, title, comment="", color=No
         "editable": editable
     }
 
-    if color is not None:
-        task['color'] = color
+    if priority is not None:
+        task['priority'] = priority
 
     if icon is not None:
         task['icon'] = icon
 
     if icon_font is not None:
         task['icon_font'] = icon_font
-
-    if ui_style is not None:
-        task['ui_style'] = ui_style
 
     if url is not None:
         task['url'] = url

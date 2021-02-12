@@ -317,7 +317,7 @@ class LightDevice(Device):
 
         # Adjusting the brightness requires 2 parameters for compatibility with our partners gateways
         commands = [
-            botengine.form_command("currentLevel", int((percent / 100.0) * 254)),
+            botengine.form_command("currentLevel", percent),
             botengine.form_command("commandName", "setLevel")
         ]
 

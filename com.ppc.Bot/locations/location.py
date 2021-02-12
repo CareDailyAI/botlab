@@ -10,17 +10,27 @@ file 'LICENSE.txt', which is part of this source code package.
 import pytz
 import datetime
 import utilities.utilities as utilities
-import utilities.analytics as analytics
+import signals.analytics as analytics
+from utilities.narrative import Narrative
 import intelligence.index
 import importlib
 import domain
-from utilities.narrative import Narrative
-
 
 class Location:
     """
     Provide tools and information to manage the Location.
     """
+
+    # Security States
+    SECURITY_STATE_DISARMED = 0
+    SECURITY_STATE_EXIT_DELAY_FULL = 1
+    SECURITY_STATE_EXIT_DELAY_PERIMETER = 2
+    SECURITY_STATE_ARMED_FULLY = 3
+    SECURITY_STATE_ARMED_PERIMETER = 4
+    SECURITY_STATE_ENTRY_DELAY = 5
+    SECURITY_STATE_ALARMING_RECENT_CLOSING = 6
+    SECURITY_STATE_ALARMING = 7
+    SECURITY_STATE_TEST_MODE = 8
 
     def __init__(self, botengine, location_id):
         """Constructor"""
@@ -34,7 +44,7 @@ class Location:
         
         # Mode of this location (i.e. "HOME", "AWAY", etc.). This is the mode of the security system.
         self.mode = botengine.get_mode(self.location_id)
-        
+
         # All Location Intelligence modules
         self.intelligence_modules = {}
 
@@ -43,6 +53,9 @@ class Location:
 
         # Conversational UI
         self.conversational_ui = None
+
+        # Security state
+        self.security_state = Location.SECURITY_STATE_DISARMED
 
         # Occupancy status as determined by AI occupancy detection algorithms.
         self.occupancy_status = ""
@@ -78,6 +91,10 @@ class Location:
         :param botengine: BotEngine environment
         :param initialize_everything: Default is True. False is used when we're performing advance machine learning edge computing services.
         """
+        # Added December 8, 2020
+        if not hasattr(self, 'security_state'):
+            self.security_state = Location.SECURITY_STATE_DISARMED
+
         if initialize_everything:
             for d in self.devices:
                 self.devices[d].initialize(botengine)
@@ -85,11 +102,32 @@ class Location:
         # for module_name in self.intelligence_modules:
         #     botengine.get_logger().info("{} : {}".format(self.intelligence_modules[module_name].intelligence_id, module_name))
 
-        # Synchronize intelligence capabilities
-        if len(self.intelligence_modules) != len(intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']):
-            
+        # Synchronize microservices
+
+        module_names = [x['module'] for x in intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']]
+
+        changed = False
+        for m in module_names:
+            changed |= m not in self.intelligence_modules
+
+        for m in list(self.intelligence_modules.keys()):
+            changed |= m not in module_names
+
+        if changed:
+            # Remove microservices that no longer exist
+            for module_name in dict(self.intelligence_modules).keys():
+                found = False
+                for intelligence_info in intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']:
+                    if intelligence_info['module'] == module_name:
+                        found = True
+                        break
+
+                if not found:
+                    botengine.get_logger().info("Deleting location microservice: " + str(module_name))
+                    self.intelligence_modules[module_name].destroy(botengine)
+                    del self.intelligence_modules[module_name]
+
             # Add more microservices
-            # 10014: [{"module": "intelligence.rules.device_entry_intelligence", "class": "EntryRulesIntelligence"}],
             for intelligence_info in intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']:
                 if intelligence_info['module'] not in self.intelligence_modules:
                     try:
@@ -104,18 +142,7 @@ class Location:
                         botengine.get_logger().error("Could not add location microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
                         
                     
-            # Remove microservices that no longer exist
-            for module_name in dict(self.intelligence_modules).keys():
-                found = False
-                for intelligence_info in intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']:
-                    if intelligence_info['module'] == module_name:
-                        found = True
-                        break
-                    
-                if not found:
-                    botengine.get_logger().info("Deleting location microservice: " + str(module_name))
-                    self.intelligence_modules[module_name].destroy(botengine)
-                    del self.intelligence_modules[module_name]
+
                     
         # Location intelligence execution
         for i in self.intelligence_modules:
@@ -159,15 +186,20 @@ class Location:
         Delete the given device ID
         :param device_id: Device ID to delete
         """
-        device_object = None
         if device_id in self.devices:
             device_object = self.devices[device_id]
 
             if hasattr(device_object, "intelligence_modules"):
                 for intelligence_id in device_object.intelligence_modules:
-                    device_object.intelligence_modules[intelligence_id].destroy(botengine)
+                    try:
+                        device_object.intelligence_modules[intelligence_id].destroy(botengine)
+                    except Exception as e:
+                        botengine.get_logger().warning("location.py.delete_device(): microservice.destroy(): {}".format(e))
 
-            device_object.destroy(botengine)
+            try:
+                device_object.destroy(botengine)
+            except Exception as e:
+                botengine.get_logger().warning("location.py.delete_device() device_object.destory(): {}".format(e))
 
             del self.devices[device_id]
 
@@ -387,6 +419,25 @@ class Location:
                     import traceback
                     botengine.get_logger().error(traceback.format_exc())
 
+    def get_microservice_by_id(self, microservice_id):
+        """
+        Get a microservice ("intelligence module") by its id ("intelligence_id").
+        Sorry we named them 'intelligence modules' at first when they were really microservices.
+
+        :param microservice_id: Microservice ID
+        :return: Microservice object, or None if it doesn't exist.
+        """
+        for microservice in self.intelligence_modules:
+            if self.intelligence_modules[microservice].intelligence_id == microservice_id:
+                return self.intelligence_modules[microservice]
+
+        for device_id in self.devices:
+            for microservice in self.devices[device_id].intelligence_modules:
+                if self.devices[device_id].intelligence_modules[microservice].intelligence_id == microservice_id:
+                    return self.devices[device_id].intelligence_modules[microservice]
+
+        return None
+
     #===========================================================================
     # General location information
     #===========================================================================
@@ -433,35 +484,6 @@ class Location:
 
         return mode
 
-    def distribute_occupancy_status(self, botengine, status, reason, last_status, last_reason):
-        """
-        Distribute the newest occupancy status from AI occupancy algorithms
-        :param botengine: BotEngine environment
-        :param status: Current status
-        :param reason: Current reason
-        :param last_status: Last status
-        :param last_reason: Last reason
-        :return:
-        """
-        for intelligence_id in self.intelligence_modules:
-            try:
-                self.intelligence_modules[intelligence_id].occupancy_status_updated(botengine, status, reason, last_status, last_reason)
-            except Exception as e:
-                botengine.get_logger().warning("location.py - Error delivering occupancy_status_updated to location microservice (continuing execution): " + str(e))
-                import traceback
-                botengine.get_logger().error(traceback.format_exc())
-
-        # Device intelligence modules
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
-                    try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].occupancy_status_updated(botengine, status, reason, last_status, last_reason)
-                    except Exception as e:
-                        botengine.get_logger().warning("location.py - Error delivering occupancy_status_updated message to device microservice (continuing execution): " + str(e))
-                        import traceback
-                        botengine.get_logger().error(traceback.format_exc())
-
     #===========================================================================
     # Location Properties
     #===========================================================================
@@ -478,7 +500,7 @@ class Location:
         botengine.set_ui_content('location_properties', self.location_properties)
 
         if track:
-            import utilities.analytics as analytics
+            import signals.analytics as analytics
             analytics.people_set(botengine, self, {property_name: property_value})
 
     def update_location_properties(self, botengine, properties_dict, track=True):
@@ -495,7 +517,7 @@ class Location:
         botengine.set_ui_content('location_properties', self.location_properties)
 
         if track:
-            import utilities.analytics as analytics
+            import signals.analytics as analytics
             analytics.people_set(botengine, self, properties_dict)
 
     def increment_location_property(self, botengine, property_name, increment_amount=1, track=True):
@@ -517,7 +539,7 @@ class Location:
         self.location_properties[property_name] += increment_amount
         botengine.set_ui_content('location_properties', self.location_properties)
 
-        import utilities.analytics as analytics
+        import signals.analytics as analytics
         analytics.people_increment(botengine, self, {property_name: increment_amount})
 
     def get_location_property(self, botengine, property_name):
@@ -540,7 +562,7 @@ class Location:
         """
         self._sync_location_properties(botengine)
         if property_name in self.location_properties:
-            del(self.location_propertyes[property_name])
+            del(self.location_properties[property_name])
             botengine.set_ui_content('location_properties', self.location_properties)
 
     def set_location_property_separately(self, botengine, additional_property_name, additional_property_json, overwrite=False, timestamp_ms=None):
@@ -762,113 +784,6 @@ class Location:
 
         self.distribute_datastream_message(botengine, "set_behaviors", menu, internal=True, external=True)
 
-
-    #===========================================================================
-    # Conversations
-    #===========================================================================
-    def get_conversation_types(self, botengine):
-        """
-        Return the module that documents the conversation types. Or None if the conversation microservice package is not included in this build.
-        :param botengine:
-        :return: Conversations module documenting the conversation types.
-        """
-        try:
-            import intelligence.conversations.conversations as conversations
-            return conversations
-
-        except:
-            botengine.get_logger().info("location.get_conversation_types(): No conversations microservice package in this build.")
-            return None
-
-    def start_conversation(self, botengine, conversation_type, homeowner_message, supporter_message, professional_monitoring_code=None, sms_callback_method=None, next_conversation_object=None, narrative_objects=None, force=False):
-        """
-        Start a new conversation by creating the conversation and adding it to the queue.
-        :param botengine: BotEngine environment
-        :param conversation_type: Conversation type
-        :param homeowner_message: Homeowner message / question
-        :param supporter_message: Supporter message
-        :param professional_monitoring_code: Override the default professional monitoring code, if any.
-        :param sms_callback_method: Method to call back when the question is answered. def some_method(self, botengine, question_object)
-        :param next_conversation_object: Conversation to link and execute immediately after this conversation ends.
-        :param narrative_objects: Narrative objects to add details as the conversation happens { "user": narrative_object, "admin": narrative_object }
-        :param force: True to force the conversation, even if the conversation is disabled (for testing)
-        :return: conversation_object for reference in update_conversation(..). Or None if this conversation will not be active.
-        """
-        # Try to add the conversational UI, which would be captured in one of our microservices.
-        for module_name in self.intelligence_modules:
-            if 'location_conversation_microservice' in module_name:
-                return self.intelligence_modules[module_name].start_conversation(botengine,
-                                                                                 conversation_type,
-                                                                                 homeowner_message,
-                                                                                 supporter_message,
-                                                                                 professional_monitoring_code=professional_monitoring_code,
-                                                                                 sms_callback_method=sms_callback_method,
-                                                                                 next_conversation_object=next_conversation_object,
-                                                                                 narrative_objects=narrative_objects,
-                                                                                 force=force)
-
-        return None
-
-    def create_conversation(self, botengine, conversation_type, homeowner_message, supporter_message, professional_monitoring_code=None, sms_callback_method=None, next_conversation_object=None, narrative_objects=None, force=False):
-        """
-        Create and return a new conversation without executing on it or putting it into the queue.
-        This does not start the conversation.
-        This allows us to create a conversation and link it to another with ConversationType.next_conversation_object.
-        :param botengine: BotEngine environment
-        :param conversation_type: Conversation type
-        :param homeowner_message: Homeowner message / question
-        :param supporter_message: Supporter message
-        :param professional_monitoring_code: Override the default professional monitoring code, if any.
-        :param sms_callback_method: Method to call back when the question is answered. def some_method(self, botengine, question_object)
-        :param next_conversation_object: Conversation to link and execute immediately after this conversation ends.
-        :param narrative_objects: Narrative objects to add details as the conversation happens { "user": narrative_object, "admin": narrative_object }
-        :param force: True to force the conversation, even if the conversation is disabled (for testing)
-        :return: conversation_object for reference in update_conversation(..). Or None if this conversation will not be active.
-        """
-        # Try to add the conversational UI, which would be captured in one of our microservices.
-        for module_name in self.intelligence_modules:
-            if 'location_conversation_microservice' in module_name:
-                return self.intelligence_modules[module_name].create_conversation(botengine,
-                                                                                  conversation_type,
-                                                                                  homeowner_message,
-                                                                                  supporter_message,
-                                                                                  professional_monitoring_code=professional_monitoring_code,
-                                                                                  sms_callback_method=sms_callback_method,
-                                                                                  next_conversation_object=next_conversation_object,
-                                                                                  narrative_objects=narrative_objects,
-                                                                                  force=force)
-
-        return None
-
-    def update_conversation(self, botengine, conversation_object, message=None, resolved=False):
-        """
-        Update a conversation
-        :param botengine: BotEngine environment
-        :param conversation_object: Conversation object to update
-        :param message: Message to send out to either homeowners or supporters
-        :param resolved: True to resolve and end the conversation (default is False)
-        :return conversation_object for reference in update_conversation(..). Or None if this conversation will no longer be active.
-        """
-        if conversation_object is None:
-            return None
-
-        for module_name in self.intelligence_modules:
-            if 'location_conversation_microservice' in module_name:
-                return self.intelligence_modules[module_name].update_conversation(botengine, conversation_object, message, resolved)
-
-        return None
-
-
-    def total_sms_recipients(self, botengine, to_residents=True, to_supporters=True):
-        """
-        Get the total number of SMS recipients
-        :param botengine: BotEngine environment
-        :param residents: True to count the total homeowners
-        :param supporters: True to count the total supporters
-        :return: Integer number of recipients
-        """
-        return len(botengine.get_location_user_names(to_residents=to_residents, to_supporters=to_supporters, sms_only=True))
-
     #===========================================================================
     # Narration
     #===========================================================================
@@ -1021,9 +936,7 @@ class Location:
         """
         :return: True if the person is about to go to sleep, or they're sleeping, or about to wake up.
         """
-        return "SLEEP" in self.occupancy_status \
-               or "H2S" in self.occupancy_status \
-               or "S2H" in self.occupancy_status
+        return "SLEEP" in self.occupancy_status or "S2H" in self.occupancy_status
     
     def update_mode(self, botengine):
         """
@@ -1045,7 +958,7 @@ class Location:
         :param timestamp: Unix timestamp in milliseconds
         :returns: datetime
         """
-        return self.get_local_datetime_from_timestamp(botengine, botengine.get_timestamp())
+        return self.get_datetime_from_timestamp(botengine, botengine.get_timestamp(), self.get_local_timezone_string(botengine))
     
     def get_local_datetime_from_timestamp(self, botengine, timestamp_ms):
         """
@@ -1053,8 +966,22 @@ class Location:
         :param botengine: BotEngine environment
         :param timestamp_ms: Timestamp in milliseconds to transform into a timezone-aware datetime object
         """
-        return datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(self.get_local_timezone_string(botengine)))
-        
+        return self.get_datetime_from_timestamp(botengine, timestamp_ms, self.get_local_timezone_string(botengine))
+
+    def get_datetime_from_timestamp(self, botengine, timestamp_ms=None, timezone=None):
+        """
+        Get a datetime in the user's local timezone, based on an input timestamp_ms
+        :param botengine: BotEngine environment
+        :param timestamp_ms: Timestamp in milliseconds to transform into a timezone-aware datetime object
+        :param timezone: Optional timezone
+        """
+        if timestamp_ms is None:
+            timestamp_ms = botengine.get_timestamp()
+
+        if timezone is None:
+            timezone = self.get_local_timezone_string(botengine)
+        return datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone))
+
     def get_local_timezone_string(self, botengine):
         """
         Get the local timezone string
@@ -1070,20 +997,15 @@ class Location:
 
         return domain.DEFAULT_TIMEZONE
 
-    def get_relative_time_of_day(self, botengine, timestamp_ms=None):
+    def get_relative_time_of_day(self, botengine, timestamp_ms=None, timezone=None):
         """
         Transform our local datetime into a float hour and minutes
         :param botengine: BotEngine environment
         :param timestamp_ms: Transform this timestamp if given, otherwise transform the current time from botengine.
+        :param timezone: Optional timezone
         :return: Relative time of day - hours.minutes where minutes is divided by 60. 10:15 AM = 10.25
         """
-        if timestamp_ms is not None:
-            # Use the given timestamp
-            dt = self.get_local_datetime_from_timestamp(botengine, timestamp_ms)
-        else:
-            # Use the current time
-            dt = self.get_local_datetime(botengine)
-
+        dt = self.get_datetime_from_timestamp(botengine, timestamp_ms, timezone)
         return dt.hour + (dt.minute / 60.0)
 
     def get_midnight_last_night(self, botengine):
@@ -1102,16 +1024,18 @@ class Location:
         """
         return self.get_local_datetime(botengine).replace(hour=23, minute=59, second=59, microsecond=999999)
 
-
-    def local_timestamp_ms_from_relative_hours(self, botengine, weekday, hours):
+    def local_timestamp_ms_from_relative_hours(self, botengine, weekday, hours, future=True):
         """
         Calculate an absolute timestamp from relative day-of-week and hour
         :param botengine: BotEngine environment
         :param dow: day-of-week (Monday is 0)
         :param hours: Relative hours into the day (i.e. 23.5 = 11:30 PM local time)
+        :param future: True to return a timestamp that is always in the future
         :return: Unix epoch timestamp in milliseconds
         """
         from datetime import timedelta
+        hours = float(hours)
+        weekday = int(weekday)
 
         reference = self.get_local_datetime(botengine)
         hour, minute = divmod(hours, 1)
@@ -1119,8 +1043,10 @@ class Location:
         days = reference.weekday() - weekday
         target_dt = (reference - timedelta(days=days)).replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
         timestamp_ms = self.timezone_aware_datetime_to_unix_timestamp(botengine, target_dt)
-        if timestamp_ms <= botengine.get_timestamp():
-            timestamp_ms += utilities.ONE_WEEK_MS
+
+        if future:
+            if timestamp_ms <= botengine.get_timestamp():
+                timestamp_ms += utilities.ONE_WEEK_MS
 
         return timestamp_ms
 
@@ -1157,6 +1083,28 @@ class Location:
         """
         return self.get_local_datetime(botengine).weekday()
 
+    def day_of_week_to_local_midnight_datetime(self, botengine, dow):
+        """
+        Get the datetime at midnight of the next relative day of the week.
+            0 = Monday
+            1 = Tuesday
+            2 = Wednesday
+            3 = Thursday
+            4 = Friday
+            5 = Saturday
+            6 = Sunday
+
+        :param dow: Python day-of-week (0 = Monday)
+        :return: Datetime of midnight on this next day-of-week
+        """
+        from datetime import timedelta
+
+        midnight_dt = self.get_midnight_last_night(botengine)
+        offset = dow - midnight_dt.weekday()
+        if offset < 0:
+            offset += 7
+
+        return midnight_dt + timedelta(days=offset)
 
     #===========================================================================
     # Weather

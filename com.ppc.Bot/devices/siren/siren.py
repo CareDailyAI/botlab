@@ -81,6 +81,14 @@ class SirenDevice(Device):
         """
         raise NotImplementedError
 
+    def force_silence(self, botengine):
+        """
+        Force silence, even if this is locked by some other service.
+        :param botengine:
+        :return:
+        """
+        raise NotImplementedError
+
     def silence(self, botengine, microservice_identifier=""):
         """
         Silence

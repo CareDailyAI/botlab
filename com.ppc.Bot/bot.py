@@ -39,7 +39,7 @@ def run(botengine):
         controller.new_version(botengine)
 
     # SCHEDULE TRIGGER
-    elif trigger_type & botengine.TRIGGER_SCHEDULE != 0:
+    if trigger_type & botengine.TRIGGER_SCHEDULE != 0:
         schedule_id = "DEFAULT"
         if 'scheduleId' in botengine.get_inputs():
             schedule_id = botengine.get_inputs()['scheduleId']
@@ -48,7 +48,7 @@ def run(botengine):
         controller.run_intelligence_schedules(botengine, schedule_id)
         
     # MODE TRIGGERS
-    elif trigger_type & botengine.TRIGGER_MODE != 0:
+    if trigger_type & botengine.TRIGGER_MODE != 0:
         # Triggered off a change of location
         botengine.get_logger().info("Trigger: Mode")
         for trigger in triggers:
@@ -56,9 +56,78 @@ def run(botengine):
                 mode = trigger['location']['event']
                 location_id = trigger['location']['locationId']
                 controller.sync_mode(botengine, mode, location_id)
-        
+
+    # MEASUREMENT TRIGGERS
+    if trigger_type & botengine.TRIGGER_DEVICE_MEASUREMENT != 0:
+        # Triggered off a device measurement
+        for trigger in triggers:
+            if 'device' in trigger:
+                device_id = trigger['device']['deviceId']
+                device_object = controller.get_device(device_id)
+                
+                if device_object is not None:
+                    device_location = trigger['device']['locationId']
+
+                    # Measurement dictionary by updated timestamp { timestamp : [ {measure}, {measure}, {measure} ] }
+                    measures_dict = {}
+
+                    # List of measurements that were not updated
+                    measures_static = []
+
+                    # Measurements are provided in 1-second granularity, so 2 measurements may have the same timestamp
+                    # This is a list of parameters and the newest time they were updated so we don't have 2 measurements for a single timestamp
+                    # { "param_name": newest_updated_timestamp_ms }
+                    updated_ts = {}
+
+                    for m in botengine.get_measures_block():
+                        if m['deviceId'] == device_id:
+                            if not m['updated']:
+                                # Not updated
+                                measures_static.append(m)
+
+                            else:
+                                # Updated parameter
+                                # First apply 1 ms corrections for the same parameter at the same time
+                                if m['name'] in updated_ts:
+                                    if updated_ts[m['name']] == m['time']:
+                                        m['time'] = updated_ts[m['name']] + 1
+
+                                # Then add it to our list of measurements we need to trigger upon
+                                if m['time'] not in measures_dict:
+                                    measures_dict[m['time']] = []
+
+                                updated_ts[m['name']] = m['time']
+                                measures_dict[m['time']].append(m)
+
+                    # For each unique timestamp, trigger the microservices from the oldest timestamp to the newest
+                    # Also modify the botengine's concept of time to match the current input parameter's time we are executing against, and restore it later.
+                    execution_time_ms = botengine.get_timestamp()
+                    for timestamp_ms in sorted(list(measures_dict.keys())):
+                        botengine.inputs['time'] = timestamp_ms
+                        updated_devices, updated_metadata = device_object.update(botengine, measures_static + measures_dict[timestamp_ms])
+
+                        for updated_device in updated_devices:
+                            try:
+                                updated_device.device_measurements_updated(botengine)
+
+                                # Ping any proxy devices to let any sub-microservices know that the proxy is still connected and delivering measurements
+                                if updated_device.proxy_id is not None:
+                                    proxy_object = controller.get_device(updated_device.proxy_id)
+                                    if proxy_object is not None:
+                                        if proxy_object not in updated_devices:
+                                            proxy_object.device_measurements_updated(botengine)
+
+                                controller.device_measurements_updated(botengine, device_location, updated_device)
+
+                            except Exception as e:
+                                import traceback
+                                botengine.get_logger().error("bot.device_measurements_updated(): {}; {}. Continuing execution.".format(str(e), traceback.format_exc()))
+
+
+                    botengine.inputs['time'] = execution_time_ms
+
     # DEVICE ALERTS
-    elif trigger_type & botengine.TRIGGER_DEVICE_ALERT != 0:
+    if trigger_type & botengine.TRIGGER_DEVICE_ALERT != 0:
         # Triggered off a device alert
         for trigger in triggers:
             if 'device' in trigger:
@@ -67,13 +136,7 @@ def run(botengine):
 
                 if device_object is not None:
                     device_location = trigger['device']['locationId']
-                    updated_devices, updated_metadata = device_object.update(botengine)
-                    for updated_device in updated_devices:
-                        controller.sync_device(botengine, device_location, device_id, updated_device)
-                        controller.device_measurements_updated(botengine, device_location, updated_device)
-
                     alerts = botengine.get_alerts_block()
-
                     if alerts is not None:
                         for alert in alerts:
                             botengine.get_logger().info("Alert: " + json.dumps(alert, indent=2, sort_keys=True))
@@ -88,33 +151,8 @@ def run(botengine):
                                 device_object.device_alert(botengine, alert['alertType'], alert_params)
                                 controller.device_alert(botengine, device_location, device_object, alert['alertType'], alert_params)
 
-                                    
-    # MEASUREMENT TRIGGERS
-    elif trigger_type & botengine.TRIGGER_DEVICE_MEASUREMENT != 0:
-        # Triggered off a device measurement
-        for trigger in triggers:
-            if 'device' in trigger:
-                device_id = trigger['device']['deviceId']
-                device_object = controller.get_device(device_id)
-                
-                if device_object is not None:
-                    device_location = trigger['device']['locationId']
-                    updated_devices, updated_metadata = device_object.update(botengine)
-
-                    for updated_device in updated_devices:
-                        updated_device.device_measurements_updated(botengine)
-
-                        # Ping any proxy devices to let any sub-microservices know that the proxy is still connected and delivering measurements
-                        if updated_device.proxy_id is not None:
-                            proxy_object = controller.get_device(updated_device.proxy_id)
-                            if proxy_object is not None:
-                                if proxy_object not in updated_devices:
-                                    proxy_object.device_measurements_updated(botengine)
-
-                        controller.device_measurements_updated(botengine, device_location, updated_device)
-
     # FILE UPLOAD TRIGGERS
-    elif trigger_type & botengine.TRIGGER_DEVICE_FILES != 0:
+    if trigger_type & botengine.TRIGGER_DEVICE_FILES != 0:
         # Triggered off an uploaded file
         file = botengine.get_file_block()
         botengine.get_logger().info("File: " + json.dumps(file, indent=2, sort_keys=True))
@@ -125,14 +163,14 @@ def run(botengine):
                 controller.file_uploaded(botengine, device_object, file)
         
     # QUESTIONS ANSWERED
-    elif trigger_type & botengine.TRIGGER_QUESTION_ANSWER != 0:
+    if trigger_type & botengine.TRIGGER_QUESTION_ANSWER != 0:
         question = botengine.get_answered_question()
         botengine.get_logger().info("Answered: " + str(question.key_identifier))
         botengine.get_logger().info("Answer = {}".format(question.answer))
         controller.sync_question(botengine, question)
         
     # DATA STREAM TRIGGERS
-    elif trigger_type & botengine.TRIGGER_DATA_STREAM != 0:
+    if trigger_type & botengine.TRIGGER_DATA_STREAM != 0:
         # Triggered off a data stream message
         data_stream = botengine.get_datastream_block()
         botengine.get_logger().info("Data Stream: " + json.dumps(data_stream, indent=2, sort_keys=True))
@@ -153,13 +191,13 @@ def run(botengine):
                 controller.run_intelligence_schedules(botengine)
 
     # COMMAND RESPONSES
-    elif trigger_type & botengine.TRIGGER_COMMAND_RESPONSE != 0:
+    if trigger_type & botengine.TRIGGER_COMMAND_RESPONSE != 0:
         botengine.get_logger().info("Command Responses: {}".format(json.dumps(botengine.get_inputs()['commandResponses'])))
         # TODO responses to commands delivered by the bot are available to build out reliable command delivery infrastructure
         pass
 
     # GOAL / SCENARIO CHANGES
-    elif trigger_type & botengine.TRIGGER_METADATA != 0:
+    if trigger_type & botengine.TRIGGER_METADATA != 0:
         # The user changed the goal / scenario for a single sensor
         for trigger in triggers:
             botengine.get_logger().info("Changed device configuration")
@@ -175,7 +213,7 @@ def run(botengine):
                     else:
                         device_object.spaces = []
 
-                    updated_devices, updated_metadata = device_object.update(botengine)
+                    updated_devices, updated_metadata = device_object.update(botengine, botengine.get_measures_block())
 
                     for updated_device in updated_metadata:
                         controller.sync_device(botengine, device_location, device_id, updated_device)
@@ -183,7 +221,7 @@ def run(botengine):
                         controller.device_metadata_updated(botengine, device_location, updated_device)
 
     # LOCATION CONFIGURATION CHANGES
-    elif trigger_type & botengine.TRIGGER_LOCATION_CONFIGURATION != 0:
+    if trigger_type & botengine.TRIGGER_LOCATION_CONFIGURATION != 0:
         # The user changed location configuration settings, such as adding/removing/changing a user role in the location
         category = None
         previous_category = None
@@ -228,7 +266,7 @@ def run(botengine):
             controller.call_center_updated(botengine, location_id, user_id, status)
 
     # DATA REQUEST
-    elif trigger_type & botengine.TRIGGER_DATA_REQUEST != 0:
+    if trigger_type & botengine.TRIGGER_DATA_REQUEST != 0:
         # Response to botengine.request_data()
         botengine.get_logger().info("Data request received")
         data = botengine.get_data_block()
@@ -262,9 +300,6 @@ def run(botengine):
         # DO NOT SAVE CORE VARIABLES HERE.
         return
 
-    else:
-        botengine.get_logger().error("bot.py: Unknown trigger {}".format(trigger_type))
-    
     # Always save your variables!
     botengine.save_variable("controller", controller, required_for_each_execution=True)
     botengine.get_logger().info("<< bot")

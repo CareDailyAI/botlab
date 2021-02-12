@@ -4,6 +4,8 @@ Created on July 31, 2019
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
+DEPRECATED SEPTEMBER 23, 2020
+
 @author: David Moss
 '''
 
@@ -16,7 +18,7 @@ class PeoplePowerXSeriesDevice(GatewayDevice):
     """
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [35]
+    DEVICE_TYPES = []
 
     def get_device_type_name(self):
         """

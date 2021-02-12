@@ -10,8 +10,15 @@ file 'LICENSE.txt', which is part of this source code package.
 from intelligence.intelligence import Intelligence
 
 import utilities.utilities as utilities
-import utilities.analytics as analytics
+import signals.analytics as analytics
 import domain
+
+# Timer references
+TIMER_REFERENCE_BIRTH = "birth"
+TIMER_REFERENCE_INSTALL = "install"
+
+# Total number of devices we expect you to have minimum before we suggest you reach out to customer support for an assisted install session
+TOTAL_MINIMUM_DEVICES = 4
 
 class LocationWelcomeMicroservice(Intelligence):
     """
@@ -50,7 +57,7 @@ class LocationWelcomeMicroservice(Intelligence):
             if hasattr(domain, "IN_APP_WELCOME_MESSAGE"):
                 description = domain.IN_APP_WELCOME_MESSAGE
             else:
-                description = _("This screen will capture the history of events that are happening in your home. Please remember to add other people to help watch over your home inside the People tab.")
+                description = _("This screen will capture the history of events that are happening in your home. Please remember to add other people to help watch over your home inside the Trusted Circle tab.")
 
             self.parent.narrate(botengine,
                                 title=title,
@@ -63,7 +70,17 @@ class LocationWelcomeMicroservice(Intelligence):
             self.parent.set_location_property(botengine, "welcomed", True)
 
             # Send welcome SMS/push notifications to download the app.
-            self.start_timer_ms(botengine, utilities.ONE_MINUTE_MS * 5)
+            self.start_timer_ms(botengine, utilities.ONE_MINUTE_MS * 5, reference=TIMER_REFERENCE_BIRTH, argument=TIMER_REFERENCE_BIRTH)
+
+            try:
+                delay_ms = utilities.ONE_HOUR_MS * 4
+                if hasattr(domain, 'CS_VIRTUAL_CONNECT_SMS_DELAY_MS'):
+                    delay_ms = int(domain.CS_VIRTUAL_CONNECT_SMS_DELAY_MS)
+
+                self.start_timer_ms(botengine, delay_ms, reference=TIMER_REFERENCE_INSTALL, argument=TIMER_REFERENCE_INSTALL)
+
+            except Exception as e:
+                botengine.get_logger().error("location_welcome_microservice: " + e)
 
 
     def initialize(self, botengine):
@@ -182,28 +199,47 @@ class LocationWelcomeMicroservice(Intelligence):
         :param botengine: Current botengine environment
         :param argument: Argument applied when setting the timer
         """
-        # This fires one time, 5 minutes after birth
-        ios_url = None
-        android_url = None
+        if argument == TIMER_REFERENCE_BIRTH:
+            # This fires one time, 5 minutes after birth
+            ios_url = None
+            android_url = None
 
-        if hasattr(domain, 'APP_IOS_URL'):
-            ios_url = domain.APP_IOS_URL
+            if hasattr(domain, 'APP_IOS_URL'):
+                ios_url = domain.APP_IOS_URL
 
-        if hasattr(domain, 'APP_ANDROID_URL'):
-            android_url = domain.APP_ANDROID_URL
+            if hasattr(domain, 'APP_ANDROID_URL'):
+                android_url = domain.APP_ANDROID_URL
 
-        if ios_url is not None or android_url is not None:
-            message = _("Thanks for signing up! Here's how to download {}.").format(domain.SERVICE_NAME)
+            if ios_url is not None or android_url is not None:
+                message = _("Thanks for signing up! Here's how to download {}.").format(domain.SERVICE_NAME)
 
-            if ios_url is not None:
-                # Note: iOS app download URL qualifier
-                message += "\n\n{}: {}".format(_("iPhone / iPad"), ios_url)
+                if ios_url is not None:
+                    # Note: iOS app download URL qualifier
+                    message += "\n\n{}: {}".format(_("iPhone / iPad"), ios_url)
 
-            if android_url is not None:
-                # Note: Android download URL qualifier
-                message += "\n\n{}: {}".format(_("Android"), android_url)
+                if android_url is not None:
+                    # Note: Android download URL qualifier
+                    message += "\n\n{}: {}".format(_("Android"), android_url)
 
-            botengine.notify(push_content=_("{} services are activated at \"{}\"!").format(domain.SERVICE_NAME, self.parent.get_location_name(botengine)), push_sms_fallback_content=message, to_residents=True)
+                botengine.notify(push_content=_("{} services are activated at \"{}\"!").format(domain.SERVICE_NAME, self.parent.get_location_name(botengine)), push_sms_fallback_content=message, to_residents=True)
+
+        elif argument == TIMER_REFERENCE_INSTALL:
+            # This is a recommendation to schedule time with customer support for an assisted connect session
+            if len(self.parent.devices) < TOTAL_MINIMUM_DEVICES:
+                if hasattr(domain, 'CS_SCHEDULE_URL') and hasattr(domain, 'SERVICE_NAME'):
+                    if domain.CS_SCHEDULE_URL is not None:
+                        if len(domain.CS_SCHEDULE_URL) > 0:
+                            message = _("Want a real person to help you set up {} at {}? Check out -> {}.").format(domain.SERVICE_NAME, botengine.get_location_name(), domain.CS_SCHEDULE_URL)
+
+                            import signals.sms as sms
+                            sms.send(botengine,
+                                     self.parent,
+                                     sms_content=message,
+                                     to_residents=True,
+                                     to_supporters=False,
+                                     sms_group_chat=False,
+                                     user_id=None,
+                                     add_delay=False)
 
     def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
         """
@@ -234,6 +270,23 @@ class LocationWelcomeMicroservice(Intelligence):
         :param location_access: User's access to the location and devices. (0=None; 10=read location/device data; 20=control devices and modes; 30=update location info and manage devices)
         :param previous_alert_category: User's previous category, if any
         :param previous_location_access: User's previous access to the location, if any
+        """
+        return
+
+    def call_center_updated(self, botengine, user_id, status):
+        """
+        Emergency call center status has changed.
+
+            0 = Unavailable
+            1 = Available, but the user does not have enough information to activate
+            2 = Registration pending
+            3 = Registered and activated
+            4 = Cancellation pending
+            5 = Cancelled
+
+        :param botengine: BotEngine environment
+        :param user_id: User ID that made the change
+        :param status: Current call center status
         """
         return
 

@@ -47,16 +47,6 @@ OCCUPANCY_STATUS_H2A = "H2A"
 OCCUPANCY_STATUS_A2H = "A2H"
 OCCUPANCY_STATUS_VACATION = "VACATION"
 
-# Modes to Ints
-MODE_HOME_INT = 0
-MODE_AWAY_INT = 1
-MODE_STAY_INT = 4
-MODE_TEST_INT = 5
-
-# SMS Status
-SMS_SUBSCRIBED = 1
-SMS_OPT_OUT = 2
-
 # Alarm codes
 ALARM_CODE_GENERAL_BURGLARY = "E130"
 ALARM_CODE_PERIMETER_WINDOW_BURGLARY = "E131"
@@ -112,6 +102,34 @@ PUSH_SOUND_TRUMPET = "trumpet.wav"
 PUSH_SOUND_WARNING = "warning.wav"
 PUSH_SOUND_WHISTLE = "whistle.wav"
 PUSH_SOUND_WHOOPS = "whoops.wav"
+
+
+def can_contact_customer_support():
+    """
+    Leverages the com.domain.YourBot/domain.py file to determine if customer support is available for this bot
+    :return:
+    """
+    import importlib
+    try:
+        domain = importlib.import_module('domain')
+    except ImportError:
+        return False
+
+    if hasattr(domain, "CS_SCHEDULE_URL"):
+        if domain.CS_SCHEDULE_URL is not None:
+            if len(domain.CS_SCHEDULE_URL) > 0:
+                return True
+
+    if hasattr(domain, "CS_EMAIL_ADDRESS"):
+        if domain.CS_EMAIL_ADDRESS is not None:
+            if len(domain.CS_EMAIL_ADDRESS) > 0:
+                return True
+
+    if hasattr(domain, "CS_PHONE_NUMBER"):
+        if domain.CS_PHONE_NUMBER is not None:
+            if len(domain.CS_PHONE_NUMBER) > 0:
+                return True
+
 
 def alarm_code_to_description(code):
     """
@@ -173,6 +191,7 @@ def relative_f_to_c_degree(fahrenheit_degree):
     """
     return float(fahrenheit_degree) * 0.555556
 
+
 def calculate_heat_index(degrees_c, humidity):
     """
     Get the heat index in Celsius using a Rothfusz regression.
@@ -197,6 +216,7 @@ def calculate_heat_index(degrees_c, humidity):
     hi_f = -42.379 + 2.04901523 * T + 10.14333127 * RH - .22475541 * T * RH - .00683783 * T * T - .05481717 * RH * RH + .00122874 * T * T * RH + .00085282 * T * RH * RH - .00000199 * T * T * RH * RH
 
     return fahrenheit_to_celsius(hi_f + adjustment_f)
+
 
 def ms_to_human_readable_string(ms, include_seconds=False):
     """
@@ -233,6 +253,7 @@ def ms_to_human_readable_string(ms, include_seconds=False):
 
     return str.strip()
 
+
 def normalize_measurement(measure):
     """
     Transform a measurement's value, which could be a string, into a real value - like a boolean or int or float
@@ -252,6 +273,7 @@ def normalize_measurement(measure):
         else:
             return measure
 
+
 def get_answer(question_object):
     """
     Easily extract an answer from a question object and normalize it.
@@ -268,6 +290,7 @@ def get_answer(question_object):
         return normalize_measurement(question_object.answer)
     return normalize_measurement(question_object.default_answer)
 
+
 def iso_format(dt):
     """
     Returns an ISO formatted datetime that matches the format the server (Java) gives us, which is in milliseconds and not microseconds.
@@ -275,6 +298,39 @@ def iso_format(dt):
     :return: ISO formatted string
     """
     return dt.strftime("%Y-%m-%dT%H:%M:%S." + '%03d' % (dt.microsecond / 1000) + "%z")
+
+
+def get_admin_url_for_location(botengine):
+    """
+    Attempt to return the URL of the command center for this home.
+
+    To make this work, you'll need a file in the base of the bot called 'domain.py' containing configuration settings.
+
+    It should have a configuration like this:
+
+        # Command Center URLs
+        COMMAND_CENTER_URLS = {
+            "app.presencepro.com": "https://console.peoplepowerfamily.com",
+            "sboxall.presencepro.com": "https://cc.presencepro.com"
+        }
+
+    :return: URL to this home in the appropriate command center
+    """
+    # The domain.COMMAND_CENTER_URLS should be formatted like this: https://console.peoplepowerfamily.com
+    import bundle
+    import domain
+    url = None
+    if hasattr(domain, 'COMMAND_CENTER_URLS'):
+        for u in domain.COMMAND_CENTER_URLS:
+            if u in bundle.CLOUD_ADDRESS:
+                url = domain.COMMAND_CENTER_URLS[u]
+
+    if url is None:
+        botengine.get_logger().warn("utilities.get_command_center_url(): No COMMAND_CENTER_URLS defined in domain.py")
+        return None
+
+    return "{}/#!/main/locations/edit/{}".format(url, botengine.get_location_id())
+
 
 def getsize(obj_0):
     """

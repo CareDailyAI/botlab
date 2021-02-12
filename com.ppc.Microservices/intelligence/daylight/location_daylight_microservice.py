@@ -13,7 +13,8 @@ file 'LICENSE.txt', which is part of this source code package.
 import importlib
 import datetime
 import utilities.utilities as utilities
-import utilities.analytics as analytics
+import signals.analytics as analytics
+import signals.dashboard as dashboard
 
 from intelligence.intelligence import Intelligence
 
@@ -133,6 +134,20 @@ class LocationDaylightMicroservice(Intelligence):
                                 icon = 'sunrise'
                                 )
 
+            dashboard.update_dashboard_header(botengine,
+                                              location_object=self.parent,
+                                              name="daylight",
+                                              priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                              percent_good=85,
+                                              title=_("Sunrise"),
+                                              comment=_("It is sunrise here.").format(self.parent.get_location_name(botengine)),
+                                              icon="sunrise",
+                                              icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
+                                              resolution_object=None,
+                                              conversation_object=None,
+                                              future_timestamp_ms=None,
+                                              ttl_ms=utilities.ONE_MINUTE_MS * 15)
+
             analytics.track(botengine, self.parent, 'sunrise')
             self.parent.is_daylight = True
             self.parent.distribute_datastream_message(botengine, "sunrise_fired", None, internal=True, external=False)
@@ -146,6 +161,20 @@ class LocationDaylightMicroservice(Intelligence):
                                 priority = botengine.NARRATIVE_PRIORITY_DEBUG,
                                 icon = 'sunset'
                                 )
+
+            dashboard.update_dashboard_header(botengine,
+                                              location_object=self.parent,
+                                              name="daylight",
+                                              priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                              percent_good=85,
+                                              title=_("Sunset"),
+                                              comment=_("It is sunset here.").format(self.parent.get_location_name(botengine)),
+                                              icon="sunset",
+                                              icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
+                                              resolution_object=None,
+                                              conversation_object=None,
+                                              future_timestamp_ms=None,
+                                              ttl_ms=utilities.ONE_MINUTE_MS * 15)
 
             analytics.track(botengine, self.parent, 'sunset')
             self.parent.is_daylight = False
@@ -162,8 +191,6 @@ class LocationDaylightMicroservice(Intelligence):
         botengine.get_logger().info("location_daylight_microservice: Lat/Long updated - recalculating sunrise/sunset times")
         self._set_sunrise_sunset_alarm(botengine)
 
-
-
     #===========================================================================
     # Sunlight
     #===========================================================================
@@ -173,8 +200,21 @@ class LocationDaylightMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :return: True if we think it's daytime at this location
         """
-        next_sunrise_ms = self.next_sunrise_timestamp_ms(botengine)
-        next_sunset_ms = self.next_sunset_timestamp_ms(botengine)
+        try:
+            ephem = importlib.import_module("ephem")
+        except ImportError:
+            ephem = None
+
+        try:
+            next_sunrise_ms = self.next_sunrise_timestamp_ms(botengine)
+            next_sunset_ms = self.next_sunset_timestamp_ms(botengine)
+
+        except ephem.AlwaysUpError:
+            return True
+
+        except ephem.NeverUpError:
+            return False
+
         return next_sunset_ms < next_sunrise_ms
 
     def next_sunrise_timestamp_ms(self, botengine):
@@ -234,8 +274,28 @@ class LocationDaylightMicroservice(Intelligence):
         """
         self.cancel_timers(botengine)
 
-        sunset_timestamp_ms = self.next_sunset_timestamp_ms(botengine)
-        sunrise_timestamp_ms = self.next_sunrise_timestamp_ms(botengine)
+        try:
+            ephem = importlib.import_module("ephem")
+        except ImportError:
+            # We don't have this ephem library. Avoid re-executing this code in the meantime and revisit in a future bot update.
+            self.start_timer_ms(botengine, utilities.ONE_DAY_MS)
+            return
+
+        try:
+            sunset_timestamp_ms = self.next_sunset_timestamp_ms(botengine)
+            sunrise_timestamp_ms = self.next_sunrise_timestamp_ms(botengine)
+
+        except ephem.AlwaysUpError:
+            # Sun never sets at this location
+            botengine.get_logger().info("location_daylight_microservice: Sun doesn't set. Try again tomorrow.")
+            self.start_timer_ms(botengine, utilities.ONE_DAY_MS)
+            return
+
+        except ephem.NeverUpError:
+            # Sun never rises at this location
+            botengine.get_logger().info("location_daylight_microservice: Sun doesn't rise. Try again tomorrow.")
+            self.start_timer_ms(botengine, utilities.ONE_DAY_MS)
+            return
 
         # We're getting double sunrise and double sunset events, and I believe it's from the ephem library not knowing that sunrise/sunset is right now.
         # So we'll check to see if the sunrise and/or sunset happened before now, and then adjust it by 24 hours.

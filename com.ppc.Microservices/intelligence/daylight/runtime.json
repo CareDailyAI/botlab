@@ -16,9 +16,9 @@
     # 256 = Data Stream Message received
     "trigger": 1,
 
-    # Midnight scheduler
     "schedules": {
-      "MIDNIGHT": "0 0 0 1/1 * ? *"
+      "MIDNIGHT": "0 0 0 1/1 * ? *",
+      "HOUR": "0 0 0/1 1/1 * ? *"
     }
   }
 }

@@ -11,7 +11,7 @@ file 'LICENSE.txt', which is part of this source code package.
 # https://presence.atlassian.net/wiki/display/devices/Thermostat
 
 from devices.thermostat.thermostat import ThermostatDevice
-import utilities.analytics as analytics
+import signals.analytics as analytics
 
 # Set the default rounding to 3 numbers.
 from decimal import *

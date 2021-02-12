@@ -106,15 +106,17 @@ class EntryDevice(Device):
         """
         return self.did_change_state(botengine) and not self.is_open(botengine)
 
-    def did_tamper(self, botengine):
+    def last_state_change_timestamp_ms(self, botengine):
         """
-        Did someone tamper with this device
+        Get the last time this entry sensor opened or closed
         :param botengine:
-        :return:
+        :return: timestamp in ms
         """
-        return False
+        if EntryDevice.MEASUREMENT_NAME_STATUS in self.measurements:
+            return self.measurements[EntryDevice.MEASUREMENT_NAME_STATUS][0][1]
 
-    
+        return None
+
     #===========================================================================
     # CSV methods for machine learning algorithm integrations
     #===========================================================================

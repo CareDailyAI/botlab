@@ -100,6 +100,8 @@ class LocationDashboardMicroservice(Intelligence):
         :param card_content:
         :return:
         """
+        botengine.get_logger().info("location_dashboard_microservice.update_dashboard_content(): {}".format(card_content))
+
         if 'content' not in card_content or 'type' not in card_content or 'title' not in card_content:
             botengine.get_logger().warning("location_dashboard_microservice: Missing elements in card_content: {}".format(card_content))
             return
@@ -118,6 +120,148 @@ class LocationDashboardMicroservice(Intelligence):
         for command_id in range(-2, 3):
             self.cancel_alarms(botengine, reference="{}-{}".format(card_content['content']['id'], command_id))
 
+
+        # BEGIN LEGACY 'dashboard' STATE VARIABLE UPGRADE
+        dashboard = botengine.get_ui_content(DASHBOARD_UI_PROPERTY_NAME)
+
+        # 2020.07.28
+        # Remove a botched set of cards as we force-replaced the title.
+        if 'cards' in dashboard:
+            for index, c in enumerate(dashboard['cards']):
+                if 'title' in c:
+                    if c['title'] == "SERVICES":
+                        del dashboard['cards'][index]
+                        break
+
+        if dashboard is None:
+            dashboard = {
+                "cards": []
+            }
+
+        if comment is not None:
+            # Update the content
+
+            # First try to find an existing card to put this content into.
+            focused_card = None
+            for card in dashboard['cards']:
+                if card['title'] == card_content['title']:
+                    focused_card = card
+                    break
+
+            if focused_card is None:
+                # No existing card, so create it.
+                focused_card = {
+                    "type": card_content['type'],
+                    "title": card_content['title'],
+                    "weight": card_content['weight'],
+                    "content": []
+                }
+
+                dashboard['cards'].append(focused_card)
+
+            # Next try to find some existing content to update
+            focused_content_index = None
+            for index, content in enumerate(focused_card['content']):
+                if content['id'] == card_content['content']['id']:
+                    focused_content_index = index
+                    break
+
+            if card_content['content']['id'] not in self.content_id:
+                self.content_id.append(card_content['content']['id'])
+
+            card_content['content']['updated'] = botengine.get_timestamp()
+
+            if focused_content_index is not None:
+                # No existing content, so inject it.
+                focused_card['content'][focused_content_index] = card_content['content']
+
+            else:
+                # Update the existing content
+                focused_card['content'].append(card_content['content'])
+
+        else:
+            # Delete the content from the card, and possibly the card itself.
+            try:
+                for card_index, card in enumerate(list(dashboard['cards'])):
+                    if card['title'] == card_content['title']:
+                        for content_index, content in enumerate(card['content']):
+                            if content['id'] == card_content['content']['id']:
+                                # Delete the content from the card.
+                                del(dashboard['cards'][card_index]['content'][content_index])
+
+                                if card_content['content']['id'] in self.content_id:
+                                    self.content_id.remove(card_content['content']['id'])
+
+                                # Check if the card is empty so we can delete it too.
+                                if len(dashboard['cards'][card_index]['content']) == 0:
+                                    # Delete the card from the dashboard.
+                                    del(dashboard['cards'][card_index])
+
+                                raise StopIteration
+
+            except StopIteration:
+                pass
+
+        # Delete cards that are too old
+        for card_index, card in enumerate(dashboard['cards']):
+            if card['type'] == 0:
+                for content_index, content in enumerate(card['content']):
+                    if 'updated' not in content:
+                        # Delete yourself
+                        content['updated'] = botengine.get_timestamp() - utilities.ONE_MONTH_MS
+
+                    if content['updated'] < (botengine.get_timestamp() - utilities.ONE_WEEK_MS):
+                        # This content is older than a week. Is there anything keeping it alive?
+                        okay = False
+                        if 'alarms' in content:
+                            for alarm_ms in list(content['alarms']):
+                                if int(alarm_ms) > botengine.get_timestamp() - utilities.ONE_DAY_MS:
+                                    # Alarm just triggered or will trigger in the future... you get to live another day
+                                    okay = True
+                                    break
+
+                        if not okay:
+                            # Kill it.
+                            botengine.get_logger().warning("location_dashboard_microservice: Deleting orphaned card '{}' which is older than a week and a day. Please check logic around this.".format(content['comment']))
+                            del(dashboard['cards'][card_index]['content'][content_index])
+
+                            if card_content['content']['id'] in self.content_id:
+                                self.content_id.remove(card_content['content']['id'])
+
+                            # Check if the card is empty so we can delete it too.
+                            if len(dashboard['cards'][card_index]['content']) == 0:
+                                # Delete the card from the dashboard.
+                                del (dashboard['cards'][card_index])
+
+        # After pruning out orphaned cards, find the next alarm to set
+        next_alarm_ms = None
+        for card in dashboard['cards']:
+            for content in card['content']:
+                if 'alarms' in content:
+                    for alarm_ms in list(content['alarms']):
+                        if next_alarm_ms is None:
+                            next_alarm_ms = int(alarm_ms)
+
+                        elif int(alarm_ms) < next_alarm_ms:
+                            next_alarm_ms = int(alarm_ms)
+
+        if next_alarm_ms is not None:
+            botengine.get_logger().info("location_dashboard_microservice: Setting alarm for {} ms from now.".format(int(alarm_ms) - botengine.get_timestamp()))
+            self.set_alarm(botengine, next_alarm_ms)
+
+        # Sort it out
+        for card in dashboard['cards']:
+            card['content'].sort(key=lambda x: (x['weight'], x['updated']))
+        dashboard['cards'].sort(key=lambda x: x['weight'])
+
+        # Save
+        self.parent.set_location_property_separately(botengine, DASHBOARD_UI_PROPERTY_NAME, dashboard)
+
+        ####################################################
+        # Everything above retains backwards compatibility
+        # Everything below lets us execute on 'now' and 'services' UI elements separately.
+        # FOR PF-251, WE JUST DELETE STUFF ABOVE
+
         if card_content['type'] == CARD_TYPE_NOW:
             focused_dashboard = botengine.get_ui_content(NOW_UI_PROPERTY_NAME)
 
@@ -131,6 +275,15 @@ class LocationDashboardMicroservice(Intelligence):
             focused_dashboard = {
                 "cards": []
             }
+
+        # 2020.07.28
+        # Remove a botched set of cards as we force-replaced the title.
+        if 'cards' in focused_dashboard:
+            for index, c in enumerate(focused_dashboard['cards']):
+                if 'title' in c:
+                    if c['title'] == "SERVICES":
+                        del focused_dashboard['cards'][index]
+                        break
 
         if comment is not None:
             # Update the content

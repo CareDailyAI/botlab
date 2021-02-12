@@ -21,6 +21,15 @@
     "dataStreams": [
       {
         "address": "update_dashboard_content"
+      },
+      {
+        "address": "clear_dashboard_headers"
+      },
+      {
+        "address": "resolve_dashboard_header"
+      },
+      {
+        "address": "update_dashboard_header"
       }
     ]
   }

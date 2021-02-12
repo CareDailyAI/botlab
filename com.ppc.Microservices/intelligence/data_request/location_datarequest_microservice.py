@@ -9,21 +9,16 @@ file 'LICENSE.txt', which is part of this source code package.
 
 from intelligence.intelligence import Intelligence
 import utilities.utilities as utilities
-import utilities.analytics as analytics
+import signals.analytics as analytics
+import signals.machinelearning as machinelearning
 import domain
 
 from devices.entry.entry import EntryDevice
 from devices.motion.motion import MotionDevice
 from devices.pressure.pressure import PressurePadDevice
 
-# Reference to use when requesting data so we know the response is ours
-DATA_REQUEST_REFERENCE = "all"
-
 # For debugging, export CSV data to local files
 EXPORT_CSV_TO_LOCAL_FILES = False
-
-# Number of weeks upon initialization that data should be downloaded daily - to improve ML models rapidly during the first few weeks of service.
-NUMBER_OF_WEEKS_TO_DOWNLOAD_DATA_DAILY = 4
 
 # Timer reference to avoid overlapping timers
 TIMER_REFERENCE = "dr"
@@ -60,39 +55,15 @@ class LocationDataRequestMicroservice(Intelligence):
         self.version = None
 
         # Download data
-        self.download_data(botengine)
+        machinelearning.request_data(botengine, location_object=self.parent)
 
     def initialize(self, botengine):
         """
         Initialize
         :param botengine: BotEngine environment
         """
-        # botengine.get_logger().info("LOCATION_DATAREQUEST_MICROSERVICE: LAST CALCULATION AT {}".format(botengine.load_variable("data_request_timestamp")))
-        #
-        # model = botengine.load_variable("inactivity_space")
-        # if model is None:
-        #     botengine.get_logger().error("INACTIVITY SPACE IS NONE")
-        # else:
-        #     botengine.get_logger().info("Inactivity space is okay! len={}".format(len(model)))
-        #
-        # model = botengine.load_variable("away_decision_objects")
-        # if model is None:
-        #     botengine.get_logger().error("'away_decision_objects' IS NONE")
-        # else:
-        #     botengine.get_logger().info("'away_decision_objects' is okay! len={}".format(len(model)))
-        #
-        # model = botengine.load_shared_variable("sleep_model")
-        # if model is None:
-        #     botengine.get_logger().error("'sleep_model' IS NONE")
-        # else:
-        #     botengine.get_logger().info("'sleep_model' is okay! len={}".format(len(model)))
-
-        # Added October 4, 2019
-        if not hasattr(self, 'version'):
-            self.version = None
-
         if self.version != VERSION:
-            self.download_data(botengine, {"force": True})
+            machinelearning.request_data(botengine, location_object=self.parent, force=True)
 
         return
 
@@ -114,11 +85,7 @@ class LocationDataRequestMicroservice(Intelligence):
         """
         if schedule_id == "ML":
             import random
-            self.start_timer_ms(botengine, random.randint(0, utilities.ONE_HOUR_MS * 6), reference=TIMER_REFERENCE)
-
-            # if self.born_on > botengine.get_timestamp() - (utilities.ONE_WEEK_MS * NUMBER_OF_WEEKS_TO_DOWNLOAD_DATA_DAILY):
-            #     import random
-            #     self.start_timer_ms(botengine, random.randint(utilities.ONE_DAY_MS, utilities.ONE_DAY_MS + (utilities.ONE_HOUR_MS * 6)), reference=TIMER_REFERENCE)
+            self.start_timer_ms(botengine, random.randint(0, utilities.ONE_HOUR_MS * 12), reference=TIMER_REFERENCE)
 
     def timer_fired(self, botengine, argument):
         """
@@ -126,9 +93,9 @@ class LocationDataRequestMicroservice(Intelligence):
         :param botengine: Current botengine environment
         :param argument: Argument applied when setting the timer
         """
-        self.download_data(botengine)
+        machinelearning.request_data(botengine, location_object=self.parent)
 
-    def download_data(self, botengine, content=None):
+    def download_data(self, botengine, content):
         """
         This is data stream message friendly to allow external microservices to request all data for recalculating
         models.
@@ -138,14 +105,31 @@ class LocationDataRequestMicroservice(Intelligence):
         :return:
         """
         self.version = VERSION
-        force = False
-        if content is not None:
-            if 'force' in content:
-                force = content['force']
 
-        if self.last_download < botengine.get_timestamp() - utilities.ONE_HOUR_MS or force:
-            self.last_download = botengine.get_timestamp()
-            botengine.get_logger().info("location_datarequest_microservice.download_data() - Requesting data")
+        force = False
+        if 'force' in content:
+            force = content['force']
+
+        reference = machinelearning.DATAREQUEST_REFERENCE_ALL
+
+        oldest_timestamp_ms = botengine.get_timestamp() - utilities.ONE_MONTH_MS * 6
+        if 'oldest_timestamp_ms' in content:
+            if content['oldest_timestamp_ms'] is not None:
+                oldest_timestamp_ms = int(content['oldest_timestamp_ms'])
+
+                if 'reference' in content:
+                    if content['reference'] == machinelearning.DATAREQUEST_REFERENCE_ALL:
+                        botengine.get_logger().error("location_datarequest_microservice: oldest_timestamp_ms={} but the reference={}; we won't process this data request because it's dangerous.".format(oldest_timestamp_ms, content['reference']))
+                        return
+
+        if 'reference' in content:
+            reference = content['reference']
+
+        if (self.last_download < botengine.get_timestamp() - utilities.ONE_HOUR_MS) or (reference != machinelearning.DATAREQUEST_REFERENCE_ALL) or force:
+            if reference == machinelearning.DATAREQUEST_REFERENCE_ALL:
+                self.last_download = botengine.get_timestamp()
+
+            botengine.get_logger().info("location_datarequest_microservice.download_data() - Requesting data for reference {}".format(reference))
 
             # Request all data from devices that capture interesting information
             for device_id in self.parent.devices:
@@ -154,12 +138,12 @@ class LocationDataRequestMicroservice(Intelligence):
                 if DOWNLOAD_FOCUSED_DEVICES_ONLY:
                     # Download focused devices only based on the list below.
                     if isinstance(focused_object, MotionDevice) or isinstance(focused_object, EntryDevice) or isinstance(focused_object, PressurePadDevice):
-                        focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, reference=DATA_REQUEST_REFERENCE)
+                        focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, oldest_timestamp_ms=oldest_timestamp_ms, reference=reference)
 
                 else:
                     # Download any device with a focused measurements parameters list.
                     if hasattr(focused_object, 'MEASUREMENT_PARAMETERS_LIST'):
-                        focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, reference=DATA_REQUEST_REFERENCE)
+                        focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, oldest_timestamp_ms=oldest_timestamp_ms, reference=reference)
 
         else:
             botengine.get_logger().info("location_datarequest_microservice: Attempted to download_data(), but we just did so recently so skipping this request.")
@@ -197,7 +181,7 @@ class LocationDataRequestMicroservice(Intelligence):
         :param reference: Optional reference passed into botengine.request_data(..)
         :param csv_dict: { device_object: 'csv data string' }
         """
-        if reference == DATA_REQUEST_REFERENCE:
+        if reference == machinelearning.DATAREQUEST_REFERENCE_ALL:
             botengine.save_variable("data_request_timestamp", botengine.get_timestamp())
 
             self.parent.narrate(botengine,

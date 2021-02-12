@@ -13,7 +13,7 @@ from devices.device import send_command_reliably
 from devices.device import cancel_reliable_command
 
 import utilities.utilities as utilities
-import utilities.analytics as analytics
+import signals.analytics as analytics
 
 # Element index numbers for our last_command_* tuples
 COMMAND_VALUE_INDEX = 0

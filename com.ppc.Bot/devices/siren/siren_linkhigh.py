@@ -101,6 +101,14 @@ class LinkhighSirenDevice(SirenDevice):
 
         botengine.send_commands(self.device_id, [param_sound, param_strobe, param_duration], command_timeout_ms=5000)
 
+    def force_silence(self, botengine):
+        """
+        Force silence, even if this is locked by some other service.
+        :param botengine:
+        :return:
+        """
+        self.play_sound(botengine, self.SOUNDS['silence'], False, 0, microservice_identifier=self.locked_microservice)
+
     def silence(self, botengine, microservice_identifier=""):
         """
         Silence
@@ -136,7 +144,7 @@ class LinkhighSirenDevice(SirenDevice):
             self.play_sound(botengine, self.SOUNDS['alarm'], True, 900, microservice_identifier=microservice_identifier)
 
         else:
-            self.play_sound(botengine, self.SOUNDS['alarm'], False, 0, microservice_identifier=microservice_identifier)
+            self.play_sound(botengine, self.SOUNDS['silence'], False, 0, microservice_identifier)
 
     def disarmed(self, botengine, microservice_identifier=""):
         """

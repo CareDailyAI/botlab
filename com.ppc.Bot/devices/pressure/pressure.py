@@ -84,6 +84,13 @@ class PressurePadDevice(Device):
 
         return Device.is_goal_id(self, target_goal_id)
 
+    def is_on_bed(self, botengine=None):
+        """
+        Is this pressure pad on the bed?
+        :return:
+        """
+        return self.is_goal_id(PressurePadDevice.GOAL_PRESSUREPAD_BED)
+
     #===========================================================================
     # Attributes
     #===========================================================================

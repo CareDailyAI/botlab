@@ -12,6 +12,7 @@ from intelligence.intelligence import Intelligence
 import domain
 import json
 import utilities.utilities as utilities
+import signals.analytics as analytics
 
 # Section weights
 WEIGHT_ALERTS = 0
@@ -251,14 +252,15 @@ class LocationDailyReportMicroservice(Intelligence):
         :return:
         """
         # If we haven't emailed the daily report yet because the person hasn't gone to sleep yet, email it now.
-        if self.last_emailed_report_ms != self.current_report_ms:
-            self.last_emailed_report_ms = self.current_report_ms
-            if "SLEEP" not in self.parent.occupancy_status and "VACATION" not in self.parent.occupancy_status:
-                self.add_entry(botengine, SECTION_ID_SLEEP, comment=_("Hasn't gone to sleep by midnight."), include_timestamp=True)
-            self.email_report(botengine)
+        if self.current_report_ms is not None:
+            if self.last_emailed_report_ms != self.current_report_ms:
+                self.last_emailed_report_ms = self.current_report_ms
+                if "SLEEP" not in self.parent.occupancy_status and "VACATION" not in self.parent.occupancy_status:
+                    self.add_entry(botengine, SECTION_ID_SLEEP, comment=_("Hasn't gone to sleep by midnight."), include_timestamp=True)
+                self.email_report(botengine)
 
         # Create a new report
-        self.current_report_ms = int(botengine.get_timestamp() / 1000.0) * 1000
+        self.current_report_ms = self._get_todays_timestamp(botengine)
         report = {}
 
         name = self._get_resident_name(botengine)
@@ -271,6 +273,13 @@ class LocationDailyReportMicroservice(Intelligence):
         report['created_ms'] = botengine.get_timestamp()
         report['sections'] = []
         self.parent.set_location_property_separately(botengine, DAILY_REPORT_ADDRESS, report, overwrite=True, timestamp_ms=self.current_report_ms)
+
+        analytics.track(botengine,
+                        self.parent,
+                        "daily_report_initialized",
+                        properties={
+                            "timestamp_ms": self.current_report_ms
+                        })
 
         # Add our first entry if possible.
         if self.started_sleeping_ms is not None and "SLEEP" in self.parent.occupancy_status:
@@ -323,6 +332,16 @@ class LocationDailyReportMicroservice(Intelligence):
         :param timestamp_override_ms: Optional timestamp in milliseconds to override the current time when citing the timestamp with include_timestamp=True
         """
         botengine.get_logger().info("location_dailyreport_microservice.add_entry(): Current report timestamp is {}".format(self.current_report_ms))
+
+        # Make sure our midnight schedule fired properly.
+        # We added a 1 hour buffer for backwards compatibility, because the self.current_report_ms was previously being set to the current botengine.get_timestamp()
+        # which was some time after midnight.
+        if self.current_report_ms is None:
+            self.midnight_fired(botengine)
+
+        if self._get_todays_timestamp(botengine) < (self.current_report_ms - utilities.ONE_HOUR_MS):
+            self.midnight_fired(botengine)
+
         report = botengine.get_ui_content(DAILY_REPORT_ADDRESS, timestamp_ms=self.current_report_ms)
         if report is None:
             botengine.get_logger().info("location_dailyreport_microservice: There is currently no active daily report.")
@@ -581,7 +600,6 @@ class LocationDailyReportMicroservice(Intelligence):
         :param botengine:
         :return:
         """
-        # TODO
         return
 
     def _get_section_object(self, botengine, report, section_id):
@@ -630,3 +648,10 @@ class LocationDailyReportMicroservice(Intelligence):
 
         return name
 
+    def _get_todays_timestamp(self, botengine):
+        """
+        Get the timestamp for midnight last night
+        :param botengine:
+        :return:
+        """
+        return self.parent.timezone_aware_datetime_to_unix_timestamp(botengine, self.parent.get_midnight_last_night(botengine))

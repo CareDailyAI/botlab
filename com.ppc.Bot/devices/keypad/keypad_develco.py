@@ -11,7 +11,7 @@ from devices.keypad.keypad import KeypadDevice
 import utilities.utilities as utilities
 
 # Grace period that your code will still work before needing to type it in again
-CODE_GRACE_PERIOD_MS = utilities.ONE_SECOND_MS * 10
+CODE_GRACE_PERIOD_MS = utilities.ONE_SECOND_MS * 20
 
 # Helper enums
 VALUE = 0
@@ -96,7 +96,9 @@ class DevelcoKeypadDevice(KeypadDevice):
         :return:
         """
         if self.did_authenticate(botengine):
-            return self.measurements[self.MEASUREMENT_NAME_ARM_MODE][0][0] == "Disarm"
+            if self.MEASUREMENT_NAME_ARM_MODE in self.measurements:
+                return self.measurements[self.MEASUREMENT_NAME_ARM_MODE][0][0] == "Disarm"
+        return False
 
     def did_away(self, botengine):
         """
@@ -105,7 +107,9 @@ class DevelcoKeypadDevice(KeypadDevice):
         :return:
         """
         if self.did_authenticate(botengine):
-            return self.measurements[self.MEASUREMENT_NAME_ARM_MODE][0][0] == "ArmAllZones"
+            if self.MEASUREMENT_NAME_ARM_MODE in self.measurements:
+                return self.measurements[self.MEASUREMENT_NAME_ARM_MODE][0][0] == "ArmAllZones"
+        return False
 
     def did_stay(self, botengine):
         """
@@ -114,8 +118,30 @@ class DevelcoKeypadDevice(KeypadDevice):
         :return:
         """
         if self.did_authenticate(botengine):
-            return self.measurements[self.MEASUREMENT_NAME_ARM_MODE][0][0] == "ArmDay_HomeZonesOnly"
+            if self.MEASUREMENT_NAME_ARM_MODE in self.measurements:
+                return self.measurements[self.MEASUREMENT_NAME_ARM_MODE][0][0] == "ArmDay_HomeZonesOnly"
+        return False
 
+    def recent_mode_change_attempts(self, botengine, minutes=5):
+        """
+        Number of attempts at changing the mode over the past few minutes
+        :param botengine:
+        :param minutes: Minutes to look back in time for mode change attempts
+        :return:
+        """
+        total = 0
+        if self.MEASUREMENT_NAME_ARM_MODE in self.measurements:
+            botengine.get_logger().info("\tarmMode parameters = {}".format(self.measurements[self.MEASUREMENT_NAME_ARM_MODE]))
+            for m in self.measurements[self.MEASUREMENT_NAME_ARM_MODE]:
+                # measurement = (value, timestamp)
+                if m[1] >= botengine.get_timestamp() - (utilities.ONE_MINUTE_MS * minutes):
+                    # Out of measurements
+                    total += 1
+
+                else:
+                    break
+
+        return total
 
     def is_silent(self, botengine):
         """
@@ -123,12 +149,12 @@ class DevelcoKeypadDevice(KeypadDevice):
         :param botengine:
         :return:
         """
-        if 'armMode' in self.measurements:
-            if len(self.measurements['armMode']) > 1:
-                if self.measurements['armMode'][1][VALUE] == "ArmNight_SleepZonesOnly":
+        if self.MEASUREMENT_NAME_ARM_MODE in self.measurements:
+            if len(self.measurements[self.MEASUREMENT_NAME_ARM_MODE]) > 1:
+                if self.measurements[self.MEASUREMENT_NAME_ARM_MODE][1][VALUE] == "ArmNight_SleepZonesOnly":
                     # Silent button was pressed last before the current button
-                    if botengine.get_timestamp() - self.measurements['armMode'][1][TIMESTAMP] < CODE_GRACE_PERIOD_MS:
-                        # And it's within the past 10 seconds
+                    if botengine.get_timestamp() - self.measurements[self.MEASUREMENT_NAME_ARM_MODE][1][TIMESTAMP] < CODE_GRACE_PERIOD_MS:
+                        # And it's within the past few seconds
                         return True
 
         return False
@@ -204,7 +230,8 @@ class DevelcoKeypadDevice(KeypadDevice):
                         recent_param = p
 
         if botengine.get_timestamp() - recent_ts <= CODE_GRACE_PERIOD_MS:
-            return self.measurements[recent_param][0][VALUE] % 100 == DevelcoKeypadDevice.CODE_TYPE_KEYCODE
+            code_type = self.measurements[recent_param][0][VALUE] % 100
+            return code_type == DevelcoKeypadDevice.CODE_TYPE_KEYCODE or code_type == DevelcoKeypadDevice.CODE_TYPE_COMBO
 
         return False
 
@@ -228,7 +255,33 @@ class DevelcoKeypadDevice(KeypadDevice):
                         recent_param = p
 
         if botengine.get_timestamp() - recent_ts <= CODE_GRACE_PERIOD_MS:
-            return self.measurements[recent_param][0][VALUE] % 100 == DevelcoKeypadDevice.CODE_TYPE_KEYCARD
+            code_type = self.measurements[recent_param][0][VALUE] % 100
+            return code_type == DevelcoKeypadDevice.CODE_TYPE_KEYCARD or code_type == DevelcoKeypadDevice.CODE_TYPE_COMBO
+
+        return False
+
+    def did_unknown_authenticate(self, botengine):
+        """
+        User authenticated but the authentication method was unknown
+        :param botengine:
+        :return: True if the user is authenticated but the method (code or card) is unknown
+        """
+        recent_param = None
+        recent_ts = 0
+
+        # Find the most recent authenticated codeType.# parameter
+        for p in self.measurements:
+            if self.MEASUREMENT_NAME_CODE_TYPE in p:
+                if self.measurements[p][0][VALUE] > 0:
+                    # Authenticated
+                    if self.measurements[p][0][TIMESTAMP] > recent_ts:
+                        # Recent authentication
+                        recent_ts = self.measurements[p][0][TIMESTAMP]
+                        recent_param = p
+
+        if botengine.get_timestamp() - recent_ts <= CODE_GRACE_PERIOD_MS:
+            code_type = self.measurements[recent_param][0][VALUE] % 100
+            return code_type == DevelcoKeypadDevice.CODE_TYPE_COMBO_UNKNOWN
 
         return False
 

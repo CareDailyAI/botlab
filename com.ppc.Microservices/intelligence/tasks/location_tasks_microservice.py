@@ -12,9 +12,9 @@ from devices.entry.entry import EntryDevice
 
 import domain
 import utilities.utilities as utilities
-import utilities.tasks as tasks
-import utilities.dailyreport as dailyreport
-import utilities.analytics as analytics
+import signals.tasks as tasks
+import signals.dailyreport as dailyreport
+import signals.analytics as analytics
 
 class LocationTasksMicroservice(Intelligence):
     """
@@ -134,24 +134,26 @@ class LocationTasksMicroservice(Intelligence):
         """
         if isinstance(device_object, EntryDevice):
             already_created = botengine.load_variable("task.__init__")
-            location_property = self.parent.get_location_property("task.__init__")
+            location_property = self.parent.get_location_property(botengine, "task.__init__")
 
             if already_created is None and location_property is None:
                 botengine.save_variable("task.__init__", True)
                 self.parent.set_location_property(botengine, "task.__init__", True, track=False)
-                tasks.update_task(botengine,
-                                  location_object=self.parent,
-                                  task_id="__init__",
-                                  title=_("Learn how to create tasks."),
-                                  comment=_("Use {} to easily create and assign household tasks to family and friends!\n"
-                                            "\n"
-                                            "\t1. Tap the [+] button on your Dashboard.\n"
-                                            "\t2. Select 'Add a Task'.\n"
-                                            "\t3. Fill out details of the task.\n"
-                                            "\n"
-                                            "To assign a task to someone, first invite them to your home. Set the Smart Home Access to anything except 'Control Nothing' and set Alert Texting to anything except 'No Alerts'.\n"
-                                            "\n"
-                                            "People can use their {} app to mark their tasks complete, and you will get notified. Enjoy!").format(domain.SERVICE_NAME, domain.SERVICE_NAME))
+                if hasattr(domain, "CARE_SERVICES"):
+                    if domain.CARE_SERVICES:
+                        tasks.update_task(botengine,
+                                          location_object=self.parent,
+                                          task_id="__init__",
+                                          title=_("Learn how to create tasks."),
+                                          comment=_("Use {} to easily create and assign household tasks to family and friends!\n"
+                                                    "\n"
+                                                    "\t1. Tap the [+] button on your Dashboard.\n"
+                                                    "\t2. Select 'Add a Task'.\n"
+                                                    "\t3. Fill out details of the task.\n"
+                                                    "\n"
+                                                    "To assign a task to someone, first invite them to your home. Set their Smart Home Access to 'Allow App Access' and Alert Texting to anything except 'No Alerts'.\n"
+                                                    "\n"
+                                                    "People can use their {} app to mark their tasks complete, and you will get notified. Enjoy!").format(domain.SERVICE_NAME, domain.SERVICE_NAME))
 
         return
 

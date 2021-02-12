@@ -1,0 +1,11 @@
+{
+  "version": {
+    "triggerParameters": [
+      "vibrationStatus",
+      "movementStatus",
+      "vibrationSensitivity",
+      "batteryVoltage",
+      "degC"
+    ]
+  }
+}

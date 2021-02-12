@@ -27,6 +27,44 @@ COMMAND_SET_STATUS_CRITICAL = 2
 # Data Stream Address
 DATASTREAM_ADDRESS = "update_dashboard_content"
 
+
+# # Data Stream Content
+# DATASTREAM_CONTENT = {
+#     "type": 0,
+#     "title": "NOW",
+#     "weight": 0,
+#     "content": {
+#         "status": 0,
+#         "comment": "Left the house once today.",
+#         "weight": 25,
+#         "id": "leave",
+#         "icon": "house-leave",
+#         "icon_font": "far",
+#         "alarms": {
+#             int(time.time() * 1000) + (ONE_SECOND_MS * 600): COMMAND_DELETE,
+#         }
+#     }
+# }
+
+
+# # Data Stream Content
+# DATASTREAM_CONTENT = {
+#     "type": 0,
+#     "title": "NOW",
+#     "weight": 0,
+#     "content": {
+#         "status": 0,
+#         "comment": "81% sleep score.",
+#         "weight": 20,
+#         "id": "sleep",
+#         "icon": "snooze",
+#         "icon_font": "far",
+#         "alarms": {
+#             int(time.time() * 1000) + (ONE_SECOND_MS * 600): COMMAND_DELETE,
+#         }
+#     }
+# }
+
 # Data Stream Content
 DATASTREAM_CONTENT = {
     "type": 0,
@@ -34,13 +72,13 @@ DATASTREAM_CONTENT = {
     "weight": 0,
     "content": {
         "status": 0,
-        "comment": "Hello World",
-        "weight": 0,
-        "id": "installed",
+        "comment": "Judy Bessee reached out today.",
+        "weight": 30,
+        "id": "temporary",
+        "icon": "comment-smile",
+        "icon_font": "far",
         "alarms": {
-            int(time.time() * 1000) + (ONE_SECOND_MS * 30): COMMAND_SET_STATUS_CRITICAL,
-            int(time.time() * 1000) + (ONE_SECOND_MS * 45): COMMAND_DELETE,
-            int(time.time() * 1000) + ONE_SECOND_MS * 15 : COMMAND_SET_STATUS_WARNING,
+            int(time.time() * 1000) + (ONE_SECOND_MS * 600): COMMAND_DELETE,
         }
     }
 }

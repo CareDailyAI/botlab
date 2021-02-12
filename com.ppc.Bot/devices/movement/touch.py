@@ -1,5 +1,6 @@
 '''
 Created on May 6, 2017
+Deprecated on October 27, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
@@ -11,17 +12,21 @@ from devices.device import Device
 
 
 class TouchDevice(Device):
-    """Touch Sensor"""
+    """
+    Touch Sensor
+    DEPRECATED. Replaced by vibration.linkhigh_vibration.py
+    """
     
-    # List of Device Types this class is compatible with
-    DEVICE_TYPES = [10019]
-
-    # Measurement name for the button status
-    MEASUREMENT_NAME_VIBRATION_STATUS = 'vibrationStatus'
-
-    MEASUREMENT_PARAMETERS_LIST = [
-        MEASUREMENT_NAME_VIBRATION_STATUS
-    ]
+    # # List of Device Types this class is compatible with
+    # DEVICE_TYPES = [10019]
+    #
+    # # Measurement name for the button status
+    # MEASUREMENT_NAME_VIBRATION_STATUS = 'vibrationStatus'
+    #
+    # MEASUREMENT_PARAMETERS_LIST = [
+    #     MEASUREMENT_NAME_VIBRATION_STATUS
+    # ]
+    #
 
     # Goals / Behaviors
     GOAL_ALERT_ON_EVERY_TOUCH = 20
@@ -46,25 +51,3 @@ class TouchDevice(Device):
         :return: the font icon name of this device type
         """
         return "touch"
-
-    def did_tamper(self, botengine):
-        """
-        Did someone tamper with this device
-        :param botengine:
-        :return:
-        """
-        return False
-
-    def did_start_moving(self, botengine):
-        """
-        :param botengine: BotEngine environment
-        :return: True if the sensor started moving
-        """
-        return self.MEASUREMENT_NAME_VIBRATION_STATUS in self.last_updated_params and self.measurements[self.MEASUREMENT_NAME_VIBRATION_STATUS][0][0]
-
-    def did_stop_moving(self, botengine):
-        """
-        :param botengine:
-        :return: True if the sensor stopped moving
-        """
-        return self.MEASUREMENT_NAME_VIBRATION_STATUS in self.last_updated_params and not self.measurements[self.MEASUREMENT_NAME_VIBRATION_STATUS][0][0]

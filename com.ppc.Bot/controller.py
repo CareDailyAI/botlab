@@ -17,7 +17,6 @@ from devices.entry.entry import EntryDevice
 from devices.entry.entry_develco import DevelcoEntryDevice
 from devices.environment.temperature import TemperatureDevice
 from devices.environment.temperaturehumidity import TemperatureHumidityDevice
-from devices.gateway.gateway_peoplepower_xseries import PeoplePowerXSeriesDevice
 from devices.gateway.gateway_peoplepower_edge import PeoplePowerEdgeDevice
 from devices.gateway.gateway_peoplepower_mseries import PeoplePowerMSeriesDevice
 from devices.gateway.gateway_qorvo_lcgw import QorvoLcgwGatewayDevice
@@ -27,19 +26,19 @@ from devices.light.light import LightDevice
 from devices.light.lightswitch_ge import LightswitchGeDevice
 from devices.motion.motion import MotionDevice
 from devices.motion.motion_develco import DevelcoMotionDevice
-from devices.movement.touch import TouchDevice
 from devices.siren.siren_linkhigh import LinkhighSirenDevice
 from devices.siren.siren_smartenit_zbalarm import SmartenitZbalarmDevice
 from devices.siren.siren_develco import DevelcoSirenDevice
 from devices.smartplug.smartplug import SmartplugDevice
-from devices.smartplug.smartplug_centralite_3series import Centralite3SeriesSmartplugDevice  # TODO how do we cast objects that are already created with this into a different class?
 from devices.thermostat.thermostat_centralite_pearl import ThermostatCentralitePearlDevice
 from devices.thermostat.thermostat_honeywell_lyric import ThermostatHoneywellLyricDevice
 from devices.thermostat.thermostat_sensibo_sky import ThermostatSensiboSkyDevice
 from devices.thermostat.thermostat_ecobee import ThermostatEcobeeDevice
 from devices.thermostat.thermostat_emerson_thermostat import ThermostatEmersonDevice
 from devices.touchpad.touchpad_peoplepower import PeoplePowerTouchpadDevice
-from devices.button.button import ButtonDevice
+from devices.button.button_multi_develco import DevelcoMultiButtonDevice
+from devices.button.button_panic_develco import DevelcoPanicButtonDevice
+from devices.button.button_multi_linkhigh import LinkHighMultiButtonDevice
 from devices.lock.lock import LockDevice
 from devices.gas.carbon_monoxide import CarbonMonoxideDevice
 from devices.pictureframe.pictureframe_peoplepower_ios import PeoplePowerPictureFrameIosDevice
@@ -49,15 +48,28 @@ from devices.pressure.pressure import PressurePadDevice
 from devices.keypad.keypad_develco import DevelcoKeypadDevice
 from devices.leak.leak_develco import DevelcoLeakDevice
 from devices.smartplug.smartplug_develco import DevelcoSmartplugDevice
+from devices.io.io import IoDevice
+from devices.vibration.vibration_develco import DevelcoVibrationDevice
+from devices.vibration.vibration_linkhigh import LinkHighVibrationDevice
+
+# Deprecated:
+from devices.smartplug.smartplug_centralite_3series import Centralite3SeriesSmartplugDevice
+from devices.button.button import ButtonDevice
+from devices.button.button_develco import DevelcoButtonDevice
+from devices.button.button_linkhigh import LinkHighButtonDevice
+from devices.gateway.gateway_peoplepower_xseries import PeoplePowerXSeriesDevice
+from devices.movement.touch import TouchDevice
 
 class Controller:
-    """This is the main class that will coordinate all our sensors and behavior"""
+    """
+    This is the main class that will coordinate all our sensors and behavior
+    """
     
     def __init__(self):
         """
         Constructor
         """
-        # A list of our locations, where the key is the location ID. Most users only have 1 location, but our architecture supports multiple so we prepare for that
+        # A list of our locations, where the key is the location ID.
         self.locations = {}
             
         # A map of device_id : locationId
@@ -65,8 +77,7 @@ class Controller:
 
         # Last execution timestamp for debugging support
         self.exec_timestamp = 0
-        
-        
+
     def initialize(self, botengine, initialize_everything=True):
         """
         Initialize the controller.
@@ -102,7 +113,6 @@ class Controller:
         logger.info("self.locations: " + str(self.locations))
         logger.info("self.location_devices: " + str(self.location_devices))
         logger.info("-----")
-            
     
     def track_new_and_deleted_devices(self, botengine, precache_measurements=True):
         """
@@ -153,6 +163,11 @@ class Controller:
                 device_object = self.get_device(device_id)
 
                 if device_object is not None:
+                    if not hasattr(device_object, 'device_type'):
+                        self.delete_device(botengine, device_id)
+                        device_object = None
+                        continue
+
                     if device_type != device_object.device_type:
                         # The device type changed. We have to restart this device.
                         # This happens when a device gets registered to our cloud and looks like some device type,
@@ -181,9 +196,6 @@ class Controller:
                     elif device_type in PeoplePowerMSeriesDevice.DEVICE_TYPES:
                         device_object = PeoplePowerMSeriesDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
-                    elif device_type in PeoplePowerXSeriesDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerXSeriesDevice(botengine, device_id, device_type, device_desc, precache_measurements)
-
                     elif device_type in PeoplePowerEdgeDevice.DEVICE_TYPES:
                         device_object = PeoplePowerEdgeDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
@@ -204,10 +216,7 @@ class Controller:
                         
                     elif device_type in MotionDevice.DEVICE_TYPES:
                         device_object = MotionDevice(botengine, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in TouchDevice.DEVICE_TYPES:
-                        device_object = TouchDevice(botengine, device_id, device_type, device_desc, precache_measurements)
-                        
+
                     elif device_type in SmartenitZbalarmDevice.DEVICE_TYPES:
                         device_object = SmartenitZbalarmDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
@@ -232,8 +241,14 @@ class Controller:
                     elif device_type in PeoplePowerTouchpadDevice.DEVICE_TYPES:
                         device_object = PeoplePowerTouchpadDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
-                    elif device_type in ButtonDevice.DEVICE_TYPES:
-                        device_object = ButtonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                    elif device_type in LinkHighMultiButtonDevice.DEVICE_TYPES:
+                        device_object = LinkHighMultiButtonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoPanicButtonDevice.DEVICE_TYPES:
+                        device_object = DevelcoPanicButtonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoMultiButtonDevice.DEVICE_TYPES:
+                        device_object = DevelcoMultiButtonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in LockDevice.DEVICE_TYPES:
                         device_object = LockDevice(botengine, device_id, device_type, device_desc, precache_measurements)
@@ -273,6 +288,15 @@ class Controller:
 
                     elif device_type in DevelcoSmartplugDevice.DEVICE_TYPES:
                         device_object = DevelcoSmartplugDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in IoDevice.DEVICE_TYPES:
+                        device_object = IoDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in DevelcoVibrationDevice.DEVICE_TYPES:
+                        device_object = DevelcoVibrationDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in LinkHighVibrationDevice.DEVICE_TYPES:
+                        device_object = LinkHighVibrationDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     else:
                         botengine.get_logger().warn("Unsupported device type: " + str(device_type) + " ('" + device_desc + "')")
@@ -320,7 +344,26 @@ class Controller:
     
             if not found:
                 self.delete_device(botengine, device_id)
-    
+
+            else:
+                # Delete deprecated objects
+                if isinstance(self.locations[self.location_devices[device_id]].devices[device_id], ButtonDevice):
+                    self.delete_device(botengine, device_id)
+
+                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], LinkHighButtonDevice):
+                    self.delete_device(botengine, device_id)
+
+                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], DevelcoButtonDevice):
+                    self.delete_device(botengine, device_id)
+
+                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], Centralite3SeriesSmartplugDevice):
+                    self.delete_device(botengine, device_id)
+
+                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], PeoplePowerXSeriesDevice):
+                    self.delete_device(botengine, device_id)
+
+                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], TouchDevice):
+                    self.delete_device(botengine, device_id)
 
     def sync_device(self, botengine, location_id, device_id, device_object):
         """
@@ -473,7 +516,7 @@ class Controller:
         :param mode: Mode of the home, like "HOME" or "AWAY"
         :param location_id: Location that had its mode changed
         """
-        botengine.get_logger().info("Controller: Sync mode for location " + str(location_id))
+        botengine.get_logger().info("Controller: Received mode '{}'".format(mode))
         if location_id not in self.locations:
             self.locations[location_id] = Location(botengine, location_id)
 

@@ -29,7 +29,7 @@ class DevelcoSquidlinkDevice(GatewayDevice):
     """
         
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [36]
+    DEVICE_TYPES = [36, 37]
         
     def get_device_type_name(self):
         """
@@ -60,6 +60,7 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         except:
             bundle = None
 
+        import json
         botengine.send_command(self.device_id, "stream", json.dumps(content), index=bundle)
 
     def did_switch_to_battery_power(self, botengine):
@@ -69,6 +70,7 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         if MEASUREMENT_POWER_STATUS in self.last_updated_params:
+            botengine.get_logger().info("gateway_develco_squidlink: powerStatus={}".format(self.measurements[MEASUREMENT_POWER_STATUS][0][0]))
             return self.measurements[MEASUREMENT_POWER_STATUS][0][0] == POWER_STATUS_BATTERY
 
         return False
@@ -80,6 +82,7 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         if MEASUREMENT_POWER_STATUS in self.last_updated_params:
+            botengine.get_logger().info("gateway_develco_squidlink: powerStatus={}".format(self.measurements[MEASUREMENT_POWER_STATUS][0][0]))
             return self.measurements[MEASUREMENT_POWER_STATUS][0][0] == POWER_STATUS_EXTERNAL
 
         return False
@@ -102,6 +105,7 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         if MEASUREMENT_CELL_STATUS in self.last_updated_params:
+            botengine.get_logger().info("gateway_develco_squidlink: cellStatus={}".format(self.measurements[MEASUREMENT_CELL_STATUS][0][0]))
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_CONNECTED
 
         return False
@@ -113,6 +117,7 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         if MEASUREMENT_CELL_STATUS in self.last_updated_params:
+            botengine.get_logger().info("gateway_develco_squidlink: cellStatus={}".format(self.measurements[MEASUREMENT_CELL_STATUS][0][0]))
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_CONNECTED
 
         return False

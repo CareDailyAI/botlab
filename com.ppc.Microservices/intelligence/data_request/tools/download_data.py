@@ -11,7 +11,8 @@ DATASTREAM_ADDRESS = "download_data"
 
 # Data Stream Content
 DATASTREAM_CONTENT = {
-    "force": True
+    "force": True,
+    "reference": "all"
 }
 
 
