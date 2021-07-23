@@ -7,11 +7,11 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 '''
 
+import localization
+
 import json
 import utilities.utilities as utilities
-import domain
-
-import localization
+import properties
 
 from controller import Controller
 
@@ -33,9 +33,14 @@ def run(botengine):
     # Grab our non-volatile memory
     controller = load_controller(botengine)
 
+    # The controller stores the bot's last version number.
+    # If this is a new bot version, this evaluation will automatically trigger the new_version() event in all microservices.
+    # Note that the new_version() event is also a bot trigger, so it executes after the initialize() event.
+    new_version_executed = controller.evaluate_version(botengine)
+
     # RESET
-    if trigger_type == 0:
-        # Reset or new version!
+    if trigger_type == 0 and not new_version_executed:
+        # Manual reset or new version trigger
         controller.new_version(botengine)
 
     # SCHEDULE TRIGGER
@@ -183,8 +188,12 @@ def run(botengine):
             if 'feed' in data_stream:
                 content = data_stream['feed']
             else:
-                content = None
-            
+                content = {}
+
+            if 'fromAppInstanceId' in data_stream:
+                if type(content) == type({}):
+                    content['sender_bot_id'] = data_stream['fromAppInstanceId']
+
             if address != "schedule":
                 controller.sync_datastreams(botengine, address, content)
             else:

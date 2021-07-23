@@ -9,11 +9,10 @@ file 'LICENSE.txt', which is part of this source code package.
 
 import gettext
 import os
-import domain
 
 # Set some default language here to allow the system to initialize (uncomment the next 2 lines)
 #localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locale')
-#gettext.translation('messages', localedir, languages=[domain.DEFAULT_LANGUAGE]).install()
+#gettext.translation('messages', localedir, languages=[properties.get_property(None, "DEFAULT_LANGUAGE"]).install()
 
 def initialize(botengine):
     """
@@ -24,7 +23,7 @@ def initialize(botengine):
 
     # lang = botengine.lang
     # if lang is None:
-    #     lang = domain.DEFAULT_LANGUAGE
+    #     lang = properties.get_property(botengine, "DEFAULT_LANGUAGE")
 
     # Add any code below to import and apply localization one time.
     # For example, uncomment the next 2 lines of code to add in localization.

@@ -17,7 +17,7 @@ class TemperatureHumidityDevice(Device):
     """
     
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [10034]
+    DEVICE_TYPES = [10034, 9134]
 
     # Goals
     GOAL_MONITOR_HOUSE = 30

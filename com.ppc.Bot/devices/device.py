@@ -101,6 +101,9 @@ class Device:
         # self.measurements["parameterName"] = [ ( newest_value, newest_timestamp ), ( value, timestamp ), ... ]
         self.measurements = {}
 
+        # Last alert received { "alert_type": { "parameter_one" : "value_one", "timestamp_ms": timestamp_ms_set_locally } }
+        self.last_alert = None
+
         # Spaces this device is associated with. For example:
         # "spaces": [
         #               {
@@ -135,7 +138,6 @@ class Device:
 
         # True if we have a low battery
         self.low_battery = False
-
         
         # RSSI averaging elements
         self._rssi_elements = []
@@ -204,6 +206,7 @@ class Device:
 
         The correct behavior is to create the object, then initialize() it every time you want to use it in a new bot execution environment
         """
+
         if str(self.device_type) in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES']:
             # Synchronize microservices
             changed = False
@@ -324,6 +327,16 @@ class Device:
         :param alert_type: Type of alert
         :param alert_params: Dictionary of alert parameters
         """
+        # Added May 4, 2021
+        if not hasattr(self, "last_alert"):
+            self.last_alert = {}
+
+        alert_params['timestamp_ms'] = botengine.get_timestamp()
+
+        self.last_alert = {
+            alert_type : alert_params
+        }
+
         for intelligence_id in self.intelligence_modules:
             self.intelligence_modules[intelligence_id].device_alert(botengine, self, alert_type, alert_params)
 
@@ -414,9 +427,14 @@ class Device:
                     if param_name == 'rssi':
                         if measure['updated']:
                             # Update the RSSI
-                            rssi = int(measure['value'])
-                            self.update_rssi(botengine, rssi)
-                            self.last_updated_params.append('rssi')
+                            try:
+                                rssi = int(measure['value'])
+                                self.update_rssi(botengine, rssi)
+                                self.last_updated_params.append('rssi')
+
+                            except KeyError as e:
+                                botengine.get_logger().warning("device.py: Measurement has no value - {}".format(measure))
+
                         else:
                             # RSSI didn't change
                             self.rssi_status_quo(botengine)
@@ -428,7 +446,7 @@ class Device:
                         
                     elif param_name not in self.measurements or measure['updated']:
                         if 'value' not in measure:
-                            #botengine.get_logger().error("device.py: Measurement has no value: " + str(measure) + ";\n Measures block was: " + str(botengine.get_measures_block()))
+                            botengine.get_logger().info("device.py: Updated parameter provided no updated value: {}".format(measure))
                             continue
 
                         value = utilities.normalize_measurement(measure['value'])
@@ -439,8 +457,9 @@ class Device:
                                 if str(measure['index']).lower() != "none":
                                     param_name = "{}.{}".format(param_name, measure['index'])
 
-                        self.add_measurement(botengine, param_name, value, measure['time'])
-                        self.last_updated_params.append(param_name)
+                        is_param_get_new_value = self.add_measurement(botengine, param_name, value, measure['time'])
+                        if is_param_get_new_value:
+                            self.last_updated_params.append(param_name)
 
         # List of devices (this one and its proxy) that were updated, to later synchronize with the location outside of this object
         updated_devices = []
@@ -487,18 +506,29 @@ class Device:
         :return:
         """
         #botengine.get_logger().info("{}: '{}': {}={}".format(self.device_id, self.description, name, value))
-        self.measurement_odometer += 1
 
+        measurement_updated = False
         if name not in self.measurements:
             # Create the measurement
             self.measurements[name] = []
 
-        self.measurements[name].insert(0, (value, timestamp))
+            measurement_updated = True
+            self.measurement_odometer += 1
+            self.measurements[name].insert(0, (value, timestamp))
+        else:
+            last_value = self.measurements[name][0][0]
+            if value != last_value:
+                measurement_updated = True
+                self.measurement_odometer += 1
+                self.measurements[name].insert(0, (value, timestamp))
+
 
         # Auto garbage-collect
         if self.enforce_cache_size:
             while (len(self.measurements[name]) > 1) and self.measurements[name][-1][1] <= botengine.get_timestamp() - TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS:
                 del(self.measurements[name][-1])
+
+        return measurement_updated
 
     def communicated(self, timestamp):
         """
@@ -729,7 +759,8 @@ class Device:
         if oldest_timestamp_ms is None:
             oldest_timestamp_ms = botengine.get_timestamp() - utilities.ONE_MONTH_MS * 6
 
-        botengine.request_data(self.device_id,
+        botengine.request_data(type=botengine.DATA_REQUEST_TYPE_PARAMETERS,
+                               device_id=self.device_id,
                                oldest_timestamp_ms=oldest_timestamp_ms,
                                newest_timestamp_ms=newest_timestamp_ms,
                                param_name_list=param_name_list,

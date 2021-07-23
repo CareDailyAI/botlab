@@ -1,4 +1,4 @@
-# Utilities
+# Signals
 
 Microservices operate independently of each other. At times, we need one microservice to talk to another microservice. 
 
@@ -12,7 +12,7 @@ We're on design pattern #4 right now and it seems to be working well. You must s
 
 The only limitation in all of these designs, so far, is this only facilitates one-way communications and does not return values. There are two ways we handle this:
 * Passing in a lambda function as an argument - as we do commonly in trends interface to transform some calculated value down below into human-readable text.
-* Passing in a callback function - which we've only explored with conversational UI's.
+* Passing in a callback function - which we've only explored so far with conversational UI's.
 
 
 

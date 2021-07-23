@@ -46,14 +46,21 @@ class SmartplugDevice(Device):
 
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
-        
+
+        # The boolean on/off state of this device that was saved
+        self.saved_state = False
+        # Whether the saved_state is valid or not
+        self.saved = False
+
+    def initialize(self, botengine):
+        Device.initialize(self, botengine)
+
         if not hasattr(self, "saved_state"):
             self.saved_state = False
-            
+
         if not hasattr(self, "saved"):
             self.saved = False
-            
-    
+
     #===========================================================================
     # Attributes
     #===========================================================================

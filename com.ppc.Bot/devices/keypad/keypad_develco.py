@@ -129,6 +129,9 @@ class DevelcoKeypadDevice(KeypadDevice):
         :param minutes: Minutes to look back in time for mode change attempts
         :return:
         """
+        if botengine.get_timestamp() - self.born_on < utilities.ONE_HOUR_MS * 12:
+            return 0
+
         total = 0
         if self.MEASUREMENT_NAME_ARM_MODE in self.measurements:
             botengine.get_logger().info("\tarmMode parameters = {}".format(self.measurements[self.MEASUREMENT_NAME_ARM_MODE]))

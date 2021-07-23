@@ -9,22 +9,23 @@ file 'LICENSE.txt', which is part of this source code package.
 
 from devices.device import Device
 
-class MultiButtonDevice(Device):
+
+class LinkHighButtonDevice(Device):
     """
-    Multi Button Device - Base Class
+    LinkHigh Button Device
     """
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = []
+    DEVICE_TYPES = [9014]
 
     # Measurement name for the button status
     MEASUREMENT_NAME_BUTTON_STATUS = 'buttonStatus'
 
     # Low battery tag
-    LOW_BATTERY_TAG = ""
+    LOW_BATTERY_TAG = "lowbattery_cr2032"
 
     # Type of battery
-    BATTERY_TYPE = ""
+    BATTERY_TYPE = "CR2032"
 
     # Goals
     GOAL_BUTTON_SIGNAL_PEOPLE_WHO_LIVE_HERE = 100
@@ -36,9 +37,6 @@ class MultiButtonDevice(Device):
     GOAL_BUTTON_CALL_FOR_HELP_PANIC = 113
     GOAL_BUTTON_DOORBELL = 115
     GOAL_BUTTON_STAY_DISARM = 116
-
-    # Demo scenarios
-    GOAL_BUTTON_DEMO_VAYYAR = 200
 
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         """
@@ -52,14 +50,14 @@ class MultiButtonDevice(Device):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
-        self.goal_id = MultiButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL
+        self.goal_id = LinkHighButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL
 
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
-        return _("Assist Button")
+        return _("Button")
 
     def get_icon(self):
         """

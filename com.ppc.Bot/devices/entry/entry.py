@@ -67,6 +67,18 @@ class EntryDevice(Device):
         """
         return "entry"
 
+    def did_tamper(self, botengine):
+        """
+        Did someone tamper with this device
+        :param botengine:
+        :return:
+        """
+        # Entry sensors with this current base device type produce false tamper alerts, ignore them.
+        if self.device_type in EntryDevice.DEVICE_TYPES:
+            return False
+
+        return Device.did_tamper(self, botengine)
+
     #===========================================================================
     # Attributes
     #===========================================================================

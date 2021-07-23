@@ -24,6 +24,7 @@ class MotionDevice(Device):
 
     # Goals
     GOAL_MOTION_PROTECT_HOME = 50
+    GOAL_MOTION_ALERT_ON_OCCUPANCY = 51
     GOAL_MOTION_SKIP = 52
 
     # Low battery tag

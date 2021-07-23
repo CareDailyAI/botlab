@@ -1,17 +1,24 @@
 '''
-Created on July 22, 2020
+Created on January 27, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
+
+DEPRECATED
 
 @author: David Moss
 '''
 
 from devices.device import Device
 
-class MultiButtonDevice(Device):
+
+class ButtonDevice(Device):
     """
-    Multi Button Device - Base Class
+    Button Device
+
+    DEPRECATED
+    Because with the significantly different behaviors for basic types of buttons,
+    we currently need to treat each manufacturer's button as a different devices with its own behaviors.
     """
 
     # List of Device Types this class is compatible with
@@ -19,12 +26,6 @@ class MultiButtonDevice(Device):
 
     # Measurement name for the button status
     MEASUREMENT_NAME_BUTTON_STATUS = 'buttonStatus'
-
-    # Low battery tag
-    LOW_BATTERY_TAG = ""
-
-    # Type of battery
-    BATTERY_TYPE = ""
 
     # Goals
     GOAL_BUTTON_SIGNAL_PEOPLE_WHO_LIVE_HERE = 100
@@ -37,8 +38,11 @@ class MultiButtonDevice(Device):
     GOAL_BUTTON_DOORBELL = 115
     GOAL_BUTTON_STAY_DISARM = 116
 
-    # Demo scenarios
-    GOAL_BUTTON_DEMO_VAYYAR = 200
+    # Low battery tag
+    LOW_BATTERY_TAG = "lowbattery_cr2032"
+
+    # Type of battery
+    BATTERY_TYPE = "CR2032"
 
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         """
@@ -52,15 +56,15 @@ class MultiButtonDevice(Device):
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
-        self.goal_id = MultiButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL
+        self.goal_id = ButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL
 
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
-        return _("Assist Button")
-
+        return _("Button")
+    
     def get_icon(self):
         """
         :return: the font icon name of this device type

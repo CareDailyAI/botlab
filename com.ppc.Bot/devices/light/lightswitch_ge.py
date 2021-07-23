@@ -24,10 +24,10 @@ class LightswitchGeDevice(LightDevice):
     
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         LightDevice.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
-        
+
         if not hasattr(self, "saved_state"):
             self.saved_state = False
-            
+
         if not hasattr(self, "saved"):
             self.saved = False
 

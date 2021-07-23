@@ -48,9 +48,11 @@ from devices.pressure.pressure import PressurePadDevice
 from devices.keypad.keypad_develco import DevelcoKeypadDevice
 from devices.leak.leak_develco import DevelcoLeakDevice
 from devices.smartplug.smartplug_develco import DevelcoSmartplugDevice
+from devices.smartplug.smartcable_develco import DevelcoSmartcableDevice
 from devices.io.io import IoDevice
 from devices.vibration.vibration_develco import DevelcoVibrationDevice
 from devices.vibration.vibration_linkhigh import LinkHighVibrationDevice
+from devices.vayyar.vayyar import VayyarDevice
 
 # Deprecated:
 from devices.smartplug.smartplug_centralite_3series import Centralite3SeriesSmartplugDevice
@@ -78,6 +80,9 @@ class Controller:
         # Last execution timestamp for debugging support
         self.exec_timestamp = 0
 
+        # Last version of the bot
+        self.version = None
+
     def initialize(self, botengine, initialize_everything=True):
         """
         Initialize the controller.
@@ -85,24 +90,16 @@ class Controller:
         :param botengine: BotEngine environment
         :param initialize_everything: Default is True. False is used for advance machine learning edge computing services.
         """
-        if len(self.locations) > 1:
-            botengine.get_logger().error("Bot instance {} is tracking multiple locations: {}; Only keeping location ID {}.".format(botengine.get_bot_instance_id(), self.locations.keys(), botengine.get_location_id()))
-            for key in list(self.locations.keys()):
-                if int(key) == int(botengine.get_location_id()):
-                    continue
-
-                else:
-                    del self.locations[key]
-
-        if not hasattr(self, 'exec_timestamp'):
-            self.exec_timestamp = 0
+        # Added June 17, 2021
+        if not hasattr(self, 'version'):
+            self.version = None
 
         botengine.get_logger().info("controller: Last execution={}; Current execution={}".format(self.exec_timestamp, botengine.get_timestamp()))
         self.exec_timestamp = botengine.get_timestamp()
 
         for key in self.locations:
             self.locations[key].initialize(botengine, initialize_everything)
-    
+
     def print_status(self, botengine):
         """
         Print the status of this object
@@ -289,6 +286,9 @@ class Controller:
                     elif device_type in DevelcoSmartplugDevice.DEVICE_TYPES:
                         device_object = DevelcoSmartplugDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
+                    elif device_type in DevelcoSmartcableDevice.DEVICE_TYPES:
+                        device_object = DevelcoSmartcableDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
                     elif device_type in IoDevice.DEVICE_TYPES:
                         device_object = IoDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
@@ -297,6 +297,9 @@ class Controller:
 
                     elif device_type in LinkHighVibrationDevice.DEVICE_TYPES:
                         device_object = LinkHighVibrationDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in VayyarDevice.DEVICE_TYPES:
+                        device_object = VayyarDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     else:
                         botengine.get_logger().warn("Unsupported device type: " + str(device_type) + " ('" + device_desc + "')")
@@ -633,4 +636,22 @@ class Controller:
         """
         for location_id in self.locations:
             self.locations[location_id].new_version(botengine)
-        
+
+    def evaluate_version(self, botengine):
+        """
+        Evaluate for a new version and trigger the new_version() if we are indeed running a new version of the bot.
+        :param botengine: BotEngine environment
+        :return: True if a new version was detected and the new_version() trigger was executed.
+        """
+        import json
+        import os
+        with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "runtime.json")) as f:
+            j = json.load(f)
+            version = j["version"]["version"]
+            if version != self.version:
+                botengine.get_logger().info("controller: New version detected")
+                self.version = version
+                self.new_version(botengine)
+                return True
+
+        return False

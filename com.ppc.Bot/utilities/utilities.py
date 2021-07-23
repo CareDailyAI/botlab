@@ -64,6 +64,7 @@ ALARM_CODE_MEDICAL_ALARM = "E100"
 ALARM_CODE_GENERAL_MEDICAL_ALARM = "E102"
 ALARM_CODE_WELLNESS_NO_DISPATCH = "E103"
 ALARM_CODE_WELLNESS_DISPATCH = "E106"
+ALARM_CODE_COMMS_FAILURE = "E354"
 
 # Professional Monitoring
 PROFESSIONAL_MONITORING_NEVER_PURCHASED = 0
@@ -104,31 +105,28 @@ PUSH_SOUND_WHISTLE = "whistle.wav"
 PUSH_SOUND_WHOOPS = "whoops.wav"
 
 
-def can_contact_customer_support():
+def can_contact_customer_support(botengine):
     """
-    Leverages the com.domain.YourBot/domain.py file to determine if customer support is available for this bot
+    Leverages the com.domain.YourBot/domain.py file or organization properties to determine if customer support is available for this bot
     :return:
     """
     import importlib
     try:
-        domain = importlib.import_module('domain')
+        properties = importlib.import_module('properties')
     except ImportError:
         return False
 
-    if hasattr(domain, "CS_SCHEDULE_URL"):
-        if domain.CS_SCHEDULE_URL is not None:
-            if len(domain.CS_SCHEDULE_URL) > 0:
-                return True
+    if properties.get_property(botengine, "CS_SCHEDULE_URL") is not None:
+        if len(properties.get_property(botengine, "CS_SCHEDULE_URL")) > 0:
+            return True
 
-    if hasattr(domain, "CS_EMAIL_ADDRESS"):
-        if domain.CS_EMAIL_ADDRESS is not None:
-            if len(domain.CS_EMAIL_ADDRESS) > 0:
-                return True
+    if properties.get_property(botengine, "CS_EMAIL_ADDRESS") is not None:
+        if len(properties.get_property(botengine, "CS_EMAIL_ADDRESS")) > 0:
+            return True
 
-    if hasattr(domain, "CS_PHONE_NUMBER"):
-        if domain.CS_PHONE_NUMBER is not None:
-            if len(domain.CS_PHONE_NUMBER) > 0:
-                return True
+    if properties.get_property(botengine, "CS_PHONE_NUMBER") is not None:
+        if len(properties.get_property(botengine, "CS_PHONE_NUMBER")) > 0:
+            return True
 
 
 def alarm_code_to_description(code):
@@ -304,9 +302,10 @@ def get_admin_url_for_location(botengine):
     """
     Attempt to return the URL of the command center for this home.
 
-    To make this work, you'll need a file in the base of the bot called 'domain.py' containing configuration settings.
+    To make this work, you'll need a file in the base of the bot called 'domain.py' containing configuration settings,
+    or set the properties in your organization.
 
-    It should have a configuration like this:
+    It should have a property like this:
 
         # Command Center URLs
         COMMAND_CENTER_URLS = {
@@ -316,18 +315,18 @@ def get_admin_url_for_location(botengine):
 
     :return: URL to this home in the appropriate command center
     """
-    # The domain.COMMAND_CENTER_URLS should be formatted like this: https://console.peoplepowerfamily.com
+    # The domain.COMMAND_CENTER_URLS (or your organization property) should be formatted like this: https://console.peoplepowerfamily.com
     import bundle
-    import domain
+    import properties
     url = None
-    if hasattr(domain, 'COMMAND_CENTER_URLS'):
-        for u in domain.COMMAND_CENTER_URLS:
+    if properties.get_property(botengine, "COMMAND_CENTER_URLS") is not None:
+        for u in properties.get_property(botengine, "COMMAND_CENTER_URLS"):
             if u in bundle.CLOUD_ADDRESS:
-                url = domain.COMMAND_CENTER_URLS[u]
+                url = properties.get_property(botengine, "COMMAND_CENTER_URLS")[u]
 
     if url is None:
         botengine.get_logger().warn("utilities.get_command_center_url(): No COMMAND_CENTER_URLS defined in domain.py")
-        return None
+        return ""
 
     return "{}/#!/main/locations/edit/{}".format(url, botengine.get_location_id())
 

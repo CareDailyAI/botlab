@@ -1,11 +1,11 @@
-'''
+"""
 Created on May 14, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 import utilities.utilities as utilities
 
@@ -24,17 +24,22 @@ def track(botengine, location_object, event_name, properties={}):
             "test": botengine.is_test_location()
         })
 
-    location_object.narrate(botengine,
-                            title=event_name,
-                            description=str(properties),
-                            priority=botengine.NARRATIVE_PRIORITY_ANALYTIC,
-                            icon="cogs",
-                            icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
-                            timestamp_ms=None,
-                            extra_json_dict=properties,
-                            to_user=True,
-                            to_admin=False)
+    botengine.narrate(title=event_name,
+                      description=None,
+                      priority=botengine.NARRATIVE_PRIORITY_ANALYTIC,
+                      icon="cogs",
+                      icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
+                      status=None,
+                      timestamp_ms=None,
+                      file_ids=None,
+                      extra_json_dict=properties,
+                      event_type="analytic.{}".format(event_name),
+                      update_narrative_id=None,
+                      update_narrative_timestamp=None,
+                      admin=False,
+                      publish_to_partner=True)
 
+    # Do not corrupt our analytics with internal test / beta locations.
     if botengine.is_test_location():
         return
 

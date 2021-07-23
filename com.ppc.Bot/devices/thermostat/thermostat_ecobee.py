@@ -58,13 +58,13 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         :param botengine:
         :return:
         """
+        ThermostatDevice.initialize(self, botengine)
+
         if not hasattr(self, 'ee_only'):
             self.ee_only = False
 
         if not hasattr(self, 'ee_timestamp_ms'):
             self.ee_timestamp_ms = None
-
-        ThermostatDevice.initialize(self, botengine)
 
     def get_device_type_name(self):
         """

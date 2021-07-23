@@ -150,8 +150,4 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :param botengine:
         :return:
         """
-        if 'batteryLevel' in self.measurements:
-            if len(self.measurements['batteryLevel']) > 0:
-                return self.measurements['batteryLevel'][0][0]
-
-        return 100
+        return self.battery_level

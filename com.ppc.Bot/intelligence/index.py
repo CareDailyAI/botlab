@@ -63,5 +63,5 @@ MICROSERVICES = {
 
         # The next line is an example of how to add a location-based microservice
         #{"module": "intelligence.example.location_example_microservice", "class": "LocationExampleMicroservice"}
-        ]
+    ]
 }

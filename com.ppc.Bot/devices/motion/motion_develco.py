@@ -29,10 +29,17 @@ class DevelcoMotionDevice(MotionDevice):
     def get_temperature_c(self, botengine=None):
         """
         Get the latest temperature in Celsius
-        :param botengine:
+        :param botengine: BotEngine environment
         :return: temperature in Celsius
         """
         if DevelcoMotionDevice.MEASUREMENT_DEG_C in self.measurements:
             return self.measurements[DevelcoMotionDevice.MEASUREMENT_DEG_C][0][0]
 
         return None
+
+    def did_update_temperature(self, botengine=None):
+        """
+        :param botengine: BotEngine environment
+        :return: True if the temperature just got updated on this execution
+        """
+        return DevelcoMotionDevice.MEASUREMENT_DEG_C in self.last_updated_params
