@@ -1,0 +1,12 @@
+scikit-learn
+ephem
+joblib
+python-dateutil
+numpy
+requests
+pytz
+lz4
+tzlocal
+dill
+pybabel
+colorama

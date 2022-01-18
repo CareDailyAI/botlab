@@ -7,18 +7,21 @@ These bots run 24/7 in the background of your life, making products do things th
 **You do not need to host your own server to run bot microservices.** We host and run them for you on our servers. Of course, you can also run them live on your local computer and watch them execute against real-time data from the real world.
 
 
-## Setup Python
+### You need Python 3.x
+We're using Python 3.x+. We strongly recommend using a virtual environment. 
 
-BotEngine prefers Python 3.8.
+```
+# Create your virtual environment
+virtualenv -p PATH/TO/PYTHON3 bots
+# if it fails for you, Try:
+# python3 -m virtualenv bots
 
-We *strongly recommend* setting up Python 3.x on your local machine inside a virtual environment, which helps keep things clean. See https://www.youtube.com/watch?v=N5vscPTWKOk.  This is also a good tutorial for Mac users: https://hackercodex.com/guide/python-development-environment-on-mac-osx/. After setting up a virtual environment, you can activate it each time you open the terminal with a strategically placed command in one of your startup scripts, like ~/.profile or ~/.bashrc. Here's an example out of my environment's startup scripts:
+# Activate your virtual environment. I add this to my ~/.bash_profile (on mac).
+source bots/bin/active
 
-`source ~/workspace/botengine/bots/bin/activate`
-
-Once you have your Python environment established, install these python package dependencies:
-
-`pip install requests dill tzlocal python-dateutil`
-
+# Install dependencies. Note it may be 'pip3' in your environment.
+pip install -r requirements.txt
+```
 
 ## Get Started with the BotEngine
 
@@ -27,8 +30,6 @@ Clone this repository to your computer. The 'botengine' file is a Python applica
 Most developers simply type `./botengine` to execute commands on the command line interface. For example, `./botengine --help`
 
 If you're running Windows, we recommend using Windows Terminal to run the 'botengine' application. You can also try `python botengine`. Please keep in mind that although Python is meant to be operating system independent, some differences do exist between OS's and bot commercial code runs in a Linux environment on the cloud or on the edge.
-
-When you clone the botengine repository, be sure to add its location to your PYTHONPATH variable.
 
 
 ## BotEngine Shortcuts
@@ -40,6 +41,37 @@ The botengine requires your username and password for every interaction with the
 Then you can run your botengine like this:
 
 `botengine --my_purchased_bots $LOGIN`
+
+
+### Developer bots stop executing after 24 hours.
+
+If you're not interacting with your bot as a developer, the cloud will automatically stop executing it. This is to protect our resources from bots that haven't been reviewed for performance.
+
+Next steps include:
+* Make your bot do what you want by editing code locally, and `--run` it again with each modification.
+* Keep making commits to the cloud. You need to increment the version number each time inside `runtime.json`.
+* Publish the bot with the `--publish` command. This technically puts it through a review process like the Apple App Store. In reality, since we're not the Apple App Store yet, you can just let us know when you are ready to publish a bot by emailing dmoss@peoplepowerco.com. Once published, a subscription can be associated with the bot and other users can get access with a purchase.
+
+
+## Notes on architecture
+
+There are a few design philosophies and best practices we've grown over the years as we've developed bots. 
+
+* No lower layer in the stack should depend upon any higher layer in the stack. Data flows from `lambda.py` to `botengine` to `bot.py` on up the stack to the location object -> filter objects -> device objects -> microservice objects. It should be obvious, but while microservices can be dependent upon a device object, the device object should never be dependent upon a microservice.
+* To get around these dependencies, we use `signals`. A signal is really just a function definition that turns a set of arguments into a data stream message. We try to avoid creating data stream messages directly inside microservices now, because they're difficult to maintain, find, and document. Check out `com.ppc.Bot/signals` and `com.ppc.BotProprietary/signals`. 
+* Check out how we use the `datastream_updated()` event in our microservices to transform a data stream message (signal) directly into a function call, where the name of the function is the name of the signal. Super easy.
+* Often times, these signals can become externally accessible "Synthetic APIs". A Synthetic API is asynchronous, and realized through a combination of 2 platform APIs: Data Stream Messages and State Variables. If you choose to expose a Synthetic API, documentation is important, and we keep these docs on http://github.com/peoplepower/peoplepower-docs.
+* We've found pretty much all devices produce untrustworthy data, and cleaning that data or deriving entirely new information is an important activity. This is why we introduced the concept of `filters` in the Summer of 2021. Filters are treated just like microservices in that they're modular and can be added and removed without strict dependencies, but they also have a slightly different interface than microservices. Data now flows up the stack from the location object -> filters -> device objects and then finally to microservices. The `filter_measurements()` event allows filters the opportunity to correct or delete data before it lands in our representative model of the world. And it can even invent new parameterized data for microservices to work with. There's still more to explore in this architecture, including the ability to potentially save the corrected and parameterized time-series data back to the device on the AI+IoT Platform itself.
+
+As a new bot developer, I strongly recommend you generate a bot and follow the data path all the way through from botengine -> bot.py -> controller (a legacy artifact from a time in which our platform architecture was user-centric instead of location-centric, and a bot could operate against multiple of the user's locations) -> location.py -> filters -> device objects -> microservices. I also strongly recommend understanding what microservice packages exist today, how they operate, and what signals they use to communicate with each other. A large part of being a good bot developer is simply knowing where things are located.
+
+Always remember your place on the DIKW ladder: 
+1. DATA is what a device produces, in its own protocol / language, below the AI+IoT Platform.
+2. INFORMATION is produced when we transform all that data into a common language, separating the messy "network layer" from the "application layer". Information is what you pull out of the AI+IoT Platform, and you can visualize it on a graph. Filters help improve the trustworthiness of information, and help synthesize new information.
+3. KNOWLEDGE is derived from information. This can often be expressed as a sentence, like "You got great sleep quality last night." Most of the time, this is what people want. People don't want to think hard about a graph of energy consumption, they want to read a sentence that conveys the knowledge that energy consumption is currently trending out-of-bounds. People don't want to look at a graph of bedtime, they want to know the bedtime has remained consistent day after day.
+4. WISDOM is an action back to the physical world, derived from knowledge. This is what happens when we turn off a light because we know you've gone to bed, or we send a notification that you forgot to arm your security system when you left the house.
+
+Bots operate primarily in the Knowledge and Wisdom layers of the stack.
 
 
 ## Corporate Networks with Proxies
