@@ -11,7 +11,7 @@ import pytz
 import datetime
 import utilities.utilities as utilities
 from utilities.narrative import Narrative
-import intelligence.index
+import index
 import importlib
 import properties
 
@@ -41,17 +41,20 @@ class Location:
         """
         self.location_id = int(location_id)
 
-        # Dictionary of all device objects. { 'device_id': <device_object> }
-        self.devices = {}
-        
         # Born on date
         self.born_on = botengine.get_timestamp()
-        
-        # Mode of this location (i.e. "HOME", "AWAY", etc.). This is the mode of the security system.
-        self.mode = botengine.get_mode(self.location_id)
+
+        # Data filtration modules to optionally correct data before entering into the upper layers of our stack
+        self.filters = {}
+
+        # Representative model of all device objects. { 'device_id': <device_object> }
+        self.devices = {}
 
         # All Location Intelligence modules
         self.intelligence_modules = {}
+
+        # Mode of this location (i.e. "HOME", "AWAY", etc.). This is the mode of the security system.
+        self.mode = botengine.get_mode(self.location_id)
 
         # Try to update our current mode
         self.update_mode(botengine)
@@ -92,117 +95,128 @@ class Location:
         # Users in location, {"userid": user_object, ...}
         self.users = {}
         self.synchronize_users(botengine)
-        
-    def initialize(self, botengine, initialize_everything=True):
+
+    def new_version(self, botengine):
         """
-        Initialize
+        New bot version - runs one time when we are executing a new bot version
+
+        The new_version() event is distributed throughout our environment in the following order:
+            * Device objects
+            * Filter objects
+            * Microservices
+
         :param botengine: BotEngine environment
-        :param initialize_everything: Default is True. False is used when we're performing advance machine learning edge computing services.
         """
-        # Added December 8, 2020
-        if not hasattr(self, 'security_state'):
-            self.security_state = Location.SECURITY_STATE_DISARMED
+        botengine.get_logger().info("location: New bot version detected")
+
+        # Added October 21, 2021
+        if not hasattr(self, 'filters'):
+            self.filters = {}
 
         # Added July 2, 2021
         if not hasattr(self, 'users'):
             self.users = {}
             self.synchronize_users(botengine)
 
-        if initialize_everything:
-            for d in self.devices:
-                try:
-                    self.devices[d].initialize(botengine)
-                except Exception as e:
-                    botengine.get_logger().warning("location.py - Error initializing device microservice (continuing execution): " + str(e))
-                    import traceback
-                    botengine.get_logger().error(traceback.format_exc())
+        # Synchronize all microservices
+        if 'LOCATION_MICROSERVICES' in index.MICROSERVICES:
+            self._sync_modules(botengine, self.intelligence_modules, index.MICROSERVICES['LOCATION_MICROSERVICES'])
 
-            for u in self.users:
-                try:
-                    self.users[u].initialize(botengine)
-                except Exception as e:
-                    botengine.get_logger().warning("location.py - Error initializing user (continuing execution): " + str(e))
-                    import traceback
-                    botengine.get_logger().error(traceback.format_exc())
+        # Synchronize all data filters
+        if 'DATA_FILTER_MICROSERVICES' in index.MICROSERVICES:
+            self._sync_modules(botengine, self.filters, index.MICROSERVICES['DATA_FILTER_MICROSERVICES'])
 
-        # for module_name in self.intelligence_modules:
-        #     botengine.get_logger().info("{} : {}".format(self.intelligence_modules[module_name].intelligence_id, module_name))
-
-        # Synchronize microservices
-
-        module_names = [x['module'] for x in intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']]
-
-        changed = False
-        for m in module_names:
-            changed |= m not in self.intelligence_modules
-
-        for m in list(self.intelligence_modules.keys()):
-            changed |= m not in module_names
-
-        if changed:
-            # Remove microservices that no longer exist
-            for module_name in dict(self.intelligence_modules).keys():
-                found = False
-                for intelligence_info in intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']:
-                    if intelligence_info['module'] == module_name:
-                        found = True
-                        break
-
-                if not found:
-                    botengine.get_logger().info("Deleting location microservice: " + str(module_name))
-                    self.intelligence_modules[module_name].destroy(botengine)
-                    del self.intelligence_modules[module_name]
-
-            # Add more microservices
-            for intelligence_info in intelligence.index.MICROSERVICES['LOCATION_MICROSERVICES']:
-                if intelligence_info['module'] not in self.intelligence_modules:
-                    try:
-                        intelligence_module = importlib.import_module(intelligence_info['module'])
-                        class_ = getattr(intelligence_module, intelligence_info['class'])
-                        botengine.get_logger().info("Adding location microservice: " + str(intelligence_info['module']))
-                        intelligence_object = class_(botengine, self)
-                        self.intelligence_modules[intelligence_info['module']] = intelligence_object
-
-                    except Exception as e:
-                        import traceback
-                        botengine.get_logger().error("Could not add location microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
-
-        # Location intelligence execution
-        for i in self.intelligence_modules:
-            self.intelligence_modules[i].parent = self
-            if initialize_everything:
-                try:
-                    self.intelligence_modules[i].initialize(botengine)
-                except Exception as e:
-                    botengine.get_logger().warning("location.py - Error initializing device microservice (continuing execution): " + str(e))
-                    import traceback
-                    botengine.get_logger().error(traceback.format_exc())
-
-    def new_version(self, botengine):
-        """
-        New bot version
-        :param botengine: BotEngine environment
-        """
-        botengine.get_logger().info("location: New bot version detected")
-
-        for intelligence_id in self.intelligence_modules:
+        # Tell all device objects and their device microservices we're running a new version
+        for device_object in self.devices.values():
             try:
-                self.intelligence_modules[intelligence_id].new_version(botengine)
+                device_object.new_version(botengine)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering new_version to device object (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
+
+        # Tell all filters we're running a new version
+        for filter_object in self.filters.values():
+            try:
+                filter_object.new_version(botengine)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering new_version to data filter (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
+
+        # Tell all microservices we're running a new version
+        for microservice_object in self.intelligence_modules.values():
+            try:
+                microservice_object.new_version(botengine)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering new_version to device microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
 
-        # Device intelligence modules
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
-                    try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].new_version(botengine)
-                    except Exception as e:
-                        botengine.get_logger().warning("location.py - Error delivering new_version to device microservice (continuing execution): " + str(e))
-                        import traceback
-                        botengine.get_logger().error(traceback.format_exc())
+    def initialize(self, botengine):
+        """
+        Initialize - runs on every execution of the bot
+        :param botengine: BotEngine environment
+        """
+        for filter_object in self.filters.values():
+            try:
+                filter_object.initialize(botengine)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error initializing data filter (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
+
+        for device_object in self.devices.values():
+            try:
+               device_object.initialize(botengine)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error initializing device microservice (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
+
+        for user_object in self.users.values():
+            try:
+                user_object.initialize(botengine)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error initializing user (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
+
+        for microservice_object in self.intelligence_modules.values():
+            try:
+                microservice_object.initialize(botengine)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error initializing microservice (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
 
     def add_device(self, botengine, device_object):
         """
@@ -221,11 +235,19 @@ class Location:
                     import traceback
                     botengine.get_logger().error(traceback.format_exc())
 
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].device_added(botengine, device_object)
+                microservice_object.device_added(botengine, device_object)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering add_device to location microservice (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+
+        for filter_object in self.filters.values():
+            try:
+                filter_object.device_added(botengine, device_object)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering add_device to filter (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
 
@@ -251,11 +273,19 @@ class Location:
 
             del self.devices[device_id]
 
-            for intelligence_id in self.intelligence_modules:
+            for microservice_object in self.intelligence_modules.values():
                 try:
-                    self.intelligence_modules[intelligence_id].device_deleted(botengine, device_object)
+                    microservice_object.device_deleted(botengine, device_object)
                 except Exception as e:
                     botengine.get_logger().warning("location.py - Error delivering delete_device to location microservice (continuing execution): " + str(e))
+                    import traceback
+                    botengine.get_logger().error(traceback.format_exc())
+
+            for filter_object in self.filters.values():
+                try:
+                    filter_object.device_deleted(botengine, device_object)
+                except Exception as e:
+                    botengine.get_logger().warning("location.py - Error delivering delete_device to filter (continuing execution): " + str(e))
                     import traceback
                     botengine.get_logger().error(traceback.format_exc())
 
@@ -265,39 +295,85 @@ class Location:
         """
         self.mode = mode.upper()
         botengine.get_logger().info("location mode_updated(): " + self.mode + " mode.")
-        
-        for intelligence_id in self.intelligence_modules:
+
+        # Location microservices
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].mode_updated(botengine, mode)
+                microservice_object.mode_updated(botengine, mode)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering mode_updated to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
 
-        # Device intelligence modules
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
+        # Device microservices
+        for device_object in self.devices.values():
+            if hasattr(device_object, "intelligence_modules"):
+                for intelligence_id in device_object.intelligence_modules:
                     try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].mode_updated(botengine, mode)
+                        device_object.intelligence_modules[intelligence_id].mode_updated(botengine, mode)
                     except Exception as e:
                         botengine.get_logger().warning("location.py - Error delivering mode_updated to device microservice (continuing execution): " + str(e))
                         import traceback
                         botengine.get_logger().error(traceback.format_exc())
-    
+                        if botengine.playback:
+                            # Give us a chance to see the error as we playback data in fast-forward mode
+                            import time
+                            time.sleep(2)
+
+        # Filters
+        for filter_object in self.filters.values():
+            try:
+                filter_object.mode_updated(botengine, mode)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering mode_updated to filter (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
+
+    def filter_measurements(self, botengine, device_object, measurements):
+        """
+        Optionally filter device measurement data before it reaches the upper layers of the stack.
+        :param botengine: BotEngine environment
+        :param device_object: Device object pending update
+        :param measurements: Measurements dictionary we're about to trigger off of, which is modified in place.
+        :return: Nothing, because the measurements dictionary should be directly modified to correct the data.
+        """
+        for filter_object in self.filters.values():
+            try:
+                filter_object.filter_measurements(botengine, device_object, measurements)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering filter_device_data to data filter (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
+
     def device_measurements_updated(self, botengine, device_object):
         """
         Evaluate a device that was recently updated
         :param botengine: BotEngine environment
         :param device_object: Device object that was updated
         """
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].device_measurements_updated(botengine, device_object)
+                microservice_object.device_measurements_updated(botengine, device_object)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering device_measurements_updated to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
     
     def device_metadata_updated(self, botengine, device_object):
         """
@@ -305,13 +381,17 @@ class Location:
         :param botengine: BotEngine environment
         :param device_object: Device object that was updated
         """
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].device_metadata_updated(botengine, device_object)
+                microservice_object.device_metadata_updated(botengine, device_object)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering device_metadata_updated to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
 
     def device_alert(self, botengine, device_object, alert_type, alert_params):
         """
@@ -320,13 +400,17 @@ class Location:
         :param device_object: Device object that sent the alert
         :param alerts_list: List of alerts
         """
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].device_alert(botengine, device_object, alert_type, alert_params)
+                microservice_object.device_alert(botengine, device_object, alert_type, alert_params)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering device_alert to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
 
     def question_answered(self, botengine, question):
         """
@@ -334,24 +418,34 @@ class Location:
         :param botengine: BotEngine environment
         :param question: Question object
         """
-        for intelligence_id in self.intelligence_modules:
+        # Microservices
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].question_answered(botengine, question)
+                microservice_object.question_answered(botengine, question)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering question_answered to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
 
-        # Device intelligence modules
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
+        # Device microservices
+        for device_object in self.devices.values():
+            if hasattr(device_object, "intelligence_modules"):
+                for intelligence_id in device_object.intelligence_modules:
                     try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].question_answered(botengine, question)
+                        device_object.intelligence_modules[intelligence_id].question_answered(botengine, question)
                     except Exception as e:
                         botengine.get_logger().warning("location.py - Error delivering question_answered to location microservice (continuing execution): " + str(e))
                         import traceback
                         botengine.get_logger().error(traceback.format_exc())
+
+        # Filters
+        for filter_object in self.filters.values():
+            try:
+                filter_object.question_answered(botengine, question)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering question_answered to filter (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
     
     def datastream_updated(self, botengine, address, content):
         """
@@ -360,24 +454,46 @@ class Location:
         :param address: Data Stream address
         :param content: Data Stream content
         """
-        for intelligence_id in self.intelligence_modules:
+        # Top priority - Location microservices
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].datastream_updated(botengine, address, content)
+                microservice_object.datastream_updated(botengine, address, content)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering datastream message to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
 
-        # Device intelligence modules
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
+        # Second priority - Device microservices
+        for device_object in self.devices.values():
+            if hasattr(device_object, "intelligence_modules"):
+                for intelligence_id in device_object.intelligence_modules:
                     try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].datastream_updated(botengine, address, content)
+                        device_object.intelligence_modules[intelligence_id].datastream_updated(botengine, address, content)
                     except Exception as e:
                         botengine.get_logger().warning("location.py - Error delivering datastream message to device microservice (continuing execution): " + str(e))
                         import traceback
                         botengine.get_logger().error(traceback.format_exc())
+                        if botengine.playback:
+                            # Give us a chance to see the error as we playback data in fast-forward mode
+                            import time
+                            time.sleep(2)
+
+        # Lowest priority - filters
+        for filter_object in self.filters.values():
+            try:
+                filter_object.datastream_updated(botengine, address, content)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering datastream message to data filter (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
 
     def schedule_fired(self, botengine, schedule_id):
         """
@@ -388,34 +504,83 @@ class Location:
         if schedule_id == "MIDNIGHT":
             self.synchronize_users(botengine)
 
-        # Location intelligence modules
-        for intelligence_id in self.intelligence_modules:
+        # Filters
+        for filter_object in self.filters.values():
             try:
-                self.intelligence_modules[intelligence_id].schedule_fired(botengine, schedule_id)
+                filter_object.schedule_fired(botengine, schedule_id)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering schedule_fired to filter (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
+
+        # Location intelligence modules
+        for microservice_object in self.intelligence_modules.values():
+            try:
+                microservice_object.schedule_fired(botengine, schedule_id)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering schedule_fired to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
-            return
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+                    time.sleep(2)
 
         # Device intelligence modules
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
+        for device_object in self.devices.values():
+            if hasattr(device_object, "intelligence_modules"):
+                for intelligence_id in device_object.intelligence_modules:
                     try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].schedule_fired(botengine, schedule_id)
+                        device_object.intelligence_modules[intelligence_id].schedule_fired(botengine, schedule_id)
                     except Exception as e:
                         botengine.get_logger().warning("location.py - Error delivering schedule_fired to device microservice (continuing execution): " + str(e))
                         import traceback
                         botengine.get_logger().error(traceback.format_exc())
+                        if botengine.playback:
+                            # Give us a chance to see the error as we playback data in fast-forward mode
+                            import time
+                            time.sleep(2)
         
-    def timer_fired(self, botengine, argument):
+    def timer_fired(self, botengine, microservice_id, argument):
         """
         Timer fired
         :param botengine: BotEngine environment
+        :param microservice_id: Microservice to trigger
         :param argument: Optional argument
         """
-        return
+        # Search for and trigger location intelligence instances
+        for microservice_object in self.intelligence_modules.values():
+            if microservice_id == microservice_object.intelligence_id:
+                try:
+                    microservice_object.timer_fired(botengine, argument)
+                except Exception as e:
+                    botengine.get_logger().warning("location.py - Error triggering timer_fired in location microservice (continuing execution): " + str(e))
+                    import traceback
+                    botengine.get_logger().error(traceback.format_exc())
+                    if botengine.playback:
+                        # Give us a chance to see the error as we playback data in fast-forward mode
+                        import time
+                        time.sleep(2)
+                return
+
+        # Search for and trigger filters
+        for filter_object in self.filters.values():
+            if microservice_id == filter_object.filter_id:
+                try:
+                    filter_object.timer_fired(botengine, argument)
+                except Exception as e:
+                    botengine.get_logger().warning("location.py - Error triggering timer_fired in filter microservice (continuing execution): " + str(e))
+                    import traceback
+                    botengine.get_logger().error(traceback.format_exc())
+                    if botengine.playback:
+                        # Give us a chance to see the error as we playback data in fast-forward mode
+                        import time
+                        time.sleep(2)
+                return
 
     def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
         """
@@ -427,20 +592,21 @@ class Location:
         :param content_type: The content type, for example 'video/mp4'
         :param file_extension: The file extension, for example 'mp4'
         """
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
+                microservice_object.file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering file_uploaded to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
 
-    def user_role_updated(self, botengine, user_id, category, location_access, previous_category, previous_location_access):
+    def user_role_updated(self, botengine, user_id, role, category, location_access, previous_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment
         :param location_id: Location ID
         :param user_id: User ID that changed roles
+        :param role: Application-layer agreed upon role integer which may auto-configure location_access and alert category
         :param category: User's current alert/communications category (1=resident; 2=supporter)
         :param location_access: User's access to the location and devices. (0=None; 10=read location/device data; 20=control devices and modes; 30=update location info and manage devices)
         :param previous_category: User's previous category, if any
@@ -451,27 +617,27 @@ class Location:
         # User objects
         if user_id in self.users:
             try:
-                self.users[user_id].user_role_updated(botengine, user_id, category, location_access, previous_category, previous_location_access)
+                self.users[user_id].user_role_updated(botengine, user_id, role, category, location_access, previous_category, previous_location_access)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering user_role_updated to user object (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
 
         # Location intelligence modules
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].user_role_updated(botengine, user_id, category, location_access, previous_category, previous_location_access)
+                microservice_object.user_role_updated(botengine, user_id, role, category, location_access, previous_category, previous_location_access)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering user_role_updated to location microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
 
         # Device intelligence modules
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
+        for device_object in self.devices.values():
+            if hasattr(device_object, "intelligence_modules"):
+                for intelligence_id in device_object.intelligence_modules:
                     try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].user_role_updated(botengine, user_id, category, location_access, previous_category, previous_location_access)
+                        device_object.intelligence_modules[intelligence_id].user_role_updated(botengine, user_id, role, category, location_access, previous_category, previous_location_access)
                     except Exception as e:
                         botengine.get_logger().warning("location.py - Error delivering user_role_updated to device microservice (continuing execution): " + str(e))
                         import traceback
@@ -485,20 +651,20 @@ class Location:
         :param status: Current call center status
         """
         # Location intelligence modules
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.intelligence_modules.values():
             try:
-                self.intelligence_modules[intelligence_id].call_center_updated(botengine, user_id, status)
+                microservice_object.call_center_updated(botengine, user_id, status)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering call_center_updated to device microservice (continuing execution): " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
 
         # Device intelligence modules
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
+        for device_object in self.devices.values():
+            if hasattr(device_object, "intelligence_modules"):
+                for intelligence_id in device_object.intelligence_modules:
                     try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].call_center_updated(botengine, user_id, status)
+                        device_object.intelligence_modules[intelligence_id].call_center_updated(botengine, user_id, status)
                     except Exception as e:
                         botengine.get_logger().warning("location.py - Error delivering call_center_updated to device microservice (continuing execution): " + str(e))
                         import traceback
@@ -511,21 +677,31 @@ class Location:
         :param reference: Optional reference passed into botengine.request_data(..)
         :param device_csv_dict: { 'device_id': 'csv data string' }
         """
-        # Location microservices
-        for intelligence_id in self.intelligence_modules:
+        # Filters to correct data before passing to other microservices
+        # Edit the device_csv_dict in place inside the filter
+        for filter_object in self.filters.values():
             try:
-                self.intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
+                filter_object.data_request_ready(botengine, reference, device_csv_dict)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering data_request_ready to data filter : " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+
+        # Location microservices
+        for microservice_object in self.intelligence_modules.values():
+            try:
+                microservice_object.data_request_ready(botengine, reference, device_csv_dict)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering data_request_ready to location microservice : " + str(e))
                 import traceback
                 botengine.get_logger().error(traceback.format_exc())
 
         # Device microservices
-        for device_id in self.devices:
-            if hasattr(self.devices[device_id], "intelligence_modules"):
-                for intelligence_id in self.devices[device_id].intelligence_modules:
+        for device_object in self.devices.values():
+            if hasattr(device_object, "intelligence_modules"):
+                for intelligence_id in device_object.intelligence_modules:
                     try:
-                        self.devices[device_id].intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
+                        device_object.intelligence_modules[intelligence_id].data_request_ready(botengine, reference, device_csv_dict)
                     except Exception as e:
                         botengine.get_logger().warning("location.py - Error delivering data_request_ready to device microservice : " + str(e))
                         import traceback
@@ -547,9 +723,9 @@ class Location:
             self.latitude = latitude
             self.longitude = longitude
 
-            for intelligence_id in self.intelligence_modules:
+            for microservice_object in self.intelligence_modules.values():
                 try:
-                    self.intelligence_modules[intelligence_id].coordinates_updated(botengine, self.latitude, self.longitude)
+                    microservice_object.coordinates_updated(botengine, self.latitude, self.longitude)
                 except Exception as e:
                     botengine.get_logger().warning("location.py - Error delivering coordinates_updated to location microservice : " + str(e))
                     import traceback
@@ -563,14 +739,14 @@ class Location:
         :param microservice_id: Microservice ID
         :return: Microservice object, or None if it doesn't exist.
         """
-        for microservice in self.intelligence_modules:
-            if self.intelligence_modules[microservice].intelligence_id == microservice_id:
-                return self.intelligence_modules[microservice]
+        for microservice_object in self.intelligence_modules.values():
+            if microservice_object.intelligence_id == microservice_id:
+                return microservice_object
 
-        for device_id in self.devices:
-            for microservice in self.devices[device_id].intelligence_modules:
-                if self.devices[device_id].intelligence_modules[microservice].intelligence_id == microservice_id:
-                    return self.devices[device_id].intelligence_modules[microservice]
+        for device_object in self.devices.values():
+            for microservice in device_object.intelligence_modules:
+                if device_object.intelligence_modules[microservice].intelligence_id == microservice_id:
+                    return device_object.intelligence_modules[microservice]
 
         return None
 
@@ -1001,7 +1177,7 @@ class Location:
 
     def is_sleeping(self, botengine=None):
         """
-        :return: True if the person is about to go to sleep, or they're sleeping, or about to wake up.
+        :return: True if the person is sleeping or about to wake up.
         """
         return "SLEEP" in self.occupancy_status or "S2H" in self.occupancy_status
     
@@ -1026,7 +1202,16 @@ class Location:
         :returns: datetime
         """
         return self.get_datetime_from_timestamp(botengine, botengine.get_timestamp(), self.get_local_timezone_string(botengine))
-    
+
+    def get_local_format_date(self, botengine):
+        """
+        Get formatted date in the user's local timezone
+        :returns: eg:30/01/2021
+        """
+        timestamp_ms = botengine.get_timestamp()
+        timezone = self.get_local_timezone_string(botengine)
+        return datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone)).strftime("%d/%m/%y")
+
     def get_local_datetime_from_timestamp(self, botengine, timestamp_ms):
         """
         Get a datetime in the user's local timezone, based on an input timestamp_ms
@@ -1127,7 +1312,7 @@ class Location:
         :return: timestamp in milliseconds
         """
         from tzlocal import get_localzone
-        return int((dt.astimezone(get_localzone())).strftime("%s")) * 1000
+        return int((dt.astimezone(get_localzone())).timestamp()) * 1000
 
     def get_local_hour_of_day(self, botengine):
         """
@@ -1175,6 +1360,14 @@ class Location:
 
         return midnight_dt + timedelta(days=offset)
 
+    def is_last_day_of_month(self, botengine):
+        import datetime
+        import calendar
+
+        date = self.get_local_datetime(botengine)
+        last_day_of_month = calendar.monthrange(date.year, date.month)[1]
+        return date == datetime.date(date.year, date.month, last_day_of_month)
+
     #===========================================================================
     # Weather
     #===========================================================================
@@ -1194,6 +1387,56 @@ class Location:
         :return: Weather JSON data
         """
         return botengine.get_current_weather_by_location(self.location_id, units)
+
+    #===========================================================================
+    # Synchronize local modules
+    #===========================================================================
+    def _sync_modules(self, botengine, modules, desired_modules_dict):
+        """
+        Synchronize the modules declared in our index.py file with this local class
+        :param botengine: BotEngine environment
+        :param modules: Dictionary of local modules { 'module_id': module_object }
+        :param desired_modules_dict: Dictionary of desired modules, typically loaded from an index.py file
+        """
+        module_names = [x['module'] for x in desired_modules_dict]
+
+        changed = False
+        for m in module_names:
+            changed |= m not in modules
+
+        for m in list(modules.keys()):
+            changed |= m not in module_names
+
+        if changed:
+            # Remove modules that no longer exist
+            for module_name in dict(modules).keys():
+                found = False
+                for intelligence_info in desired_modules_dict:
+                    if intelligence_info['module'] == module_name:
+                        found = True
+                        break
+
+                if not found:
+                    botengine.get_logger().info("Deleting module: " + str(module_name))
+                    modules[module_name].destroy(botengine)
+                    del modules[module_name]
+
+            # Add more modules
+            for intelligence_info in desired_modules_dict:
+                if intelligence_info['module'] not in modules:
+                    try:
+                        intelligence_module = importlib.import_module(intelligence_info['module'])
+                        class_ = getattr(intelligence_module, intelligence_info['class'])
+                        botengine.get_logger().info("Adding module: " + str(intelligence_info['module']))
+                        intelligence_object = class_(botengine, self)
+                        modules[intelligence_info['module']] = intelligence_object
+
+                    except Exception as e:
+                        import traceback
+                        botengine.get_logger().error("Could not add module: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
+                        if botengine.playback:
+                            import time
+                            time.sleep(5)
 
     #===========================================================================
     # CSV methods for machine learning algorithm integrations

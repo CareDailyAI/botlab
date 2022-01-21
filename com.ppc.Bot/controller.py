@@ -24,6 +24,8 @@ from devices.gateway.gateway_develco_squidlink import DevelcoSquidlinkDevice
 from devices.leak.leak import LeakDevice
 from devices.light.light import LightDevice
 from devices.light.lightswitch_ge import LightswitchGeDevice
+from devices.light.light_inwall_dimmer import InWallDimmerDevice
+from devices.light.light_smartdimmer import SmartDimmerDevice
 from devices.motion.motion import MotionDevice
 from devices.motion.motion_develco import DevelcoMotionDevice
 from devices.siren.siren_linkhigh import LinkhighSirenDevice
@@ -49,6 +51,7 @@ from devices.keypad.keypad_develco import DevelcoKeypadDevice
 from devices.leak.leak_develco import DevelcoLeakDevice
 from devices.smartplug.smartplug_develco import DevelcoSmartplugDevice
 from devices.smartplug.smartcable_develco import DevelcoSmartcableDevice
+from devices.smartplug.smartplug_inwall_outlet import InWallOutletDevice
 from devices.io.io import IoDevice
 from devices.vibration.vibration_develco import DevelcoVibrationDevice
 from devices.vibration.vibration_linkhigh import LinkHighVibrationDevice
@@ -83,12 +86,11 @@ class Controller:
         # Last version of the bot
         self.version = None
 
-    def initialize(self, botengine, initialize_everything=True):
+    def initialize(self, botengine):
         """
         Initialize the controller.
         This is mandatory to call once for each new execution of the bot
         :param botengine: BotEngine environment
-        :param initialize_everything: Default is True. False is used for advance machine learning edge computing services.
         """
         # Added June 17, 2021
         if not hasattr(self, 'version'):
@@ -98,7 +100,7 @@ class Controller:
         self.exec_timestamp = botengine.get_timestamp()
 
         for key in self.locations:
-            self.locations[key].initialize(botengine, initialize_everything)
+            self.locations[key].initialize(botengine)
 
     def print_status(self, botengine):
         """
@@ -210,7 +212,13 @@ class Controller:
                         
                     elif device_type in LightswitchGeDevice.DEVICE_TYPES:
                         device_object = LightswitchGeDevice(botengine, device_id, device_type, device_desc, precache_measurements)
-                        
+
+                    elif device_type in InWallDimmerDevice.DEVICE_TYPES:
+                        device_object = InWallDimmerDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in SmartDimmerDevice.DEVICE_TYPES:
+                        device_object = SmartDimmerDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
                     elif device_type in MotionDevice.DEVICE_TYPES:
                         device_object = MotionDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
@@ -225,7 +233,7 @@ class Controller:
                         
                     elif device_type in ThermostatCentralitePearlDevice.DEVICE_TYPES:
                         device_object = ThermostatCentralitePearlDevice(botengine, device_id, device_type, device_desc, precache_measurements)
-                    
+
                     elif device_type in ThermostatHoneywellLyricDevice.DEVICE_TYPES:
                         device_object = ThermostatHoneywellLyricDevice(botengine, device_id, device_type, device_desc, precache_measurements)
                         
@@ -288,6 +296,9 @@ class Controller:
 
                     elif device_type in DevelcoSmartcableDevice.DEVICE_TYPES:
                         device_object = DevelcoSmartcableDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+
+                    elif device_type in InWallOutletDevice.DEVICE_TYPES:
+                        device_object = InWallOutletDevice(botengine, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in IoDevice.DEVICE_TYPES:
                         device_object = IoDevice(botengine, device_id, device_type, device_desc, precache_measurements)
@@ -406,7 +417,17 @@ class Controller:
             self.location_devices[device_id] = location_id
             self.locations[location_id].devices[device_id] = device_object
             device_object.location_object = self.locations[location_id]
-    
+
+    def filter_measurements(self, botengine, location_id, device_object, measurements):
+        """
+        Optionally filter device measurement data before it reaches the upper layers of the stack.
+        :param botengine: BotEngine environment
+        :param location_id: Location ID
+        :param device_object: Device object pending update
+        :param measurements: Measurements dictionary we're about to trigger with, which is modified in place.
+        """
+        self.locations[location_id].filter_measurements(botengine, device_object, measurements)
+
     def device_measurements_updated(self, botengine, location_id, device_object):
         """
         A device's measurements have been updated
@@ -465,12 +486,13 @@ class Controller:
         device_object.file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
         self.locations[location_id].file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
 
-    def user_role_updated(self, botengine, location_id, user_id, category, location_access, previous_category, previous_location_access):
+    def user_role_updated(self, botengine, location_id, user_id, role, category, location_access, previous_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment
         :param location_id: Location ID
         :param user_id: User ID that changed roles
+        :param role: Application-layer agreed upon role integer which may auto-configure location_access and alert category
         :param category: User's current alert/communications category (1=resident; 2=supporter)
         :param location_access: User's current access to the location
         :param previous_category: User's previous category, if any
@@ -482,7 +504,7 @@ class Controller:
             botengine.get_logger().info("\t=> Now tracking location " + str(location_id))
             self.locations[location_id] = Location(botengine, location_id)
 
-        self.locations[location_id].user_role_updated(botengine, user_id, category, location_access, previous_category, previous_location_access)
+        self.locations[location_id].user_role_updated(botengine, user_id, role, category, location_access, previous_category, previous_location_access)
 
     def call_center_updated(self, botengine, location_id, user_id, status):
         """
@@ -556,16 +578,8 @@ class Controller:
         """
         botengine.get_logger().info("Location Intelligence Timer Fired: " + str(intelligence_id))
         for location_id in self.locations:
-            # Search for and trigger individual location instances
-            if str(intelligence_id) == str(location_id):
-                self.locations[location_id].timer_fired(botengine, argument)
-                return
-
-            # Search for and trigger location intelligence instances
-            for intelligence_module_name in self.locations[location_id].intelligence_modules:
-                if intelligence_id == self.locations[location_id].intelligence_modules[intelligence_module_name].intelligence_id:
-                    self.locations[location_id].intelligence_modules[intelligence_module_name].timer_fired(botengine, argument)
-                    return
+            self.locations[location_id].timer_fired(botengine, intelligence_id, argument)
+            return
 
     def run_device_intelligence(self, botengine, intelligence_id, argument):
         """

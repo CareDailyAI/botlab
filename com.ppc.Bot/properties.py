@@ -20,7 +20,11 @@ def get_property(botengine, name, complain_if_missing=True):
     # Organization properties override local properties
     if botengine is not None:
         if name in botengine.organization_properties:
-            return botengine.organization_properties[name]
+            property = str(botengine.organization_properties[name]).replace("null", "None").replace("false", "False").replace("true", "True")
+            try:
+                return eval(property)
+            except Exception as e:
+                return botengine.organization_properties[name]
 
     # Attempt to extract the local property
     import domain

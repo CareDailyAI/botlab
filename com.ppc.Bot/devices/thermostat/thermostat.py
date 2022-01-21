@@ -182,6 +182,13 @@ class ThermostatDevice(Device):
 
         Device.initialize(self, botengine)
 
+    def did_change_mode(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if we changed the mode
+        """
+        return ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE in self.last_updated_params
+
     def did_change_cooling_setpoint(self, botengine=None):
         """
         :param botengine: BotEngine environment
@@ -233,13 +240,14 @@ class ThermostatDevice(Device):
                         self.last_system_mode_command = None
 
                         if self.location_object is not None:
+                            # NOTE: Thermostat mode set.
                             self.location_object.narrate(botengine,
-                                                title = _("'{}' now set to {}").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
-                                                description = _("Your '{}' is set to {}.").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
-                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                                icon = 'thermostat',
-                                                extra_json_dict={"device_id": self.device_id}
-                                                )
+                                                         title=_("'{}' now set to {}").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
+                                                         description=_("Your '{}' is set to {}.").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
+                                                         priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                         icon='thermostat',
+                                                         extra_json_dict={"device_id": self.device_id},
+                                                         event_type="thermostat.thermostat_mode")
                             analytics.track(botengine, self.location_object, 'thermostat_mode', properties={"device_id": self.device_id, "description": self.description, "ai": True, "thermostat_mode": self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])})
 
                     else:
@@ -260,13 +268,14 @@ class ThermostatDevice(Device):
                         self.last_cooling_setpoint_command = None
 
                         if self.location_object is not None:
+                            # NOTE: Thermostat cooling set point adjusted.
                             self.location_object.narrate(botengine,
-                                                title = _("Cooling set point adjusted"),
-                                                description = _("Your '{}' cooling set point is set to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0])),
-                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                                icon = 'thermostat',
-                                                extra_json_dict={"device_id": self.device_id}
-                                                )
+                                                         title=_("Cooling set point adjusted"),
+                                                         description=_("Your '{}' cooling set point is set to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0])),
+                                                         priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                         icon='thermostat',
+                                                         extra_json_dict={"device_id": self.device_id},
+                                                         event_type="thermostat.thermostat_cooling_setpoint")
                             analytics.track(botengine, self.location_object, 'thermostat_cooling_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": True, "cooling_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]})
 
                     else:
@@ -289,13 +298,14 @@ class ThermostatDevice(Device):
                         self.last_heating_setpoint_command = None
 
                         if self.location_object is not None:
+                            # NOTE: Thermostat heating set point adjusted.
                             self.location_object.narrate(botengine,
-                                                title = _("Heating set point adjusted"),
-                                                description = _("Your '{}' heating set point is set to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0])),
-                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                                icon = 'thermostat',
-                                                extra_json_dict={"device_id": self.device_id}
-                                                )
+                                                         title=_("Heating set point adjusted"),
+                                                         description=_("Your '{}' heating set point is set to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0])),
+                                                         priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                         icon='thermostat',
+                                                         extra_json_dict={"device_id": self.device_id},
+                                                         event_type="thermostat.thermostat_heating_setpoint")
                             analytics.track(botengine, self.location_object, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": True, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
 
                     else:
@@ -310,13 +320,14 @@ class ThermostatDevice(Device):
             elif name == ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE and self.last_system_mode_command is None:
                 # User adjusted the mode - we didn't send a command recently
                 if self.location_object is not None:
+                    # Thermostat set mode by user.
                     self.location_object.narrate(botengine,
-                                                title = _("'{}' now set to {}").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
-                                                description = _("Your '{}' is now set to {}.").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
-                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                                icon = 'thermostat',
-                                                extra_json_dict={"device_id": self.device_id}
-                                                )
+                                                 title=_("'{}' now set to {}").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
+                                                 description=_("Your '{}' is now set to {}.").format(self.description, self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])),
+                                                 priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                 icon='thermostat',
+                                                 extra_json_dict={"device_id": self.device_id},
+                                                 event_type="thermostat.thermostat_mode")
                     analytics.track(botengine, self.location_object, 'thermostat_mode', properties={"device_id": self.device_id, "description": self.description, "ai": False, "thermostat_mode": self.thermostat_mode_to_string(self.measurements[ThermostatDevice.MEASUREMENT_NAME_SYSTEM_MODE][0][0])})
 
             elif name == ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C and self.last_cooling_setpoint_command is None:
@@ -324,13 +335,14 @@ class ThermostatDevice(Device):
                 self.user_adjusted_timestamp = botengine.get_timestamp()
 
                 if self.location_object is not None:
+                    # NOTE: Thermostat adjusted the cooling setpoint by user.
                     self.location_object.narrate(botengine,
-                                                title = _("Cooling set point adjusted"),
-                                                description = _("Your '{}' cooling set point was manually adjusted to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0])),
-                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                                icon = 'thermostat',
-                                                extra_json_dict={"device_id": self.device_id}
-                                                )
+                                                 title=_("Cooling set point adjusted"),
+                                                 description=_("Your '{}' cooling set point was manually adjusted to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0])),
+                                                 priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                 icon='thermostat',
+                                                 extra_json_dict={"device_id": self.device_id},
+                                                 event_type="thermostat.thermostat_cooling_setpoint")
 
                     analytics.track(botengine, self.location_object, 'thermostat_cooling_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "cooling_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]})
 
@@ -339,13 +351,14 @@ class ThermostatDevice(Device):
                 self.user_adjusted_timestamp = botengine.get_timestamp()
 
                 if self.location_object is not None:
+                    # NOTE: Thermostat adjusted the heating setpoint by user.
                     self.location_object.narrate(botengine,
-                                                title = _("Heating set point adjusted"),
-                                                description = _("Your '{}' heating set point was manually adjusted to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0])),
-                                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                                icon = 'thermostat',
-                                                extra_json_dict={"device_id": self.device_id}
-                                                )
+                                                 title = _("Heating set point adjusted"),
+                                                 description = _("Your '{}' heating set point was manually adjusted to {}.").format(self.description, self._celsius_to_narrative(self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0])),
+                                                 priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                                                 icon = 'thermostat',
+                                                 extra_json_dict={"device_id": self.device_id},
+                                                 event_type="thermostat.thermostat_heating_setpoint")
                     analytics.track(botengine, self.location_object, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
 
 
@@ -402,7 +415,7 @@ class ThermostatDevice(Device):
         if ThermostatDevice.MEASUREMENT_NAME_AMBIENT_TEMPERATURE_C in self.measurements:
             return self.measurements[ThermostatDevice.MEASUREMENT_NAME_AMBIENT_TEMPERATURE_C][0][0]
 
-        return False
+        return None
 
     def get_cooling_setpoint(self, botengine=None):
         """
@@ -538,26 +551,26 @@ class ThermostatDevice(Device):
         if system_mode is not None:
             if ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C in self.last_updated_params:
                 self.preferred_cooling_setpoint_home_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_COOLING_SETPOINT_C][0][0]
-
+                # NOTE: Learned HOME thermostat cooling set point.
                 self.location_object.narrate(botengine,
-                                            title = _("'{}': Learned HOME cooling set point.").format(self.description),
-                                            description = _("Your '{}' learned you want the cooling set point set to {} when you are home.").format(self.description, self._celsius_to_narrative(self.preferred_cooling_setpoint_home_c)),
-                                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                            icon = 'thermostat',
-                                            extra_json_dict={"device_id": self.device_id}
-                                            )
+                                             title=_("'{}': Learned HOME cooling set point.").format(self.description),
+                                             description=_("Your '{}' learned you want the cooling set point set to {} when you are home.").format(self.description, self._celsius_to_narrative(self.preferred_cooling_setpoint_home_c)),
+                                             priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                             icon='thermostat',
+                                             extra_json_dict={"device_id": self.device_id},
+                                             event_type="thermostat.thermostat_cooling_setpoint_learned")
                 analytics.track(botengine, self.location_object, 'thermostat_cooling_setpoint_learned', properties={"device_id": self.device_id, "description": self.description, "thermostat_mode": "COOL", "mode": "HOME", "setpoint_c": self.preferred_cooling_setpoint_home_c})
 
             if ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C in self.last_updated_params:
                 self.preferred_heating_setpoint_home_c = self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]
-
+                # NOTE: Learned HOME thermostat heating set point.
                 self.location_object.narrate(botengine,
-                                            title = _("'{}': Learned HOME heating set point.").format(self.description),
-                                            description = _("Your '{}' learned you want the heating set point set to {} when you are home.").format(self.description, self._celsius_to_narrative(self.preferred_heating_setpoint_home_c)),
-                                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                            icon = 'thermostat',
-                                            extra_json_dict={"device_id": self.device_id}
-                                            )
+                                             title=_("'{}': Learned HOME heating set point.").format(self.description),
+                                             description=_("Your '{}' learned you want the heating set point set to {} when you are home.").format(self.description, self._celsius_to_narrative(self.preferred_heating_setpoint_home_c)),
+                                             priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                             icon='thermostat',
+                                             extra_json_dict={"device_id": self.device_id},
+                                             event_type="thermostat.thermostat_heating_setpoint_learned")
                 analytics.track(botengine, self.location_object, 'thermostat_heating_setpoint_learned', properties={"device_id": self.device_id, "description": self.description, "thermostat_mode": "HEAT", "mode": "HOME", "setpoint_c": self.preferred_heating_setpoint_home_c})
 
         # This number will represent the total amount of time across ALL devices.
@@ -596,15 +609,16 @@ class ThermostatDevice(Device):
                         self.preferred_cooling_offset_sleep_c = ONE_DEGREE_F_TO_C
                     botengine.get_logger().info("Sleep mode cooling offset is now less efficient (offset={}C)".format(self.preferred_cooling_offset_sleep_c))
 
+                # NOTE: Thermostat cooling setpoint learned night time preferences.
                 self.location_object.narrate(botengine,
-                                    title = _("'{}': Learned night time preferences.").format(self.description),
-                                    description = _("Your '{}' learned the night time cooling setpoint.").format(self.description),
-                                    priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                    icon = 'thermostat',
-                                    extra_json_dict={
-                                        "device_id": self.device_id
-                                    }
-                                    )
+                                             title=_("'{}': Learned night time preferences.").format(self.description),
+                                             description=_("Your '{}' learned the night time cooling setpoint.").format(self.description),
+                                             priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                             icon='thermostat',
+                                             extra_json_dict={
+                                                 "device_id": self.device_id
+                                             },
+                                             event_type="thermostat.thermostat_cooling_sleep_setpoint_learned")
 
                 # analytics.track(botengine, self.location_object, 'thermostat_cooling_sleep_setpoint_learned', properties={
                 #     "device_id": self.device_id,
@@ -634,15 +648,16 @@ class ThermostatDevice(Device):
                         self.preferred_heating_offset_sleep_c = ONE_DEGREE_F_TO_C
                     botengine.get_logger().info("Sleep mode heating offset is now less efficient (offset={}C)".format(self.preferred_heating_offset_sleep_c))
 
+                # NOTE: Thermostat heating setpoint learned night time preferences.
                 self.location_object.narrate(botengine,
-                                    title = _("'{}': Learned night time preferences.").format(self.description),
-                                    description = _("Your '{}' learned the night time heating setpoint.").format(self.description),
-                                    priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                    icon = 'thermostat',
-                                    extra_json_dict={
-                                        "device_id": self.device_id
-                                    }
-                                    )
+                                             title=_("'{}': Learned night time preferences.").format(self.description),
+                                             description=_("Your '{}' learned the night time heating setpoint.").format(self.description),
+                                             priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                             icon='thermostat',
+                                             extra_json_dict={
+                                                 "device_id": self.device_id
+                                             },
+                                             event_type="thermostat.thermostat_heating_sleep_setpoint_learned")
 
                 # analytics.track(botengine, self.location_object, 'thermostat_heating_sleep_setpoint_learned', properties={
                 #     "device_id": self.device_id,
@@ -691,21 +706,22 @@ class ThermostatDevice(Device):
                         self.preferred_cooling_offset_away_c = ONE_DEGREE_F_TO_C
                     botengine.get_logger().info("Away mode cooling offset is now less efficient (offset={}C)".format(self.preferred_cooling_offset_away_c))
 
+                # NOTE: Thermostat cooling setpoint learned away preferences.
                 self.location_object.narrate(botengine,
-                                    title = _("'{}': Learned away preferences.").format(self.description),
-                                    description = _("Your '{}' learned the away cooling setpoint should be {} from HOME mode.").format(self.description, self._celsius_to_narrative(self.preferred_cooling_offset_away_c)),
-                                    priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                    icon = 'thermostat',
-                                    extra_json_dict={
-                                        "device_id": self.device_id,
-                                        "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                                        "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                                        "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                                        "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                                        "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                                        "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c
-                                    }
-                                    )
+                                             title=_("'{}': Learned away preferences.").format(self.description),
+                                             description=_("Your '{}' learned the away cooling setpoint should be {} from HOME mode.").format(self.description, self._celsius_to_narrative(self.preferred_cooling_offset_away_c)),
+                                             priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                             icon='thermostat',
+                                             extra_json_dict={
+                                                 "device_id": self.device_id,
+                                                 "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                                                 "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                                                 "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                                                 "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                                                 "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                                                 "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c
+                                             },
+                                             event_type="thermostat.thermostat_cooling_away_setpoint_learned")
 
                 # analytics.track(botengine, self.location_object, 'thermostat_cooling_away_setpoint_learned', properties={
                 #     "device_id": self.device_id,
@@ -735,21 +751,22 @@ class ThermostatDevice(Device):
                         self.preferred_heating_offset_away_c = ONE_DEGREE_F_TO_C
                     botengine.get_logger().info("Away mode heating offset is now less efficient (offset={}C)".format(self.preferred_heating_offset_away_c))
 
+                # NOTE: Thermostat heating setpoint learned away preferences.
                 self.location_object.narrate(botengine,
-                                    title = _("'{}': Learned night time preferences.").format(self.description),
-                                    description = _("Your '{}' learned the away heating setpoint should be {} from HOME mode.").format(self.description, self._celsius_to_narrative(self.preferred_heating_offset_away_c)),
-                                    priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                    icon = 'thermostat',
-                                    extra_json_dict={
-                                        "device_id": self.device_id,
-                                        "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
-                                        "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
-                                        "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
-                                        "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
-                                        "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
-                                        "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c
-                                    }
-                                    )
+                                             title=_("'{}': Learned night time preferences.").format(self.description),
+                                             description=_("Your '{}' learned the away heating setpoint should be {} from HOME mode.").format(self.description, self._celsius_to_narrative(self.preferred_heating_offset_away_c)),
+                                             priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                             icon='thermostat',
+                                             extra_json_dict={
+                                                 "device_id": self.device_id,
+                                                 "preferred_cooling_offset_sleep_c": self.preferred_cooling_offset_sleep_c,
+                                                 "preferred_heating_offset_sleep_c": self.preferred_heating_offset_sleep_c,
+                                                 "preferred_cooling_offset_away_c": self.preferred_cooling_offset_away_c,
+                                                 "preferred_heating_offset_away_c": self.preferred_heating_offset_away_c,
+                                                 "preferred_cooling_setpoint_home_c": self.preferred_cooling_setpoint_home_c,
+                                                 "preferred_heating_setpoint_home_c": self.preferred_heating_setpoint_home_c
+                                             },
+                                             event_type="thermostat.thermostat_heating_away_setpoint_learned")
 
                 # analytics.track(botengine, self.location_object, 'thermostat_heating_away_setpoint_learned', properties={
                 #     "device_id": self.device_id,
@@ -954,13 +971,14 @@ class ThermostatDevice(Device):
                 policies["preferred_heating_setpoint_home_c"] = self.preferred_heating_setpoint_home_c
                 policies["heating_temperature_c"] = heating_setpoint_celsius
 
+                # NOTE: Thermostat update the policy.
                 self.location_object.narrate(botengine,
-                                            title = _("'{}': Applying energy policies").format(self.description),
-                                            description = _("Your new cooling set point is {} and heating setpoint is {}.").format(self._celsius_to_narrative(cooling_setpoint_celsius), self._celsius_to_narrative(heating_setpoint_celsius)),
-                                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                            icon = 'thermostat',
-                                            extra_json_dict={"device_id": self.device_id}
-                                            )
+                                             title=_("'{}': Applying energy policies").format(self.description),
+                                             description=_("Your new cooling set point is {} and heating setpoint is {}.").format(self._celsius_to_narrative(cooling_setpoint_celsius), self._celsius_to_narrative(heating_setpoint_celsius)),
+                                             priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                             icon='thermostat',
+                                             extra_json_dict={"device_id": self.device_id},
+                                             event_type="thermostat.thermostat_policy_update")
 
                 if abs(heat_ee_offset + heat_dr_offset + cool_ee_offset + cool_dr_offset) > 0.0:
                     analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)

@@ -29,7 +29,7 @@ class DevelcoSquidlinkDevice(GatewayDevice):
     """
         
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [36, 37]
+    DEVICE_TYPES = [36, 37, 38]
         
     def get_device_type_name(self):
         """

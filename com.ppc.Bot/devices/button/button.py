@@ -37,6 +37,7 @@ class ButtonDevice(Device):
     GOAL_BUTTON_CALL_FOR_HELP_PANIC = 113
     GOAL_BUTTON_DOORBELL = 115
     GOAL_BUTTON_STAY_DISARM = 116
+    GOAL_BUTTON_SKIP = 300
 
     # Low battery tag
     LOW_BATTERY_TAG = "lowbattery_cr2032"

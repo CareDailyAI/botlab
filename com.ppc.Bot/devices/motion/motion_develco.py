@@ -43,3 +43,25 @@ class DevelcoMotionDevice(MotionDevice):
         :return: True if the temperature just got updated on this execution
         """
         return DevelcoMotionDevice.MEASUREMENT_DEG_C in self.last_updated_params
+
+    def set_application_light(self, botengine, on=True):
+        """
+        :param botengine: BotEngine environment
+        :param on: True if turn on the application light
+        :return:
+        """
+        value = "0"
+        if on:
+            value = "1"
+        botengine.send_command(self.device_id, "ledAppEnable", value)
+
+    def set_error_light(self, botengine, on=True):
+        """
+        :param botengine: BotEngine environment
+        :param on: True if turn on the error light
+        :return:
+        """
+        value = "0"
+        if on:
+            value = "1"
+        botengine.send_command(self.device_id, "ledErrEnable", value)

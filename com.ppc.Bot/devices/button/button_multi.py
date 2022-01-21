@@ -36,6 +36,7 @@ class MultiButtonDevice(Device):
     GOAL_BUTTON_CALL_FOR_HELP_PANIC = 113
     GOAL_BUTTON_DOORBELL = 115
     GOAL_BUTTON_STAY_DISARM = 116
+    GOAL_BUTTON_SKIP = 300
 
     # Demo scenarios
     GOAL_BUTTON_DEMO_VAYYAR = 200

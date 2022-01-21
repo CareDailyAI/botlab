@@ -4,7 +4,7 @@
 declare -a languages=("en" "de")
 
 # 1. Update the .pot file template for all languages
-pybabel extract -o ./intelligence/locale/messages.pot -c NOTE: -s ./
+pybabel extract -o ./intelligence/locale/messages.pot -c NOTE: -s ./ --sort-output
 
 # Loop through every language and update the .po file
 for i in "${languages[@]}"
@@ -18,7 +18,7 @@ do
 		# 2b. Update the existing language directory .po file
 		echo ""
 		echo "Updating the existing language directory .po file : $i"	
-		pybabel update -D 'messages' -i ./intelligence/locale/messages.pot -d ./intelligence/locale -l $i
+		pybabel update -D 'messages' -i ./intelligence/locale/messages.pot -d ./intelligence/locale -l $i --ignore-obsolete
 	fi
 	
 	# 3. Compile the .po file into the .mo file

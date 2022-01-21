@@ -41,3 +41,25 @@ class DevelcoEntryDevice(EntryDevice):
             return self.measurements[DevelcoEntryDevice.MEASUREMENT_DEG_C][0][0]
 
         return None
+
+    def set_application_light(self, botengine, on=True):
+        """
+        :param botengine: BotEngine environment
+        :param on: True if turn on the application light
+        :return:
+        """
+        value = "0"
+        if on:
+            value = "1"
+        botengine.send_command(self.device_id, "ledAppEnable", value)
+
+    def set_error_light(self, botengine, on=True):
+        """
+        :param botengine: BotEngine environment
+        :param on: True if turn on the error light
+        :return:
+        """
+        value = "0"
+        if on:
+            value = "1"
+        botengine.send_command(self.device_id, "ledErrEnable", value)

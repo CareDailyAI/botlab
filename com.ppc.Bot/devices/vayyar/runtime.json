@@ -24,6 +24,8 @@
       "vyrc.presenceReportMinRateMills",
       "vyrc.targetPositionChangeThresholdMeters",
       "vyrc.silentMode",
+      "vyrc.sensorHeight",
+      "vyrc.sensorMounting",
       "occupancyMap"
     ]
   }

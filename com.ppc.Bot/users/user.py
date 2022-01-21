@@ -7,7 +7,7 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: Edward Liu
 """
 
-import intelligence.index
+import index
 import importlib
 
 class User:
@@ -94,7 +94,7 @@ class User:
         """
         return
 
-    def user_role_updated(self, botengine, user_id, alert_category, location_access, previous_alert_category, previous_location_access):
+    def user_role_updated(self, botengine, user_id, role, alert_category, location_access, previous_alert_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment

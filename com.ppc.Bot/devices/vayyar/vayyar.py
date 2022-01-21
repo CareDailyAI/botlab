@@ -8,7 +8,13 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from devices.device import Device
+import signals.vayyar as vayyar
 import utilities.utilities as utilities
+
+# We had established code to avoid going all the way to the wall, but this caused interferences between
+# subregions and the arena where subregions were not also adjusted to the arena side. This caused some
+# kinds of false positive presence detects, apparently, so we're backing this feature off for now.
+WALL_PADDING_M = 0
 
 class VayyarDevice(Device):
     """
@@ -36,10 +42,18 @@ class VayyarDevice(Device):
     FALL_STATUS_EXIT = "fall_exit"
 
     # Min and max values
-    X_MIN_METERS = -1.9
-    X_MAX_METERS = 1.9
-    Y_MIN_METERS = 0.3
-    Y_MAX_METERS = 3.9
+    X_MIN_METERS_WALL = -2.0
+    X_MAX_METERS_WALL = 2.0
+    Y_MIN_METERS_WALL = 0.3
+    Y_MAX_METERS_WALL = 4.0
+    Z_MIN_METERS_WALL = 0
+    Z_MAX_METERS_WALL = 2.0
+    X_MIN_METERS_CEILING = -2.0
+    X_MAX_METERS_CEILING = 2.0
+    Y_MIN_METERS_CEILING = -2.5
+    Y_MAX_METERS_CEILING = 2.5
+    SENSOR_HEIGHT_MIN_METERS_CEILING = 2.3
+    SENSOR_HEIGHT_MAX_METERS_CEILING = 3.0
 
     # Behavior ID's
     BEHAVIOR_TYPE_BEDROOM = 0
@@ -48,11 +62,22 @@ class VayyarDevice(Device):
     BEHAVIOR_TYPE_KITCHEN = 3
     BEHAVIOR_TYPE_OTHER = 4
 
+    # Mounting options
+    SENSOR_MOUNTING_WALL = 0
+    SENSOR_MOUNTING_CEILING = 1
+    SENSOR_MOUNTING_CEILING_45_DEGREE = 2
+
     # Maximum allowable subregions
     MAXIMUM_SUBREGIONS = 4
 
+    # Low signal strength warning threshold
+    LOW_RSSI_THRESHOLD = -75
+
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [2000]
+
+    # Maximum fall counter value
+    MAXIMUM_FALL_COUNT = 20
 
     def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
         """
@@ -65,12 +90,72 @@ class VayyarDevice(Device):
         """
         Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
+        # Information (changes quickly): Total occupant information as measured and updated by a supporting microservice (location_vayyarsubregion_microservice)
+        self.information_total_occupants = 0
+
+        # Knowledge (changes more slowly): Total occupants knowledge as measured and updated by a supporting microservice (device_vayyar
+        self.knowledge_total_occupants = 0
+
+        # Count of times a target measurement has detected a fall on this device.
+        # Every fall detect from a target increments this value to the MAXIMUM_FALL_COUNT
+        # Every non-fall target measurement decrements the count.
+        # This is used like a 'capacitor' of fall events, giving us confidence to call for help or that a person is still on the ground.
+        self.fall_count = 0
+
+        # True if this device is declared to be near an exit door.
+        self.near_exit = False
+
+        # Summary of existing subregions - { "unique_id": (context_id, name), ... }
+        self.subregions = {}
+
+        # List of occupied subregion information (high frequency / not validated) - [ "unique_id", ... ]
+        self.information_occupied_subregions = []
+
+        # List of occupied subregion knowledge (low frequency / higher reliability) - [ "unique_id", ... ]
+        self.knowledge_occupied_subregions = []
+
+    def new_version(self, botengine):
+        """
+        New version
+        :param botengine: BotEngine environment
+        """
+        Device.new_version(self, botengine)
+
+        # Added November 24, 2021
+        if not hasattr(self, 'information_total_occupants'):
+            self.information_total_occupants = 0
+
+        # Added December 14, 2021
+        if not hasattr(self, 'knowledge_total_occupants'):
+            self.knowledge_total_occupants = 0
+
+        # Added November 24, 2021
+        if not hasattr(self, 'fall_count'):
+            self.fall_count = 0
+
+        # Added November 30, 2021
+        if not hasattr(self, 'near_exit'):
+            self.near_exit = False
+
+        # Added January 17, 2022
+        if not hasattr(self, 'subregions'):
+            self.subregions = {}
+
+        # Added January 17, 2022
+        if not hasattr(self, 'information_occupied_subregions'):
+            self.information_occupied_subregions = []
+
+        # Added January 17, 2022
+        if not hasattr(self, 'knowledge_occupied_subregions'):
+            self.knowledge_occupied_subregions = []
+
+
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
-        return _("Vayyar Home")
+        return _("Vayyar Care")
     
     def get_icon(self):
         """
@@ -106,6 +191,9 @@ class VayyarDevice(Device):
         :param botengine:
         :return: True if this device is in a bathroom
         """
+        if self.goal_id == VayyarDevice.BEHAVIOR_TYPE_BATHROOM:
+            return True
+
         bathroom_names = ['schlaf', 'bath', 'toilet', 'shower', 'powder']
 
         for name in bathroom_names:
@@ -117,6 +205,26 @@ class VayyarDevice(Device):
     #===========================================================================
     # Attributes
     #===========================================================================
+    def did_change_fall_status(self, botengine):
+        """
+        Did the fall status get updated
+        :param botengine:
+        :return: True if the fall status changed
+        """
+        if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
+            if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.last_updated_params:
+                return True
+
+    def get_fall_status(self, botengine):
+        """
+        Retrieve the most recent fall status value
+        :param botengine:
+        :return:
+        """
+        if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
+            return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][0][0]
+        return None
+
     def did_start_detecting_fall(self, botengine):
         """
         :param botengine:
@@ -124,7 +232,7 @@ class VayyarDevice(Device):
         """
         if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
             if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.last_updated_params:
-                return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][0][0] == VayyarDevice.FALL_STATUS_CALLING
+                return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][0][0] == VayyarDevice.FALL_STATUS_CONFIRMED
 
         return False
 
@@ -138,7 +246,7 @@ class VayyarDevice(Device):
                 if len(self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS]) > 1:
                     # We have more than one fallStatus measurement captured, and the latest parameter to get updated was fallStatus.
                     # Make sure this newest parameter says we are not calling for help, and the last parameter did say we were calling for help.
-                    return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][0][0] != VayyarDevice.FALL_STATUS_CALLING and self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][1][0] == VayyarDevice.FALL_STATUS_CALLING
+                    return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][0][0] == VayyarDevice.FALL_STATUS_EXIT
 
         return False
 
@@ -189,6 +297,18 @@ class VayyarDevice(Device):
 
         return targets
 
+    def get_newest_targets(self, botengine):
+        """
+        Retrieve only the current targets, without organizing by timestamp.
+        { 'target_id': { 'x': x, 'y': y, 'z': z } }
+        :param botengine: BotEngine environment
+        :return: { 'target_id': { 'x': x, 'y': y, 'z': z } }
+        """
+        targets = self.get_occupancy_targets(botengine)
+        for timestamp_ms in targets:
+            return targets[timestamp_ms]
+        return {}
+
     def print_occupant_positions(self, botengine):
         """
         Print the occupant position to the CLI
@@ -199,16 +319,29 @@ class VayyarDevice(Device):
             for target_id in targets[timestamp_ms]:
                 botengine.get_logger().info(utilities.Color.GREEN + "VayyarDevice target {}: x = {} inches; y = {} inches".format(target_id, round(targets[timestamp_ms][target_id]['x'] * 0.393701, 1), round(targets[timestamp_ms][target_id]['y'] * 0.393701, 1)) + utilities.Color.END)
 
-    def total_occupants(self, botengine):
-        """
-        Get the current total occupants (0, 1, or "more than one" (2+))
-        :param botengine:
-        :return: 0, 1, or 2+
-        """
-        total = len(self.get_occupancy_targets(botengine))
-        if total > 2:
-            total = 2
-        return total
+    # def total_occupants(self, botengine):
+    #     """
+    #     Get the current total occupants (0, 1, or "more than one" (2+))
+    #     :param botengine:
+    #     :return: 0, 1, or 2+
+    #     """
+    #     total = 0
+    #     if not self.is_detecting_occupancy(botengine):
+    #         # If the device can update us that occupancy is no longer detected in the room, then there's nobody there.
+    #         # But we don't trust this - because sometimes we've observed nobody in the room
+    #         # and no targets getting updated, but the occupancy parameter remained a '1'.
+    #         # So we do another double check below on the timestamp on the most recent target detection.
+    #         return 0
+    #
+    #     targets = self.get_occupancy_targets(botengine)
+    #     if len(targets) > 0:
+    #         # There's at least a measurement captured.
+    #         for timestamp_ms in targets:
+    #             if timestamp_ms > botengine.get_timestamp() - utilities.ONE_SECOND_MS * 15:
+    #                 total = len(targets[timestamp_ms])
+    #                 if total > 2:
+    #                     total = 2
+    #     return total
 
     def did_start_detecting_motion(self, botengine):
         """
@@ -220,6 +353,17 @@ class VayyarDevice(Device):
         :return: True if the Vayyar Home did start detecting occupancy.
         """
         return self.did_start_detecting_occupancy(botengine)
+
+    def is_detecting_occupancy(self, botengine):
+        """
+        True if this device is detecting an occupant, as indicated by the 'occupancy' parameter and not our targets
+        :param botengine:
+        :return:
+        """
+        if VayyarDevice.MEASUREMENT_NAME_OCCUPANCY in self.measurements:
+            if len(self.measurements[VayyarDevice.MEASUREMENT_NAME_OCCUPANCY]) > 0:
+                return self.measurements[VayyarDevice.MEASUREMENT_NAME_OCCUPANCY][0][0] == 1
+        return False
 
     def did_start_detecting_occupancy(self, botengine):
         """
@@ -350,7 +494,46 @@ class VayyarDevice(Device):
         """
         botengine.send_command(self.device_id, "vyrc.targetPositionChangeThresholdMeters", float(target_change_threshold_m))
 
-    def set_room_boundaries(self, botengine, x_min_meters=-1.9, x_max_meters=1.9, y_min_meters=0.3, y_max_meters=3.9, z_min_meters=0, z_max_meters=2.5):
+    def set_ceiling_mount(self, botengine, sensor_height_m=2.0):
+        """
+        Configure this Vayyar Home for a ceiling mount
+        :param botengine: BotEngine environment
+        :param sensor_height: Sensor height in meters (for example 2.0 - 3.0 meters)
+        """
+        all_params = []
+
+        all_params.append({
+            "name": "vyrc.sensorMounting",
+            "value": VayyarDevice.SENSOR_MOUNTING_CEILING
+        })
+
+        all_params.append({
+            "name": "vyrc.sensorHeight",
+            "value": sensor_height_m
+        })
+
+        botengine.send_commands(self.device_id, all_params)
+
+    def set_wall_mount(self, botengine):
+        """
+        Configure this Vayyar Home for a wall mount
+        :param botengine: BotEngine environment
+        """
+        all_params = []
+
+        all_params.append({
+            "name": "vyrc.sensorMounting",
+            "value": VayyarDevice.SENSOR_MOUNTING_WALL
+        })
+
+        all_params.append({
+            "name": "vyrc.sensorHeight",
+            "value": 1.5
+        })
+
+        botengine.send_commands(self.device_id, all_params)
+
+    def set_room_boundaries(self, botengine, x_min_meters=-2.0, x_max_meters=2.0, y_min_meters=0.3, y_max_meters=4.0, z_min_meters=0, z_max_meters=2.0, mounting_type=0, sensor_height_m=1.5, near_exit=False):
         """
         Set the boundaries of the room. Measurements are in meters.
 
@@ -371,20 +554,97 @@ class VayyarDevice(Device):
         :param y_max_meters: Distance across the room from the Vayyar Home, maximum is 3.9 meters
         :param z_min_meters: Doesn't matter, if the Vayyar Home is wall-mounted.
         :param z_max_meters: Doesn't matter, if the Vayyar Home is wall-mounted.
+        :param near_exit: True if this device is near an exit door
         """
         all_params = []
 
-        if x_min_meters < VayyarDevice.X_MIN_METERS:
-            x_min_meters = VayyarDevice.X_MIN_METERS
+        self.near_exit = near_exit
 
-        if x_max_meters > VayyarDevice.X_MAX_METERS:
-            x_max_meters = VayyarDevice.X_MAX_METERS
+        if mounting_type == VayyarDevice.SENSOR_MOUNTING_WALL:
+            # Guardrails for wall mount
+            if x_min_meters > 0:
+                x_min_meters = -x_min_meters
 
-        if y_min_meters < VayyarDevice.Y_MIN_METERS:
-            y_min_meters = VayyarDevice.Y_MIN_METERS
+            if x_max_meters < 0:
+                x_max_meters = -x_max_meters
 
-        if y_max_meters > VayyarDevice.Y_MAX_METERS:
-            y_max_meters = VayyarDevice.Y_MAX_METERS
+            if y_max_meters < 1.0:
+                y_max_meters = 1.0
+
+            x_min_meters = round(x_min_meters + WALL_PADDING_M, 3)
+            x_max_meters = round(x_max_meters - WALL_PADDING_M, 3)
+            y_max_meters = round(y_max_meters - WALL_PADDING_M, 3)
+            z_max_meters = round(z_max_meters - WALL_PADDING_M, 3)
+
+            if x_min_meters < VayyarDevice.X_MIN_METERS_WALL:
+                x_min_meters = VayyarDevice.X_MIN_METERS_WALL
+
+            if x_max_meters > VayyarDevice.X_MAX_METERS_WALL:
+                x_max_meters = VayyarDevice.X_MAX_METERS_WALL
+
+            if y_max_meters > VayyarDevice.Y_MAX_METERS_WALL:
+                y_max_meters = VayyarDevice.Y_MAX_METERS_WALL
+
+            if y_min_meters < VayyarDevice.Y_MIN_METERS_WALL:
+                y_min_meters = VayyarDevice.Y_MIN_METERS_WALL
+
+            if z_max_meters > VayyarDevice.Z_MAX_METERS_WALL:
+                z_max_meters = VayyarDevice.Z_MAX_METERS_WALL
+
+            # Fixed sensor height on walls
+            all_params.append({
+                "name": "vyrc.sensorHeight",
+                "value": 1.5
+            })
+
+        elif mounting_type == VayyarDevice.SENSOR_MOUNTING_CEILING or mounting_type == VayyarDevice.SENSOR_MOUNTING_CEILING_45_DEGREE:
+            # Guardrails for ceiling mount
+            if x_min_meters > 0:
+                x_min_meters = -x_min_meters
+
+            if x_max_meters < 0:
+                x_max_meters = -x_max_meters
+
+            if y_min_meters > 0:
+                y_min_meters = -y_min_meters
+
+            if y_max_meters < 0:
+                y_max_meters = -y_max_meters
+
+            x_min_meters = round(x_min_meters + WALL_PADDING_M, 3)
+            x_max_meters = round(x_max_meters - WALL_PADDING_M, 3)
+            y_max_meters = round(y_max_meters - WALL_PADDING_M, 3)
+            y_min_meters = round(y_min_meters + WALL_PADDING_M, 3)
+
+            if x_min_meters < VayyarDevice.X_MIN_METERS_CEILING:
+                x_min_meters = VayyarDevice.X_MIN_METERS_CEILING
+
+            if x_max_meters > VayyarDevice.X_MAX_METERS_CEILING:
+                x_max_meters = VayyarDevice.X_MAX_METERS_CEILING
+
+            if y_min_meters < VayyarDevice.Y_MIN_METERS_CEILING:
+                y_min_meters = VayyarDevice.Y_MIN_METERS_CEILING
+
+            if y_max_meters > VayyarDevice.Y_MAX_METERS_CEILING:
+                y_max_meters = VayyarDevice.Y_MAX_METERS_CEILING
+
+            if sensor_height_m < VayyarDevice.SENSOR_HEIGHT_MIN_METERS_CEILING:
+                sensor_height_m = VayyarDevice.SENSOR_HEIGHT_MIN_METERS_CEILING
+
+            if sensor_height_m > VayyarDevice.SENSOR_HEIGHT_MAX_METERS_CEILING:
+                sensor_height_m = VayyarDevice.SENSOR_HEIGHT_MAX_METERS_CEILING
+
+            # Variable sensor height on ceilings
+            all_params.append({
+                "name": "vyrc.sensorHeight",
+                "value": sensor_height_m
+            })
+
+
+        all_params.append({
+            "name": "vyrc.sensorMounting",
+            "value": mounting_type
+        })
 
         all_params.append({
             "name": "vyrc.xMin",
@@ -426,6 +686,20 @@ class VayyarDevice(Device):
         """
         return "vyrc.xMin" in self.last_updated_params or "vyrc.xMax" in self.last_updated_params or "vyrc.yMin" in self.last_updated_params or "vyrc.yMax" in self.last_updated_params or "vyrc.zMin" in self.last_updated_params or "vyrc.zMax" in self.last_updated_params or "vyrc.zMin" in self.last_updated_params
 
+    def get_mounting_type(self, botengine):
+        """
+        Get the mounting type
+        * 0 = wall
+        * 1 = ceiling
+        * 2 = ceiling @ 45-degree angle
+        :param botengine: BotEngine environment
+        :return: Mounting type
+        """
+        if "vyrc.sensorMounting" in self.measurements:
+            if len(self.measurements["vyrc.sensorMounting"]) > 0:
+                return self.measurements["vyrc.sensorMounting"][0][0]
+        return VayyarDevice.SENSOR_MOUNTING_WALL
+
     def get_room_boundaries(self, botengine):
         """
         Return the boundaries of this room in the form of a dictionary, and include an "updated_ms" value declaring the newest update timestamp in milliseconds.
@@ -433,12 +707,14 @@ class VayyarDevice(Device):
         :param botengine:
         :return: Dictionary with room boundaries
         """
-        x_min = -1.9
-        x_max = 1.9
-        y_min = 0.3
-        y_max = 3.9
-        z_min = 0
-        z_max = 2.5
+        x_min = VayyarDevice.X_MIN_METERS_WALL
+        x_max = VayyarDevice.X_MAX_METERS_WALL
+        y_min = VayyarDevice.Y_MIN_METERS_WALL
+        y_max = VayyarDevice.Y_MAX_METERS_WALL
+        z_min = VayyarDevice.Z_MIN_METERS_WALL
+        z_max = VayyarDevice.Z_MAX_METERS_WALL
+        mounting_type = 0
+        sensor_height_m = 1.5
         updated_ms = 0
 
         if "vyrc.xMin" in self.measurements:
@@ -477,19 +753,149 @@ class VayyarDevice(Device):
                 if self.measurements["vyrc.zMax"][0][1] > updated_ms:
                     updated_ms = self.measurements["vyrc.zMax"][0][1]
 
+        if "vyrc.sensorMounting" in self.measurements:
+            if len(self.measurements["vyrc.sensorMounting"]) > 0:
+                mounting_type = self.measurements["vyrc.sensorMounting"][0][0]
+                if self.measurements["vyrc.sensorMounting"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.sensorMounting"][0][1]
+
+        if "vyrc.sensorHeight" in self.measurements:
+            if len(self.measurements["vyrc.sensorHeight"]) > 0:
+                sensor_height_m = self.measurements["vyrc.sensorHeight"][0][0]
+                if self.measurements["vyrc.sensorHeight"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.sensorHeight"][0][1]
+
+        # Undo our wall padding
+        if mounting_type == VayyarDevice.SENSOR_MOUNTING_WALL:
+            x_min = round(x_min - WALL_PADDING_M, 3)
+            x_max = round(x_max + WALL_PADDING_M, 3)
+            y_max = round(y_max + WALL_PADDING_M, 3)
+            z_max = round(z_max + WALL_PADDING_M, 3)
+
+        else:
+            x_min = round(x_min - WALL_PADDING_M, 3)
+            x_max = round(x_max + WALL_PADDING_M, 3)
+            y_max = round(y_max + WALL_PADDING_M, 3)
+            y_min = round(y_min - WALL_PADDING_M, 3)
+
         return {
-            "x_min": x_min,
-            "x_max": x_max,
-            "y_min": y_min,
-            "y_max": y_max,
-            "z_min": z_min,
-            "z_max": z_max,
-            "updated_ms": updated_ms
+            "x_min_meters": x_min,
+            "x_max_meters": x_max,
+            "y_min_meters": y_min,
+            "y_max_meters": y_max,
+            "z_min_meters": z_min,
+            "z_max_meters": z_max,
+            "mounting_type": mounting_type,
+            "sensor_height_m": sensor_height_m,
+            "updated_ms": updated_ms,
+            "near_exit": self.near_exit
         }
+
+    def record_subregion(self, botengine, unique_id, context_id, name):
+        """
+        Record the existence of a subregion without saving it to the device, so
+        microservices can quickly check if we have a particular subregion defined.
+        :param botengine: BotEngine
+        :param unique_id: Unique ID to add/update
+        :param context_id: Context ID of the subregion
+        :param name: Name of the subregion
+        """
+        self.subregions[unique_id] = (context_id, name)
+
+    def delete_recorded_subregion(self, botengine, unique_id):
+        """
+        Delete a subregion record without saving it to the device.
+        :param botengine: BotEngine
+        :param unique_id: Unique ID to delete
+        """
+        if unique_id in self.subregions:
+            del self.subregions[unique_id]
+
+    def subregions_with_context(self, botengine, target_context_id):
+        """
+        Check if this device has a subregion with the given context
+        :param botengine: BotEngine
+        :param context_id: Context ID
+        :return: List of tuples: [ (unique_id, context_id, name), ... ] or an empty list if there are no subregions defined with this same general context
+        """
+        return_list = []
+        for unique_id in self.subregions:
+            context_id, name = self.subregions[unique_id]
+            if vayyar.is_same_general_context(target_context_id, context_id):
+                return_list.append((unique_id, context_id, name))
+
+        return return_list
+
+    def record_occupied_subregion_information(self, botengine, unique_id, occupied):
+        """
+        Record information (high-frequency / lower accuracy) that a subregion is occupied
+        :param botengine: BotEngine
+        :param unique_id: Unique ID of the subregion
+        :param occupied: True if the subregion is occupied
+        """
+        if occupied:
+            if unique_id not in self.information_occupied_subregions:
+                self.information_occupied_subregions.append(unique_id)
+        else:
+            if unique_id in self.information_occupied_subregions:
+                self.information_occupied_subregions.remove(unique_id)
+
+    def record_occupied_subregion_knowledge(self, botengine, unique_id, occupied):
+        """
+        Record knowledge (low-frequency / higher accuracy) that a subregion is occupied
+        :param botengine: BotEngine
+        :param unique_id: Unique ID of the subregion
+        :param occupied: True if the subregion is occupied
+        """
+        if occupied:
+            if unique_id not in self.knowledge_occupied_subregions:
+                self.knowledge_occupied_subregions.append(unique_id)
+        else:
+            if unique_id in self.knowledge_occupied_subregions:
+                self.knowledge_occupied_subregions.remove(unique_id)
+
+    def is_in_shower(self, botengine):
+        """
+        Is a person in a shower subregion
+        :param botengine: BotEngine
+        :return: True if we have knowledge the person is in the shower
+        """
+        relevant_subregions = self.subregions_with_context(botengine, vayyar.SUBREGION_CONTEXT_WALK_IN_SHOWER)
+        for (unique_id, context_id, name) in relevant_subregions:
+            if unique_id in self.knowledge_occupied_subregions:
+                return True
+
+        return False
+
+    def is_in_chair(self, botengine):
+        """
+        Is a person in a chair subregion
+        :param botengine: BotEngine
+        :return: True if we have knowledge the person is in the chair
+        """
+        relevant_subregions = self.subregions_with_context(botengine, vayyar.SUBREGION_CONTEXT_CHAIR)
+        for (unique_id, context_id, name) in relevant_subregions:
+            if unique_id in self.knowledge_occupied_subregions:
+                return True
+
+        return False
+
+    def is_in_bed(self, botengine):
+        """
+        Is a person in a bed subregion
+        :param botengine: BotEngine
+        :return: True if we have knowledge the person is in the bed
+        """
+        relevant_subregions = self.subregions_with_context(botengine, vayyar.SUBREGION_CONTEXT_BED)
+        for (unique_id, context_id, name) in relevant_subregions:
+            if unique_id in self.knowledge_occupied_subregions:
+                return True
+
+        return False
 
     def set_subregions(self, botengine, subregion_list):
         """
-        Set a complete list of subregions.
+        Send a complete list of subregions to the device.
 
         subregion_list format:
             [

@@ -162,6 +162,16 @@ def alarm_code_to_description(code):
         return _("may need some assistance")
 
 
+def good_enough_unique_id():
+    """
+    Return a UUID4 unique ID that is "good enough"
+    "e363f4f3-8ea1-4a01-a480-b12d560a84f5" => "b12d560a84f5"
+    :return: String pseudo-unique ID
+    """
+    import uuid
+    return str(uuid.uuid4()).split("-")[-1]
+
+
 def celsius_to_fahrenheit(celsius):
     """
     Celsius to Fahrenheit
@@ -214,6 +224,15 @@ def calculate_heat_index(degrees_c, humidity):
     hi_f = -42.379 + 2.04901523 * T + 10.14333127 * RH - .22475541 * T * RH - .00683783 * T * T - .05481717 * RH * RH + .00122874 * T * T * RH + .00085282 * T * RH * RH - .00000199 * T * T * RH * RH
 
     return fahrenheit_to_celsius(hi_f + adjustment_f)
+
+
+def temperature_to_human_readable_string(temperature_c):
+    """
+    Convert the given temperature to a huamn-readable string
+    :param temperature_c: Temperature in Celsius
+    :return: String that describes the temperature in both Celsius and fahrenheit as a string.
+    """
+    return "{}°F / {}°C".format(str("%.1f" % float(celsius_to_fahrenheit(temperature_c))), str("%.1f" % float(temperature_c)))
 
 
 def ms_to_human_readable_string(ms, include_seconds=False):
@@ -289,13 +308,53 @@ def get_answer(question_object):
     return normalize_measurement(question_object.default_answer)
 
 
+def human_readable_format(dt):
+    """
+    Returns an ISO formatted datetime that matches the format the server (Java) gives us, which is in milliseconds and not microseconds.
+    :param dt: datetime to transform into an ISO formatted string
+    :return: ISO formatted string
+    """
+    return strftime(dt, "%Y-%m-%d %H:%M:%S")
+
+
+def strftime(dt, strftime_string):
+    """
+    Cross-platform strftime()
+    https://docs.python.org/3.9/library/datetime.html#strftime-strptime-behavior
+    The ability to remove the leading 0 from an strftime() string is different between Linux/Unix and Windows.
+    In an effort to become more cross-platform accessible, we need to transform the '-' character which
+    removes leading 0's into a '#' character for Windows. Underneath Python, it's using the OS's native strftime()
+    which is why we need to implement a better abstraction layer ourselves.
+    :param dt: Datetime to transform into the given strftime string format
+    :param strftime_string: strftime() string
+    :return: Cross-platform corrected strftime() string
+    """
+    try:
+        return dt.strftime(strftime_string.replace("%#", "%-"))
+    except ValueError:
+        return dt.strftime(strftime_string.replace("%-", "%#"))
+
+
 def iso_format(dt):
     """
     Returns an ISO formatted datetime that matches the format the server (Java) gives us, which is in milliseconds and not microseconds.
     :param dt: datetime to transform into an ISO formatted string
     :return: ISO formatted string
     """
-    return dt.strftime("%Y-%m-%dT%H:%M:%S." + '%03d' % (dt.microsecond / 1000) + "%z")
+    return strftime(dt, "%Y-%m-%dT%H:%M:%S." + '%03d' % (dt.microsecond / 1000) + "%z")
+
+
+def cumulative_moving_average(new_value, previous_average, previous_count):
+    """
+    Calculate a Cumulative Moving Average (running average). Use this when you want to calculate an average value
+    without storing each data point.
+
+    :param new_value: New value
+    :param previous_average: Previous average
+    :param previous_count: Previous total count of the times this function has been executed up until now.
+    :return: New average
+    """
+    return previous_average + (new_value - previous_average) / (previous_count + 1)
 
 
 def get_admin_url_for_location(botengine):
@@ -381,19 +440,38 @@ class MachineLearningError(Exception):
         """
         self.message = message
 
+def pause_playback(botengine, seconds=1):
+    """
+    Pause playback helper function to avoid mistakes.
+    :param botengine:
+    :param seconds:
+    :return:
+    """
+    if botengine.playback:
+        import time
+        time.sleep(seconds)
 
 #===============================================================================
 # Color Class for CLI
 #===============================================================================
 class Color:
-    """Color your command line output text with Color.WHATEVER and Color.END"""
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
+    """
+    Color your command line output text with Color.WHATEVER and Color.END
+    This is maintained for backwards compatibility with our original Color class.
+    """
+    # Cross-platform color compatibility. Please see notes at:
+    # https://github.com/tartley/colorama
+    from colorama import reinit, Fore, Style
+
+    # reinit() runs faster vs. init().
+    # Color only matters when running locally, so we init() colorama in the main() method.
+    reinit()
+
+    PURPLE = Fore.MAGENTA
+    CYAN = Fore.CYAN
+    BLUE = Fore.BLUE
+    GREEN = Fore.GREEN
+    YELLOW = Fore.YELLOW
+    RED = Fore.RED
+    BOLD = Style.BRIGHT
+    END = Style.RESET_ALL

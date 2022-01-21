@@ -18,6 +18,18 @@ from controller import Controller
 def run(botengine):
     """
     Entry point for bot microservices
+
+    The bot boots up in this order:
+        1. Create the `controller` object.
+
+        2. Synchronize with our devices and create a location object and device objects
+
+        3. new_version() - Executes one time when we're running a new version of the bot
+            2.a. Microservices and filters are synchronized inside the location object
+            2.a. Each device object, microservice, and filter should run its new_version() event
+
+        4. initialize() - This event executes in every location / device object / microservice / filter on every trigger the bot
+
     :param botengine: BotEngine environment object, our window to the outside world.
     """
     localization.initialize(botengine)
@@ -42,6 +54,9 @@ def run(botengine):
     if trigger_type == 0 and not new_version_executed:
         # Manual reset or new version trigger
         controller.new_version(botengine)
+
+    # INITIALIZE
+    controller.initialize(botengine)
 
     # SCHEDULE TRIGGER
     if trigger_type & botengine.TRIGGER_SCHEDULE != 0:
@@ -109,8 +124,15 @@ def run(botengine):
                     execution_time_ms = botengine.get_timestamp()
                     for timestamp_ms in sorted(list(measures_dict.keys())):
                         botengine.inputs['time'] = timestamp_ms
-                        updated_devices, updated_metadata = device_object.update(botengine, measures_static + measures_dict[timestamp_ms])
+                        all_measurements = measures_static + measures_dict[timestamp_ms]
 
+                        # Filter data
+                        controller.filter_measurements(botengine, device_location, device_object, all_measurements)
+
+                        # Update the device directly
+                        updated_devices, updated_metadata = device_object.update(botengine, all_measurements)
+
+                        # Update the proxies
                         for updated_device in updated_devices:
                             try:
                                 updated_device.device_measurements_updated(botengine)
@@ -122,12 +144,12 @@ def run(botengine):
                                         if proxy_object not in updated_devices:
                                             proxy_object.device_measurements_updated(botengine)
 
-                                controller.device_measurements_updated(botengine, device_location, updated_device)
-
                             except Exception as e:
                                 import traceback
                                 botengine.get_logger().error("bot.device_measurements_updated(): {}; {}. Continuing execution.".format(str(e), traceback.format_exc()))
 
+                            # Update the location
+                            controller.device_measurements_updated(botengine, device_location, updated_device)
 
                     botengine.inputs['time'] = execution_time_ms
 
@@ -261,7 +283,11 @@ def run(botengine):
                 if 'userId' in user:
                     user_id = user['userId']
 
-                controller.user_role_updated(botengine, location_id, user_id, category, location_access, previous_category, previous_location_access)
+                role = None
+                if 'role' in user:
+                    role = user['role']
+
+                controller.user_role_updated(botengine, location_id, user_id, role, category, location_access, previous_category, previous_location_access)
 
         if call_center is not None:
             # Location call center changed status
@@ -299,7 +325,7 @@ def run(botengine):
                 if reference not in events:
                     events[reference] = {}
 
-                botengine.get_logger().info("Downloading {} ({} bytes)...".format(d['deviceId'], d['compressedLength']))
+                botengine.get_logger().info("Downloading {} ({} bytes)...".format(d['deviceId'], d['dataLength']))
                 r = botengine._requests.get(d['url'], timeout=60, stream=True)
                 events[reference][controller.get_device(d['deviceId'])] = lz4.block.decompress(r.content, uncompressed_size=d['dataLength'])
 
@@ -335,7 +361,6 @@ def load_controller(botengine):
         botengine.save_variable("controller", controller, required_for_each_execution=True)
 
     controller.track_new_and_deleted_devices(botengine)
-    controller.initialize(botengine)
     return controller
 
 
@@ -439,6 +464,9 @@ def _device_intelligence_fired(botengine, argument_tuple):
     except Exception as e:
         import traceback
         botengine.get_logger().error("{}; {}".format(str(e), traceback.format_exc()))
+        if botengine.playback:
+            import time
+            time.sleep(2)
 
     botengine.save_variable("controller", controller, required_for_each_execution=True)
     botengine.get_logger().info("<< bot (device timer)")

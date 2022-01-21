@@ -8,11 +8,8 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 import utilities.utilities as utilities
-import intelligence.index
+import index
 import importlib
-
-# This is the maximum number of elements we'll average over for RSSI and LQI readings
-MAXIMUM_AVERAGING_ELEMENTS = 25
 
 # Maximum number of attempts for any one command
 MAX_ATTEMPTS = 20
@@ -59,19 +56,15 @@ VALUE = 0
 TIMESTAMP = 1
 
 class Device:
-    """This is a base class for each of our devices"""
-        
-    # Low battery tag - Override in sub-classes to make it more specific
-    LOW_BATTERY_TAG = "lowbattery"
-    
-    # Low signal strength tag
-    LOW_SIGNAL_STRENGTH_TAG = "weaksignal"
+    """
+    This is a base class for each of our devices
+    """
 
     # Low battery threshold - Override in sub-classes
     LOW_BATTERY_THRESHOLD = 10
         
     # Low signal strength threshold - Override in sub-classes
-    LOW_RSSI_THRESHOLD = -80
+    LOW_RSSI_THRESHOLD = -87
     
     # List of Device Types this class is compatible with - Specify in sub-classes
     DEVICE_TYPES = []
@@ -126,7 +119,7 @@ class Device:
         
         # Last parameters that we updated
         self.last_updated_params = []
-        
+
         # Battery level
         self.battery_level = 100
 
@@ -138,13 +131,7 @@ class Device:
 
         # True if we have a low battery
         self.low_battery = False
-        
-        # RSSI averaging elements
-        self._rssi_elements = []
-        
-        # List of arbitrary tags this device has
-        self.tags = []
-        
+
         # True if this device is currently connected
         self.is_connected = False
         
@@ -194,24 +181,26 @@ class Device:
             # Download and start this object out with a history of measurements
             self.cache_measurements(botengine, botengine.get_timestamp() - TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS, botengine.get_timestamp())
 
-        # initialize(...) gets called in controller.py, after this device is finished syncing with the system.
+        self.new_version(botengine)
 
-    def initialize(self, botengine):
+    def new_version(self, botengine):
         """
-        Initialize this object
+        New version
 
         NOTE: YOU CANNOT CHANGE THE CLASS NAME OF A MICROSERVICE AT THIS TIME.
         Microservice changes will be identified through different 'module' names only. If you change the class name, it is currently ignored.
         This can be revisited in future architecture changes, noted below.
 
         The correct behavior is to create the object, then initialize() it every time you want to use it in a new bot execution environment
-        """
 
-        if str(self.device_type) in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES']:
+        :param botengine: BotEngine environment
+        """
+        # Synchronize device microservices
+        if str(self.device_type) in index.MICROSERVICES['DEVICE_MICROSERVICES']:
             # Synchronize microservices
             changed = False
 
-            module_names = [x['module'] for x in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]]
+            module_names = [x['module'] for x in index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]]
 
             for m in module_names:
                 changed |= m not in self.intelligence_modules
@@ -224,7 +213,7 @@ class Device:
                 delete = []
                 for module_name in self.intelligence_modules.keys():
                     found = False
-                    for intelligence_info in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]:
+                    for intelligence_info in index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]:
                         if intelligence_info['module'] == module_name:
                             found = True
                             break
@@ -237,7 +226,7 @@ class Device:
                     del self.intelligence_modules[d]
 
                 # Add more microservices
-                for intelligence_info in intelligence.index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]:
+                for intelligence_info in index.MICROSERVICES['DEVICE_MICROSERVICES'][str(self.device_type)]:
                     if intelligence_info['module'] not in self.intelligence_modules:
                         try:
                             intelligence_module = importlib.import_module(intelligence_info['module'])
@@ -248,15 +237,32 @@ class Device:
                         except Exception as e:
                             import traceback
                             botengine.get_logger().error("Could not add device microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
-
-            for i in self.intelligence_modules:
-                self.intelligence_modules[i].parent = self
-                self.intelligence_modules[i].initialize(botengine)
+                            if botengine.playback:
+                                import time
+                                time.sleep(10)
 
         elif len(self.intelligence_modules) > 0:
             # There are no intelligence modules for this device type, and yet we have some intelligence modules locally. Delete everything.
             botengine.get_logger().info("\tDeleting all device microservices")
             self.intelligence_modules = {}
+
+        # Tell all device microservices we're running a new version
+        for microservice in list(self.intelligence_modules.values()):
+            try:
+                microservice.new_version(botengine)
+            except Exception as e:
+                botengine.get_logger().warning("location.py - Error delivering new_version to device microservice (continuing execution): " + str(e))
+                import traceback
+                botengine.get_logger().error(traceback.format_exc())
+
+    def initialize(self, botengine):
+        """
+        Initialize this object
+        :param botengine: BotEngine environment
+        """
+        # Initialize all device microservices
+        for device_microservice in self.intelligence_modules.values():
+            device_microservice.initialize(botengine)
 
     def destroy(self, botengine):
         """
@@ -424,22 +430,10 @@ class Device:
             for measure in measures:
                 if measure['deviceId'] == self.device_id:
                     param_name = measure['name']
-                    if param_name == 'rssi':
-                        if measure['updated']:
-                            # Update the RSSI
-                            try:
-                                rssi = int(measure['value'])
-                                self.update_rssi(botengine, rssi)
-                                self.last_updated_params.append('rssi')
-
-                            except KeyError as e:
-                                botengine.get_logger().warning("device.py: Measurement has no value - {}".format(measure))
-
-                        else:
-                            # RSSI didn't change
-                            self.rssi_status_quo(botengine)
-                    
-                    elif param_name == 'batteryLevel' and measure['updated']:
+                    if param_name == 'batteryLevel' and measure['updated']:
+                        if 'value' not in measure:
+                            botengine.get_logger().info("device.py: Updated parameter provided no updated value: {}".format(measure))
+                            continue
                         # Update the battery_level
                         self.battery_level = int(measure['value'])
                         self.last_updated_params.append('batteryLevel')
@@ -448,7 +442,7 @@ class Device:
                         if 'value' not in measure:
                             botengine.get_logger().info("device.py: Updated parameter provided no updated value: {}".format(measure))
                             continue
-
+                            
                         value = utilities.normalize_measurement(measure['value'])
 
                         # If there's an index number, we just augment the parameter name with the index number to make it a unique parameter name.  param_name.index
@@ -505,8 +499,6 @@ class Device:
         :param timestamp:
         :return:
         """
-        #botengine.get_logger().info("{}: '{}': {}={}".format(self.device_id, self.description, name, value))
-
         measurement_updated = False
         if name not in self.measurements:
             # Create the measurement
@@ -521,7 +513,6 @@ class Device:
                 measurement_updated = True
                 self.measurement_odometer += 1
                 self.measurements[name].insert(0, (value, timestamp))
-
 
         # Auto garbage-collect
         if self.enforce_cache_size:
@@ -566,46 +557,27 @@ class Device:
     #===========================================================================
     # Device health
     #===========================================================================
-    def update_rssi(self, botengine, rssi):
+    def did_update_rssi(self, botengine=None):
         """
-        Update our RSSI readings
-        :param rssi
+        :return: True if we updated the RSSI for this device on this execution
         """
-        self._rssi_elements.append(int(rssi))
-        
-        if len(self._rssi_elements) > MAXIMUM_AVERAGING_ELEMENTS:
-            del self._rssi_elements[0]
-            
-        rssi_average = int(sum(self._rssi_elements) / len(self._rssi_elements))
-        
-        if rssi_average < self.LOW_RSSI_THRESHOLD:
-            # Should be tagged
-            if self.LOW_SIGNAL_STRENGTH_TAG not in self.tags:
-                # Wasn't tagged before, tag it.
-                botengine.tag_device(self.LOW_SIGNAL_STRENGTH_TAG, self.device_id)
-                self.tags.append(self.LOW_SIGNAL_STRENGTH_TAG)
-                
-        else:
-            # Shouldn't be tagged
-            if self.LOW_SIGNAL_STRENGTH_TAG in self.tags:
-                # Was tagged, delete it.
-                botengine.delete_device_tag(self.LOW_SIGNAL_STRENGTH_TAG, self.device_id)
-                self.tags.remove(self.LOW_SIGNAL_STRENGTH_TAG)
-        
-    def rssi_status_quo(self, botengine):
-        """
-        RSSI reading didn't change from last time, duplicate the last reading
-        :param botengine:
-        :return:
-        """
-        if len(self._rssi_elements) > 0:
-            self.update_rssi(botengine, self._rssi_elements[-1])
+        return 'rssi' in self.last_updated_params
 
-    def low_signal_strength(self):
+    def get_rssi(self, botengine=None):
         """
-        :return: True if this device has a low wireless signal strength
+        :return: The most recent RSSI value, or None if it doesn't exist
         """
-        return self.LOW_SIGNAL_STRENGTH_TAG in self.tags
+        if 'rssi' in self.measurements:
+            return self.measurements['rssi'][0][0]
+
+    def low_signal_strength(self, botengine=None):
+        """
+        :return: True if this device currently has a low signal strength
+        """
+        rssi = self.get_rssi(botengine)
+        if rssi is not None:
+            return rssi < self.LOW_RSSI_THRESHOLD
+        return False
 
     def raw_command(self, name, value):
         """

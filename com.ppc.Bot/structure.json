@@ -21,7 +21,8 @@
         "lz4",
         "dill",
         "tzlocal",
-        "requests"
+        "requests",
+        "colorama"
   ],
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
