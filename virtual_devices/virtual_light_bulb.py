@@ -18,6 +18,7 @@ import json
 import threading
 import time
 import logging
+import os
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -36,8 +37,8 @@ def main(argv=None):
     parser.add_argument("-d", "--deviceId", dest="deviceId", help="Globally unique device ID")
     parser.add_argument("-u", "--username", dest="username", help="Username")
     parser.add_argument("-p", "--password", dest="password", help="Password")
-    parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.presencepro.com)")
-    parser.add_argument("-b", "--brand", dest="brand", help="Brand name partner to interact with the correct servers: 'myplace', 'origin', 'presence', etc.")
+    parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.peoplepowerco.com)")
+    parser.add_argument("-l", "--location", dest="location_id", help="Location ID")
     parser.add_argument("--httpdebug", dest="httpdebug", action="store_true", help="HTTP debug logger output");
     parser.add_argument("--https_proxy", dest="https_proxy", help="If your corporate network requires a proxy, type in the full HTTPS proxy address here (i.e. http://10.10.1.10:1080)")
 
@@ -46,33 +47,12 @@ def main(argv=None):
 
     # Extract the arguments
     deviceId = args.deviceId
+    locationId = args.location_id
     username = args.username
     password = args.password
     server = args.server
     httpdebug = args.httpdebug
-    brand = args.brand
 
-    if brand is not None:
-        brand = brand.lower()
-        if brand == 'presence':
-            print(Color.BOLD + "\nPresence by People Power" + Color.END)
-            server = "app.presencepro.com"
-
-        elif brand == 'myplace':
-            print(Color.BOLD + "\nMyPlace - Smart. Simple. Secure." + Color.END)
-            server = "iot.peoplepowerco.com"
-
-        elif brand == 'origin':
-            print(Color.BOLD + "\nOrigin Home HQ" + Color.END)
-            server = "app.originhomehq.com.au"
-
-        elif brand == 'innogy':
-            print(Color.BOLD + "\ninnogy SmartHome" + Color.END)
-            server = "innogy.presencepro.com"
-
-        else:
-            sys.stderr.write("This brand does not exist: " + str(brand) + "\n\n")
-            return 1
 
     if not deviceId:
         sys.stderr.write("Specify a device ID for this virtual device with the -d option. Use --help for more info.")
@@ -87,7 +67,7 @@ def main(argv=None):
 
     # Define the bot server
     if not server:
-        server = "https://app.presencepro.com"
+        server = "https://app.peoplepowerco.com"
 
     if "http" not in server:
         server = "https://" + server
@@ -113,13 +93,10 @@ def main(argv=None):
     device_server = _get_ensemble_server_url(server, deviceId)
 
     # Login to your user account
-    app_key, user_info = _login(server, username, password)
+    app_key = _login(server, username, password)
 
     # This is the device type of this virtual device
     deviceType = 10071
-
-    # Grab the user's primary location ID
-    locationId = user_info['locations'][0]['id']
 
     # Register the virtual device to your user's account
     _register_device(server, app_key, locationId, deviceId, deviceType, "Virtual Light Bulb")
@@ -151,38 +128,108 @@ def _listen(device_server, deviceId):
 
 
 
-def _login(server, username, password):
-    """Get an Bot API key and User Info by login with a username and password"""
+def _login(server, username, password, admin=False):
+    """
+    Login and obtain an API key
+    :param server: Server address
+    :param username: Username
+    :param password: Password
+    :return: API Key
+    """
+
     global _https_proxy
+    import pickle
+
     if not username:
         username = input('Email address: ')
 
     if not password:
         import getpass
-        password = getpass.getpass('Password: ')
+        password = getpass.getpass()
 
     try:
         import requests
 
-        # login by username and password
-        http_headers = {"PASSWORD": password, "Content-Type": "application/json"}
-        r = requests.get(server + "/cloud/json/login", params={"username":username}, headers=http_headers, proxies=_https_proxy)
-        j = json.loads(r.text)
-        _check_for_errors(j)
-        app_key = j['key']
+        type = "user"
+        if admin:
+            type = "admin"
 
-        # get user info
-        http_headers = {"PRESENCE_API_KEY": app_key, "Content-Type": "application/json"}
-        r = requests.get(server + "/cloud/json/user", headers=http_headers, proxies=_https_proxy)
+        fixed_server = server.replace("http://", "").replace("https://", "").split(".")[0]
+
+        filename = "{}.{}.{}".format(username, fixed_server, type)
+
+        if os.path.isfile(filename):
+            try:
+                with open(filename, 'rb') as f:
+                    key = pickle.load(f)
+
+                params = {
+                    "keyType": 0
+                }
+
+                if admin:
+                    params['keyType'] = 11
+                    params['expiry'] = 2
+
+                http_headers = {"API_KEY": key, "Content-Type": "application/json"}
+                r = requests.get(server + "/cloud/json/loginByKey", params=params, headers=http_headers, proxies=_https_proxy)
+                j = json.loads(r.text)
+
+                if j['resultCode'] == 0:
+                    key = j['key']
+
+                    with open(filename, 'wb') as f:
+                        pickle.dump(key, f)
+
+                    return key
+
+            except ValueError:
+                # Can't unpickle the local file.
+                # This happens as we switch back to Python 2.7 from Python 3.7.
+                pass
+
+        params = {
+            "username": username
+        }
+
+        if admin:
+            params['keyType'] = 11
+
+        http_headers = {"PASSWORD": password, "Content-Type": "application/json"}
+        r = requests.get(server + "/cloud/json/login", params=params, headers=http_headers, proxies=_https_proxy)
         j = json.loads(r.text)
+
+        if j['resultCode'] == 17:
+            passcode = input('Type in the passcode you received on your phone: ')
+
+            passcode = passcode.upper()
+
+            params['expiry'] = 2
+            http_headers['passcode'] = passcode
+            del http_headers['PASSWORD']
+            r = requests.get(server + "/cloud/json/login", params=params, headers=http_headers, proxies=_https_proxy)
+            j = json.loads(r.text)
+
+            if j['resultCode'] == 0:
+                key = j['key']
+
+                with open(filename, 'wb') as f:
+                    pickle.dump(key, f)
+
         _check_for_errors(j)
-        return app_key, j
+
+        return j['key']
 
     except BotError as e:
-        sys.stderr.write("Error: " + e.msg)
+        sys.stderr.write("BotEngine Error: " + e.msg)
         sys.stderr.write("\nCreate an account on " + server + " and use it to sign in")
         sys.stderr.write("\n\n")
         raise e
+
+    #except Exception:
+    #    sys.stderr.write(Color.RED + "Error trying to contact the server.\n\n" + Color.END)
+    #    exit(1)
+
 
 
 def _register_device(server, appKey, locationId, deviceId, deviceType, description):
