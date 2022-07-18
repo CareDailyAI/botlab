@@ -4078,7 +4078,7 @@ def _upload_bot(server, key, bundle, bot_filename, tar=True, runtime=RUNTIME_PYT
         content_type = "application/x-tar"
         params = {
             "source": True,
-            "async:": True,
+            "async": True,
             "bundle": bundle,
             "runtime": runtime
         }
