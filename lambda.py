@@ -82,7 +82,7 @@ def send_sqs_message(queue_name, msg_body, client_context):
 
 class LambdaLogger():
     
-    def __init__(self):
+    def __init__(self, log_level="warn"):
         # Tracebacks for crashes
         self.tracebacks = []
 
@@ -92,28 +92,50 @@ class LambdaLogger():
         # Start Code - provided by the server in response to the Start API
         self.start_code = 0
 
+        # Log level (info, debug, warn, error)
+        self.log_level = log_level
+
     def log(self, level, message):
-        pass
+        if level == "debug":
+            self.debug(message)
+
+        if level == "info":
+            self.info(message)
+
+        if level == "warn":
+            self.warn(message)
+        
+        if level == "error":
+            self.error(message)
 
     def debug(self, message):
-        pass
+        if self.log_level in ["debug"]:
+            print("DEBUG {}".format(message))
+            self.logs.append("{}: [{}] {}".format(time.time(), "DEBUG", message))
 
     def info(self, message):
-        pass
+        if self.log_level in ["debug", "info"]:
+            print("INFO {}".format(message))
+            self.logs.append("{}: [{}] {}".format(time.time(), "INFO", message))
 
     def warning(self, message):
-        self.logs.append("{}: [{}] {}".format(time.time(), "WARNING", message))
+        self.warn(message)
 
     def warn(self, message):
-        self.logs.append("{}: [{}] {}".format(time.time(), "WARNING", message))
+        if self.log_level in ["debug", "info", "warn"]:
+            print("WARN {}".format(message))
+            self.logs.append("{}: [{}] {}".format(time.time(), "WARN", message))
 
     def error(self, message):
+        print("ERROR {}".format(message))
         self.logs.append("{}: [{}] {}".format(time.time(), "ERROR", message))
 
     def critical(self, message):
+        print("CRITICAL {}".format(message))
         self.logs.append("{}: [{}] {}".format(time.time(), "CRITICAL", message))
 
     def exception(self, message):
+        print("EXCEPTION {}".format(message))
         self.logs.append("{}: [{}] {}".format(time.time(), "EXCEPTION", message))
 
     def get_lambda_return(self, data):
@@ -127,10 +149,11 @@ class LambdaLogger():
             response['tracebacks'] = self.tracebacks
 
         if len(self.logs) > 0:
-            self.logs.append(self._form_admin_url(data))
+            self.logs.append("'{}'".format(self._form_admin_url(data)))
 
         if len(self.logs):
-            response['logs'] = self.logs
+            import re
+            response['logs'] = list(map(lambda x: re.sub(r'\033\[(\d|;)+?m', ' ', x).strip(), self.logs))
 
         response['startCode'] = self.start_code
         

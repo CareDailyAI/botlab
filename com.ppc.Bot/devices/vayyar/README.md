@@ -1,3 +1,5 @@
+# Vayyar Device Class Information
+
 Button Press - "button_press" alert
 
 vyrc.trackerSubRegions parameter - the JSON format is exactly as is shown in the Vayyar API documentation. We have to provide the entire array every time.

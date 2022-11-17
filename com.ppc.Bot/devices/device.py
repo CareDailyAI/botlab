@@ -69,15 +69,19 @@ class Device:
     # List of Device Types this class is compatible with - Specify in sub-classes
     DEVICE_TYPES = []
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor
         :param botengine: BotEngine environment
+        :param location_object: Parent location object
         :param device_id: Device ID
         :param device_type: Device Type
         :param device_description: Device description (nickname)
         :param precache_measurements: True (default) to download historical measurements to cache them locally, the length of time of which is defined by device.TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS
         """
+        # Parent location object
+        self.location_object = location_object
+
         # Device ID
         self.device_id = device_id
         
@@ -86,9 +90,6 @@ class Device:
         
         # Device description
         self.description = device_description.strip()
-        
-        # This is set by the controller object after init during synchronization with the location
-        self.location_object = None
         
         # Measurements for each parameter, newest measurements at index 0
         # self.measurements["parameterName"] = [ ( newest_value, newest_timestamp ), ( value, timestamp ), ... ]
@@ -150,6 +151,9 @@ class Device:
         # The goal (scenario) ID for this device
         self.goal_id = None
 
+        # If the goal (scenario) ID changed
+        self.is_goal_changed = False
+
         # Approximate latitude (available on devices that directly connect to the cloud, like gateways)
         self.latitude = None
 
@@ -195,6 +199,11 @@ class Device:
 
         :param botengine: BotEngine environment
         """
+        # Added April 7, 2022
+        if not hasattr(self, "is_goal_changed"):
+            self.is_goal_changed = False
+        # import json
+        # print("index" + json.dumps(index.MICROSERVICES, indent=2))
         # Synchronize device microservices
         if str(self.device_type) in index.MICROSERVICES['DEVICE_MICROSERVICES']:
             # Synchronize microservices
@@ -219,7 +228,7 @@ class Device:
                             break
 
                     if not found:
-                        botengine.get_logger().info("\tDeleting device microservice: " + str(module_name))
+                        botengine.get_logger().debug("\tDeleting device microservice: " + str(module_name))
                         delete.append(module_name)
 
                 for d in delete:
@@ -231,7 +240,7 @@ class Device:
                         try:
                             intelligence_module = importlib.import_module(intelligence_info['module'])
                             class_ = getattr(intelligence_module, intelligence_info['class'])
-                            botengine.get_logger().info("\tAdding device microservice: " + str(intelligence_info['module']))
+                            botengine.get_logger().debug("\tAdding device microservice: " + str(intelligence_info['module']))
                             intelligence_object = class_(botengine, self)
                             self.intelligence_modules[intelligence_info['module']] = intelligence_object
                         except Exception as e:
@@ -243,7 +252,7 @@ class Device:
 
         elif len(self.intelligence_modules) > 0:
             # There are no intelligence modules for this device type, and yet we have some intelligence modules locally. Delete everything.
-            botengine.get_logger().info("\tDeleting all device microservices")
+            botengine.get_logger().debug("\tDeleting all device microservices")
             self.intelligence_modules = {}
 
         # Tell all device microservices we're running a new version
@@ -302,7 +311,7 @@ class Device:
         :return: True if the goal ID matches for this device
         """
         if self.goal_id is not None:
-            return self.goal_id % 1000 == target_goal_id
+            return self.goal_id % 1000 == int(target_goal_id)
         return False
 
     #===========================================================================
@@ -431,7 +440,7 @@ class Device:
                 if measure['deviceId'] == self.device_id:
                     param_name = measure['name']
                     if param_name == 'batteryLevel' and measure['updated']:
-                        if 'value' not in measure:
+                        if 'value' not in measure or measure['value'] == "":
                             botengine.get_logger().info("device.py: Updated parameter provided no updated value: {}".format(measure))
                             continue
                         # Update the battery_level
@@ -489,6 +498,23 @@ class Device:
         """
         for intelligence_id in self.intelligence_modules:
             self.intelligence_modules[intelligence_id].file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
+
+    def last_measurement_timestamp_ms(self, botengine):
+        """
+        Timestamp of the last measurement received
+        :param botengine: BotEngine
+        :return: Timestamp in milliseconds or None if no measurements received
+        """
+        newest_timestamp_ms = None
+        for name in self.measurements:
+            if len(self.measurements[name]) > 0:
+                value, timestamp_ms = self.measurements[name][0]
+                if newest_timestamp_ms is None:
+                    newest_timestamp_ms = timestamp_ms
+                elif timestamp_ms > newest_timestamp_ms:
+                    newest_timestamp_ms = timestamp_ms
+
+        return newest_timestamp_ms
 
     def add_measurement(self, botengine, name, value, timestamp):
         """
