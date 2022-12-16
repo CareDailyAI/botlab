@@ -29,7 +29,7 @@ class DevelcoButtonDevice(Device):
     GOAL_BUTTON_SIGNAL_FAMILY_FRIENDS = 105
     GOAL_BUTTON_CALL_FOR_HELP_MEDICAL = 111
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor
         :param botengine:
@@ -38,7 +38,7 @@ class DevelcoButtonDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
         self.goal_id = DevelcoButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL

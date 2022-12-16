@@ -27,7 +27,7 @@ class DevelcoLeakDevice(LeakDevice):
         MEASUREMENT_NAME_STATUS
     ]
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor
         :param botengine:
@@ -36,7 +36,7 @@ class DevelcoLeakDevice(LeakDevice):
         :param device_description:
         :param precache_measurements:
         """
-        LeakDevice.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        LeakDevice.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
     def initialize(self, botengine):
         """

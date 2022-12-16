@@ -35,8 +35,8 @@ class PressurePadDevice(Device):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [9039]
     
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
         self.goal_id = PressurePadDevice.GOAL_PRESSUREPAD_BED

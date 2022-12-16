@@ -57,6 +57,8 @@ from devices.vibration.vibration_develco import DevelcoVibrationDevice
 from devices.vibration.vibration_linkhigh import LinkHighVibrationDevice
 from devices.vayyar.vayyar import VayyarDevice
 
+
+
 # Deprecated:
 from devices.smartplug.smartplug_centralite_3series import Centralite3SeriesSmartplugDevice
 from devices.button.button import ButtonDevice
@@ -92,10 +94,6 @@ class Controller:
         This is mandatory to call once for each new execution of the bot
         :param botengine: BotEngine environment
         """
-        # Added June 17, 2021
-        if not hasattr(self, 'version'):
-            self.version = None
-
         botengine.get_logger().info("controller: Last execution={}; Current execution={}".format(self.exec_timestamp, botengine.get_timestamp()))
         self.exec_timestamp = botengine.get_timestamp()
 
@@ -160,6 +158,7 @@ class Controller:
                     continue
 
                 device_object = self.get_device(device_id)
+                location_object = self.locations[location_id]
 
                 if device_object is not None:
                     if not hasattr(device_object, 'device_type'):
@@ -178,139 +177,139 @@ class Controller:
                 
                 if device_object is None:
                     if device_type in PeoplePowerPresenceAndroidCameraDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPresenceAndroidCameraDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = PeoplePowerPresenceAndroidCameraDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in PeoplePowerPresenceIosCameraDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPresenceIosCameraDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = PeoplePowerPresenceIosCameraDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in EntryDevice.DEVICE_TYPES:
-                        device_object = EntryDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = EntryDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                     
                     elif device_type in TemperatureDevice.DEVICE_TYPES:
-                        device_object = TemperatureDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = TemperatureDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in TemperatureHumidityDevice.DEVICE_TYPES:
-                        device_object = TemperatureHumidityDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = TemperatureHumidityDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in PeoplePowerMSeriesDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerMSeriesDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = PeoplePowerMSeriesDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in PeoplePowerEdgeDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerEdgeDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = PeoplePowerEdgeDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoSquidlinkDevice.DEVICE_TYPES:
-                        device_object = DevelcoSquidlinkDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoSquidlinkDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in QorvoLcgwGatewayDevice.DEVICE_TYPES:
-                        device_object = QorvoLcgwGatewayDevice(botengine, device_id, device_type, device_desc, precache_measurements)
-                        
+                        device_object = QorvoLcgwGatewayDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
+
                     elif device_type in LeakDevice.DEVICE_TYPES:
-                        device_object = LeakDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = LeakDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in LightDevice.DEVICE_TYPES:
-                        device_object = LightDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = LightDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in LightswitchGeDevice.DEVICE_TYPES:
-                        device_object = LightswitchGeDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = LightswitchGeDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in InWallDimmerDevice.DEVICE_TYPES:
-                        device_object = InWallDimmerDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = InWallDimmerDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in SmartDimmerDevice.DEVICE_TYPES:
-                        device_object = SmartDimmerDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = SmartDimmerDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in MotionDevice.DEVICE_TYPES:
-                        device_object = MotionDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = MotionDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in SmartenitZbalarmDevice.DEVICE_TYPES:
-                        device_object = SmartenitZbalarmDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = SmartenitZbalarmDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in LinkhighSirenDevice.DEVICE_TYPES:
-                        device_object = LinkhighSirenDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = LinkhighSirenDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in SmartplugDevice.DEVICE_TYPES:
-                        device_object = SmartplugDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = SmartplugDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in ThermostatCentralitePearlDevice.DEVICE_TYPES:
-                        device_object = ThermostatCentralitePearlDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = ThermostatCentralitePearlDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in ThermostatHoneywellLyricDevice.DEVICE_TYPES:
-                        device_object = ThermostatHoneywellLyricDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = ThermostatHoneywellLyricDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in ThermostatSensiboSkyDevice.DEVICE_TYPES:
-                        device_object = ThermostatSensiboSkyDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = ThermostatSensiboSkyDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in ThermostatEcobeeDevice.DEVICE_TYPES:
-                        device_object = ThermostatEcobeeDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = ThermostatEcobeeDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
                         
                     elif device_type in PeoplePowerTouchpadDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerTouchpadDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = PeoplePowerTouchpadDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in LinkHighMultiButtonDevice.DEVICE_TYPES:
-                        device_object = LinkHighMultiButtonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = LinkHighMultiButtonDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoPanicButtonDevice.DEVICE_TYPES:
-                        device_object = DevelcoPanicButtonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoPanicButtonDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoMultiButtonDevice.DEVICE_TYPES:
-                        device_object = DevelcoMultiButtonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoMultiButtonDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in LockDevice.DEVICE_TYPES:
-                        device_object = LockDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = LockDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in CarbonMonoxideDevice.DEVICE_TYPES:
-                        device_object = CarbonMonoxideDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = CarbonMonoxideDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in PeoplePowerPictureFrameIosDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPictureFrameIosDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = PeoplePowerPictureFrameIosDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in PeoplePowerPictureFrameAndroidDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPictureFrameAndroidDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = PeoplePowerPictureFrameAndroidDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in SmartenitLargeLoadControllerDevice.DEVICE_TYPES:
-                        device_object = SmartenitLargeLoadControllerDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = SmartenitLargeLoadControllerDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoMotionDevice.DEVICE_TYPES:
-                        device_object = DevelcoMotionDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoMotionDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoEntryDevice.DEVICE_TYPES:
-                        device_object = DevelcoEntryDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoEntryDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in PressurePadDevice.DEVICE_TYPES:
-                        device_object = PressurePadDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = PressurePadDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in ThermostatEmersonDevice.DEVICE_TYPES:
-                        device_object = ThermostatEmersonDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = ThermostatEmersonDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoSirenDevice.DEVICE_TYPES:
-                        device_object = DevelcoSirenDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoSirenDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoKeypadDevice.DEVICE_TYPES:
-                        device_object = DevelcoKeypadDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoKeypadDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoLeakDevice.DEVICE_TYPES:
-                        device_object = DevelcoLeakDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoLeakDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoSmartplugDevice.DEVICE_TYPES:
-                        device_object = DevelcoSmartplugDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoSmartplugDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoSmartcableDevice.DEVICE_TYPES:
-                        device_object = DevelcoSmartcableDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoSmartcableDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in InWallOutletDevice.DEVICE_TYPES:
-                        device_object = InWallOutletDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = InWallOutletDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in IoDevice.DEVICE_TYPES:
-                        device_object = IoDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = IoDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in DevelcoVibrationDevice.DEVICE_TYPES:
-                        device_object = DevelcoVibrationDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = DevelcoVibrationDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in LinkHighVibrationDevice.DEVICE_TYPES:
-                        device_object = LinkHighVibrationDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = LinkHighVibrationDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     elif device_type in VayyarDevice.DEVICE_TYPES:
-                        device_object = VayyarDevice(botengine, device_id, device_type, device_desc, precache_measurements)
+                        device_object = VayyarDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
 
                     else:
                         botengine.get_logger().warn("Unsupported device type: " + str(device_type) + " ('" + device_desc + "')")
@@ -333,10 +332,15 @@ class Controller:
                     device_object.proxy_id = str(item['device']['proxyId'])
                 
                 if 'goalId' in item['device']:
-                    device_object.goal_id = int(item['device']['goalId'])
+                    goal_id = int(item['device']['goalId'])
+                    if goal_id is None or goal_id >= 0:
+                        device_object.is_goal_changed = device_object.goal_id is None or (device_object.goal_id is not None and device_object.goal_id != goal_id)
+                        device_object.goal_id = goal_id
 
                 if 'startDate' in item['device']:
                     device_object.born_on = int(item['device']['startDate'])
+                elif device_object.born_on is None:
+                    device_object.born_on = botengine.get_timestamp()
 
                 self.sync_device(botengine, location_id, device_id, device_object)
 
@@ -651,7 +655,7 @@ class Controller:
         for location_id in self.locations:
             self.locations[location_id].new_version(botengine)
 
-    def evaluate_version(self, botengine):
+    def evaluate_version(self, botengine, startup):
         """
         Evaluate for a new version and trigger the new_version() if we are indeed running a new version of the bot.
         :param botengine: BotEngine environment
@@ -663,9 +667,22 @@ class Controller:
             j = json.load(f)
             version = j["version"]["version"]
             if version != self.version:
+                startup.set_is_preparing(True)
+                botengine.save_variable("startup_tool", startup, required_for_each_execution=True)
+                botengine.flush_binary_variables()
+
                 botengine.get_logger().info("controller: New version detected")
                 self.version = version
                 self.new_version(botengine)
                 return True
+
+        # Are we running locally and this is our very first execution?
+        if botengine.local and botengine.local_execution_count == 0:
+            startup.set_is_preparing(True)
+            botengine.save_variable("startup_tool", startup, required_for_each_execution=True)
+            botengine.flush_binary_variables()
+
+            self.new_version(botengine)
+            return True
 
         return False

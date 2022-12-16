@@ -33,8 +33,8 @@ class TouchDevice(Device):
     GOAL_ALERT_WHEN_AWAY = 21
     GOAL_TOILET = 22
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
         self.goal_id = TouchDevice.GOAL_ALERT_WHEN_AWAY

@@ -87,7 +87,7 @@ class ThermostatDevice(Device):
     FAN_MODE__AUTO = 5
     FAN_MODE__SMART = 6
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
 
         # Saved system mode
         self.saved_system_mode = None
@@ -160,7 +160,7 @@ class ThermostatDevice(Device):
         # Last total offset applied, in C
         self.last_offset_c = 0
 
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
 
     def initialize(self, botengine):

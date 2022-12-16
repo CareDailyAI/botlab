@@ -2534,18 +2534,22 @@ USAGE
 
             start_timestamp_ms = round(time.time() * 1000)
 
+            playback_notifications_log = "playback_notifications-{}.txt".format(playback_session_id)
+            playback_narratives_log = "playback_narratives-{}.txt".format(playback_session_id)
+            playback_states_log = "playback_states-{}.txt".format(playback_session_id)
+
             try:
-                os.remove("playback_notifications.txt")
+                os.remove(playback_notifications_log)
             except:
                 pass
 
             try:
-                os.remove("playback_narratives.txt")
+                os.remove(playback_narratives_log)
             except:
                 pass
 
             try:
-                os.remove("playback_states.txt")
+                os.remove(playback_states_log)
             except:
                 pass
 
@@ -3118,11 +3122,11 @@ USAGE
             # Write playback states out to the file
             import copy
             output_states = copy.deepcopy(playback_states)
-            with open("playback_states.txt", "w") as myfile:
+            with open(playback_states_log, "w") as myfile:
                 if None in output_states:
                     myfile.write(json.dumps(output_states[None], indent=2, sort_keys=True) + "\n\n-----\n\n")
 
-                del output_states[None]
+                    del output_states[None]
                 if len(output_states) > 0:
                     myfile.write(json.dumps(output_states, indent=2, sort_keys=True) + "\n\n")
 
@@ -3131,7 +3135,7 @@ USAGE
                 shutil.rmtree(unzipped_file_name)
 
             print("Fast-forwarded {} hours of playback into only {} minutes - {}% time savings!".format(virtual_duration_hours, runtime_duration_minutes,                                                                                      round((1 - (runtime_duration_ms / virtual_duration_ms)) * 100, 2)))
-            print("\nExported runtime history to playback_log.txt, playback_states.txt, playback_narratives.txt, playback_notifications.txt, etc.")
+            print("\nExported runtime history to {}, {}, {}, etc.".format(playback_states_log, playback_narratives_log, playback_notifications_log))
             print(the_bot() + " Done!")
 
             sys.exit(0)

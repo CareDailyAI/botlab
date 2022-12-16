@@ -13,8 +13,8 @@ from devices.device import Device
 class CameraDevice(Device):
     """Camera Device"""
     
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
         
     def get_device_type_name(self):
         """

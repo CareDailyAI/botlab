@@ -45,8 +45,8 @@ class LockDevice(Device):
     GOAL_STATIC_AUTO_LOCK = 102 # Deprecated
     GOAL_UNLOCK_WITH_KEYPADS = 103
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
         self.goal_id = LockDevice.GOAL_INTELLIGENT_AUTO_LOCK
