@@ -32,7 +32,7 @@ if args.bundle_id is not None:
     botname = args.bundle_id
 base_path = os.path.join(os.getcwd(), "." + botname)
 print("Using base_path = {}".format(base_path))
-botengine._merge_redirects(os.path.join(core, botname), base_path, botname, "pytest", core)
+botengine._merge_redirects(os.path.join(core, botname), base_path, botname, core_directory=core)
 
 # Here we're going to overwrite the set of microservices in the bot with ALL the available microservice packages.
 # This is because when we load up ISM data environments from other bots, we need to be able to unpickle objects and land on files that exist.
