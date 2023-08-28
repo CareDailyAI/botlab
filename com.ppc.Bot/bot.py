@@ -13,6 +13,7 @@ import json
 import utilities.utilities as utilities
 import properties
 
+from startup import StartUpUtil
 from controller import Controller
 
 def run(botengine):
@@ -41,32 +42,146 @@ def run(botengine):
     triggers = botengine.get_triggers()
     print("\n\n")
     botengine.get_logger().info("TRIGGER : " + str(trigger_type))
-    
+
+    # RESET
+    if trigger_type == botengine.TRIGGER_UNPAUSED:
+        # This triggers on (a) the first execution of a bot, ever.
+        # Or (b) when a bot was cryogenically frozen and is now thawed out and running again.
+        # What happens on (b) is the bot used to be in the middle of doing something, and now as it
+        # wakes up, it still thinks it is in the middle of that last situation it was tracking.
+        # Even though it may be hours or days later. The bot has no idea where it is or what it should be doing now.
+        # Since this affects potentially hundreds of microservices, the best bet right now is to blow the
+        # bot's brains out and make it restart from scratch. Best practice is to store persistent memories
+        # inside separate non-volatile variables or state variables that exist outside of this bot's 'controller' memory.
+        # If you'd like to do something more elegant, please be my guest...
+        botengine.get_logger().info("bot.py: Unpaused. Deleting all internal memory.")
+        botengine.destroy_core_memory()
+
+    # Start up tool to cache the triggers when controller is not ready
+    startup = load_startup_tool(botengine)
+
+    if trigger_type & botengine.TRIGGER_DATA_REQUEST == 0:
+        startup.queue_triggers((trigger_type, triggers))
+
+        if startup.is_bot_preparing():
+            startup.set_start_time(botengine)
+
+            if startup.is_something_wrong(botengine):
+                startup.reset()
+
+            botengine.save_variable("startup_tool", startup, required_for_each_execution=True)
+            botengine.flush_binary_variables()
+
+            botengine.get_logger().info("bot.py: Controller is not ready...")
+            return
+    else:
+        # DATA REQUEST
+        # Response to botengine.request_data()
+        if not botengine.playback:
+            import threading
+            import copy
+
+            data_block = copy.copy(botengine.get_data_block())
+            request_thread = threading.Thread(target=async_data_request, args=(botengine, startup, data_block))
+            request_thread.start()
+
+            return
+
+        else:
+            startup.queue_triggers((trigger_type, triggers))
+
+
     # Grab our non-volatile memory
     controller = load_controller(botengine)
 
     # The controller stores the bot's last version number.
     # If this is a new bot version, this evaluation will automatically trigger the new_version() event in all microservices.
-    # Note that the new_version() event is also a bot trigger, so it executes after the initialize() event.
-    new_version_executed = controller.evaluate_version(botengine)
-
-    # RESET
-    if trigger_type == 0 and not new_version_executed:
-        # Manual reset or new version trigger
-        controller.new_version(botengine)
+    # Note that the new_version() event is also a bot trigger.
+    controller.evaluate_version(botengine, startup)
 
     # INITIALIZE
     controller.initialize(botengine)
 
+    botengine.get_logger().info("bot.py: Controller is ready now...")
+    while len(startup.event_queue) > 0:
+        (trigger_type, triggers) = startup.event_queue.pop(0)
+        trigger_event(botengine, controller, trigger_type, triggers)
+
+    # Always save your variables!
+    botengine.save_variable("controller", controller, required_for_each_execution=True)
+    startup.reset()
+    botengine.save_variable("startup_tool", startup, required_for_each_execution=True)
+    botengine.get_logger().info("<< bot")
+    
+
+def load_controller(botengine):
+    """
+    Load the Controller object
+    :param botengine: Execution environment
+    """
+    logger = botengine.get_logger()
+    try:
+        controller = botengine.load_variable("controller")
+        logger.info("Loaded the controller")
+
+    except:
+        controller = None
+        logger.info("Unable to load the controller")
+
+    if controller is None:
+        botengine.get_logger().info("Bot : Creating a new Controller object. Hello.")
+        controller = Controller()
+        botengine.save_variable("controller", controller, required_for_each_execution=True)
+
+    controller.track_new_and_deleted_devices(botengine)
+    return controller
+
+
+def load_startup_tool(botengine):
+    """
+    Load the Controller object
+    :param botengine: Execution environment
+    """
+    logger = botengine.get_logger()
+    try:
+        startup = botengine.load_variable("startup_tool")
+        logger.info("Loaded the startup tool")
+
+    except:
+        startup = None
+        logger.info("Unable to load the startup tool")
+
+    if startup is None:
+        botengine.get_logger().info("Bot : Creating a new startup tool object.")
+        startup = StartUpUtil()
+        botengine.save_variable("startup_tool", startup, required_for_each_execution=True)
+
+    return startup
+
+
+def trigger_event(botengine, controller, trigger_type, triggers):
+    if botengine.playback:
+        if trigger_type & botengine.TRIGGER_DATA_REQUEST != 0:
+            events = {}
+            data = botengine.get_data_block()
+
+            for device_id, csv_data in data.items():
+                events['all'] = {}
+                events['all'][controller.get_device(device_id)] = csv_data
+
+            for reference in events:
+                controller.data_request_ready(botengine, reference, events[reference])
+
     # SCHEDULE TRIGGER
     if trigger_type & botengine.TRIGGER_SCHEDULE != 0:
-        schedule_id = "DEFAULT"
-        if 'scheduleId' in botengine.get_inputs():
-            schedule_id = botengine.get_inputs()['scheduleId']
-            botengine.get_logger().info("Schedule fired: {}".format(schedule_id))
+        schedule_ids = ["DEFAULT"]
+        if 'scheduleIds' in botengine.get_inputs():
+            schedule_ids = botengine.get_inputs()['scheduleIds']
+            botengine.get_logger().info("Schedule fired: {}".format(schedule_ids))
 
-        controller.run_intelligence_schedules(botengine, schedule_id)
-        
+        for schedule_id in schedule_ids:
+            controller.run_intelligence_schedules(botengine, schedule_id)
+
     # MODE TRIGGERS
     if trigger_type & botengine.TRIGGER_MODE != 0:
         # Triggered off a change of location
@@ -84,7 +199,7 @@ def run(botengine):
             if 'device' in trigger:
                 device_id = trigger['device']['deviceId']
                 device_object = controller.get_device(device_id)
-                
+
                 if device_object is not None:
                     device_location = trigger['device']['locationId']
 
@@ -153,6 +268,7 @@ def run(botengine):
 
                     botengine.inputs['time'] = execution_time_ms
 
+
     # DEVICE ALERTS
     if trigger_type & botengine.TRIGGER_DEVICE_ALERT != 0:
         # Triggered off a device alert
@@ -188,14 +304,14 @@ def run(botengine):
 
             if device_object is not None:
                 controller.file_uploaded(botengine, device_object, file)
-        
+
     # QUESTIONS ANSWERED
     if trigger_type & botengine.TRIGGER_QUESTION_ANSWER != 0:
         question = botengine.get_answered_question()
         botengine.get_logger().info("Answered: " + str(question.key_identifier))
         botengine.get_logger().info("Answer = {}".format(question.answer))
         controller.sync_question(botengine, question)
-        
+
     # DATA STREAM TRIGGERS
     if trigger_type & botengine.TRIGGER_DATA_STREAM != 0:
         # Triggered off a data stream message
@@ -203,7 +319,7 @@ def run(botengine):
         botengine.get_logger().info("Data Stream: " + json.dumps(data_stream, indent=2, sort_keys=True))
         if 'address' not in data_stream:
             botengine.get_logger().warn("Data stream message does not contain an 'address' field. Ignoring the message.")
-            
+
         else:
             address = data_stream['address']
 
@@ -300,14 +416,24 @@ def run(botengine):
 
             controller.call_center_updated(botengine, location_id, user_id, status)
 
-    # DATA REQUEST
-    if trigger_type & botengine.TRIGGER_DATA_REQUEST != 0:
-        # Response to botengine.request_data()
-        botengine.get_logger().info("Data request received")
-        data = botengine.get_data_block()
-        events = {}
+# DATA REQUEST
+def async_data_request(botengine, startup, data):
+    # Response to botengine.request_data()
+    botengine.get_logger().info("Data request received")
+    events = {}
+
+    if botengine.playback:
+        for device_id, csv_data in data.items():
+            events['all'] = {}
+            events['all'][controller.get_device(device_id)] = csv_data
+
+        for reference in events:
+            controller.data_request_ready(botengine, reference, events[reference])
+
+    else:
         imported = False
 
+        import time
         import importlib
         try:
             import lz4.block
@@ -325,44 +451,37 @@ def run(botengine):
                 if reference not in events:
                     events[reference] = {}
 
-                botengine.get_logger().info("Downloading {} ({} bytes)...".format(d['deviceId'], d['dataLength']))
-                r = botengine._requests.get(d['url'], timeout=60, stream=True)
-                events[reference][controller.get_device(d['deviceId'])] = lz4.block.decompress(r.content, uncompressed_size=d['dataLength'])
+            botengine.get_logger().info("Downloading {} ({} bytes)...".format(d['deviceId'], d['dataLength']))
+            r = botengine._requests.get(d['url'], timeout=60, stream=True)
+            events[reference][d['deviceId']] = lz4.block.decompress(r.content, uncompressed_size=d['dataLength'])
+            time.sleep(10)
 
-            for reference in events:
-                controller.data_request_ready(botengine, reference, events[reference])
+    start_timestamp = botengine.get_timestamp()
 
-        # DO NOT SAVE CORE VARIABLES HERE.
-        return
+    while True:
+        if startup.is_bot_preparing():
+            # May change to use await/notify
+            time.sleep(5)
+            continue
 
-    # Always save your variables!
-    botengine.save_variable("controller", controller, required_for_each_execution=True)
-    botengine.get_logger().info("<< bot")
-    
-    
-    
-def load_controller(botengine):
-    """
-    Load the Controller object
-    :param botengine: Execution environment
-    """
-    logger = botengine.get_logger()
-    try:
+        if botengine.get_timestamp() - start_timestamp > 3 * utilities.ONE_MINUTE_MS:
+            break
+
         controller = botengine.load_variable("controller")
-        logger.info("Loaded the controller")
+        if controller is not None:
+            data_events = {}
 
-    except:
-        controller = None
-        logger.info("Unable to load the controller")
+            for reference, value in events.items():
+                if reference not in data_events:
+                    data_events[reference] = {}
 
-    if controller == None:
-        botengine.get_logger().info("Bot : Creating a new Controller object. Hello.")
-        controller = Controller()
-        botengine.save_variable("controller", controller, required_for_each_execution=True)
+                for device_id, decompressed_content in value.items():
+                    data_events[reference][controller.get_device(device_id)] = decompressed_content
 
-    controller.track_new_and_deleted_devices(botengine)
-    return controller
+            for reference in data_events:
+                controller.data_request_ready(botengine, reference, data_events[reference])
 
+            break
 
 
 #===============================================================================

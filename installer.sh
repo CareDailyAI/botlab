@@ -12,8 +12,8 @@ if command -v python > /dev/null 2>&1; then
     rm -f /tmp/botengine_bytecode.tmp
   fi
   echo "Fetching latest version ..."
-  curl --progress-bar https://raw.githubusercontent.com/peoplepower/botlab/master/botengine -o /tmp/botengine.tmp
-  curl --progress-bar https://raw.githubusercontent.com/peoplepower/botlab/master/botengine_bytecode -o /tmp/botengine_bytecode.tmp
+  curl --progress-bar https://raw.githubusercontent.com/caredailyai/botlab/master/botengine -o /tmp/botengine.tmp
+  curl --progress-bar https://raw.githubusercontent.com/caredailyai/botlab/master/botengine_bytecode -o /tmp/botengine_bytecode.tmp
   if [ ! -d /usr/local/bin ]; then
     echo "Making /usr/local/bin"
     mkdir -p /usr/local/bin

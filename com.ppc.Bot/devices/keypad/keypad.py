@@ -23,7 +23,7 @@ class KeypadDevice(Device):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = []
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor
         :param botengine:
@@ -32,7 +32,7 @@ class KeypadDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
     def initialize(self, botengine):
         """

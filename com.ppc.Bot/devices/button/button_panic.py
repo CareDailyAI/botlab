@@ -27,7 +27,7 @@ class PanicButtonDevice(Device):
     GOAL_BUTTON_CALL_FOR_HELP_MEDICAL = 111
     GOAL_BUTTON_SKIP = 300
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor
         :param botengine:
@@ -36,7 +36,7 @@ class PanicButtonDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
         self.goal_id = PanicButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL

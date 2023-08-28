@@ -1,26 +1,39 @@
 # Byte-compiled / optimized / DLL files
-
-.com*
+__pycache__/
+maestro_cli/downloads/
+.precommit
+*.pickle
+*.py[cod]
+.DS_Store
 .bot
 _bot.zip
 _bot.tar
-.idea
-.project
-.pydevproject
-.DS_Store
+botengine_bytecode
+.*.dat
+*.zip
+.com.*
+.org.*
+*.auth
+*.mp4
+*.tar
+.precommit*
+.bot*
+.edu*
+*.user
+*.admin
 
-.*
-
-__pycache__/
-*.py[cod]
-*$py.class
+# Comma-delimeted files
+*.csv
 
 # C extensions
 *.so
 
+.idea
+
 # Distribution / packaging
 .Python
 env/
+bin/
 build/
 develop-eggs/
 dist/
@@ -35,6 +48,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.settings/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -57,9 +71,13 @@ coverage.xml
 *,cover
 .hypothesis/
 
-# Translations
-*.mo
-*.pot
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Rope
+.ropeproject
 
 # Django stuff:
 *.log
@@ -74,6 +92,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+
+# Doxygen
+docs/html/
 
 # PyBuilder
 target/
@@ -99,3 +120,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+.pytest_cache
+.github

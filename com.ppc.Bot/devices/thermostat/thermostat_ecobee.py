@@ -34,7 +34,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
     COMMAND_CLIMATE_MODE = "climate"
     
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor
         :param botengine:
@@ -43,7 +43,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         :param device_description:
         :param precache_measurements:
         """
-        ThermostatDevice.__init__(self, botengine, device_id, device_type, device_description, precache_measurements)
+        ThermostatDevice.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements)
 
         # Set to True to activate the 'climate' mode switching functionality which is incompatible with demand response events.
         self.ee_only = False

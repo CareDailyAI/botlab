@@ -59,7 +59,7 @@ class SmartenitZbalarmDevice(SirenDevice):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [9002]
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor
         :param botengine:
@@ -68,7 +68,7 @@ class SmartenitZbalarmDevice(SirenDevice):
         :param device_description:
         :param precache_measurements:
         """
-        SirenDevice.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        SirenDevice.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Microservice this siren is locked to
         self.locked_microservice = None

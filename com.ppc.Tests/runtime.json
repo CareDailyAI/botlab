@@ -1,0 +1,15 @@
+{
+  "version": {
+    "version": "1.0.0",
+    "whatsnew": {
+        "en": "Creation"
+    },
+
+    # Runtime values
+    #   1 = Python 3.8
+    "runtime": 1,
+
+    # Maximum time this bot is allowed to run, in seconds (maximum is 300 seconds)
+    "timeout": 60
+  }
+}

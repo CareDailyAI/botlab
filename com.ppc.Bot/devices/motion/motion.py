@@ -36,8 +36,8 @@ class MotionDevice(Device):
     # Number of seconds that elapses before the motion detector sends a second packet saying motion is no longer detected
     MOTION_AUTO_OFF_SECONDS = 15
 
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # Default behavior
         self.goal_id = MotionDevice.GOAL_MOTION_PROTECT_HOME

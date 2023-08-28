@@ -85,8 +85,8 @@ class PeoplePowerPresenceCameraDevice(CameraDevice):
     ROBOT_GALILEO_BLE = 4
     ROBOT_PRESENCE_360 = 5
     
-    def __init__(self, botengine, device_id, device_type, device_description, precache_measurements=True):
-        CameraDevice.__init__(self, botengine, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+        CameraDevice.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
         
     def get_device_type_name(self):
         """

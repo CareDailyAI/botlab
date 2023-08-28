@@ -10,3 +10,8 @@ tzlocal
 dill
 pybabel
 colorama
+Babel
+ijson
+croniter
+keepachangelog
+gitpython

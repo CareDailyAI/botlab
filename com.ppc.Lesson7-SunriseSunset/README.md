@@ -1,4 +1,4 @@
-# Lesson 6 : Sunrise / Sunset
+# Lesson 7 : Sunrise / Sunset
 
 By the end of this lesson you will know:
 
