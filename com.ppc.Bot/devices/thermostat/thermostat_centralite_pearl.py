@@ -13,10 +13,6 @@ file 'LICENSE.txt', which is part of this source code package.
 from devices.thermostat.thermostat import ThermostatDevice
 
 
-# Set the default rounding to 3 numbers.
-from decimal import *
-getcontext().prec = 1
-
 # fanModeSequence values
 FAN_MODE_SEQUENCE__LOW_MED_HIGH = 0
 FAN_MODE_SEQUENCE__LOW_HIGH = 1

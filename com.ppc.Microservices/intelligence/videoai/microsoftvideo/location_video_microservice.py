@@ -9,9 +9,17 @@ file 'LICENSE.txt', which is part of this source code package.
 
 from intelligence.intelligence import Intelligence
 import os, uuid, sys
-import httplib, urllib, base64
+import urllib, base64
+
+try:
+    import http.client as http_client
+        
+except ImportError:
+    # Python 2
+    import httplib as http_client
 import json
-from azure.storage.blob import BlockBlobService, PublicAccess
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import time
 
 # Copy/paste Microsoft Blob Storage Account Name
@@ -60,16 +68,6 @@ class LocationVideoMicroservice(Intelligence):
         :param botengine: BotEngine environment
         """
         return
-
-    def get_html_summary(self, botengine, oldest_timestamp_ms, newest_timestamp_ms, test_mode=False):
-        """
-        Return a human-friendly HTML summary of insights or status of this intelligence module to report in weekly and test mode emails
-        :param botengine: BotEngine environment
-        :param oldest_timestamp_ms: Oldest timestamp in milliseconds to summarize
-        :param newest_timestamp_ms: Newest timestamp in milliseconds to summarize
-        :param test_mode: True to add or modify details for test mode, instead of a general weekly summary
-        """
-        return ""
 
     def mode_updated(self, botengine, current_mode):
         """
@@ -124,15 +122,6 @@ class LocationVideoMicroservice(Intelligence):
         """
         return
 
-    def datastream_updated(self, botengine, address, content):
-        """
-        Data Stream Message Received
-        :param botengine: BotEngine environment
-        :param address: Data Stream address
-        :param content: Content of the message
-        """
-        return
-
     def schedule_fired(self, botengine, schedule_id):
         """
         The bot executed on a hard coded schedule specified by our runtime.json file
@@ -153,7 +142,7 @@ class LocationVideoMicroservice(Intelligence):
             'accessToken': token,
             'language': 'English',
         })
-        conn = httplib.HTTPSConnection('api.videoindexer.ai')
+        conn = http_client.HTTPSConnection('api.videoindexer.ai')
         conn.request("GET", "/" + ACCOUNT_LOCATION + "/Accounts/" + ACCOUNT_ID + "/Videos/" + str(job_id) + "/Index?%s" % params)
         response = conn.getresponse()
         data = response.read()
@@ -161,7 +150,7 @@ class LocationVideoMicroservice(Intelligence):
 
         # Check if the results are finished processing. Else restart a timer
         if result["state"] == 'Processed':
-            botengine.get_logger().info(json.dumps(result, indent=2, sort_keys=True))
+            botengine.get_logger().info(json.dumps(result, sort_keys=True))
             conn.close()
         else:
             self.start_timer_s(botengine, 5, [job_id, token])
@@ -222,7 +211,7 @@ class LocationVideoMicroservice(Intelligence):
 
         # HTTP GET request to Video Indexer API to acquire access token
         try:
-            conn = httplib.HTTPSConnection('api.videoindexer.ai')
+            conn = http_client.HTTPSConnection('api.videoindexer.ai')
             conn.request("GET", "/auth/" + ACCOUNT_LOCATION + "/Accounts/" + ACCOUNT_ID + "/AccessToken?%s" % params, headers=headers)
             response = conn.getresponse()
             token = response.read()
@@ -242,7 +231,7 @@ class LocationVideoMicroservice(Intelligence):
             'privacy': "Public"
         })
         try:
-            conn = httplib.HTTPSConnection('api.videoindexer.ai')
+            conn = http_client.HTTPSConnection('api.videoindexer.ai')
             conn.request("POST", "/" + ACCOUNT_LOCATION + "/Accounts/" + ACCOUNT_ID + "/Videos?accessToken=" +token + "&name=Sample&%s" % params, headers=headers)
             response = conn.getresponse()
             data = response.read()
@@ -258,7 +247,7 @@ class LocationVideoMicroservice(Intelligence):
             'accessToken': token,
             'language': 'English',
         })
-        conn = httplib.HTTPSConnection('api.videoindexer.ai')
+        conn = http_client.HTTPSConnection('api.videoindexer.ai')
         conn.request("GET", "/" + ACCOUNT_LOCATION + "/Accounts/" + ACCOUNT_ID + "/Videos/"+d["id"]+"/Index?%s" % params)
         response = conn.getresponse()
         data = response.read()

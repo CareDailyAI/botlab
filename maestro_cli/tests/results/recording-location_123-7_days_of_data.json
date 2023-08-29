@@ -1,0 +1,18 @@
+{
+"location_info":{"addrStreet1": "123 Main", "addrCity": "Small Town", "zip": "12345", "id": 123, "name": "My Home", "timezone": {"id": "America/Los_Angeles", "offset": -480, "dst": true, "name": "Pacific Standard Time"}, "organizationId": 123},
+"device_properties":{"abc123": []},
+"data":[
+{"trigger": "8", "location_id": "123", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1670270287513", "timestamp_iso": "2022-12-05T19:58:07.513000Z", "timestamp_excel": "12/05/2022 11:58:07", "behavior": "-1", "otherParam": "0", "param": "0:52,129,147"},
+{"trigger": "4", "location_id": "123", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1670270287513", "timestamp_iso": "2022-12-05T19:58:07.513000Z", "timestamp_excel": "12/05/2022 11:58:07", "behavior": "-1", "alert_type": "some_alert", "time": "1670298428824", "type": "18"},
+{"trigger": "256", "location_id": "123", "timestamp_ms": "1670270287513", "timestamp_iso": "2022-12-05T19:58:07.513000Z", "timestamp_excel": "12/05/2022 11:58:07", "address": "do_something", "feed": "{\"thing\":{\"type\":\"0\"},\"other_thing\":123}"},
+{"trigger": "2", "location_id": "123", "timestamp_ms": "1670270287513", "timestamp_iso": "2022-12-05T19:58:07.513000Z", "timestamp_excel": "12/05/2022 11:58:07", "event": "HOME.5421.:.H2S.AI", "source_type": "2"},
+{"trigger": "8", "location_id": "123", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1670270288513", "timestamp_iso": "2022-12-05T19:58:08.513000Z", "timestamp_excel": "12/05/2022 11:58:08", "behavior": "-1", "otherParam": "0", "param": "0:52,129,147"},
+{"trigger": "4", "location_id": "123", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1670270288513", "timestamp_iso": "2022-12-05T19:58:08.513000Z", "timestamp_excel": "12/05/2022 11:58:08", "behavior": "-1", "alert_type": "some_alert", "time": "1670298428824", "type": "18"},
+{"trigger": "256", "location_id": "123", "timestamp_ms": "1670270288513", "timestamp_iso": "2022-12-05T19:58:08.513000Z", "timestamp_excel": "12/05/2022 11:58:08", "address": "do_something", "feed": "{\"thing\":{\"type\":\"1\"},\"other_thing\":123}"},
+{"trigger": "2", "location_id": "123", "timestamp_ms": "1670270288513", "timestamp_iso": "2022-12-05T19:58:08.513000Z", "timestamp_excel": "12/05/2022 11:58:08", "event": "HOME.5421.:.SLEEP.AI", "source_type": "2"},
+{"trigger": "8", "location_id": "123", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1670270289513", "timestamp_iso": "2022-12-05T19:58:09.513000Z", "timestamp_excel": "12/05/2022 11:58:09", "behavior": "-1", "otherParam": "1", "param": "0:52,129,147"},
+{"trigger": "4", "location_id": "123", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1670270289513", "timestamp_iso": "2022-12-05T19:58:09.513000Z", "timestamp_excel": "12/05/2022 11:58:09", "behavior": "-1", "alert_type": "some_alert", "time": "1670298428824", "type": "18"},
+{"trigger": "256", "location_id": "123", "timestamp_ms": "1670270289513", "timestamp_iso": "2022-12-05T19:58:09.513000Z", "timestamp_excel": "12/05/2022 11:58:09", "address": "do_something", "feed": "{\"thing\":{\"type\":\"2\"},\"other_thing\":123}"},
+{"trigger": "2", "location_id": "123", "timestamp_ms": "1670270289513", "timestamp_iso": "2022-12-05T19:58:09.513000Z", "timestamp_excel": "12/05/2022 11:58:09", "event": "HOME.5421.:.S2H.AI", "source_type": "2"}
+
+]}

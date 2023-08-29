@@ -9,7 +9,7 @@ file 'LICENSE.txt', which is part of this source code package.
 
 from intelligence.intelligence import Intelligence
 
-import domain
+import properties
 import json
 import utilities.utilities as utilities
 import signals.analytics as analytics
@@ -84,15 +84,22 @@ class LocationDailyReportMicroservice(Intelligence):
         # Last report we emailed
         self.last_emailed_report_ms = None
 
-
-    def initialize(self, botengine):
+    def new_version(self, botengine):
         """
-        Initialize
+        Upgraded to a new bot version
         :param botengine: BotEngine environment
         """
         if not hasattr(self, 'last_emailed_report_ms'):
             self.last_emailed_report_ms = None
 
+        return
+
+    def initialize(self, botengine):
+        """
+        Initialize
+        :param botengine:
+        :return:
+        """
         return
 
     def destroy(self, botengine):
@@ -109,30 +116,6 @@ class LocationDailyReportMicroservice(Intelligence):
         :param current_mode: Current mode
         :param current_timestamp: Current timestamp
         """
-        return
-
-    def occupancy_status_updated(self, botengine, status, reason, last_status, last_reason):
-        """
-        AI Occupancy Status updated
-        :param botengine: BotEngine
-        :param status: Current occupancy status
-        :param reason: Current occupancy reason
-        :param last_status: Last occupancy status
-        :param last_reason: Last occupancy reason
-        """
-        if 'SLEEP' in status and REASON_ML in reason and self.started_sleeping_ms is None:
-            # Started sleeping
-            self.started_sleeping_ms = botengine.get_timestamp()
-
-            if self.parent.get_relative_time_of_day(botengine) > 12.0:
-                # Went to sleep before midnight - send out the daily report now.
-                self.last_emailed_report_ms = self.current_report_ms
-                self.email_report(botengine)
-
-        if 'SLEEP' not in status and 'S2H' not in status and self.started_sleeping_ms is not None:
-            # Stopped sleeping
-            self.started_sleeping_ms = None
-
         return
 
     def device_measurements_updated(self, botengine, device_object):
@@ -232,7 +215,7 @@ class LocationDailyReportMicroservice(Intelligence):
         """
         return
 
-    def user_role_updated(self, botengine, user_id, alert_category, location_access, previous_alert_category, previous_location_access):
+    def user_role_updated(self, botengine, user_id, role, alert_category, location_access, previous_alert_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment
@@ -244,6 +227,30 @@ class LocationDailyReportMicroservice(Intelligence):
         """
         return
 
+    def capture_trend_data(self, botengine, trend_data):
+        """
+        Capture trend data information - Data Stream Message
+        When we capture a new data point, we should update the trends summary for this data.
+
+        :param botengine:
+        :param trend_data:
+        :return:
+        """
+        if "trend_id" not in trend_data or "value" not in trend_data:
+            botengine.get_logger().warning("location_dailyreport_microservice: Missing fields in trend data: {}".format(trend_data))
+            return
+
+        if trend_data['value'] is None:
+            botengine.get_logger().warning("location_dailyreport_microservice: value field in NoneType in trend data: {}".format(trend_data))
+            return
+
+        trend_id = trend_data['trend_id']
+        value = float(trend_data['value'])
+
+        if trend_id == "trend.bathroom_duration":
+            pass
+
+
     def midnight_fired(self, botengine, content=None):
         """
         Data stream message - Midnight timer fired
@@ -251,12 +258,15 @@ class LocationDailyReportMicroservice(Intelligence):
         :param content:
         :return:
         """
+        botengine.get_logger().info("location_dailyreport_microservice: midnight_fired()")
+
         # If we haven't emailed the daily report yet because the person hasn't gone to sleep yet, email it now.
         if self.current_report_ms is not None:
             if self.last_emailed_report_ms != self.current_report_ms:
                 self.last_emailed_report_ms = self.current_report_ms
-                if "SLEEP" not in self.parent.occupancy_status and "VACATION" not in self.parent.occupancy_status:
-                    self.add_entry(botengine, SECTION_ID_SLEEP, comment=_("Hasn't gone to sleep by midnight."), include_timestamp=True)
+                if "SLEEP" not in self.parent.occupancy_status and "VACATION" not in self.parent.occupancy_status and (23.5 < self.parent.get_relative_time_of_day(botengine) or self.parent.get_relative_time_of_day(botengine) < 0.5):
+                    self.add_entry(botengine, SECTION_ID_SLEEP, comment=_("Hasn't gone to sleep by midnight."), include_timestamp=True, force_previous=True)
+
                 self.email_report(botengine)
 
         # Create a new report
@@ -269,7 +279,7 @@ class LocationDailyReportMicroservice(Intelligence):
         else:
             report['title'] = _("DAILY REPORT")
 
-        report['subtitle'] = _("Daily Report for {}").format(self.parent.get_local_datetime(botengine).strftime("%A %B %-d, %Y"))
+        report['subtitle'] = _("Daily Report for {}").format(utilities.strftime(self.parent.get_local_datetime(botengine), "%A %B %-d, %Y"))
         report['created_ms'] = botengine.get_timestamp()
         report['sections'] = []
         self.parent.set_location_property_separately(botengine, DAILY_REPORT_ADDRESS, report, overwrite=True, timestamp_ms=self.current_report_ms)
@@ -321,7 +331,7 @@ class LocationDailyReportMicroservice(Intelligence):
 
         self.add_entry(botengine, section_id, comment=comment, subtitle=subtitle, identifier=identifier, include_timestamp=include_timestamp, timestamp_override_ms=timestamp_override_ms)
 
-    def add_entry(self, botengine, section_id, comment=None, subtitle=None, identifier=None, include_timestamp=False, timestamp_override_ms=None):
+    def add_entry(self, botengine, section_id, comment=None, subtitle=None, identifier=None, include_timestamp=False, timestamp_override_ms=None, force_previous=False):
         """
         Add a section and bullet point the current daily report
         :param botengine: BotEngine environment
@@ -330,23 +340,22 @@ class LocationDailyReportMicroservice(Intelligence):
         :param identifier: Optional identifier to come back and edit this entry later.
         :param include_timestamp: True to include a timestamp like "7:00 AM - <comment>" (default is False)
         :param timestamp_override_ms: Optional timestamp in milliseconds to override the current time when citing the timestamp with include_timestamp=True
+        :param force_previous: Internal argument to add an entry to the previous day's daily report, even if today is a different day than the current report.
         """
         botengine.get_logger().info("location_dailyreport_microservice.add_entry(): Current report timestamp is {}".format(self.current_report_ms))
 
-        # Make sure our midnight schedule fired properly.
-        # We added a 1 hour buffer for backwards compatibility, because the self.current_report_ms was previously being set to the current botengine.get_timestamp()
-        # which was some time after midnight.
         if self.current_report_ms is None:
             self.midnight_fired(botengine)
 
-        if self._get_todays_timestamp(botengine) < (self.current_report_ms - utilities.ONE_HOUR_MS):
+        # Make sure our midnight schedule fired properly.
+        elif self._get_todays_timestamp(botengine) != self.current_report_ms and not force_previous:
             self.midnight_fired(botengine)
 
-        report = botengine.get_ui_content(DAILY_REPORT_ADDRESS, timestamp_ms=self.current_report_ms)
+        report = botengine.get_state(DAILY_REPORT_ADDRESS, timestamp_ms=self.current_report_ms)
         if report is None:
             botengine.get_logger().info("location_dailyreport_microservice: There is currently no active daily report.")
             self.midnight_fired(botengine)
-            report = botengine.get_ui_content(DAILY_REPORT_ADDRESS, self.current_report_ms)
+            report = botengine.get_state(DAILY_REPORT_ADDRESS, self.current_report_ms)
             if report is None:
                 return
             else:
@@ -478,6 +487,11 @@ class LocationDailyReportMicroservice(Intelligence):
             report['sections'] = sorted(report['sections'], key=lambda k: k['weight'])
 
         if comment is not None or identifier is not None:
+            # Backwards compatibility with older app versions that exclusively used a comment modified with the timestamp.
+            timeless_comment = comment
+            timeful_comment = comment
+            timestamp_str = None
+
             if include_timestamp and comment is not None:
                 if timestamp_override_ms is not None:
                     dt = self.parent.get_local_datetime_from_timestamp(botengine, timestamp_override_ms)
@@ -486,10 +500,14 @@ class LocationDailyReportMicroservice(Intelligence):
 
                 if section_id == SECTION_ID_SLEEP:
                     # Sleep timestamps include the day
-                    comment = "{} - {}".format(dt.strftime("%-I:%M %p %A"), comment)
+                    timestamp_str = utilities.strftime(dt, "%-I:%M %p %A")
+
+                    # Backwards compatibility with previous apps that use a 'comment' field which included the timestamp in the field.
+                    timeful_comment = "{} - {}".format(timestamp_str, comment)
                 else:
                     # Other timestamps don't include the day
-                    comment = "{} - {}".format(dt.strftime("%-I:%M %p"), comment)
+                    timestamp_str = utilities.strftime(dt, "%-I:%M %p")
+                    timeful_comment = "{} - {}".format(timestamp_str, comment)
 
             if identifier is None and comment is not None:
                 ts = botengine.get_timestamp()
@@ -498,7 +516,9 @@ class LocationDailyReportMicroservice(Intelligence):
 
                 focused_item = {
                     "timestamp_ms": ts,
-                    "comment": comment
+                    "comment": timeful_comment,
+                    "timestamp_str": timestamp_str,
+                    "comment_raw": timeless_comment
                 }
                 focused_section['items'].append(focused_item)
                 focused_section['items'] = sorted(focused_section['items'], key=lambda k: k['timestamp_ms'])
@@ -521,6 +541,8 @@ class LocationDailyReportMicroservice(Intelligence):
 
                         focused_item['timestamp_ms'] = ts
                         focused_item['comment'] = comment
+                        focused_item['comment_raw'] = timeless_comment
+                        focused_item['timestamp_str'] = timestamp_str
                         focused_section['items'] = sorted(focused_section['items'], key=lambda k: k['timestamp_ms'])
 
                     else:
@@ -540,7 +562,9 @@ class LocationDailyReportMicroservice(Intelligence):
 
                     focused_item = {
                         "timestamp_ms": ts,
-                        "comment": comment,
+                        "comment": timeful_comment,
+                        "comment_raw": timeless_comment,
+                        "timestamp_str": timestamp_str,
                         "id": identifier
                     }
                     focused_section['items'].append(focused_item)
@@ -654,4 +678,5 @@ class LocationDailyReportMicroservice(Intelligence):
         :param botengine:
         :return:
         """
+        botengine.get_logger().info("location_dailyreport_microservice: Midnight last night = {}; Today's timestamp = {}".format(self.parent.get_midnight_last_night(botengine), self.parent.timezone_aware_datetime_to_unix_timestamp(botengine, self.parent.get_midnight_last_night(botengine))))
         return self.parent.timezone_aware_datetime_to_unix_timestamp(botengine, self.parent.get_midnight_last_night(botengine))

@@ -40,7 +40,7 @@ Explore the `com.ppc.Bot/devices/` directory for a list of devices. A subset of 
     * lock(self, botengine)
     * unlock(self, botengine)
 
-* **com.ppc.Bot/devices/siren/siren_linkhigh.py**                   - Controls MyPlace / People Power sirens (play sounds, blink lights)
+* **com.ppc.Bot/devices/siren/siren_linkhigh.py**                   - Controls People Power sirens (play sounds, blink lights)
     * squawk(self, botengine, warning=False)
     * alarm(self, botengine, on)
     * play_sound(self, botengine, sound_id, strobe, duration_sec)

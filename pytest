@@ -21,6 +21,10 @@ args = parser.parse_args()
 
 print("args: {}".format(args))
 core = os.getcwd()
+if args.core_directory is not None:
+    core = args.core_directory
+
+print("Using $BOTLAB_CORE = {}".format(core))
 
 # Load the botengine.
 shutil.copy(os.path.join('./', 'botengine'), 'botengine.py')

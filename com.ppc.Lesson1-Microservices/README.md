@@ -19,7 +19,7 @@ The process of creating and running a bot is similar to the process of mobile ap
 1. Develop code for a new bot on your local computer by copy/pasting an existing bot into a new directory and editing it. 
 2. You `--commit` the bot to your smart home's cloud server, with the user account you already established. Now the bot is in 'developer mode'. You, as the developer, are the only person who can see it available for purchase. Once committed, it's like a blueprint or a class - it doesn't really exist until you instantiate it by purchasing it into your user account.
 3. You `--purchase` the bot into your account. This doesn't necessarily mean there's money involved, but it is to say there's an explicit transaction to get the bot into your account. This makes an instance of the bot, running live in your user account on the server. As a developer, if you don't directly interact with your bot for at least 24 hours, it will automatically pause itself. By purchasing your bot into your own developer account, now you are able to test it and run it live in the cloud or locally on your computer for debugging.
-4. You `--publish` the bot when it's ready for commercial release. The bot goes through a review process and is approved or rejected (with reasons) from People Power. If approved for distribution, then other users will be able to discover and purchase your bot.
+4. You `--publish` the bot when it's ready for commercial release. The bot goes through a review process and is approved or rejected (with reasons) from Care Daily. If approved for distribution, then other users will be able to discover and purchase your bot.
 
 You can also `--run` your bot locally, if you have the source code on your laptop. Which you should, if you have cloned this 'botlab' repository.
 
@@ -44,10 +44,10 @@ Now it's time to commit your bot into your own developer account on the server:
     
 Once committed, the server now has a blueprint of your bot service. This bot is privately available for you to purchase into your own developer account, but not available for other users to discover, purchase, or run.
 
-    botengine --commit com.yourname.Lesson1 -b presence
+    botengine --commit com.yourname.Lesson1 -b presencefamily
     
-    Presence by People Power
-    Bot Server: https://app.presencepro.com
+    Care Daily AI
+    Bot Server: https://app.peoplepowerco.com
     Uploading the marketing file...
     Uploading the runtime configuration...
     Generating the bot...
@@ -88,10 +88,10 @@ You must have your bot's source code locally available to run it on your compute
     
 When your bot begins running locally, you'll see the following output to your Terminal window:
 
-    botengine --run com.yourname.Lesson1 -b presence
+    botengine --run com.yourname.Lesson1 -b presencefamily
     
-    Presence by People Power
-    Bot Server: https://app.presencepro.com
+    Care Daily AI
+    Bot Server: https://app.peoplepowerco.com
     Device Server: https://esp.peoplepowerco.com:8443
     Running forever, until you press CTRL+Z to quit
 
@@ -131,7 +131,7 @@ This will add a virtual light switch device to your account (our server thinks i
 
 #### What happens when your bot is running
 
-Unlike active applications on your computer, active bots do not run all the time. They go to sleep whenever possible - which technically means they exit and stop executing. That would normally mean you lose all your variables between executions, but the bot microservices framework by People Power takes care of that for you and makes it appear as if your bot never exits. It just keeps running. Thank you, bot microservices framework. 
+Unlike active applications on your computer, active bots do not run all the time. They go to sleep whenever possible - which technically means they exit and stop executing. That would normally mean you lose all your variables between executions, but the bot microservices framework by Care Daily takes care of that for you and makes it appear as if your bot never exits. It just keeps running. Thank you, bot microservices framework. 
 
 Imagine if you had 10 million users and each of them had a python application that needed to run. Now imagine you have a computer (or in the case of a cloud server - a cluster of computers) running those applications. Can you imagine, even on a large body of computers, having 10 million applications open and running simultaneously? Ya, right. If you don't believe me, try opening a even just a few hundred applications on your own computer and see how that goes. This is why the bots run and exit completely. Your job, as the developer, is to make the bots trigger infrequently and get done executing quickly to free up CPU time for other bots to run.
 

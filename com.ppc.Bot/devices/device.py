@@ -202,9 +202,11 @@ class Device:
         # Added April 7, 2022
         if not hasattr(self, "is_goal_changed"):
             self.is_goal_changed = False
-        # import json
-        # print("index" + json.dumps(index.MICROSERVICES, indent=2))
+
         # Synchronize device microservices
+        print("device.py - Synchronizing device microservices for device type: " + str(self.device_type))
+        print("device.py - Device microservices: " + str(index.MICROSERVICES['DEVICE_MICROSERVICES']))
+        
         if str(self.device_type) in index.MICROSERVICES['DEVICE_MICROSERVICES']:
             # Synchronize microservices
             changed = False
@@ -258,7 +260,10 @@ class Device:
         # Tell all device microservices we're running a new version
         for microservice in list(self.intelligence_modules.values()):
             try:
+                import time
+                t = time.time()
                 microservice.new_version(botengine)
+                microservice.track_statistics(botengine, (time.time() - t) * 1000)
             except Exception as e:
                 botengine.get_logger().warning("location.py - Error delivering new_version to device microservice (continuing execution): " + str(e))
                 import traceback
@@ -271,7 +276,14 @@ class Device:
         """
         # Initialize all device microservices
         for device_microservice in self.intelligence_modules.values():
+            
+            # Reset device microservice statistics
+            device_microservice.reset_statistics(botengine)
+
+            import time
+            t = time.time()
             device_microservice.initialize(botengine)
+            device_microservice.track_statistics(botengine, (time.time() - t) * 1000)
 
     def destroy(self, botengine):
         """
@@ -324,7 +336,10 @@ class Device:
         :return:
         """
         for intelligence_id in self.intelligence_modules:
+            import time
+            t = time.time()
             self.intelligence_modules[intelligence_id].device_measurements_updated(botengine, self)
+            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
 
     def device_metadata_updated(self, botengine):
         """
@@ -333,7 +348,10 @@ class Device:
         :return:
         """
         for intelligence_id in self.intelligence_modules:
+            import time
+            t = time.time()
             self.intelligence_modules[intelligence_id].device_metadata_updated(botengine, self)
+            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
 
     def device_alert(self, botengine, alert_type, alert_params):
         """
@@ -353,7 +371,10 @@ class Device:
         }
 
         for intelligence_id in self.intelligence_modules:
+            import time
+            t = time.time()
             self.intelligence_modules[intelligence_id].device_alert(botengine, self, alert_type, alert_params)
+            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
 
     #===========================================================================
     # Measurement synchronization and updates
@@ -497,7 +518,10 @@ class Device:
         :param file_extension: The file extension, for example 'mp4'
         """
         for intelligence_id in self.intelligence_modules:
+            import time
+            t = time.time()
             self.intelligence_modules[intelligence_id].file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
+            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
 
     def last_measurement_timestamp_ms(self, botengine):
         """
@@ -659,13 +683,19 @@ class Device:
 
         # Notify my microservices
         for intelligence_id in self.intelligence_modules:
+            import time
+            t = time.time()
             self.intelligence_modules[intelligence_id].coordinates_updated(botengine, latitude, longitude)
+            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
 
         # Notify all children microservices
         for device_id in self.location_object.devices:
             if self.location_object.devices[device_id].proxy_id == self.device_id:
                 for intelligence_id in self.location_object.devices[device_id].intelligence_modules:
+                    import time
+                    t = time.time()
                     self.location_object.devices[device_id].intelligence_modules[intelligence_id].coordinates_updated(botengine, latitude, longitude)
+                    self.location_object.devices[device_id].intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
 
     #===========================================================================
     # Spaces

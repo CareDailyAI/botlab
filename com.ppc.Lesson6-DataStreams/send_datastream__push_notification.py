@@ -29,8 +29,8 @@ def main(argv=None):
 
     parser.add_argument("-u", "--username", dest="username", help="Username")
     parser.add_argument("-p", "--password", dest="password", help="Password")
-    parser.add_argument("-b", "--brand", dest="brand", help="Brand name partner to interact with the correct servers: 'myplace', 'origin', 'presence', etc.")
-    parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.presencepro.com)")
+    parser.add_argument("-b", "--brand", dest="brand", help="Brand name partner to interact with the correct servers: 'presencefamily', etc.")
+    parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.peoplepowerco.com)")
     parser.add_argument("--httpdebug", dest="httpdebug", action="store_true", help="HTTP debug logger output");
 
     # Process arguments
@@ -45,21 +45,9 @@ def main(argv=None):
 
     if brand is not None:
         brand = brand.lower()
-        if brand == 'presence':
-            print(Color.BOLD + "\nPresence by People Power" + Color.END)
-            server = "app.presencepro.com"
-
-        elif brand == 'myplace':
-            print(Color.BOLD + "\nMyPlace - Smart. Simple. Secure." + Color.END)
-            server = "iot.peoplepowerco.com"
-
-        elif brand == 'origin':
-            print(Color.BOLD + "\nOrigin Home HQ" + Color.END)
-            server = "app.originhomehq.com.au"
-
-        elif brand == 'innogy':
-            print(Color.BOLD + "\ninnogy SmartHome" + Color.END)
-            server = "innogy.presencepro.com"
+        if brand == 'presencefamily':
+            print(Color.BOLD + "\nCare Daily AI" + Color.END)
+            server = "app.peoplepowerco.com"
 
         else:
             sys.stderr.write("This brand does not exist: " + str(brand) + "\n\n")
@@ -67,7 +55,7 @@ def main(argv=None):
 
     # Define the bot server
     if not server:
-        server = "https://app.presencepro.com"
+        server = "https://app.peoplepowerco.com"
 
     if "http" not in server:
         server = "https://" + server

@@ -7,7 +7,8 @@
       "cellQuality",
       "cellStatus",
       "simStatus",
-      "powerStatus"
+      "powerStatus",
+      "netType"
     ]
   }
 }

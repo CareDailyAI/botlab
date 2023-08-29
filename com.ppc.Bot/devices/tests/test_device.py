@@ -64,6 +64,11 @@ class TestDevice():
         device_desc = "Test"
 
         mut = Device(botengine, location_object, device_id, device_type, device_desc)
+        location_object.devices[device_id] = mut
+
+        location_object.new_version(botengine)
+        location_object.initialize(botengine)
+        mut.new_version(botengine)
 
         assert len(mut.intelligence_modules) > 0
 

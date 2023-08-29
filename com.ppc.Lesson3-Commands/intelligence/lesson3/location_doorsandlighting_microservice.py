@@ -31,7 +31,7 @@ class LocationDoorsAndLightingMicroservice(Intelligence):
         * com.ppc.Bot/devices/camera/camera_peoplepower_presence.py     - Provides control methods for all cameras provided by your smartphone app (use your spare smartphone as a security camera).
         * com.ppc.Bot/devices/light/light.py                            - Base class for lighting controls (on / off / save / restore / hue / saturation / brightness)
         * com.ppc.Bot/devices/lock/lock.py                              - Control smart locks (i.e. Kwikset 916 Smart Lock) (lock / unlock)
-        * com.ppc.Bot/devices/siren/siren_linkhigh.py                   - Controls MyPlace / People Power sirens (play sounds, blink lights)
+        * com.ppc.Bot/devices/siren/siren_linkhigh.py                   - Controls People Power sirens (play sounds, blink lights)
         * com.ppc.Bot/smartplug/smartplug.py                            - Base class for smart plug devices (on / off / save / restore)
         * com.ppc.Bot/thermostat/thermostat.py                          - Base class for thermostat devices (control modes, set points, energy efficiency and demand response policies)
         * com.ppc.Bot/touchpad/touchpad_peoplepower.py                  - Touchpad (play sounds, send notifications to the touchpad)

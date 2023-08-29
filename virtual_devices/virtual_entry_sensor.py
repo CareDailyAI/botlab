@@ -38,7 +38,7 @@ def main(argv=None):
     parser.add_argument("-u", "--username", dest="username", help="Username")
     parser.add_argument("-p", "--password", dest="password", help="Password")
     parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.peoplepowerco.com)")
-    parser.add_argument("-b", "--brand", dest="brand", help="Brand name partner to interact with the correct servers: 'myplace', 'origin', 'presence', etc.")
+    parser.add_argument("-b", "--brand", dest="brand", help="Brand name partner to interact with the correct servers: 'presencefamily', etc.")
     parser.add_argument("-l", "--location", dest="location_id", help="Location ID")
     parser.add_argument("--httpdebug", dest="httpdebug", action="store_true", help="HTTP debug logger output")
     parser.add_argument("--https_proxy", dest="https_proxy", help="If your corporate network requires a proxy, type in the full HTTPS proxy address here (i.e. http://10.10.1.10:1080)")

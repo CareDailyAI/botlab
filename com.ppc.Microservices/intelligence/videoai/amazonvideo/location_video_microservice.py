@@ -14,10 +14,10 @@ import json
 from botocore.client import Config
 
 # Copy/paste your Amazon AWS Access Key ID here
-ACCESS_KEY_ID = 'AKIAIATDMH4O56GJ6D2A'
+ACCESS_KEY_ID = 'AKIAIRN6HROWXQCZVNRA'
 
 # Copy/paste your Amazon AWS Access Secret Key here
-ACCESS_SECRET_KEY = 'HlXXC6v2Pv+rLTAajYcZ49hwU2+xpfpbZRggLoC3'
+ACCESS_SECRET_KEY = '2Jf9Rxi4YOgMjZLGPya6Xr14GR8jmelD7mhEW6Kp'
 
 # Copy/paste your Amazon AWS S3 bucket name here to store videos
 BUCKET_NAME = 'test-video-file-upload'
@@ -26,7 +26,7 @@ BUCKET_NAME = 'test-video-file-upload'
 EXTRACT_LABELS = True
 
 # Set to True to make AWS Rekognition extract information about faces it sees in the video
-EXTRACT_FACES = True
+EXTRACT_FACES = False
 
 
 # State references for our timer to finish executing split-phase facial and label extractions from AWS
@@ -50,11 +50,12 @@ class LocationVideoMicroservice(Intelligence):
         """
         Intelligence.__init__(self, botengine, parent)
 
+
     def initialize(self, botengine):
         """
         Initialize
         :param botengine: BotEngine environment
-        """    
+        """
         return
 
     def destroy(self, botengine):
@@ -63,16 +64,6 @@ class LocationVideoMicroservice(Intelligence):
         :param botengine: BotEngine environment
         """
         return
-
-    def get_html_summary(self, botengine, oldest_timestamp_ms, newest_timestamp_ms, test_mode=False):
-        """
-        Return a human-friendly HTML summary of insights or status of this intelligence module to report in weekly and test mode emails
-        :param botengine: BotEngine environment
-        :param oldest_timestamp_ms: Oldest timestamp in milliseconds to summarize
-        :param newest_timestamp_ms: Newest timestamp in milliseconds to summarize
-        :param test_mode: True to add or modify details for test mode, instead of a general weekly summary
-        """
-        return ""
 
     def mode_updated(self, botengine, current_mode):
         """
@@ -127,15 +118,6 @@ class LocationVideoMicroservice(Intelligence):
         """
         return
 
-    def datastream_updated(self, botengine, address, content):
-        """
-        Data Stream Message Received
-        :param botengine: BotEngine environment
-        :param address: Data Stream address
-        :param content: Content of the message
-        """
-        return
-
     def schedule_fired(self, botengine, schedule_id):
         """
         The bot executed on a hard coded schedule specified by our runtime.json file
@@ -150,24 +132,37 @@ class LocationVideoMicroservice(Intelligence):
         :param botengine: Current botengine environment
         :param argument: Argument applied when setting the timer
         """
-        state, job_id = argument
+        state, job_id, file_id = argument
 
         client = boto3.client('rekognition')
 
         if state == TIMER_REFERENCE__EXTRACT_LABELS:
             labels = client.get_label_detection(
                 JobId=job_id,
-                MaxResults=50,
+                MaxResults=1000,
                 SortBy='NAME'
             )
 
             if labels["JobStatus"] == "SUCCEEDED":
                 # Label detection completed
                 botengine.get_logger().info("LABELS: ")
-                botengine.get_logger().info(json.dumps(labels, indent=2, sort_keys=True))
+                botengine.get_logger().info(json.dumps(labels, sort_keys=True))
+
+                names = []
+
+                if 'Labels' in labels:
+                    for label_object in labels['Labels']:
+                        if 'Label' in label_object:
+                            if 'Name' in label_object['Label']:
+                                name = label_object['Label']['Name']
+                                if name not in names:
+                                    names.append(name)
+                                    botengine.get_logger().info("Tagged: {}".format(name))
+                                    botengine.tag_file(name, file_id)
+
             else:
                 # Label detection is still processing ... wait a few more seconds
-                self.start_timer_s(botengine, 5, (TIMER_REFERENCE__EXTRACT_LABELS, job_id))
+                self.start_timer_s(botengine, 5, (TIMER_REFERENCE__EXTRACT_LABELS, job_id, file_id))
                 
         elif state == TIMER_REFERENCE__EXTRACT_FACES:
             faces = client.get_face_detection(
@@ -178,10 +173,10 @@ class LocationVideoMicroservice(Intelligence):
             if faces['JobStatus'] == "SUCCEEDED":  
                 # Facial recognition completed
                 botengine.get_logger().info("FACES: ")
-                botengine.get_logger().info(json.dumps(faces, indent=2, sort_keys=True))
+                botengine.get_logger().info(json.dumps(faces, sort_keys=True))
             else:
                 # Facial recognition is still processing ... wait a few more seconds
-                self.start_timer_s(botengine, 5, (TIMER_REFERENCE__EXTRACT_FACES, job_id))
+                self.start_timer_s(botengine, 5, (TIMER_REFERENCE__EXTRACT_FACES, job_id, file_id))
 
         return
 
@@ -233,12 +228,12 @@ class LocationVideoMicroservice(Intelligence):
                         'Name': FILE_NAME,
                     }
                 },
-                ClientRequestToken='request-labels',
-                MinConfidence=0,
+                ClientRequestToken=str(botengine.get_timestamp()),
+                MinConfidence = 50,
                 JobTag='job-labels'
             )
 
-            self.start_timer_s(botengine, 5, (TIMER_REFERENCE__EXTRACT_LABELS, response["JobId"]))
+            self.start_timer_s(botengine, 5, (TIMER_REFERENCE__EXTRACT_LABELS, response["JobId"], file_id))
 
 
             # We've gotten you this far.
@@ -256,11 +251,11 @@ class LocationVideoMicroservice(Intelligence):
                     }
                 },
                 ClientRequestToken='request-faces',
-                FaceAttributes='ALL',
+                FaceAttributes='DEFAULT',
                 JobTag='job-faces'
             )
 
-            self.start_timer_s(botengine, 5, (TIMER_REFERENCE__EXTRACT_FACES, response["JobId"]))
+            self.start_timer_s(botengine, 5, (TIMER_REFERENCE__EXTRACT_FACES, response["JobId"], file_id))
 
         return
 

@@ -23,6 +23,14 @@ CELL_STATUS_CONNECTED = 1
 # Cell status measurement
 MEASUREMENT_CELL_STATUS = "cellStatus"
 
+# Network type enum
+NETWORK_TYPE_ETHERNET = 1
+NETWORK_TYPE_WIFI = 2
+NETWORK_TYPE_CELLULAR = 3
+
+# Network type measurement
+MEASUREMENT_NETWORK_TYPE = "netType"
+
 class DevelcoSquidlinkDevice(GatewayDevice):
     """
     Develco Squid.link Gateway
@@ -70,7 +78,6 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         if MEASUREMENT_POWER_STATUS in self.last_updated_params:
-            botengine.get_logger().info("gateway_develco_squidlink: powerStatus={}".format(self.measurements[MEASUREMENT_POWER_STATUS][0][0]))
             return self.measurements[MEASUREMENT_POWER_STATUS][0][0] == POWER_STATUS_BATTERY
 
         return False
@@ -82,7 +89,6 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         if MEASUREMENT_POWER_STATUS in self.last_updated_params:
-            botengine.get_logger().info("gateway_develco_squidlink: powerStatus={}".format(self.measurements[MEASUREMENT_POWER_STATUS][0][0]))
             return self.measurements[MEASUREMENT_POWER_STATUS][0][0] == POWER_STATUS_EXTERNAL
 
         return False
@@ -107,6 +113,9 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         if MEASUREMENT_CELL_STATUS in self.last_updated_params:
             botengine.get_logger().info("gateway_develco_squidlink: cellStatus={}".format(self.measurements[MEASUREMENT_CELL_STATUS][0][0]))
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_CONNECTED
+        elif MEASUREMENT_NETWORK_TYPE in self.last_updated_params:
+            botengine.get_logger().info("gateway_develco_squidlink: netType={}".format(self.measurements[MEASUREMENT_NETWORK_TYPE][0][0]))
+            return self.measurements[MEASUREMENT_NETWORK_TYPE][0][0] == NETWORK_TYPE_CELLULAR
 
         return False
 
@@ -118,7 +127,10 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         """
         if MEASUREMENT_CELL_STATUS in self.last_updated_params:
             botengine.get_logger().info("gateway_develco_squidlink: cellStatus={}".format(self.measurements[MEASUREMENT_CELL_STATUS][0][0]))
-            return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_CONNECTED
+            return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_DISCONNECTED
+        elif MEASUREMENT_NETWORK_TYPE in self.last_updated_params:
+            botengine.get_logger().info("gateway_develco_squidlink: netType={}".format(self.measurements[MEASUREMENT_NETWORK_TYPE][0][0]))
+            return self.measurements[MEASUREMENT_NETWORK_TYPE][0][0] != NETWORK_TYPE_CELLULAR
 
         return False
 
@@ -130,6 +142,8 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         """
         if MEASUREMENT_CELL_STATUS in self.measurements:
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_DISCONNECTED
+        if MEASUREMENT_NETWORK_TYPE in self.measurements:
+            return self.measurements[MEASUREMENT_NETWORK_TYPE][0][0] != NETWORK_TYPE_CELLULAR
 
         return self.is_connected
 
@@ -141,6 +155,8 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         """
         if MEASUREMENT_CELL_STATUS in self.measurements:
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_CONNECTED
+        if MEASUREMENT_NETWORK_TYPE in self.measurements:
+            return self.measurements[MEASUREMENT_NETWORK_TYPE][0][0] == NETWORK_TYPE_CELLULAR
 
         return False
 

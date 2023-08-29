@@ -469,57 +469,6 @@ class LocationMlExampleMicroservice(Intelligence):
 
         return
 
-
-    def occupancy_status_updated(self, botengine, status, reason, last_status, last_reason):
-        """
-        AI Occupancy Status updated
-        :param botengine: BotEngine
-        :param status: Current occupancy status
-        :param reason: Current occupancy reason
-        :param last_status: Last occupancy status
-        :param last_reason: Last occupancy reason
-        """
-        # See how well Away mode detection did...
-        # We implement a basic reinforcement algorithm to identify success or failure of the machine learning
-        # decisions, and then use this to dial the knob of our confidence thresholds up to require our
-        # machine learning algorithms to be more discerning next time.
-        if (( "ABSENT" in last_status or "A2H" in last_status) and ML_ALGORITHM_MODE_CHANGE in last_reason) and "PRESENT" in status:
-            # This intelligence changed to away mode last time. Were we correct?
-
-            if ML_ALGORITHM_MODE_CHANGE in last_reason:
-                # Some other intelligence changed the mode this time.
-
-                if "MOTION" in reason:
-                    # We're now in HOME mode because motion was detected.
-                    # This means we made a mistake - dial up the confidence threshold.
-                    self.away_confidence_threshold += AWAY_CONFIDENCE_THRESHOLD_INCREMENT
-                    if self.away_confidence_threshold > MAX_AWAY_CONFIDENCE_THRESHOLD:
-                        self.away_confidence_threshold = MAX_AWAY_CONFIDENCE_THRESHOLD
-
-                    # Track it in your favorite analytics service
-                    self.parent.track(botengine,
-                                      'occupancy_absent_failure',
-                                      properties={
-                                          "away_confidence_threshold": self.away_confidence_threshold
-                                      })
-
-                elif "ENTRY" in reason:
-                    # Success (really, dependent upon enough doors being instrumented and motion sensors in place)
-                    self.parent.track(botengine,
-                                      'occupancy_absent_success',
-                                      properties={
-                                          "away_confidence_threshold": self.away_confidence_threshold
-                                      })
-
-        elif ("ABSENT" in last_status or "A2H" in last_status) and ("AI" not in last_status and "AWAY" in last_status):
-            # The user changed their mode to AWAY which confirms we made the right choice.
-            # Log this in your favorite analytics service
-            self.parent.track(botengine, 'occupancy_absent_success',
-                              properties={
-                                  "away_confidence_threshold": self.away_confidence_threshold
-                              })
-
-
     def _is_entry_sensor_naughty(self, botengine, device_object):
         """
         Return True if the entry sensor device is naughty and should be ignored

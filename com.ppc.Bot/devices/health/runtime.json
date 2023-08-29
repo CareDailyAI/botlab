@@ -1,0 +1,16 @@
+{
+  "version": {
+    "triggerParameters": [
+      "movementStatus",
+      "hr",
+      "steps",
+      "sleepAnalysis",
+      "br",
+      "brStability",
+      "hrStability",
+      "motionIndex",
+      "motionStability",
+      "occupancy"
+    ]
+  }
+}

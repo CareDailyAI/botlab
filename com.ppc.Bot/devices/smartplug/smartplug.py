@@ -43,23 +43,31 @@ class SmartplugDevice(Device):
     GOAL_SMARTPLUG_APPLIANCE_MONITORING = 91
     GOAL_SMARTPLUG_MICROWAVE = 92
 
-
     def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+        """
+        Constructor
+        :param botengine:
+        :param location_object:
+        :param device_id:
+        :param device_type:
+        :param device_description:
+        :param precache_measurements:
+        """
         Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
 
         # The boolean on/off state of this device that was saved
         self.saved_state = False
+
         # Whether the saved_state is valid or not
         self.saved = False
 
     def initialize(self, botengine):
+        """
+        Initialize on every execution
+        :param botengine:
+        :return:
+        """
         Device.initialize(self, botengine)
-
-        if not hasattr(self, "saved_state"):
-            self.saved_state = False
-
-        if not hasattr(self, "saved"):
-            self.saved = False
 
     #===========================================================================
     # Attributes

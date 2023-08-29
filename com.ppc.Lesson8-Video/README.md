@@ -8,7 +8,7 @@ In this lesson, you'll learn how to:
 
 ## Reacting to videos
 
-Open any app powered by People Power (for example 'Presence by People Power'), and you'll find a killer feature built right into the app: a free security camera.
+Open the Presence Video Security Camera app powered by Care Daily, and you'll find a killer feature built right into the app: a free security camera.
 
 Your app will transform a spare smartphone or tablet into a free internet security camera with the ability to view live, record motion detection videos, and even talk back to people and pets who are nearby your camera.
 

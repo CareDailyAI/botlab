@@ -59,17 +59,6 @@ class LocationMultistreamMicroservice(Intelligence):
         """
         return
 
-    def occupancy_status_updated(self, botengine, status, reason, last_status, last_reason):
-        """
-        AI Occupancy Status updated
-        :param botengine: BotEngine
-        :param status: Current occupancy status
-        :param reason: Current occupancy reason
-        :param last_status: Last occupancy status
-        :param last_reason: Last occupancy reason
-        """
-        return
-
     def device_measurements_updated(self, botengine, device_object):
         """
         Device was updated
@@ -145,7 +134,7 @@ class LocationMultistreamMicroservice(Intelligence):
         :param botengine: Current botengine environment
         :param argument: Argument applied when setting the timer
         """
-        multistream_queue = botengine.get_ui_content(MULTISTREAM_STATE_VARIABLE)
+        multistream_queue = botengine.get_state(MULTISTREAM_STATE_VARIABLE)
 
         for id in list(multistream_queue.keys()):
             if multistream_queue[id]['timestamp'] <= botengine.get_timestamp():
@@ -177,7 +166,7 @@ class LocationMultistreamMicroservice(Intelligence):
         """
         return
 
-    def user_role_updated(self, botengine, user_id, alert_category, location_access, previous_alert_category, previous_location_access):
+    def user_role_updated(self, botengine, user_id, role, alert_category, location_access, previous_alert_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment
@@ -248,7 +237,7 @@ class LocationMultistreamMicroservice(Intelligence):
                     id = str(uuid.uuid4())
                     # The ID is not stored in the content, it's stored as the key in the multistream_queue dictionary.
 
-                multistream_queue = botengine.get_ui_content(MULTISTREAM_STATE_VARIABLE)
+                multistream_queue = botengine.get_state(MULTISTREAM_STATE_VARIABLE)
                 if multistream_queue is None:
                     multistream_queue = {}
 
@@ -262,7 +251,7 @@ class LocationMultistreamMicroservice(Intelligence):
         # Deliver immediately
         # First delete the object from our queue if the ID exists in our queue
         if id is not None:
-            multistream_queue = botengine.get_ui_content(MULTISTREAM_STATE_VARIABLE)
+            multistream_queue = botengine.get_state(MULTISTREAM_STATE_VARIABLE)
             if multistream_queue is not None:
                 if id in multistream_queue:
                     del multistream_queue[id]
@@ -279,7 +268,7 @@ class LocationMultistreamMicroservice(Intelligence):
         :param botengine:
         :return:
         """
-        multistream_queue = botengine.get_ui_content(MULTISTREAM_STATE_VARIABLE)
+        multistream_queue = botengine.get_state(MULTISTREAM_STATE_VARIABLE)
 
         # Pick the next closest timestamp
         next_timestamp_ms = None

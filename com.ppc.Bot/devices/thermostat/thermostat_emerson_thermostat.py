@@ -12,10 +12,6 @@ file 'LICENSE.txt', which is part of this source code package.
 
 from devices.thermostat.thermostat import ThermostatDevice
 
-# Set the default rounding to 3 numbers.
-from decimal import *
-getcontext().prec = 1
-
 
 class ThermostatEmersonDevice(ThermostatDevice):
     """Emerson Thermostat Device"""

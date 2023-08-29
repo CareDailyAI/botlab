@@ -179,6 +179,14 @@ class Filter:
         if hasattr(self, address):
             getattr(self, address)(botengine, content)
 
+    def language_updated(self, botengine, language):
+        """
+        The location's preferred language has been updated.
+        Please translate any Synthetic API state variables and history that may be exposed in user experiences.
+        :param botengine: BotEngine environment
+        :param language: New language identifier, i.e. 'en'
+        """
+        return
 
     #===============================================================================
     # Built-in Timer and Alarm methods.

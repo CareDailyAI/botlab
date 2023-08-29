@@ -7,6 +7,24 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 '''
 
+# Narrative priority levels
+NARRATIVE_PRIORITY_ANALYTIC = -1
+NARRATIVE_PRIORITY_DEBUG = 0
+NARRATIVE_PRIORITY_DETAIL = 0
+NARRATIVE_PRIORITY_INFO = 1
+NARRATIVE_PRIORITY_WARNING = 2
+NARRATIVE_PRIORITY_CRITICAL = 3
+
+# Narrative types
+# High-frequency 'observation' entries for explainable AI and accountability
+NARRATIVE_TYPE_OBSERVATION = 0
+
+# Low-frequency 'journal' entries for SUMMARIZED exec-level communications to humans
+NARRATIVE_TYPE_JOURNAL = 4
+
+# High-frequency 'insight' entries for real-time CRITICAL exec-level communications to humans
+NARRATIVE_TYPE_INSIGHT = 5
+
 class Narrative:
     """
     This class is instantiated as a narrative object that can be updated later.
