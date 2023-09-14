@@ -517,14 +517,16 @@ def getsize(obj_0):
     """
     import sys
     from numbers import Number
-    from collections import Set, Mapping, deque
+    from collections import deque
 
-    try: # Python 2
-        zero_depth_bases = (basestring, Number, xrange, bytearray)
-        iteritems = 'iteritems'
-    except NameError: # Python 3
+    try: 
+        from collections.abc import Mapping
         zero_depth_bases = (str, bytes, Number, range, bytearray)
         iteritems = 'items'
+    except ImportError: # Python 2
+        from collections import Mapping
+        zero_depth_bases = (basestring, Number, xrange, bytearray)
+        iteritems = 'iteritems'
 
     _seen_ids = set()
     def inner(obj):
@@ -535,7 +537,7 @@ def getsize(obj_0):
         size = sys.getsizeof(obj)
         if isinstance(obj, zero_depth_bases):
             pass # bypass remaining control flow and return
-        elif isinstance(obj, (tuple, list, Set, deque)):
+        elif isinstance(obj, (tuple, list, set, deque)):
             size += sum(inner(i) for i in obj)
         elif isinstance(obj, Mapping) or hasattr(obj, iteritems):
             size += sum(inner(k) + inner(v) for k, v in getattr(obj, iteritems)())
