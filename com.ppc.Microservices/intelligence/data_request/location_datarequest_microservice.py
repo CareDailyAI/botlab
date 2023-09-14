@@ -11,7 +11,7 @@ from intelligence.intelligence import Intelligence
 import utilities.utilities as utilities
 import signals.analytics as analytics
 import signals.machinelearning as machinelearning
-import domain
+import properties
 
 from devices.entry.entry import EntryDevice
 from devices.motion.motion import MotionDevice
@@ -57,9 +57,9 @@ class LocationDataRequestMicroservice(Intelligence):
         # Download data
         machinelearning.request_data(botengine, location_object=self.parent)
 
-    def initialize(self, botengine):
+    def new_version(self, botengine):
         """
-        Initialize
+        Upgraded to a new bot version
         :param botengine: BotEngine environment
         """
         if self.version != VERSION:
@@ -107,8 +107,11 @@ class LocationDataRequestMicroservice(Intelligence):
         self.version = VERSION
 
         force = False
-        if 'force' in content:
-            force = content['force']
+        try:
+            if 'force' in content:
+                force = content['force']
+        except:
+            pass
 
         reference = machinelearning.DATAREQUEST_REFERENCE_ALL
 
@@ -186,10 +189,11 @@ class LocationDataRequestMicroservice(Intelligence):
 
             self.parent.narrate(botengine,
                                 title=_("Learning"),
-                                description=_("{} is reviewing everything it observed recently and is learning from it.").format(domain.SERVICE_NAME),
+                                description=_("{} is reviewing everything it observed recently and is learning from it.").format(properties.get_property(botengine, "SERVICE_NAME")),
                                 priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                                 extra_json_dict={ "timestamp_ms": botengine.get_timestamp() },
-                                icon="brain")
+                                icon="brain",
+                                event_type="data_request.ready")
 
             analytics.track(botengine, self.parent, "data_request_ready", properties={"reference": reference})
 

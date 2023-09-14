@@ -2,7 +2,7 @@
 
 These README.md files are best viewed on the open source repository at GitHub.com, if you're not there already.
 
-http://github.com/peoplepower/botlab
+http://github.com/caredailyai/botlab
 
 By the end of this lesson, you will have done the following:
 * Setup your environment to run the botengine
@@ -16,7 +16,7 @@ You'll run the 'botengine' from your Terminal.
 
 ### Step 1 : Get a user account
 
-Download the People Power Family app on iOS or Android. Create an account with your phone number, email address, and password.
+Download the Care Daily AI app on iOS or Android. Create an account with your phone number, email address, and password.
 
 
 ### Step 2 : Setup Python
@@ -51,8 +51,8 @@ If you successfully get back something that looks like this, you're in business.
 
     botengine --my_purchased_bots -u user@email.com -p password
     
-    Bot Server: https://app.presencepro.com
-    Bot Instance 700: com.ppc.Geofencing; Version 1.0.8; ACTIVE
+    Bot Server: https://app.peoplepowerco.com
+    Bot Instance 700: com.ppc.Tests; Version 1.0.8; ACTIVE
     
     Done!
 

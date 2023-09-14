@@ -51,16 +51,6 @@ class LocationVideoMicroservice(Intelligence):
         
         return
 
-    def get_html_summary(self, botengine, oldest_timestamp_ms, newest_timestamp_ms, test_mode=False):
-        """
-        Return a human-friendly HTML summary of insights or status of this intelligence module to report in weekly and test mode emails
-        :param botengine: BotEngine environment
-        :param oldest_timestamp_ms: Oldest timestamp in milliseconds to summarize
-        :param newest_timestamp_ms: Newest timestamp in milliseconds to summarize
-        :param test_mode: True to add or modify details for test mode, instead of a general weekly summary
-        """
-        return ""
-
     def mode_updated(self, botengine, current_mode):
         """
         Mode was updated
@@ -111,15 +101,6 @@ class LocationVideoMicroservice(Intelligence):
         The user answered a question
         :param botengine: BotEngine environment
         :param question: Question object
-        """
-        return
-
-    def datastream_updated(self, botengine, address, content):
-        """
-        Data Stream Message Received
-        :param botengine: BotEngine environment
-        :param address: Data Stream address
-        :param content: Content of the message
         """
         return
 

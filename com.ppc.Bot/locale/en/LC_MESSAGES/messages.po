@@ -1,0 +1,718 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: English (BotLab)\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-30 13:59-0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: English <http://weblate-"
+"eu.peoplepowerco.com/projects/botlab/com-ppc-bot/en/>\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.11.0\n"
+
+#: devices/thermostat/thermostat.py:245 devices/thermostat/thermostat.py:325
+#, read-only
+msgid "'{}' now set to {}"
+msgstr "'{}' now set to {}"
+
+#: devices/thermostat/thermostat.py:974
+#, read-only
+msgid "'{}': Applying energy policies"
+msgstr "'{}': Applying energy policies"
+
+#: devices/thermostat/thermostat_ecobee.py:146
+#: devices/thermostat/thermostat_ecobee.py:186
+#, read-only
+msgid "'{}': Away mode"
+msgstr "'{}': Away mode"
+
+#: devices/thermostat/thermostat_ecobee.py:262
+#, read-only
+msgid "'{}': Home mode"
+msgstr "'{}': Home mode"
+
+#: devices/thermostat/thermostat.py:557
+#, read-only
+msgid "'{}': Learned HOME cooling set point."
+msgstr "'{}': Learned HOME cooling set point."
+
+#: devices/thermostat/thermostat.py:569
+#, read-only
+msgid "'{}': Learned HOME heating set point."
+msgstr "'{}': Learned HOME heating set point."
+
+#: devices/thermostat/thermostat.py:712
+#, read-only
+msgid "'{}': Learned away preferences."
+msgstr "'{}': Learned away preferences."
+
+#: devices/thermostat/thermostat.py:615 devices/thermostat/thermostat.py:654
+#: devices/thermostat/thermostat.py:757
+#, read-only
+msgid "'{}': Learned night time preferences."
+msgstr "'{}': Learned night time preferences."
+
+#: devices/thermostat/thermostat_ecobee.py:122
+#: devices/thermostat/thermostat_ecobee.py:221
+#, read-only
+msgid "'{}': Sleep mode"
+msgstr "'{}': Sleep mode"
+
+#: utilities/utilities.py:283
+#, read-only
+msgid "0 seconds"
+msgstr "0 seconds"
+
+#: utilities/utilities.py:267
+#, read-only
+msgid "1 hour"
+msgstr "1 hour"
+
+#: utilities/utilities.py:272
+#, read-only
+msgid "1 minute"
+msgstr "1 minute"
+
+#: utilities/utilities.py:278
+#, read-only
+msgid "1 second"
+msgstr "1 second"
+
+#: signals/dashboard.py:13
+msgid "ALERTS"
+msgstr ""
+
+#: confidence/occupancy_confidence_machine.py:82
+#: confidence/occupancy_confidence_machine.py:129
+#: confidence/occupancy_confidence_machine.py:134
+#, read-only
+msgid "Add 1 Entry device to improve the confidence."
+msgstr "Add 1 Entry device to improve the confidence."
+
+#: confidence/occupancy_confidence_machine.py:85
+#: confidence/occupancy_confidence_machine.py:125
+#: confidence/occupancy_confidence_machine.py:137
+#, fuzzy, read-only
+msgid "Add 1 Motion device to improve the confidence."
+msgstr "Add 1 Motion device to improve the confidence."
+
+#: confidence/occupancy_confidence_machine.py:73
+#: confidence/sleep_confidence_machine.py:87
+#, fuzzy, read-only
+msgid "Add 1 more Motion device to improve the confidence."
+msgstr "Add 1 more Motion device to improve the confidence."
+
+#: confidence/occupancy_confidence_machine.py:77
+#, read-only
+msgid "Add 1 more entry device to improve the confidence."
+msgstr "Add 1 more entry device to improve the confidence."
+
+#: confidence/sleep_confidence_machine.py:95
+#, fuzzy, read-only
+msgid ""
+"Add more Motion devices installed inside bedroom to improve the "
+"confidence."
+msgstr ""
+"Add more Motion devices installed inside bedroom to improve the "
+"confidence."
+
+#: confidence/sleep_confidence_machine.py:92
+#, fuzzy, read-only
+msgid ""
+"Add more Motion devices installed outside bedroom to improve the "
+"confidence."
+msgstr ""
+"Add more Motion devices installed outside bedroom to improve the "
+"confidence."
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/alarm/alarm.py:27 devices/alarm/alarm_eu_develco.py:35
+#, read-only
+msgid "Alarm"
+msgstr "Alarm"
+
+#. Device type name
+#: devices/camera/camera_peoplepower_presenceandroid.py:22
+#, read-only
+msgid "Android Camera"
+msgstr "Android Camera"
+
+#. Device type name
+#: devices/pictureframe/pictureframe_peoplepower_android.py:24
+#, read-only
+msgid "Android Picture Frame"
+msgstr "Android Picture Frame"
+
+#. Device type name
+#: devices/health/health_apple.py:30
+#, read-only
+msgid "Apple Health"
+msgstr "Apple Health"
+
+#. Device type name.
+#: devices/proxy/proxy_apple.py:24
+#, read-only
+msgid "Apple Proxy"
+msgstr "Apple Proxy"
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/button/button_multi.py:60 devices/button/button_panic.py:49
+#, read-only
+msgid "Assist Button"
+msgstr "Assist Button"
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/button/button.py:67 devices/button/button_develco.py:51
+#: devices/button/button_linkhigh.py:60
+#, read-only
+msgid "Button"
+msgstr "Button"
+
+#. Abstract device type name, doeesn't show up in end user documentation
+#: devices/camera/camera.py:24
+#, read-only
+msgid "Camera"
+msgstr "Camera"
+
+#. Device type name
+#: devices/gas/carbon_monoxide.py:35
+#, read-only
+msgid "Carbon Monoxide Sensor"
+msgstr "Carbon Monoxide Sensor"
+
+#. Device type name
+#: devices/thermostat/thermostat_centralite_pearl.py:65
+#, read-only
+msgid "Centralite Pearl Thermostat"
+msgstr "Centralite Pearl Thermostat"
+
+#: devices/thermostat/thermostat.py:273 devices/thermostat/thermostat.py:340
+#, read-only
+msgid "Cooling set point adjusted"
+msgstr "Cooling set point adjusted"
+
+#: signals/dashboard.py:400
+msgid "DISABLED"
+msgstr ""
+
+#. Super abstract device type name
+#: devices/device.py:300
+#, read-only
+msgid "Device"
+msgstr "Device"
+
+#. Device type name
+#: devices/thermostat/thermostat_ecobee.py:70
+#, read-only
+msgid "Ecobee"
+msgstr "Ecobee"
+
+#. Device type name
+#: devices/thermostat/thermostat_emerson_thermostat.py:34
+#, read-only
+msgid "Emerson Thermostat"
+msgstr "Emerson Thermostat"
+
+#. Device type name
+#: devices/entry/entry.py:62
+#, read-only
+msgid "Entry Sensor"
+msgstr "Entry Sensor"
+
+#. Device type name
+#: devices/light/lightswitch_ge.py:42
+#, read-only
+msgid "GE In-Wall Switch"
+msgstr "GE In-Wall Switch"
+
+#. Device type name
+#: devices/health/health.py:92
+#, read-only
+msgid "Health"
+msgstr "Health"
+
+#: devices/thermostat/thermostat.py:303 devices/thermostat/thermostat.py:356
+#, read-only
+msgid "Heating set point adjusted"
+msgstr "Heating set point adjusted"
+
+#. Device type name
+#: devices/thermostat/thermostat_honeywell_lyric.py:35
+#, read-only
+msgid "Honeywell Lyric Thermostat"
+msgstr "Honeywell Lyric Thermostat"
+
+#: utilities/genai.py:167
+msgid "I'm sorry, I don't know how to respond to that."
+msgstr ""
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/io/io.py:55
+#, read-only
+msgid "IO Module"
+msgstr "IO Module"
+
+#. Device type name
+#: devices/light/light_inwall_dimmer.py:24
+#, read-only
+msgid "In-Wall Dimmer"
+msgstr "In-Wall Dimmer"
+
+#. Device type name - In-Wall Outlet
+#: devices/smartplug/smartplug_inwall_outlet.py:24
+#, read-only
+msgid "In-Wall Outlet"
+msgstr "In-Wall Outlet"
+
+#. Device type name
+#: devices/keypad/keypad.py:50 devices/keypad/keypad_develco.py:89
+#, read-only
+msgid "Keypad"
+msgstr "Keypad"
+
+#. Device type name - Smartenit Large Load Controller
+#: devices/smartplug/smartplug_smartenit_largeload.py:31
+#, read-only
+msgid "Large Load Controller"
+msgstr "Large Load Controller"
+
+#. Device type name
+#: devices/leak/leak.py:39 devices/leak/leak_develco.py:54
+#, read-only
+msgid "Leak Sensor"
+msgstr "Leak Sensor"
+
+#. Device type name
+#: devices/light/lightswitch_leviton_decora.py:42
+#, read-only
+msgid "Leviton Decora In-Wall Switch"
+msgstr "Leviton Decora In-Wall Switch"
+
+#. Device type name
+#: devices/light/light.py:82
+#, read-only
+msgid "Light"
+msgstr "Light"
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/lock/lock.py:59
+#, read-only
+msgid "Lock"
+msgstr "Lock"
+
+#. Device type name
+#: devices/gateway/gateway_peoplepower_mseries.py:26
+#, read-only
+msgid "M-Series Smart Home Center"
+msgstr "M-Series Smart Home Center"
+
+#. Device type name
+#: devices/motion/motion.py:50
+#, read-only
+msgid "Motion Sensor"
+msgstr "Motion Sensor"
+
+#: signals/dashboard.py:12
+msgid "NOW"
+msgstr ""
+
+#: signals/dashboard.py:435
+msgid "Okay, resolving the notification..."
+msgstr ""
+
+#. Device type name
+#: devices/pictureframe/pictureframe_peoplepower.py:107
+#, read-only
+msgid "Picture Frame"
+msgstr "Picture Frame"
+
+#. This is an abstract name of a camera device that doesn't show up in end-user
+#. documentation.
+#: devices/camera/camera_peoplepower_presence.py:96
+#, read-only
+msgid "Presence Camera"
+msgstr "Presence Camera"
+
+#: devices/pressure/pressure.py:56
+#, read-only
+msgid "Pressure Pad"
+msgstr "Pressure Pad"
+
+#. Abstract device type name
+#: devices/proxy/proxy.py:26
+#, read-only
+msgid "Proxy"
+msgstr "Proxy"
+
+#: signals/dashboard.py:398
+msgid "RUNNING"
+msgstr ""
+
+#: signals/dashboard.py:435
+#, fuzzy, read-only
+msgid "Resolve"
+msgstr "stove"
+
+#: signals/dashboard.py:16
+#, fuzzy, read-only
+msgid "SERVICES"
+msgstr "Device"
+
+#. Device type name
+#: devices/thermostat/thermostat_sensibo_sky.py:53
+#, read-only
+msgid "Sensibo Sky Thermostat"
+msgstr "Sensibo Sky Thermostat"
+
+#: devices/thermostat/thermostat_ecobee.py:147
+#: devices/thermostat/thermostat_ecobee.py:187
+#, read-only
+msgid "Setting your ecobee thermostat into Away mode."
+msgstr "Setting your ecobee thermostat into Away mode."
+
+#: devices/thermostat/thermostat_ecobee.py:263
+#, read-only
+msgid "Setting your ecobee thermostat into Home mode."
+msgstr "Setting your ecobee thermostat into Home mode."
+
+#: devices/thermostat/thermostat_ecobee.py:123
+#: devices/thermostat/thermostat_ecobee.py:222
+#, read-only
+msgid "Setting your ecobee thermostat into Sleep mode."
+msgstr "Setting your ecobee thermostat into Sleep mode."
+
+#. Device type name
+#: devices/siren/siren.py:36
+#, read-only
+msgid "Siren"
+msgstr "Siren"
+
+#. Device type name
+#: devices/smartplug/smartcable_develco.py:21
+#, read-only
+msgid "Smart Cable"
+msgstr "Smart Cable"
+
+#. Device type name
+#: devices/light/light_smartdimmer.py:24
+#, read-only
+msgid "Smart Dimmer"
+msgstr "Smart Dimmer"
+
+#. Abstract device type name
+#. Device type name
+#. Device type name.
+#: devices/gateway/gateway.py:26
+#: devices/gateway/gateway_develco_squidlink.py:47
+#: devices/gateway/gateway_dsr_sgw.py:24
+#: devices/gateway/gateway_peoplepower_edge.py:26
+#: devices/gateway/gateway_peoplepower_iotgateway.py:26
+#: devices/gateway/gateway_peoplepower_xseries.py:28
+#: devices/gateway/gateway_qorvo_lcgw.py:24
+#, read-only
+msgid "Smart Home Center"
+msgstr "Smart Home Center"
+
+#. Device type name - abstract smart plug
+#. Device type name - Centralte 3-series smart plug
+#. Device type name
+#: devices/smartplug/smartplug.py:80
+#: devices/smartplug/smartplug_centralite_3series.py:26
+#: devices/smartplug/smartplug_develco.py:21
+#, read-only
+msgid "Smart Plug"
+msgstr "Smart Plug"
+
+#. Device type name
+#: devices/environment/temperature.py:37
+#, read-only
+msgid "Temperature Sensor"
+msgstr "Temperature Sensor"
+
+#. Device type name
+#: devices/environment/temperaturehumidity.py:58
+#, read-only
+msgid "Temperature and Humidity Sensor"
+msgstr "Temperature and Humidity Sensor"
+
+#. Device type name
+#: devices/movement/touch.py:47
+#, read-only
+msgid "Touch Sensor"
+msgstr "Touch Sensor"
+
+#. Device type name
+#: devices/touchpad/touchpad_peoplepower.py:76
+#, read-only
+msgid "Touchpad"
+msgstr "Touchpad"
+
+#: signals/dashboard.py:435
+msgid "UPDATE STATUS >"
+msgstr ""
+
+#: signals/dashboard.py:435
+msgid "Update Status"
+msgstr ""
+
+#. Device type name
+#: devices/vibration/vibration.py:77
+#, read-only
+msgid "Vibration Sensor"
+msgstr "Vibration Sensor"
+
+#: confidence/occupancy_confidence_machine.py:117
+#, fuzzy, read-only
+msgid "We don't have Motion or Entry device for occupancy home service to work."
+msgstr "We don't have Motion or Entry device for occupancy home service to work."
+
+#: confidence/occupancy_confidence_machine.py:65
+#, fuzzy, read-only
+msgid "We don't have enough Motion devices for occupancy away service to work."
+msgstr "We don't have enough Motion devices for occupancy away service to work."
+
+#: confidence/sleep_confidence_machine.py:70
+#, read-only
+msgid "We don't have enough devices for sleep service to work."
+msgstr "We don't have enough devices for sleep service to work."
+
+#: confidence/occupancy_confidence_machine.py:69
+#, read-only
+msgid "We have high confidence on the occupancy away service."
+msgstr "We have high confidence on the occupancy away service."
+
+#: confidence/occupancy_confidence_machine.py:121
+#, read-only
+msgid "We have high confidence on the occupancy home service."
+msgstr "We have high confidence on the occupancy home service."
+
+#: confidence/sleep_confidence_machine.py:79
+#, read-only
+msgid "We have high confidence on the sleep service."
+msgstr "We have high confidence on the sleep service."
+
+#: confidence/sleep_confidence_machine.py:84
+#, read-only
+msgid ""
+"We have low confidence on the sleep service due to lack of recent "
+"measurements."
+msgstr ""
+"We have low confidence on the sleep service due to lack of recent "
+"measurements."
+
+#: confidence/sleep_confidence_machine.py:76
+#, read-only
+msgid ""
+"We have medium confidence on the sleep service due to lack of recent "
+"measurements."
+msgstr ""
+"We have medium confidence on the sleep service due to lack of recent "
+"measurements."
+
+#: devices/thermostat/thermostat.py:274
+#, read-only
+msgid "Your '{}' cooling set point is set to {}."
+msgstr "Your '{}' cooling set point is set to {}."
+
+#: devices/thermostat/thermostat.py:341
+#, read-only
+msgid "Your '{}' cooling set point was manually adjusted to {}."
+msgstr "Your '{}' cooling set point was manually adjusted to {}."
+
+#: devices/thermostat/thermostat.py:304
+#, read-only
+msgid "Your '{}' heating set point is set to {}."
+msgstr "Your '{}' heating set point is set to {}."
+
+#: devices/thermostat/thermostat.py:357
+#, read-only
+msgid "Your '{}' heating set point was manually adjusted to {}."
+msgstr "Your '{}' heating set point was manually adjusted to {}."
+
+#: devices/thermostat/thermostat.py:326
+#, read-only
+msgid "Your '{}' is now set to {}."
+msgstr "Your '{}' is now set to {}."
+
+#: devices/thermostat/thermostat.py:246
+#, read-only
+msgid "Your '{}' is set to {}."
+msgstr "Your '{}' is set to {}."
+
+#: devices/thermostat/thermostat.py:713
+#, read-only
+msgid "Your '{}' learned the away cooling setpoint should be {} from HOME mode."
+msgstr "Your '{}' learned the away cooling setpoint should be {} from HOME mode."
+
+#: devices/thermostat/thermostat.py:758
+#, read-only
+msgid "Your '{}' learned the away heating setpoint should be {} from HOME mode."
+msgstr "Your '{}' learned the away heating setpoint should be {} from HOME mode."
+
+#: devices/thermostat/thermostat.py:616
+#, read-only
+msgid "Your '{}' learned the night time cooling setpoint."
+msgstr "Your '{}' learned the night time cooling setpoint."
+
+#: devices/thermostat/thermostat.py:655
+#, read-only
+msgid "Your '{}' learned the night time heating setpoint."
+msgstr "Your '{}' learned the night time heating setpoint."
+
+#: devices/thermostat/thermostat.py:558
+#, read-only
+msgid ""
+"Your '{}' learned you want the cooling set point set to {} when you are "
+"home."
+msgstr ""
+"Your '{}' learned you want the cooling set point set to {} when you are "
+"home."
+
+#: devices/thermostat/thermostat.py:570
+#, read-only
+msgid ""
+"Your '{}' learned you want the heating set point set to {} when you are "
+"home."
+msgstr ""
+"Your '{}' learned you want the heating set point set to {} when you are "
+"home."
+
+#: devices/thermostat/thermostat.py:975
+#, read-only
+msgid "Your new cooling set point is {} and heating setpoint is {}."
+msgstr "Your new cooling set point is {} and heating setpoint is {}."
+
+#: devices/motion/motion.py:76
+#, read-only
+msgid "bath"
+msgstr "bath"
+
+#: devices/motion/motion.py:63
+#, read-only
+msgid "bdrm"
+msgstr "bdrm"
+
+#: devices/motion/motion.py:63
+#, read-only
+msgid "bed"
+msgstr "bed"
+
+#: devices/motion/motion.py:63
+#, read-only
+msgid "bett"
+msgstr "bett"
+
+#: devices/motion/motion.py:63
+#, read-only
+msgid "dad's room"
+msgstr "dad's room"
+
+#: devices/motion/motion.py:63
+#, read-only
+msgid "dads room"
+msgstr "dads room"
+
+#. "The Moss family <typed a Duress code into the Touchpad>."
+#: utilities/utilities.py:165
+#, read-only
+msgid "entered a duress code, indicating a potential threat."
+msgstr "entered a duress code, indicating a potential threat."
+
+#. "The Moss family <burglary alarm tripped>."
+#: utilities/utilities.py:145
+#, read-only
+msgid "has a burglar alarm"
+msgstr "has a burglar alarm"
+
+#. "The Moss family <burglary alarm tripped because a door opened>."
+#: utilities/utilities.py:153
+#, read-only
+msgid "has a burglar alarm because a door opened"
+msgstr "has a burglar alarm because a door opened"
+
+#. "The Moss family <burglary alarm tripped because a window opened>."
+#: utilities/utilities.py:149
+#, read-only
+msgid "has a burglar alarm because a window opened"
+msgstr "has a burglar alarm because a window opened"
+
+#. "The Moss family <burglary alarm tripped shortly after arming>."
+#: utilities/utilities.py:161
+#, read-only
+msgid "has a burglar alarm, shortly after arming"
+msgstr "has a burglar alarm, shortly after arming"
+
+#. Device type name
+#: devices/camera/camera_peoplepower_presenceios.py:22
+#, read-only
+msgid "iOS Camera"
+msgstr "iOS Camera"
+
+#. Device type name
+#: devices/pictureframe/pictureframe_peoplepower_ios.py:24
+#, read-only
+msgid "iOS Picture Frame"
+msgstr "iOS Picture Frame"
+
+#. "The Moss family <is experiencing a water leak>."
+#: utilities/utilities.py:157
+#, read-only
+msgid "is experiencing a water leak"
+msgstr "is experiencing a water leak"
+
+#. "The Moss family <may need some assistance>." - generic message
+#: utilities/utilities.py:169
+#, read-only
+msgid "may need some assistance"
+msgstr "may need some assistance"
+
+#: devices/motion/motion.py:63
+#, read-only
+msgid "mom's room"
+msgstr "mom's room"
+
+#: devices/motion/motion.py:63
+#, read-only
+msgid "moms room"
+msgstr "moms room"
+
+#: devices/motion/motion.py:76
+#, read-only
+msgid "powder"
+msgstr "powder"
+
+#: devices/motion/motion.py:76
+#, read-only
+msgid "schlaf"
+msgstr "schlaf"
+
+#: devices/motion/motion.py:76
+#, read-only
+msgid "shower"
+msgstr "shower"
+
+#: devices/motion/motion.py:76
+#, read-only
+msgid "toilet"
+msgstr "toilet"
+
+#: utilities/utilities.py:269
+#, read-only
+msgid "{} hours"
+msgstr "{} hours"
+
+#: utilities/utilities.py:274
+#, read-only
+msgid "{} minutes"
+msgstr "{} minutes"
+
+#: utilities/utilities.py:280
+#, read-only
+msgid "{} seconds"
+msgstr "{} seconds"
+

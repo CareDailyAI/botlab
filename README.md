@@ -6,8 +6,16 @@ These bots run 24/7 in the background of your life, making products do things th
 
 **You do not need to host your own server to run bot microservices.** We host and run them for you on our servers. Of course, you can also run them live on your local computer and watch them execute against real-time data from the real world.
 
+### Start with an interactive demo
+
+The best way to start understanding the Bot Lab is to see it in action. Sign up at https://app.caredaily.ai/signup for a dynamic introduction to the Bot Lab, and a jump start in getting you a live demo environment built right into Care Daily's existing services.
+
+In this demo you can expect to visit many of the concepts presented in the included lessons, including SMS, notifications, live updates and more.
+
+After working through the interactive demo you will be prepared to start your journey into building Bots.  Have fun!
 
 ### You need Python 3.x
+
 We're using Python 3.x+. We strongly recommend using a virtual environment. 
 
 ```
@@ -49,9 +57,8 @@ If you're not interacting with your bot as a developer, the cloud will automatic
 
 Next steps include:
 * Make your bot do what you want by editing code locally, and `--run` it again with each modification.
-* Keep making commits to the cloud. You need to increment the version number each time inside `runtime.json`.
-* Publish the bot with the `--publish` command. This technically puts it through a review process like the Apple App Store. In reality, since we're not the Apple App Store yet, you can just let us know when you are ready to publish a bot by emailing dmoss@caredaily.ai or destry@caredaily.ai. Once published, a subscription can be associated with the bot and other users can get access with a purchase.
-
+* Keep making commits to the cloud. You do not need to increment the version number each time inside `runtime.json`.
+* Publish the bot with the `--publish` command. This technically puts it through a review process like the Apple App Store. In reality, since we're not the Apple App Store yet, you can just let us know when you are ready to publish a bot by emailing dmoss@caredaily.ai or destry@caredaily.ai. Once published, other users can purchase the bot with the `--purchase` command.
 
 ## Notes on architecture
 
@@ -63,7 +70,7 @@ There are a few design philosophies and best practices we've grown over the year
 * Often times, these signals can become externally accessible "Synthetic APIs". A Synthetic API is asynchronous, and realized through a combination of 2 platform APIs: Data Stream Messages and State Variables. If you choose to expose a Synthetic API, documentation is important, and we keep these docs on http://github.com/caredailyai/docs.
 * We've found pretty much all devices produce untrustworthy data, and cleaning that data or deriving entirely new information is an important activity. This is why we introduced the concept of `filters` in the Summer of 2021. Filters are treated just like microservices in that they're modular and can be added and removed without strict dependencies, but they also have a slightly different interface than microservices. Data now flows up the stack from the location object -> filters -> device objects and then finally to microservices. The `filter_measurements()` event allows filters the opportunity to correct or delete data before it lands in our representative model of the world. And it can even invent new parameterized data for microservices to work with. There's still more to explore in this architecture, including the ability to potentially save the corrected and parameterized time-series data back to the device on the AI+IoT Platform itself.
 
-As a new bot developer, I strongly recommend you generate a bot and follow the data path all the way through from botengine -> bot.py -> controller (a legacy artifact from a time in which our platform architecture was user-centric instead of location-centric, and a bot could operate against multiple of the user's locations) -> location.py -> filters -> device objects -> microservices. I also strongly recommend understanding what microservice packages exist today, how they operate, and what signals they use to communicate with each other. A large part of being a good bot developer is simply knowing where things are located.
+As a new bot developer, I strongly recommend you generate a bot and follow the data path all the way through from botengine -> bot.py -> controller -> location.py -> filters -> device objects -> microservices. I also strongly recommend understanding what microservice packages exist today, how they operate, and what signals they use to communicate with each other. A large part of being a good bot developer is simply knowing where things are located.
 
 Always remember your place on the DIKW ladder: 
 1. DATA is what a device produces, in its own protocol / language, below the AI+IoT Platform.

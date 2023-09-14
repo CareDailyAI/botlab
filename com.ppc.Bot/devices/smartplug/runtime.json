@@ -3,7 +3,11 @@
     "triggerParameters": [
       "outletStatus",
       "power",
-      "energy"
+      "energy",
+      "breakerStatus",
+      "volts",
+      "current",
+      "lineFrequency"
     ]
   }
 }

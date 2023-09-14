@@ -24,7 +24,7 @@ There are several categories of groups defined, including:
 
 The user declares who these people are through their mobile app. When a new person is added, they receive a text message like this:
 
-    The Moss Family has added you to MyPlace Security to get SMS alerts from their home. 
+    The Moss Family has added you to Care Daily AI to get SMS alerts from their home. 
     Your carrier may charge you for SMS msgs. 
     Reply STOP to opt-out.
     

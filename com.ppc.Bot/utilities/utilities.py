@@ -104,6 +104,13 @@ PUSH_SOUND_WARNING = "warning.wav"
 PUSH_SOUND_WHISTLE = "whistle.wav"
 PUSH_SOUND_WHOOPS = "whoops.wav"
 
+# Organization User Notification Categories
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_MANAGER = 1
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_TECHNICIAN = 2
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_BILLING = 3
+
+# Default name for AI Chat Assistant (common for all locales)
+DEFAULT_CHAT_ASSISTANT_NAME = "Arti"
 
 def can_contact_customer_support(botengine):
     """
@@ -170,6 +177,13 @@ def good_enough_unique_id():
     """
     import uuid
     return str(uuid.uuid4()).split("-")[-1]
+
+
+def float_round(number, count = 1):
+    if isinstance(number, float):
+        return round(number, count)
+    else:
+        return round(float(number), count)
 
 
 def celsius_to_fahrenheit(celsius):
@@ -344,6 +358,24 @@ def iso_format(dt):
     return strftime(dt, "%Y-%m-%dT%H:%M:%S." + '%03d' % (dt.microsecond / 1000) + "%z")
 
 
+def override_timestamp(botengine, location_object):
+    """
+    Return the override timestamp.(10 mins before the midnight.)
+    :param botengine:
+    :param location_object
+    :return:
+    """
+    current_timestamp = botengine.get_timestamp()
+    today_dt = location_object.get_local_datetime_from_timestamp(botengine, botengine.get_timestamp()).replace(hour=0, minute=0, second=0, microsecond=0)
+    todays_timestamp = location_object.timezone_aware_datetime_to_unix_timestamp(botengine, today_dt)
+    if current_timestamp - todays_timestamp < ONE_MINUTE_MS * 10:
+        timestamp_override_ms = current_timestamp - ONE_MINUTE_MS * 10
+    else:
+        timestamp_override_ms = None
+
+    return timestamp_override_ms
+
+
 def cumulative_moving_average(new_value, previous_average, previous_count):
     """
     Calculate a Cumulative Moving Average (running average). Use this when you want to calculate an average value
@@ -356,6 +388,50 @@ def cumulative_moving_average(new_value, previous_average, previous_count):
     """
     return previous_average + (new_value - previous_average) / (previous_count + 1)
 
+def get_chat_assistant_name(botengine):
+    """
+    Return the name of the chat assistant.
+    This can be overridden by setting the bot bundle domain property "CHAT_ASSISTANT_NAME".
+
+    :param botengine: BotEngine environment
+    :return: Name of the chat assistant.
+    """
+    import properties
+    name = properties.get_property(botengine, "CHAT_ASSISTANT_NAME", complain_if_missing=False)
+    if name is None:
+        name = DEFAULT_CHAT_ASSISTANT_NAME
+    return name
+
+def get_admin_url(botengine):
+    """
+    Attempt to return the URL of the command center.
+
+    To make this work, you'll need a file in the base of the bot called 'domain.py' containing configuration settings,
+    or set the properties in your organization.
+
+    It should have a property like this:
+
+        # Command Center URLs
+        COMMAND_CENTER_URLS = {
+            "app.peoplepowerco.com": "https://console.peoplepowerfamily.com",
+            "sboxall.peoplepowerco.com": "https://maestro-sbox.peoplepowerco.com"
+            or
+            "app.peoplepowerco.com": "https://app.caredaily.ai",
+            "sboxall.peoplepowerco.com": "https://app-sbox.caredaily.ai"
+        }
+
+    :return: URL to this home in the appropriate command center
+    """
+    # The domain.COMMAND_CENTER_URLS (or your organization property) should be formatted like this: https://console.peoplepowerfamily.com
+    import bundle
+    import properties
+    url = "https://app.caredaily.ai"
+    if properties.get_property(botengine, "COMMAND_CENTER_URLS") is not None:
+        for u in properties.get_property(botengine, "COMMAND_CENTER_URLS"):
+            if u in bundle.CLOUD_ADDRESS:
+                url = properties.get_property(botengine, "COMMAND_CENTER_URLS")[u]
+
+    return url
 
 def get_admin_url_for_location(botengine):
     """
@@ -368,8 +444,11 @@ def get_admin_url_for_location(botengine):
 
         # Command Center URLs
         COMMAND_CENTER_URLS = {
-            "app.presencepro.com": "https://console.peoplepowerfamily.com",
-            "sboxall.presencepro.com": "https://cc.presencepro.com"
+            "app.peoplepowerco.com": "https://console.peoplepowerfamily.com",
+            "sboxall.peoplepowerco.com": "https://maestro-sbox.peoplepowerco.com"
+            or
+            "app.peoplepowerco.com": "https://app.caredaily.ai",
+            "sboxall.peoplepowerco.com": "https://app-sbox.caredaily.ai"
         }
 
     :return: URL to this home in the appropriate command center
@@ -384,10 +463,51 @@ def get_admin_url_for_location(botengine):
                 url = properties.get_property(botengine, "COMMAND_CENTER_URLS")[u]
 
     if url is None:
-        botengine.get_logger().warn("utilities.get_command_center_url(): No COMMAND_CENTER_URLS defined in domain.py")
+        botengine.get_logger().warn("utilities.get_admin_url_for_location(): No COMMAND_CENTER_URLS defined in domain.py")
         return ""
 
+    # Check if the url contains caredaily
+    if "caredaily" in url:
+        # Return the url for CareDailyInsights
+        return "{}/org/{}/locations/{}/dashboard".format(url, botengine.get_organization_id(), botengine.get_location_id())
+    
+    # Return the url for Maestro
     return "{}/#!/main/locations/edit/{}".format(url, botengine.get_location_id())
+
+def get_organization_user_notification_categories(botengine, location, excluded_categories=[]):
+    """
+    Return a list of Organization User Notification categories for this location
+    :param botengine: BotEngine environment
+    :param location: Location object
+    :param excluded_categories: List of categories to exclude
+    :return: List of categories
+    """
+    import properties
+    import utilities
+    # [1.0] Disable notifications for all categories
+    if properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_MONITORING") is not None:
+        if not properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_MONITORING"):
+            botengine.get_logger().info("utilities: Do not contact admins")
+            return []
+    
+    # [1.1] Limit the time of day for Technicians
+    before_hour = properties.get_property(botengine, "DO_NOT_CONTACT_ADMINS_BEFORE_RELATIVE_HOUR")
+    after_hour = properties.get_property(botengine, "DO_NOT_CONTACT_ADMINS_AFTER_RELATIVE_HOUR")
+    timezone = location.get_local_timezone_string(botengine)
+    if properties.get_property(botengine, "ADMIN_DEFAULT_TIMEZONE") is not None:
+        timezone = properties.get_property(botengine, "ADMIN_DEFAULT_TIMEZONE")
+
+    categories = [ORGANIZATION_USER_NOTIFICATION_CATEGORY_MANAGER]
+    if before_hour is not None and after_hour is not None:
+        botengine.get_logger().info("utilities: Check if we should contact technicians: {} <= {} <= {}".format(before_hour, location.get_relative_time_of_day(botengine, timezone=timezone), after_hour))
+        if before_hour <= location.get_relative_time_of_day(botengine, timezone=timezone) <= after_hour:
+            categories.append(ORGANIZATION_USER_NOTIFICATION_CATEGORY_TECHNICIAN)
+        else:
+            botengine.get_logger().info("utilities: Do not contact technicians because it's after hours")
+
+    # Excluded categories
+    categories = [c for c in categories if c not in excluded_categories]
+    return categories
 
 
 def getsize(obj_0):
@@ -397,14 +517,16 @@ def getsize(obj_0):
     """
     import sys
     from numbers import Number
-    from collections import Set, Mapping, deque
+    from collections import deque
 
-    try: # Python 2
-        zero_depth_bases = (basestring, Number, xrange, bytearray)
-        iteritems = 'iteritems'
-    except NameError: # Python 3
+    try: 
+        from collections.abc import Mapping
         zero_depth_bases = (str, bytes, Number, range, bytearray)
         iteritems = 'items'
+    except ImportError: # Python 2
+        from collections import Mapping
+        zero_depth_bases = (basestring, Number, xrange, bytearray)
+        iteritems = 'iteritems'
 
     _seen_ids = set()
     def inner(obj):
@@ -415,7 +537,7 @@ def getsize(obj_0):
         size = sys.getsizeof(obj)
         if isinstance(obj, zero_depth_bases):
             pass # bypass remaining control flow and return
-        elif isinstance(obj, (tuple, list, Set, deque)):
+        elif isinstance(obj, (tuple, list, set, deque)):
             size += sum(inner(i) for i in obj)
         elif isinstance(obj, Mapping) or hasattr(obj, iteritems):
             size += sum(inner(k) + inner(v) for k, v in getattr(obj, iteritems)())
@@ -475,3 +597,35 @@ class Color:
     RED = Fore.RED
     BOLD = Style.BRIGHT
     END = Style.RESET_ALL
+
+def distance_between_points(latitude_1, longitude_1, latitude_2, longitude_2):
+    """
+    Calculate the distance between two points on the earth.
+    :param latitude_1: Latitude of the first point
+    :param longitude_1: Longitude of the first point
+    :param latitude_2: Latitude of the second point
+    :param longitude_2: Longitude of the second point
+    :return: Distance in meters
+    """
+    from math import sin, cos, sqrt, atan2, radians
+
+    # Approximate radius of earth in km
+    R = 6373.0
+
+    # Convert to radians
+    lat1 = radians(float(latitude_1))
+    lon1 = radians(float(longitude_1))
+    lat2 = radians(float(latitude_2))
+    lon2 = radians(float(longitude_2))
+
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    # Haversine formula
+    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    distance = R * c
+
+    # distance rounded down to the nearest meter
+    return int(distance * 1000)

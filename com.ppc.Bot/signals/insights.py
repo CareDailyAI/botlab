@@ -8,7 +8,7 @@ file 'LICENSE.txt', which is part of this source code package.
 """
 
 
-def capture_insight(botengine, location_object, insight_id, value, title, description, icon=None, icon_font=None, device_object=None):
+def capture_insight(botengine, location_object, insight_id, value, title, description, icon=None, icon_font=None, device_object=None, confidence_state=None, confidence_reason=None):
     """
     Capture an insight
     :param botengine: BotEngine environment
@@ -33,6 +33,10 @@ def capture_insight(botengine, location_object, insight_id, value, title, descri
         content['device_type'] = device_object.device_type
     else:
         content['device_desc'] = None
+
+    if confidence_state is not None:
+        content['confidence_state'] = confidence_state
+        content['confidence_reason'] = confidence_reason
 
     location_object.distribute_datastream_message(botengine,
                                                   "capture_insight",

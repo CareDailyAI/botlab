@@ -33,31 +33,37 @@ class LocationAmplitudeMicroservice(Intelligence):
         and before variables get saved.
 
         :param botengine: BotEngine environment
-        :param event_name: (string) A name describing the event
-        :param properties: (dict) Additional data to record; keys should be strings and values should be strings, numbers, or booleans
+        :param content: (dict) A dictionary containing:
+            event_name, (string) A name describing the event, and 
+            properties, (dict) additional data to record; keys should be strings and values should be strings, numbers, or booleans
+        :return:
         """
         if botengine.is_test_location():
             return
 
         event_name = content['event_name']
-        properties = content['properties']
+        event_properties = content['properties']
 
-        botengine.get_logger().info("Analytics: Tracking {}".format(event_name))
+        import datetime
+        import pytz
+        timezone = self.parent.get_local_timezone_string(botengine)
+        event_time = int(datetime.datetime.fromtimestamp(datetime.datetime.now().timestamp(), pytz.timezone(timezone)).timestamp() * 1000)
+        botengine.get_logger().info("Analytics: Tracking {} (trigger_time={} event_time={})".format(event_name, botengine.get_timestamp(), event_time))
 
-        if properties is None:
-            properties = {}
+        if event_properties is None:
+            event_properties = {}
 
-        properties["locationId"] = botengine.get_location_id()
-        properties["organizationId"] = botengine.get_organization_id()
+        event_properties["locationId"] = botengine.get_location_id()
+        event_properties["organizationId"] = botengine.get_organization_id()
 
         self._flush(botengine,
                    [
                         {
                             "user_id": self._get_user_id(botengine),
                             "device_id": self._get_device_id(botengine),
-                            "time": botengine.get_timestamp(),
+                            "time": event_time,
                             "event_type": event_name,
-                            "event_properties": properties,
+                            "event_properties": event_properties,
                             "user_properties": {
                                 "locationId": botengine.get_location_id(),
                                 "organizationId": botengine.get_organization_id()
@@ -76,7 +82,8 @@ class LocationAmplitudeMicroservice(Intelligence):
 
         properties_dict = content['properties_dict']
 
-        botengine.get_logger().info("analytics.py: Setting user info - {}".format(properties_dict))
+
+        botengine.get_logger().debug("analytics.py: Setting user info - {}".format(properties_dict))
 
         focused_properties = botengine.load_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME)
         if focused_properties is None:
@@ -175,19 +182,21 @@ class LocationAmplitudeMicroservice(Intelligence):
         Required. Implement the mechanisms to flush your analytics.
         :param botengine: BotEngine
         """
-        if botengine.is_test_location():
+        if botengine.is_test_location() or botengine.is_playback():
             botengine.get_logger().info("Analytics: This test location will not record analytics.")
             return
 
-        import domain
+        import properties
         import json
         import requests
         import bundle
 
         token = None
-        for cloud_address in domain.AMPLITUDE_TOKENS:
-            if cloud_address in bundle.CLOUD_ADDRESS:
-                token = domain.AMPLITUDE_TOKENS[cloud_address]
+        amplitude_tokens = properties.get_property(botengine, "AMPLITUDE_TOKENS")
+        if amplitude_tokens is not None:
+            for cloud_address in amplitude_tokens:
+                if cloud_address in bundle.CLOUD_ADDRESS:
+                    token = amplitude_tokens[cloud_address]
 
         if token is None:
             # Nothing to do
@@ -212,17 +221,17 @@ class LocationAmplitudeMicroservice(Intelligence):
             requests.post(url, headers=http_headers, data=json.dumps(body), timeout=AMPLITUDE_HTTP_TIMEOUT_S)
             botengine.get_logger().info("location_amplitude_microservice: Flushed()")
 
-        except self.requests.HTTPError:
-            self.get_logger().info("Generic HTTP error calling POST " + url)
+        except requests.HTTPError:
+            botengine.get_logger().info("Generic HTTP error calling POST " + url)
 
-        except self.requests.ConnectionError:
-            self.get_logger().info("Connection HTTP error calling POST " + url)
+        except requests.ConnectionError:
+            botengine.get_logger().info("Connection HTTP error calling POST " + url)
 
-        except self.requests.Timeout:
-            self.get_logger().info(str(AMPLITUDE_HTTP_TIMEOUT_S) + " second HTTP Timeout calling POST " + url)
+        except requests.Timeout:
+            botengine.get_logger().info(str(AMPLITUDE_HTTP_TIMEOUT_S) + " second HTTP Timeout calling POST " + url)
 
-        except self.requests.TooManyRedirects:
-            self.get_logger().info("Too many redirects HTTP error calling POST " + url)
+        except requests.TooManyRedirects:
+            botengine.get_logger().info("Too many redirects HTTP error calling POST " + url)
 
         except Exception as e:
             return

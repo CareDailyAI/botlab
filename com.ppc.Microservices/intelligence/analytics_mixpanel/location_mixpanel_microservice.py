@@ -9,7 +9,7 @@ file 'LICENSE.txt', which is part of this source code package.
 
 from intelligence.intelligence import Intelligence
 import mixpanel
-import domain
+import properties
 
 # Mixpanel HTTP Timeout in seconds
 MIXPANEL_HTTP_TIMEOUT_S = 2
@@ -38,17 +38,20 @@ class LocationMixpanelMicroservice(Intelligence):
         and before variables get saved.
 
         :param botengine: BotEngine environment
-        :param event_name: (string) A name describing the event
-        :param properties: (dict) Additional data to record; keys should be strings and values should be strings, numbers, or booleans
+        :param content: (dict) A dictionary containing:
+            event_name, (string) A name describing the event, and 
+            properties, (dict) additional data to record; keys should be strings and values should be strings, numbers, or booleans
+        :return:
         """
         if botengine.is_test_location():
             return
 
         event_name = content['event_name']
-        properties = content['properties']
+        event_properties = content['event_properties']
 
-        mp = mixpanel.Mixpanel(domain.MIXPANEL_TOKEN, consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
-        mp.track(self._get_distinct_id(botengine), event_name, properties)
+        botengine.get_logger().info("Analytics: Tracking {} => {}".format(self.total, event_name))
+        mp = mixpanel.Mixpanel(properties.get_property(botengine, "MIXPANEL_TOKEN"), consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
+        mp.track(self._get_distinct_id(botengine), event_name, event_properties)
         self._flush(botengine, mp)
 
     def analytics_people_set(self, botengine, content):
@@ -62,8 +65,8 @@ class LocationMixpanelMicroservice(Intelligence):
 
         properties_dict = content['properties_dict']
 
-        botengine.get_logger().info("analytics.py: Setting user info - {}".format(properties_dict))
-        mp = mixpanel.Mixpanel(domain.MIXPANEL_TOKEN, consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
+        botengine.get_logger().debug("analytics.py: Setting user info - {}".format(properties_dict))
+        mp = mixpanel.Mixpanel(properties.get_property(botengine, "MIXPANEL_TOKEN"), consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
         mp.people_set(self._get_distinct_id(botengine), properties_dict)
         self._flush(botengine, mp)
 
@@ -79,7 +82,7 @@ class LocationMixpanelMicroservice(Intelligence):
         properties_dict = content['properties_dict']
 
         botengine.get_logger().info("Analytics: Incrementing user info - {}".format(properties_dict))
-        mp = mixpanel.Mixpanel(domain.MIXPANEL_TOKEN, consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
+        mp = mixpanel.Mixpanel(properties.get_property(botengine, "MIXPANEL_TOKEN"), consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
         mp.people_increment(self._get_distinct_id(botengine), properties_dict)
         self._flush(botengine, mp)
 
@@ -95,7 +98,7 @@ class LocationMixpanelMicroservice(Intelligence):
         properties_list = content['properties_list']
 
         botengine.get_logger().info("Analytics: Removing user info - {}".format(properties_list))
-        mp = mixpanel.Mixpanel(domain.MIXPANEL_TOKEN, consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
+        mp = mixpanel.Mixpanel(properties.get_property(botengine, "MIXPANEL_TOKEN"), consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
         mp.people_unset(self._get_distinct_id(botengine), properties_list)
         self._flush(botengine, mp)
 
@@ -118,21 +121,9 @@ class LocationMixpanelMicroservice(Intelligence):
         Sync the user account information
         :param botengine: BotEngine environment
         """
-        anonymize = False
-        if hasattr(domain, "ANONYMIZE_ANALYTICS"):
-            anonymize = domain.ANONYMIZE_ANALYTICS
-
-        if anonymize:
-            mp.people_set(self._get_distinct_id(botengine), {
-                'location_id': botengine.get_location_id()
-            })
-
-        else:
-            mp.people_set(self._get_distinct_id(botengine), {
-                'location_id': botengine.get_location_id(),
-                '$first_name': botengine.get_location_name(),
-                '$last_name': ""
-            })
+        mp.people_set(self._get_distinct_id(botengine), {
+            'location_id': botengine.get_location_id()
+        })
 
     def _get_distinct_id(self, botengine):
         """

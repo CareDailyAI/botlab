@@ -11,54 +11,6 @@ import copy
 
 from locations.location import Location
 
-from devices.camera.camera_peoplepower_presenceandroid import PeoplePowerPresenceAndroidCameraDevice
-from devices.camera.camera_peoplepower_presenceios import PeoplePowerPresenceIosCameraDevice
-from devices.entry.entry import EntryDevice
-from devices.entry.entry_develco import DevelcoEntryDevice
-from devices.environment.temperature import TemperatureDevice
-from devices.environment.temperaturehumidity import TemperatureHumidityDevice
-from devices.gateway.gateway_peoplepower_edge import PeoplePowerEdgeDevice
-from devices.gateway.gateway_peoplepower_mseries import PeoplePowerMSeriesDevice
-from devices.gateway.gateway_qorvo_lcgw import QorvoLcgwGatewayDevice
-from devices.gateway.gateway_develco_squidlink import DevelcoSquidlinkDevice
-from devices.leak.leak import LeakDevice
-from devices.light.light import LightDevice
-from devices.light.lightswitch_ge import LightswitchGeDevice
-from devices.light.light_inwall_dimmer import InWallDimmerDevice
-from devices.light.light_smartdimmer import SmartDimmerDevice
-from devices.motion.motion import MotionDevice
-from devices.motion.motion_develco import DevelcoMotionDevice
-from devices.siren.siren_linkhigh import LinkhighSirenDevice
-from devices.siren.siren_smartenit_zbalarm import SmartenitZbalarmDevice
-from devices.siren.siren_develco import DevelcoSirenDevice
-from devices.smartplug.smartplug import SmartplugDevice
-from devices.thermostat.thermostat_centralite_pearl import ThermostatCentralitePearlDevice
-from devices.thermostat.thermostat_honeywell_lyric import ThermostatHoneywellLyricDevice
-from devices.thermostat.thermostat_sensibo_sky import ThermostatSensiboSkyDevice
-from devices.thermostat.thermostat_ecobee import ThermostatEcobeeDevice
-from devices.thermostat.thermostat_emerson_thermostat import ThermostatEmersonDevice
-from devices.touchpad.touchpad_peoplepower import PeoplePowerTouchpadDevice
-from devices.button.button_multi_develco import DevelcoMultiButtonDevice
-from devices.button.button_panic_develco import DevelcoPanicButtonDevice
-from devices.button.button_multi_linkhigh import LinkHighMultiButtonDevice
-from devices.lock.lock import LockDevice
-from devices.gas.carbon_monoxide import CarbonMonoxideDevice
-from devices.pictureframe.pictureframe_peoplepower_ios import PeoplePowerPictureFrameIosDevice
-from devices.pictureframe.pictureframe_peoplepower_android import PeoplePowerPictureFrameAndroidDevice
-from devices.smartplug.smartplug_smartenit_largeload import SmartenitLargeLoadControllerDevice
-from devices.pressure.pressure import PressurePadDevice
-from devices.keypad.keypad_develco import DevelcoKeypadDevice
-from devices.leak.leak_develco import DevelcoLeakDevice
-from devices.smartplug.smartplug_develco import DevelcoSmartplugDevice
-from devices.smartplug.smartcable_develco import DevelcoSmartcableDevice
-from devices.smartplug.smartplug_inwall_outlet import InWallOutletDevice
-from devices.io.io import IoDevice
-from devices.vibration.vibration_develco import DevelcoVibrationDevice
-from devices.vibration.vibration_linkhigh import LinkHighVibrationDevice
-from devices.vayyar.vayyar import VayyarDevice
-
-
-
 # Deprecated:
 from devices.smartplug.smartplug_centralite_3series import Centralite3SeriesSmartplugDevice
 from devices.button.button import ButtonDevice
@@ -110,6 +62,62 @@ class Controller:
         logger.info("self.locations: " + str(self.locations))
         logger.info("self.location_devices: " + str(self.location_devices))
         logger.info("-----")
+
+    def get_intelligence_statistics(self, botengine):
+        """
+        Get the intelligence statistics for all locations
+        :param botengine: BotEngine environment
+        :return: List of statistics json
+
+        Example:
+        [
+            {
+                "name": "microservice_name",
+                "calls": 3,
+                "time": 280 # ms
+            }   
+        ]
+        """
+        all_intelligence_module_statistics = []
+        for location_id in self.locations:
+            # Gather location intelligence modules
+            for intelligence_module in self.locations[location_id].intelligence_modules.keys():
+                all_intelligence_module_statistics.append((intelligence_module, self.locations[location_id].intelligence_modules[intelligence_module].get_statistics(botengine)))
+            # Gather device intelligence modules
+            for device_id in self.locations[location_id].devices:
+                for intelligence_module in self.locations[location_id].devices[device_id].intelligence_modules.keys():
+                    all_intelligence_module_statistics.append((intelligence_module, self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module].get_statistics(botengine)))
+
+        stats = []
+
+        for (intelligence_module, intelligence_module_statistics) in all_intelligence_module_statistics:
+            # Assign the microservice package name to the "name" field
+            if "intelligence" != intelligence_module.split(".")[0] or len(intelligence_module.split(".")) == 1:
+                continue
+            
+            botengine.get_logger().debug("intelligence_module: {} - {}".format(intelligence_module, intelligence_module_statistics))
+
+            intelligence_module_package_name = intelligence_module.split(".")[1]
+            # Aggregate intelligence module statistics by package name
+            _stats = [stat for stat in stats if stat["name"] == intelligence_module_package_name]
+            if len(_stats) == 0:
+                stat = {
+                    "name": intelligence_module_package_name,
+                    "calls": intelligence_module_statistics["calls"],
+                    "time": intelligence_module_statistics["time"]
+                }
+                stats.append(stat)
+            else:
+                stat = _stats[0]
+                stat["calls"] += intelligence_module_statistics["calls"]
+                stat["time"] += intelligence_module_statistics["time"]
+
+            # Remove floating point
+            stat["time"] = int(stat["time"])
+                
+        
+        return stats
+
     
     def track_new_and_deleted_devices(self, botengine, precache_measurements=True):
         """
@@ -175,143 +183,16 @@ class Controller:
                         device_object = None
                         continue
                 
+                # Load any available device type class within this bundle
+                device_type_classes = _extact_available_device_type_classes(botengine)
+
                 if device_object is None:
-                    if device_type in PeoplePowerPresenceAndroidCameraDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPresenceAndroidCameraDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in PeoplePowerPresenceIosCameraDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPresenceIosCameraDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in EntryDevice.DEVICE_TYPES:
-                        device_object = EntryDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                    
-                    elif device_type in TemperatureDevice.DEVICE_TYPES:
-                        device_object = TemperatureDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in TemperatureHumidityDevice.DEVICE_TYPES:
-                        device_object = TemperatureHumidityDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in PeoplePowerMSeriesDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerMSeriesDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in PeoplePowerEdgeDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerEdgeDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoSquidlinkDevice.DEVICE_TYPES:
-                        device_object = DevelcoSquidlinkDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in QorvoLcgwGatewayDevice.DEVICE_TYPES:
-                        device_object = QorvoLcgwGatewayDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in LeakDevice.DEVICE_TYPES:
-                        device_object = LeakDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in LightDevice.DEVICE_TYPES:
-                        device_object = LightDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in LightswitchGeDevice.DEVICE_TYPES:
-                        device_object = LightswitchGeDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in InWallDimmerDevice.DEVICE_TYPES:
-                        device_object = InWallDimmerDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in SmartDimmerDevice.DEVICE_TYPES:
-                        device_object = SmartDimmerDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in MotionDevice.DEVICE_TYPES:
-                        device_object = MotionDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in SmartenitZbalarmDevice.DEVICE_TYPES:
-                        device_object = SmartenitZbalarmDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in LinkhighSirenDevice.DEVICE_TYPES:
-                        device_object = LinkhighSirenDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in SmartplugDevice.DEVICE_TYPES:
-                        device_object = SmartplugDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in ThermostatCentralitePearlDevice.DEVICE_TYPES:
-                        device_object = ThermostatCentralitePearlDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in ThermostatHoneywellLyricDevice.DEVICE_TYPES:
-                        device_object = ThermostatHoneywellLyricDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in ThermostatSensiboSkyDevice.DEVICE_TYPES:
-                        device_object = ThermostatSensiboSkyDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in ThermostatEcobeeDevice.DEVICE_TYPES:
-                        device_object = ThermostatEcobeeDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-                        
-                    elif device_type in PeoplePowerTouchpadDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerTouchpadDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in LinkHighMultiButtonDevice.DEVICE_TYPES:
-                        device_object = LinkHighMultiButtonDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoPanicButtonDevice.DEVICE_TYPES:
-                        device_object = DevelcoPanicButtonDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoMultiButtonDevice.DEVICE_TYPES:
-                        device_object = DevelcoMultiButtonDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in LockDevice.DEVICE_TYPES:
-                        device_object = LockDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in CarbonMonoxideDevice.DEVICE_TYPES:
-                        device_object = CarbonMonoxideDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in PeoplePowerPictureFrameIosDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPictureFrameIosDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in PeoplePowerPictureFrameAndroidDevice.DEVICE_TYPES:
-                        device_object = PeoplePowerPictureFrameAndroidDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in SmartenitLargeLoadControllerDevice.DEVICE_TYPES:
-                        device_object = SmartenitLargeLoadControllerDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoMotionDevice.DEVICE_TYPES:
-                        device_object = DevelcoMotionDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoEntryDevice.DEVICE_TYPES:
-                        device_object = DevelcoEntryDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in PressurePadDevice.DEVICE_TYPES:
-                        device_object = PressurePadDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in ThermostatEmersonDevice.DEVICE_TYPES:
-                        device_object = ThermostatEmersonDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoSirenDevice.DEVICE_TYPES:
-                        device_object = DevelcoSirenDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoKeypadDevice.DEVICE_TYPES:
-                        device_object = DevelcoKeypadDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoLeakDevice.DEVICE_TYPES:
-                        device_object = DevelcoLeakDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoSmartplugDevice.DEVICE_TYPES:
-                        device_object = DevelcoSmartplugDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoSmartcableDevice.DEVICE_TYPES:
-                        device_object = DevelcoSmartcableDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in InWallOutletDevice.DEVICE_TYPES:
-                        device_object = InWallOutletDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in IoDevice.DEVICE_TYPES:
-                        device_object = IoDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in DevelcoVibrationDevice.DEVICE_TYPES:
-                        device_object = DevelcoVibrationDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in LinkHighVibrationDevice.DEVICE_TYPES:
-                        device_object = LinkHighVibrationDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    elif device_type in VayyarDevice.DEVICE_TYPES:
-                        device_object = VayyarDevice(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
-
-                    else:
+                    # Instantiate the device object based on the device type
+                    for device_type_class in device_type_classes:
+                        if device_type in device_type_class.DEVICE_TYPES:
+                            device_object = device_type_class(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
+                            break
+                    if device_object is None:
                         botengine.get_logger().warn("Unsupported device type: " + str(device_type) + " ('" + device_desc + "')")
                         continue
 
@@ -597,7 +478,10 @@ class Controller:
             for device_id in self.locations[location_id].devices:
                 for intelligence_module_name in self.locations[location_id].devices[device_id].intelligence_modules:
                     if intelligence_id == self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module_name].intelligence_id:
+                        import time
+                        t = time.time()
                         self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module_name].timer_fired(botengine, argument)
+                        self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module_name].track_statistics(botengine, (time.time() - t) * 1000)
                         return
 
     def run_intelligence_schedules(self, botengine, schedule_id):
@@ -655,34 +539,80 @@ class Controller:
         for location_id in self.locations:
             self.locations[location_id].new_version(botengine)
 
-    def evaluate_version(self, botengine, startup):
+    def is_version_updated(self, botengine):
         """
-        Evaluate for a new version and trigger the new_version() if we are indeed running a new version of the bot.
+        Check if we are indeed running a new version of the bot.
         :param botengine: BotEngine environment
-        :return: True if a new version was detected and the new_version() trigger was executed.
+        :return: True if a new version was detected.
         """
         import json
         import os
         with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "runtime.json")) as f:
             j = json.load(f)
             version = j["version"]["version"]
-            if version != self.version:
-                startup.set_is_preparing(True)
-                botengine.save_variable("startup_tool", startup, required_for_each_execution=True)
-                botengine.flush_binary_variables()
-
+            if not hasattr(self, "version") or version != self.version:
                 botengine.get_logger().info("controller: New version detected")
-                self.version = version
-                self.new_version(botengine)
                 return True
 
         # Are we running locally and this is our very first execution?
         if botengine.local and botengine.local_execution_count == 0:
-            startup.set_is_preparing(True)
-            botengine.save_variable("startup_tool", startup, required_for_each_execution=True)
-            botengine.flush_binary_variables()
-
-            self.new_version(botengine)
             return True
 
         return False
+
+    def update_version(self, botengine):
+        """
+        Trigger the new_version() if we are indeed running a new version of the bot.
+        :param botengine: BotEngine environment
+        """
+        import json
+        import os
+        with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "runtime.json")) as f:
+            j = json.load(f)
+            version = j["version"]["version"]
+            self.version = version
+            self.new_version(botengine)
+
+
+def _extact_available_device_type_classes(botengine):
+    """
+    Extract all available device type classes from a module
+    :return List of device type classes
+    """
+
+    device_type_classes = []
+    # Walk through our devices directory
+    import os
+    from os import walk
+    mypath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "devices")
+    
+    for (dirpath, dirnames, filenames) in walk(mypath):
+        # Walk through each subdirectory
+        for dirname in dirnames:                        
+            for (_dirpath, _dirnames, _filenames) in walk(os.path.join(dirpath, dirname)):
+                # Walk through each python file in the subdirectory
+                for filename in _filenames:
+                    if not filename.endswith(".py") and not filename.endswith(".pyc"):
+                        continue
+                    
+                    # Form the module name like "devices.entry.entry"
+                    from pathlib import Path
+                    module_name = "{}.{}.{}".format(_dirpath.split("/")[-2], _dirpath.split("/")[-1], Path(filename).with_suffix(''))
+                    
+                    # Import the module
+                    import importlib
+                    try:
+                        module = importlib.import_module(module_name)
+                    except Exception as e:
+                        continue
+                    
+                    # Get all the classes in the module
+                    from inspect import isclass
+                    classes = [x for x in dir(module) if isclass(getattr(module, x))]
+                    for class_name in classes:
+                        # Extract only classes that conform to the Device class with one or more specified device type
+                        class_ = getattr(module, class_name)
+                        if hasattr(class_, "DEVICE_TYPES") and class_ not in device_type_classes:
+                            device_type_classes.append(class_)
+
+    return device_type_classes

@@ -60,7 +60,7 @@ class MotionDevice(Device):
         :param botengine:
         :return: True if this device is in a bedroom
         """
-        bedroom_names = ['bed', 'bett', 'bdrm', 'moms room', 'dads room', 'mom\'s room', 'dad\'s room']
+        bedroom_names = [_('bed'), _('bett'), _('bdrm'), _('moms room'), _('dads room'), _('mom\'s room'), _('dad\'s room')]
 
         for name in bedroom_names:
             if name in self.description.lower():
@@ -73,7 +73,7 @@ class MotionDevice(Device):
         :param botengine:
         :return: True if this device is in a bathroom
         """
-        bathroom_names = ['schlaf', 'bath', 'toilet', 'shower', 'powder']
+        bathroom_names = [_('schlaf'), _('bath'), _('toilet'), _('shower'), _('powder')]
 
         for name in bathroom_names:
             if name in self.description.lower():

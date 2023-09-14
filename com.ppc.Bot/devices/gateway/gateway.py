@@ -72,6 +72,14 @@ class GatewayDevice(Device):
         """
         return False
 
+    def did_connect_wifi(self, botengine):
+        """
+        Did the gateway's primary network interface switch to a wifi connection
+        :param botengine:
+        :return:
+        """
+        return False
+
     def is_broadband_connected(self, botengine):
         """
         Is the gateway's primary network interface a broadband connection

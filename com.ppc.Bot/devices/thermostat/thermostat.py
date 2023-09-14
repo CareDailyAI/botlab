@@ -221,7 +221,7 @@ class ThermostatDevice(Device):
         :return:
         """
         botengine.get_logger().info("\t{} = {}".format(name, value))
-        Device.add_measurement(self, botengine, name, value, timestamp)
+        measurement_updated = Device.add_measurement(self, botengine, name, value, timestamp)
 
         # Sometimes the user adjusts the thermostat during or immediately after a command is sent.
         # In that case, the reliability() methods underneath end up overridding the user, which is a cause for anger and backlash.
@@ -361,6 +361,7 @@ class ThermostatDevice(Device):
                                                  event_type="thermostat.thermostat_heating_setpoint")
                     analytics.track(botengine, self.location_object, 'thermostat_heating_setpoint', properties={"device_id": self.device_id, "description": self.description, "ai": False, "heating_setpoint": self.measurements[ThermostatDevice.MEASUREMENT_NAME_HEATING_SETPOINT_C][0][0]})
 
+        return measurement_updated
 
     def get_device_type_name(self):
         '''
@@ -893,7 +894,6 @@ class ThermostatDevice(Device):
             # No DR
             heat_dr_offset = 0.0
 
-
         cool_dr_offset = None
         for d in self.dr_stack_cool:
             if cool_dr_offset is None:
@@ -908,7 +908,6 @@ class ThermostatDevice(Device):
             # No DR
             cool_dr_offset = 0.0
 
-
         heat_ee_offset = None
         for e in self.ee_stack_heat:
             if heat_ee_offset is None:
@@ -921,7 +920,6 @@ class ThermostatDevice(Device):
 
         if heat_ee_offset is None:
             heat_ee_offset = 0.0
-
 
         cool_ee_offset = None
         for e in self.ee_stack_cool:
@@ -1004,7 +1002,6 @@ class ThermostatDevice(Device):
                         # For example, if you have 1 thermostat and a EE event for 10000s, then the total is 10000s.
                         # But if you have 2 thermostats and a EE event for 10000s, then the total is 20000s
                         analytics.people_increment(botengine, self.location_object, {'ee_total_s': duration_s})
-
 
                 if heat_dr_offset + cool_dr_offset > 0:
                     # Some DR

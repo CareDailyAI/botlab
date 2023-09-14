@@ -38,9 +38,6 @@ class MultiButtonDevice(Device):
     GOAL_BUTTON_STAY_DISARM = 116
     GOAL_BUTTON_SKIP = 300
 
-    # Demo scenarios
-    GOAL_BUTTON_DEMO_VAYYAR = 200
-
     def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
         Constructor

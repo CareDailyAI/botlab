@@ -1,0 +1,622 @@
+# English translations for PROJECT.
+# Copyright (C) 2022 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-30 13:59-0700\n"
+"PO-Revision-Date: 2023-04-21 21:05+0000\n"
+"Last-Translator: Destry Teeter <destry@peoplepowerco.com>\n"
+"Language: sv\n"
+"Language-Team: Swedish <http://weblate-"
+"eu.peoplepowerco.com/projects/botlab/com-ppc-bot/sv/>\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.11.0\n"
+
+#: devices/thermostat/thermostat.py:245 devices/thermostat/thermostat.py:325
+msgid "'{}' now set to {}"
+msgstr "'{}' är nu satt till {}"
+
+#: devices/thermostat/thermostat.py:974
+msgid "'{}': Applying energy policies"
+msgstr "'{}': Tillämpning av energipolitik"
+
+#: devices/thermostat/thermostat_ecobee.py:146
+#: devices/thermostat/thermostat_ecobee.py:186
+msgid "'{}': Away mode"
+msgstr "'{}': Bortaläge"
+
+#: devices/thermostat/thermostat_ecobee.py:262
+msgid "'{}': Home mode"
+msgstr "'{}': Hemläge"
+
+#: devices/thermostat/thermostat.py:557
+msgid "'{}': Learned HOME cooling set point."
+msgstr "'{}': Inlärd HOME-kylningspunkt."
+
+#: devices/thermostat/thermostat.py:569
+msgid "'{}': Learned HOME heating set point."
+msgstr "'{}': Inlärd HOME värmeinställningspunkt."
+
+#: devices/thermostat/thermostat.py:712
+msgid "'{}': Learned away preferences."
+msgstr "'{}': Lärde sig bort inställningar."
+
+#: devices/thermostat/thermostat.py:615 devices/thermostat/thermostat.py:654
+#: devices/thermostat/thermostat.py:757
+msgid "'{}': Learned night time preferences."
+msgstr "'{}': Lärde sig nattliga preferenser."
+
+#: devices/thermostat/thermostat_ecobee.py:122
+#: devices/thermostat/thermostat_ecobee.py:221
+msgid "'{}': Sleep mode"
+msgstr "'{}': Sömnläge"
+
+#: utilities/utilities.py:283
+msgid "0 seconds"
+msgstr "0 sekunder"
+
+#: utilities/utilities.py:267
+msgid "1 hour"
+msgstr "1 timme"
+
+#: utilities/utilities.py:272
+msgid "1 minute"
+msgstr "1 minut"
+
+#: utilities/utilities.py:278
+msgid "1 second"
+msgstr "1 sekund"
+
+#: signals/dashboard.py:13
+msgid "ALERTS"
+msgstr ""
+
+#: confidence/occupancy_confidence_machine.py:82
+#: confidence/occupancy_confidence_machine.py:129
+#: confidence/occupancy_confidence_machine.py:134
+msgid "Add 1 Entry device to improve the confidence."
+msgstr "Lägg till 1 Entry-enhet för att öka förtroendet."
+
+#: confidence/occupancy_confidence_machine.py:85
+#: confidence/occupancy_confidence_machine.py:125
+#: confidence/occupancy_confidence_machine.py:137
+#, fuzzy
+msgid "Add 1 Motion device to improve the confidence."
+msgstr "Lägg till 1 Motion-enhet för att öka förtroendet."
+
+#: confidence/occupancy_confidence_machine.py:73
+#: confidence/sleep_confidence_machine.py:87
+#, fuzzy
+msgid "Add 1 more Motion device to improve the confidence."
+msgstr "Lägg till rörelseenhet en inmatningsanordning för att öka förtroendet."
+
+#: confidence/occupancy_confidence_machine.py:77
+msgid "Add 1 more entry device to improve the confidence."
+msgstr "Lägg till ytterligare en inmatningsanordning för att öka förtroendet."
+
+#: confidence/sleep_confidence_machine.py:95
+#, fuzzy
+msgid ""
+"Add more Motion devices installed inside bedroom to improve the "
+"confidence."
+msgstr "Lägg till ytterligare 1 Motion-enhet för att öka förtroendet."
+
+#: confidence/sleep_confidence_machine.py:92
+#, fuzzy
+msgid ""
+"Add more Motion devices installed outside bedroom to improve the "
+"confidence."
+msgstr "Lägg till ytterligare 1 Motion-enhet för att öka förtroendet."
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/alarm/alarm.py:27 devices/alarm/alarm_eu_develco.py:35
+msgid "Alarm"
+msgstr "Larm"
+
+#. Device type name
+#: devices/camera/camera_peoplepower_presenceandroid.py:22
+msgid "Android Camera"
+msgstr "Android-kamera"
+
+#. Device type name
+#: devices/pictureframe/pictureframe_peoplepower_android.py:24
+msgid "Android Picture Frame"
+msgstr "Android bildram"
+
+#. Device type name
+#: devices/health/health_apple.py:30
+msgid "Apple Health"
+msgstr "Apple Health"
+
+#. Device type name.
+#: devices/proxy/proxy_apple.py:24
+msgid "Apple Proxy"
+msgstr "Apple Proxy"
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/button/button_multi.py:60 devices/button/button_panic.py:49
+msgid "Assist Button"
+msgstr "Assist-knapp"
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/button/button.py:67 devices/button/button_develco.py:51
+#: devices/button/button_linkhigh.py:60
+msgid "Button"
+msgstr "Knapp"
+
+#. Abstract device type name, doeesn't show up in end user documentation
+#: devices/camera/camera.py:24
+msgid "Camera"
+msgstr "Kamera"
+
+#. Device type name
+#: devices/gas/carbon_monoxide.py:35
+msgid "Carbon Monoxide Sensor"
+msgstr "Sensor för kolmonoxid"
+
+#. Device type name
+#: devices/thermostat/thermostat_centralite_pearl.py:65
+msgid "Centralite Pearl Thermostat"
+msgstr "Centralite Pearl termostat"
+
+#: devices/thermostat/thermostat.py:273 devices/thermostat/thermostat.py:340
+msgid "Cooling set point adjusted"
+msgstr "Kylningssetpoint justerat"
+
+#: signals/dashboard.py:400
+msgid "DISABLED"
+msgstr ""
+
+#. Super abstract device type name
+#: devices/device.py:300
+msgid "Device"
+msgstr "Enhet"
+
+#. Device type name
+#: devices/thermostat/thermostat_ecobee.py:70
+msgid "Ecobee"
+msgstr "Ecobee"
+
+#. Device type name
+#: devices/thermostat/thermostat_emerson_thermostat.py:34
+msgid "Emerson Thermostat"
+msgstr "Emerson termostat"
+
+#. Device type name
+#: devices/entry/entry.py:62
+msgid "Entry Sensor"
+msgstr "Ingångssensor"
+
+#. Device type name
+#: devices/light/lightswitch_ge.py:42
+msgid "GE In-Wall Switch"
+msgstr "GE In-Wall Switch"
+
+#. Device type name
+#: devices/health/health.py:92
+msgid "Health"
+msgstr "Hälsa"
+
+#: devices/thermostat/thermostat.py:303 devices/thermostat/thermostat.py:356
+msgid "Heating set point adjusted"
+msgstr "Värmens börvärde justeras"
+
+#. Device type name
+#: devices/thermostat/thermostat_honeywell_lyric.py:35
+msgid "Honeywell Lyric Thermostat"
+msgstr "Honeywell Lyric Termostat"
+
+#: utilities/genai.py:167
+msgid "I'm sorry, I don't know how to respond to that."
+msgstr ""
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/io/io.py:55
+msgid "IO Module"
+msgstr "IO-modul"
+
+#. Device type name
+#: devices/light/light_inwall_dimmer.py:24
+msgid "In-Wall Dimmer"
+msgstr "Dimmer i vägg"
+
+#. Device type name - In-Wall Outlet
+#: devices/smartplug/smartplug_inwall_outlet.py:24
+msgid "In-Wall Outlet"
+msgstr "Uttag i vägg"
+
+#. Device type name
+#: devices/keypad/keypad.py:50 devices/keypad/keypad_develco.py:89
+msgid "Keypad"
+msgstr "Knappsats"
+
+#. Device type name - Smartenit Large Load Controller
+#: devices/smartplug/smartplug_smartenit_largeload.py:31
+msgid "Large Load Controller"
+msgstr "Controller för stor belastning"
+
+#. Device type name
+#: devices/leak/leak.py:39 devices/leak/leak_develco.py:54
+msgid "Leak Sensor"
+msgstr "Sensor för läckage"
+
+#. Device type name
+#: devices/light/lightswitch_leviton_decora.py:42
+msgid "Leviton Decora In-Wall Switch"
+msgstr "Leviton Decora väggströmbrytare"
+
+#. Device type name
+#: devices/light/light.py:82
+msgid "Light"
+msgstr "Ljus"
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/lock/lock.py:59
+msgid "Lock"
+msgstr "Lås"
+
+#. Device type name
+#: devices/gateway/gateway_peoplepower_mseries.py:26
+msgid "M-Series Smart Home Center"
+msgstr "M-serien Smart Home Center"
+
+#. Device type name
+#: devices/motion/motion.py:50
+msgid "Motion Sensor"
+msgstr "Rörelsesensor"
+
+#: signals/dashboard.py:12
+msgid "NOW"
+msgstr ""
+
+#: signals/dashboard.py:435
+msgid "Okay, resolving the notification..."
+msgstr ""
+
+#. Device type name
+#: devices/pictureframe/pictureframe_peoplepower.py:107
+msgid "Picture Frame"
+msgstr "Bildram"
+
+#. This is an abstract name of a camera device that doesn't show up in end-user
+#. documentation.
+#: devices/camera/camera_peoplepower_presence.py:96
+msgid "Presence Camera"
+msgstr "Presence-kamera"
+
+#: devices/pressure/pressure.py:56
+msgid "Pressure Pad"
+msgstr "Tryckkudde"
+
+#. Abstract device type name
+#: devices/proxy/proxy.py:26
+msgid "Proxy"
+msgstr "Fullmakt"
+
+#: signals/dashboard.py:398
+msgid "RUNNING"
+msgstr ""
+
+#: signals/dashboard.py:435
+#, fuzzy
+msgid "Resolve"
+msgstr "spis"
+
+#: signals/dashboard.py:16
+#, fuzzy
+msgid "SERVICES"
+msgstr "Enhet"
+
+#. Device type name
+#: devices/thermostat/thermostat_sensibo_sky.py:53
+msgid "Sensibo Sky Thermostat"
+msgstr "Sensibo Sky termostat"
+
+#: devices/thermostat/thermostat_ecobee.py:147
+#: devices/thermostat/thermostat_ecobee.py:187
+msgid "Setting your ecobee thermostat into Away mode."
+msgstr "Ställ in din ecobee-termostat i läget \"borta\"."
+
+#: devices/thermostat/thermostat_ecobee.py:263
+msgid "Setting your ecobee thermostat into Home mode."
+msgstr "Ställ in din ecobee-termostat i hemmaläge."
+
+#: devices/thermostat/thermostat_ecobee.py:123
+#: devices/thermostat/thermostat_ecobee.py:222
+msgid "Setting your ecobee thermostat into Sleep mode."
+msgstr "Ställ in din ecobee-termostat i viloläge."
+
+#. Device type name
+#: devices/siren/siren.py:36
+msgid "Siren"
+msgstr "Siren"
+
+#. Device type name
+#: devices/smartplug/smartcable_develco.py:21
+msgid "Smart Cable"
+msgstr "Smart kabel"
+
+#. Device type name
+#: devices/light/light_smartdimmer.py:24
+msgid "Smart Dimmer"
+msgstr "Smart Dimmer"
+
+#. Abstract device type name
+#. Device type name
+#. Device type name.
+#: devices/gateway/gateway.py:26
+#: devices/gateway/gateway_develco_squidlink.py:47
+#: devices/gateway/gateway_dsr_sgw.py:24
+#: devices/gateway/gateway_peoplepower_edge.py:26
+#: devices/gateway/gateway_peoplepower_iotgateway.py:26
+#: devices/gateway/gateway_peoplepower_xseries.py:28
+#: devices/gateway/gateway_qorvo_lcgw.py:24
+msgid "Smart Home Center"
+msgstr "Smart Home Center"
+
+#. Device type name - abstract smart plug
+#. Device type name - Centralte 3-series smart plug
+#. Device type name
+#: devices/smartplug/smartplug.py:80
+#: devices/smartplug/smartplug_centralite_3series.py:26
+#: devices/smartplug/smartplug_develco.py:21
+msgid "Smart Plug"
+msgstr "Smart Kontakt"
+
+#. Device type name
+#: devices/environment/temperature.py:37
+msgid "Temperature Sensor"
+msgstr "Temperaturgivare"
+
+#. Device type name
+#: devices/environment/temperaturehumidity.py:58
+msgid "Temperature and Humidity Sensor"
+msgstr "Sensor för temperatur och fuktighet"
+
+#. Device type name
+#: devices/movement/touch.py:47
+msgid "Touch Sensor"
+msgstr "Beröringssensor"
+
+#. Device type name
+#: devices/touchpad/touchpad_peoplepower.py:76
+msgid "Touchpad"
+msgstr "Pekplatta"
+
+#: signals/dashboard.py:435
+msgid "UPDATE STATUS >"
+msgstr ""
+
+#: signals/dashboard.py:435
+msgid "Update Status"
+msgstr ""
+
+#. Device type name
+#: devices/vibration/vibration.py:77
+msgid "Vibration Sensor"
+msgstr "Vibrationsgivare"
+
+#: confidence/occupancy_confidence_machine.py:117
+#, fuzzy
+msgid "We don't have Motion or Entry device for occupancy home service to work."
+msgstr ""
+"Vi har inte Motion eller Entry-enhet för att tjänsten Occupancy Home ska "
+"fungera."
+
+#: confidence/occupancy_confidence_machine.py:65
+#, fuzzy
+msgid "We don't have enough Motion devices for occupancy away service to work."
+msgstr ""
+"Vi har inte tillräckligt många Motion-enheter för att tjänsten Occupancy "
+"away ska fungera."
+
+#: confidence/sleep_confidence_machine.py:70
+msgid "We don't have enough devices for sleep service to work."
+msgstr "Vi har inte tillräckligt många enheter för att sömntjänsten ska fungera."
+
+#: confidence/occupancy_confidence_machine.py:69
+msgid "We have high confidence on the occupancy away service."
+msgstr "Vi har stort förtroende för tjänsten Occupancy away."
+
+#: confidence/occupancy_confidence_machine.py:121
+msgid "We have high confidence on the occupancy home service."
+msgstr "Vi har stort förtroende för hemtjänsten."
+
+#: confidence/sleep_confidence_machine.py:79
+msgid "We have high confidence on the sleep service."
+msgstr "Vi har stort förtroende för vår sömntjänst."
+
+#: confidence/sleep_confidence_machine.py:84
+msgid ""
+"We have low confidence on the sleep service due to lack of recent "
+"measurements."
+msgstr ""
+"Vi har lågt förtroende för sömntjänsten på grund av avsaknaden av färska "
+"mätningar."
+
+#: confidence/sleep_confidence_machine.py:76
+msgid ""
+"We have medium confidence on the sleep service due to lack of recent "
+"measurements."
+msgstr ""
+"Vi har ett medelhögt förtroende för sömntjänsten på grund av bristen på "
+"färska mätningar."
+
+#: devices/thermostat/thermostat.py:274
+msgid "Your '{}' cooling set point is set to {}."
+msgstr "Din \"{}\" kylpunkt är inställd på {}."
+
+#: devices/thermostat/thermostat.py:341
+msgid "Your '{}' cooling set point was manually adjusted to {}."
+msgstr "Ditt \"{}\"-kylningsinställningsvärde justerades manuellt till {}."
+
+#: devices/thermostat/thermostat.py:304
+msgid "Your '{}' heating set point is set to {}."
+msgstr "Värmeinställningen \"{}\" är inställd på {}."
+
+#: devices/thermostat/thermostat.py:357
+msgid "Your '{}' heating set point was manually adjusted to {}."
+msgstr "Värmeinställningen \"{}\" justerades manuellt till {}."
+
+#: devices/thermostat/thermostat.py:326
+msgid "Your '{}' is now set to {}."
+msgstr "Din \"{}\" är nu inställd på {}."
+
+#: devices/thermostat/thermostat.py:246
+msgid "Your '{}' is set to {}."
+msgstr "Din \"{}\" är inställd på {}."
+
+#: devices/thermostat/thermostat.py:713
+msgid "Your '{}' learned the away cooling setpoint should be {} from HOME mode."
+msgstr ""
+"Ditt \"{}\" lärde sig att kylningssollvärdet för bortkoppling ska vara {}"
+" från HOME-läget."
+
+#: devices/thermostat/thermostat.py:758
+msgid "Your '{}' learned the away heating setpoint should be {} from HOME mode."
+msgstr ""
+"Din \"{}\" lärde sig att värmesetvärdet för bortalaget ska vara {} från "
+"HOME-läget."
+
+#: devices/thermostat/thermostat.py:616
+msgid "Your '{}' learned the night time cooling setpoint."
+msgstr "Ditt \"{}\" lärde sig inställningsvärdet för nattkylning."
+
+#: devices/thermostat/thermostat.py:655
+msgid "Your '{}' learned the night time heating setpoint."
+msgstr "Ditt \"{}\" lärde sig inställningsvärdet för nattvärme."
+
+#: devices/thermostat/thermostat.py:558
+msgid ""
+"Your '{}' learned you want the cooling set point set to {} when you are "
+"home."
+msgstr ""
+"Din \"{}\" lärde dig att du vill att kylningsinställningen ska vara "
+"inställd på {} när du är hemma."
+
+#: devices/thermostat/thermostat.py:570
+msgid ""
+"Your '{}' learned you want the heating set point set to {} when you are "
+"home."
+msgstr ""
+"Din \"{}\" lärde dig att du vill att värmeinställningen ska vara inställd"
+" på {} när du är hemma."
+
+#: devices/thermostat/thermostat.py:975
+msgid "Your new cooling set point is {} and heating setpoint is {}."
+msgstr ""
+"Ditt nya börvärde för kylning är {} och ditt börvärde för uppvärmning är "
+"{}."
+
+#: devices/motion/motion.py:76
+msgid "bath"
+msgstr "bad"
+
+#: devices/motion/motion.py:63
+msgid "bdrm"
+msgstr "bdrm"
+
+#: devices/motion/motion.py:63
+msgid "bed"
+msgstr "säng"
+
+#: devices/motion/motion.py:63
+msgid "bett"
+msgstr "bett"
+
+#: devices/motion/motion.py:63
+msgid "dad's room"
+msgstr "pappas rum"
+
+#: devices/motion/motion.py:63
+msgid "dads room"
+msgstr "pappas rum"
+
+#. "The Moss family <typed a Duress code into the Touchpad>."
+#: utilities/utilities.py:165
+msgid "entered a duress code, indicating a potential threat."
+msgstr "skrev in en tvångskod, vilket visade att det fanns ett potentiellt hot."
+
+#. "The Moss family <burglary alarm tripped>."
+#: utilities/utilities.py:145
+msgid "has a burglar alarm"
+msgstr "har ett inbrottslarm"
+
+#. "The Moss family <burglary alarm tripped because a door opened>."
+#: utilities/utilities.py:153
+msgid "has a burglar alarm because a door opened"
+msgstr "har ett inbrottslarm eftersom en dörr har öppnats"
+
+#. "The Moss family <burglary alarm tripped because a window opened>."
+#: utilities/utilities.py:149
+msgid "has a burglar alarm because a window opened"
+msgstr "har ett inbrottslarm på grund av att ett fönster har öppnats"
+
+#. "The Moss family <burglary alarm tripped shortly after arming>."
+#: utilities/utilities.py:161
+msgid "has a burglar alarm, shortly after arming"
+msgstr "har ett inbrottslarm, kort efter det att det har aktiverats"
+
+#. Device type name
+#: devices/camera/camera_peoplepower_presenceios.py:22
+msgid "iOS Camera"
+msgstr "iOS-kamera"
+
+#. Device type name
+#: devices/pictureframe/pictureframe_peoplepower_ios.py:24
+msgid "iOS Picture Frame"
+msgstr "iOS bildram"
+
+#. "The Moss family <is experiencing a water leak>."
+#: utilities/utilities.py:157
+msgid "is experiencing a water leak"
+msgstr "har en vattenläcka"
+
+#. "The Moss family <may need some assistance>." - generic message
+#: utilities/utilities.py:169
+msgid "may need some assistance"
+msgstr "kan behöva viss hjälp"
+
+#: devices/motion/motion.py:63
+msgid "mom's room"
+msgstr "mammas rum"
+
+#: devices/motion/motion.py:63
+msgid "moms room"
+msgstr "mammas rum"
+
+#: devices/motion/motion.py:76
+msgid "powder"
+msgstr "pulver"
+
+#: devices/motion/motion.py:76
+msgid "schlaf"
+msgstr "schlaf"
+
+#: devices/motion/motion.py:76
+msgid "shower"
+msgstr "dusch"
+
+#: devices/motion/motion.py:76
+msgid "toilet"
+msgstr "toalett"
+
+#: utilities/utilities.py:269
+msgid "{} hours"
+msgstr "{} timmar"
+
+#: utilities/utilities.py:274
+msgid "{} minutes"
+msgstr "{} minuter"
+
+#: utilities/utilities.py:280
+msgid "{} seconds"
+msgstr "{} sekunder"
+
