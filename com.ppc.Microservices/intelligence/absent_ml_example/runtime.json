@@ -65,6 +65,16 @@
         "reason": {
           "en": "Access Motion Sensors."
         }
+      },
+      {
+        "id": 2000,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Vayyar."
+        }
       }
     ],
 
