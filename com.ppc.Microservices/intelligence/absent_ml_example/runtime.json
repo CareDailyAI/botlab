@@ -37,6 +37,16 @@
         }
       },
       {
+        "id": 9114,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Entry Sensors."
+        }
+      },
+      {
         "id": 10038,
         "minOccurrence": 0,
         "trigger": true,
@@ -44,6 +54,16 @@
         "control": false,
         "reason": {
           "en": "Monitor motion sensors."
+        }
+      },
+      {
+        "id": 9138,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Motion Sensors."
         }
       }
     ],

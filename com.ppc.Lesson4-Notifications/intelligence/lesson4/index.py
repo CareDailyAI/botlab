@@ -52,6 +52,9 @@ MICROSERVICES = {
         10014: [
             {"module": "intelligence.lesson4.device_entrynotification_microservice", "class": "DeviceEntryNotificationMicroservice"}
             ],
+        9114: [
+            {"module": "intelligence.lesson1.device_entrynotification_microservice", "class": "DeviceEntryNotificationMicroservice"}
+            ],
 
     },
 

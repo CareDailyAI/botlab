@@ -58,9 +58,15 @@ MICROSERVICES = {
         10014: [
             {"module": "intelligence.lesson1.device_entrysensor_microservice", "class": "DeviceEntrySensorMicroservice"}
             ],
+        9114: [
+            {"module": "intelligence.lesson1.device_entrysensor_microservice", "class": "DeviceEntrySensorMicroservice"}
+            ],
 
         # Motion Sensor
         10038: [
+            {"module": "intelligence.lesson1.device_motionsensor_microservice", "class": "DeviceMotionSensorMicroservice"}
+            ],
+        9138: [
             {"module": "intelligence.lesson1.device_motionsensor_microservice", "class": "DeviceMotionSensorMicroservice"}
             ],
 
@@ -151,6 +157,17 @@ MICROSERVICES = {
 
         # M-Series Gateway
         31: [
+            {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
+            ],
+
+        # Squidlink Gateway
+        36: [
+            {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
+            ],
+        37: [
+            {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
+            ],
+        38: [
             {"module": "intelligence.lesson1.device_realtimedata_microservice", "class": "DeviceRealTimeDataMicroservice"}
             ],
 

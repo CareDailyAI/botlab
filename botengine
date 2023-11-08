@@ -2410,7 +2410,7 @@ USAGE
 
                     for device in devices:
                         if 'type' in device:
-                            if device['type'] == 22 or device['type'] == 23 or device['type'] == 24 or device['type'] == 10031 or device['type'] == 31 or device['type'] == 36 or device['type'] == 35 or device['type'] == 40:
+                            if device['type'] == 22 or device['type'] == 23 or device['type'] == 24 or device['type'] == 10031 or device['type'] == 31 or device['type'] == 37 or device['type'] == 36 or device['type'] == 35 or device['type'] == 40:
                                 continue
 
                         print("Capturing " + str(device['id']) + " - '" + str(device['desc']) + "' ...")

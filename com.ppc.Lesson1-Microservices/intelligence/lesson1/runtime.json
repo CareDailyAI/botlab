@@ -245,7 +245,27 @@
         }
       },
       {
+        "id": 36,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Develco Gateways."
+        }
+      },
+      {
         "id": 37,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Develco Gateways."
+        }
+      },
+      {
+        "id": 38,
         "minOccurrence": 0,
         "trigger": true,
         "read": true,

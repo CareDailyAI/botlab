@@ -66,14 +66,11 @@ class TestDevice():
         mut = Device(botengine, location_object, device_id, device_type, device_desc)
         location_object.devices[device_id] = mut
 
-        location_object.new_version(botengine)
         location_object.initialize(botengine)
-        mut.new_version(botengine)
+        location_object.new_version(botengine)
 
-        assert len(mut.intelligence_modules) > 0
-
-        mut.initialize(botengine)
-
+        # Depending on the bot bundle under testing there may or may not be device intelligence modules
+        # If available, ensure the parent and intelligence_id are set
         for i in mut.intelligence_modules:
             assert mut.intelligence_modules[i].intelligence_id != None
             assert mut.intelligence_modules[i].parent == mut

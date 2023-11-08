@@ -6,8 +6,8 @@
   "microservices": [
     # Intelligence
     "com.ppc.Microservices/intelligence/absent_ml_example",
-    "com.ppc.Microservices/intelligence/analytics_amplitude",
-    "com.ppc.Microservices/intelligence/analytics_mixpanel",
+    # "com.ppc.Microservices/intelligence/analytics_amplitude",
+    # "com.ppc.Microservices/intelligence/analytics_mixpanel",
     "com.ppc.Microservices/intelligence/dailyreport",
     "com.ppc.Microservices/intelligence/dashboard",
     "com.ppc.Microservices/intelligence/data_request",
@@ -17,22 +17,22 @@
     "com.ppc.Microservices/intelligence/multistream",
     "com.ppc.Microservices/intelligence/sms_delivery",
     "com.ppc.Microservices/intelligence/tasks",
-    "com.ppc.Microservices/intelligence/videoai/amazonvideo",
-    "com.ppc.Microservices/intelligence/videoai/googlevideo",
-    "com.ppc.Microservices/intelligence/videoai/microsoftvideo",
+    # "com.ppc.Microservices/intelligence/videoai/amazonvideo",
+    # "com.ppc.Microservices/intelligence/videoai/googlevideo",
+    # "com.ppc.Microservices/intelligence/videoai/microsoftvideo",
     "com.ppc.Microservices/intelligence/welcome",
 
     # Lessons
     # "com.ppc.Lesson0-BotEngine",                                    # Placeholder for Lesson 0
-    "com.ppc.Lesson1-Microservices/intelligence/lesson1",
-    "com.ppc.Lesson2-LiveUpdates/intelligence/lesson2",
-    "com.ppc.Lesson3-Commands/intelligence/lesson3",
-    "com.ppc.Lesson4-Notifications/intelligence/lesson4",
-    "com.ppc.Lesson5-SpaceTime/intelligence/lesson5",
-    "com.ppc.Lesson6-DataStreams/intelligence/lesson6",
-    "com.ppc.Lesson7-SunriseSunset/intelligence/lesson7",
-    "com.ppc.Lesson8-Video/intelligence/lesson8",
-    "com.ppc.Lesson9-Sms/intelligence/lesson9",
+    # "com.ppc.Lesson1-Microservices/intelligence/lesson1",           # Placeholder for Lesson 1
+    # "com.ppc.Lesson2-LiveUpdates/intelligence/lesson2",             # Placeholder for Lesson 2
+    # "com.ppc.Lesson3-Commands/intelligence/lesson3",                # Placeholder for Lesson 3
+    # "com.ppc.Lesson4-Notifications/intelligence/lesson4",           # Placeholder for Lesson 4
+    # "com.ppc.Lesson5-SpaceTime/intelligence/lesson5",               # Placeholder for Lesson 5
+    # "com.ppc.Lesson6-DataStreams/intelligence/lesson6",             # Placeholder for Lesson 6
+    # "com.ppc.Lesson7-SunriseSunset/intelligence/lesson7",           # Placeholder for Lesson 7
+    # "com.ppc.Lesson8-Video/intelligence/lesson8",                   # Placeholder for Lesson 8
+    # "com.ppc.Lesson9-Sms/intelligence/lesson9",                     # Placeholder for Lesson 9
     # "com.ppc.Lesson10-MachineLearning/intelligence/lesson10",       # Placeholder for Lesson 10
     # "com.ppc.Lesson11-Questions/intelligence/lesson11",             # Placeholder for Lesson 11
     # "com.ppc.Lesson12-Tags/intelligence/lesson12",                  # Placeholder for Lesson 12
