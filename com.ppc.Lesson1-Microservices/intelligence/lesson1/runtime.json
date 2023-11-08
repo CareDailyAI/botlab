@@ -245,6 +245,16 @@
         }
       },
       {
+        "id": 37,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Develco Gateways."
+        }
+      },
+      {
         "id": 10031,
         "minOccurrence": 0,
         "trigger": true,
@@ -286,6 +296,16 @@
       },
       {
         "id": 10014,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Entry Sensors."
+        }
+      },
+      {
+        "id": 9114,
         "minOccurrence": 0,
         "trigger": true,
         "read": true,
@@ -342,6 +362,26 @@
         "control": true,
         "reason": {
           "en": "Access Motion Sensors."
+        }
+      },
+      {
+        "id": 9138,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Motion Sensors."
+        }
+      },
+      {
+        "id": 2000,
+        "minOccurrence": 0,
+        "trigger": true,
+        "read": true,
+        "control": true,
+        "reason": {
+          "en": "Access Vayyar."
         }
       }
     ],
