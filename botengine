@@ -4979,7 +4979,7 @@ def _set_state(server, user_key, location_id, address, json_content, overwrite=T
         requests.put(server + "/cloud/json/locations/{}/timeStates".format(location_id), params=params, data=json.dumps(body), headers=http_headers, proxies=_https_proxy)
 
 
-def _listen(device_server, user_key, bot_instance_id, timeout=2, clean=True, cleanTime=None):
+def _listen(device_server, user_key, bot_instance_id, timeout=180, clean=True, cleanTime=None):
     """
     Apps running on the developer's local computer will listen to Ensemble for incoming device data.
     :param device_server: Device Server URL
@@ -5001,7 +5001,7 @@ def _listen(device_server, user_key, bot_instance_id, timeout=2, clean=True, cle
         params['clean'] = clean
 
     http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
-    r = requests.get(device_server + "/deviceio/analytic", params=params, headers=http_headers, proxies=_https_proxy)
+    r = requests.get(device_server + "/deviceio/analytic", params=params, headers=http_headers, proxies=_https_proxy, timeout=timeout)
     j = json.loads(r.text)
     return j
 

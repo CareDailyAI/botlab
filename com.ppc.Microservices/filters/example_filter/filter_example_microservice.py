@@ -110,9 +110,9 @@ class FilterExampleMicroservice(Filter):
         botengine.get_logger().info(utilities.Color.GREEN + "Filter: Transformed measured RSSI {} into low-pass RSSI {}".format(rssi_value, measured_rssi['value']) + utilities.Color.END)
         botengine.get_logger().info("Filter: Corrected rssi = {}".format(json.dumps(self.get_parameter(measurements, "rssi"), sort_keys=True)))
 
-
         # EXAMPLE of ignoring a parameter's updated value completely.
-        self.get_parameter(measurements, "lqi")['updated'] = False
+        if self.get_parameter(measurements, "lqi"):
+            self.get_parameter(measurements, "lqi")['updated'] = False
 
         return
 

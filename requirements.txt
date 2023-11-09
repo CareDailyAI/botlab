@@ -15,3 +15,5 @@ ijson
 croniter
 keepachangelog
 gitpython
+pytest
+requests_mock
