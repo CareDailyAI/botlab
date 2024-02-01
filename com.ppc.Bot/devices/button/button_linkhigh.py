@@ -16,7 +16,7 @@ class LinkHighButtonDevice(Device):
     """
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [9014]
+    DEVICE_TYPES = [] # [9014] < Deprecated, see button_multi_linkhigh.py >
 
     # Measurement name for the button status
     MEASUREMENT_NAME_BUTTON_STATUS = 'buttonStatus'

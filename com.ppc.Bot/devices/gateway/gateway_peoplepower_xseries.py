@@ -18,7 +18,7 @@ class PeoplePowerXSeriesDevice(GatewayDevice):
     """
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = []
+    DEVICE_TYPES = [] # [] < Deprecated, see gateway_peoplepower_xseries.py >
 
     def get_device_type_name(self):
         """

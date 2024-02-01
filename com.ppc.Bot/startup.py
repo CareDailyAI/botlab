@@ -47,6 +47,10 @@ class StartUpUtil:
         self.event_queue.clear()
         self.data_request_data = None
 
+    def start(self, timestamp):
+        self.is_preparing = True
+        self.start_timestamps = timestamp
+
     def queue_triggers(self, triggers):
         """
         Queue the event triggers.

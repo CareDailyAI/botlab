@@ -17,16 +17,16 @@ class TouchDevice(Device):
     DEPRECATED. Replaced by vibration.linkhigh_vibration.py
     """
     
-    # # List of Device Types this class is compatible with
-    # DEVICE_TYPES = [10019]
-    #
-    # # Measurement name for the button status
-    # MEASUREMENT_NAME_VIBRATION_STATUS = 'vibrationStatus'
-    #
-    # MEASUREMENT_PARAMETERS_LIST = [
-    #     MEASUREMENT_NAME_VIBRATION_STATUS
-    # ]
-    #
+    # List of Device Types this class is compatible with
+    DEVICE_TYPES = [] # [10019] < Deprecated, see vibration.vibration_linkhigh.py >
+    
+    # Measurement name for the button status
+    MEASUREMENT_NAME_VIBRATION_STATUS = 'vibrationStatus'
+    
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_VIBRATION_STATUS
+    ]
+    
 
     # Goals / Behaviors
     GOAL_ALERT_ON_EVERY_TOUCH = 20

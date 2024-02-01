@@ -34,6 +34,6 @@ def get_property(botengine, name, complain_if_missing=True):
         # Couldn't find it locally, return None
         if complain_if_missing:
             if botengine is not None:
-                botengine.get_logger().warning("properties.py: Please define property '{}' in your domain.py file.".format(name))
+                botengine.get_logger(f"{__name__}").warning("properties.py: Please define property '{}' in your domain.py file.".format(name))
     return None
 

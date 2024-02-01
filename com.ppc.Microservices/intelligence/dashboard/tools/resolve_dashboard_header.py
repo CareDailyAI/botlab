@@ -11,7 +11,7 @@ DATASTREAM_ADDRESS = "resolve_dashboard_header"
 
 # Data Stream Content
 DATASTREAM_CONTENT = {
-    "name": "sleep_score",
+    "name": "placeholder",
     "answer": 0
 }
 
@@ -39,7 +39,7 @@ def main(argv=None):
     
     parser.add_argument("-u", "--username", dest="username", help="Username")
     parser.add_argument("-p", "--password", dest="password", help="Password")
-    parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.presencepro.com)")
+    parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.peoplepowerco.com)")
     parser.add_argument("-l", "--location", dest="location_id", help="Location ID")
     parser.add_argument("-a", "--api_key", dest="apikey", help="User's API key instead of a username/password")
     parser.add_argument("--httpdebug", dest="httpdebug", action="store_true", help="HTTP debug logger output");
@@ -61,7 +61,7 @@ def main(argv=None):
 
     # Define the bot server
     if not server:
-        server = "https://app.presencepro.com"
+        server = "https://app.peoplepowerco.com"
     
     if "http" not in server:
         server = "https://" + server
