@@ -39,8 +39,8 @@ from argparse import RawDescriptionHelpFormatter
 DEFAULT_BASE_SERVER_URL = "app.peoplepowerco.com"
 
 __all__ = []
-__version__ = '8.2.0'
-__date__ = '2022-11-04'
+__version__ = '9.2.2'
+__date__ = '2024-01-31'
 
 DEBUG = 0
 TESTRUN = 0
@@ -85,7 +85,8 @@ STATUS_BOT_INACTIVE = 2
 
 # global variables
 _servermode = False
-_bot_logger = None
+_bot_loggers = None
+_bot_logger_config = None
 _https_proxy = None
 
 # Runtime classifiers for AWS Lambda
@@ -134,7 +135,7 @@ EDGE_CAPABLE_GATEWAY_DEVICE_TYPES = [32]
 TAR = True
 
 # Default configurable bot runtime on the server in seconds (the server's default is 1.0 second)
-DEFAULT_RUNTIME_TIMEOUT_S = 30
+DEFAULT_RUNTIME_TIMEOUT_S = 510 # 8.5 minutes
 
 # Memory in MB required for the bot.
 # Default is 128 MB (minimum value).
@@ -337,12 +338,30 @@ USAGE
         settings_group.add_argument("--version", action='version', version=program_version_message)
         settings_group.add_argument("--update", dest="update", action="store_true", help="Update this BotEngine framework from the server")
 
+        # Subparsers
+        subparsers = parser.add_subparsers(dest="actions")
 
-        # 'tagrelease' subparser
-        distribution_subparsers = parser.add_subparsers(dest="distribution")
-        tag_release_parser = distribution_subparsers.add_parser('tagrelease')
-        tagrelease_group = tag_release_parser.add_argument_group(Color.BOLD + "Tag Release" + Color.END)
+        # 'distribution' parser
+        distribution_parser = subparsers.add_parser("distribution")
+        tagrelease_group = distribution_parser.add_argument_group(Color.BOLD + "Tag Release" + Color.END)
+        tagrelease_group.add_argument('--tag_release', dest="tag_release", action="store_true", help="Tag and push a new BotEngine release")
         tagrelease_group.add_argument("-v", "--version", dest="new_version", help="New version for this release")
+
+        # 'logging' subparser
+        logging_parser = subparsers.add_parser("logging")
+
+        logging_parser.add_argument("-i", "--instance_id", dest="app_instance_id", help="Bot Instance ID")
+        logging_parser.add_argument("-f", "--execution_flow", dest="execution_flow", help="Execution Flow")
+
+        set_cloudwatch_logging_group = logging_parser.add_argument_group(Color.BOLD + "Enable or Disable Cloudwatch Logging" + Color.END)
+        set_cloudwatch_logging_group.add_argument('--set_cloudwatch_logging', dest="set_cloudwatch_logging", action="store_true", help="Enable/disable logging in AWS CloudWatch for a specific bot instance and flow.")
+
+        set_cloudwatch_logging_group.add_argument("-s", "--status", dest="logging_status", help="Logging Status.  1 to enable, 2 to disable.")
+        set_cloudwatch_logging_group.add_argument("-d", "--end_date_ms", dest="logging_end_date_ms", help="Logging end date in milliseconds. Required if status=1.")
+
+        get_cloudwatch_log_info_group = logging_parser.add_argument_group(Color.BOLD + "Cloudwatch Log Info" + Color.END)
+
+        get_cloudwatch_log_info_group.add_argument('--get_cloudwatch_log_info', dest="get_cloudwatch_log_info", action="store_true", help="Get a description of the bot instance log stream in AWS CloudWatch.")
 
         # Process arguments
         args = parser.parse_args()
@@ -354,20 +373,29 @@ USAGE
         global playback_session_id
         playback_session_id = session_id
 
-        global _bot_logger
         if args.playback:
             logger_session_id = session_id
         else:
             logger_session_id = None
 
-        _bot_logger = _create_logger('bot', LOGGING_LEVEL_DICT[args.loglevel], True, args.logfile, playback=args.playback, session_id=logger_session_id)
+        global _bot_logger_config
+        _bot_logger_config = {
+            "level": LOGGING_LEVEL_DICT[args.loglevel], 
+            "console_mode": True, 
+            "filename": args.logfile, 
+            "playback": args.playback, 
+            "session_id": logger_session_id
+            }
+        global _bot_loggers
+        _bot_loggers = {"botengine": _create_logger('botengine', **_bot_logger_config)}
          
         if args.help:
             parser.print_help()
             return 0
 
-        if args.distribution:
-            tag_release(_bot_logger, args.new_version, args.core_directory)
+        if args.actions == "distribution":
+            if args.tag_release:
+                tag_release(_bot_loggers["botengine"], args.new_version, args.core_directory)
             return
         
         username = args.username
@@ -499,7 +527,7 @@ USAGE
                 sys.stderr.write(json_input)
                 sys.stderr.write("\n\n")
                 if _servermode:
-                    _bot_logger.error("Couldn't parse the JSON input data, date=" + str(json_input))
+                    _bot_loggers["botengine"].error("Couldn't parse the JSON input data, date=" + str(json_input))
                 return 1
 
         if not server:
@@ -507,6 +535,9 @@ USAGE
 
         if "http" not in server:
             server = "https://" + server
+
+        # Normalize server var with api host response
+        server = _get_cloud_api_server(server)
 
         print("Bot Server: " + server)
 
@@ -726,7 +757,7 @@ USAGE
                 try:
                     j = _get_apps(server, user_key, bundle)
                 except Exception as e:
-                    _bot_logger.warning("Failed to gather Info: {}".format(e))
+                    _bot_loggers["botengine"].warning("Failed to gather Info: {}".format(e))
                     continue
                 bots = j.get('apps')
                 if bots is None:
@@ -762,9 +793,9 @@ USAGE
                 try:
                     stats = _get_app_statistics(server, user_key, bundle)
                 except Exception as e:
-                    _bot_logger.warning("Failed to gather Stats: {}".format(e))
+                    _bot_loggers["botengine"].warning("Failed to gather Stats: {}".format(e))
                     continue
-                _bot_logger.debug("Stats: {}".format(json.dumps(stats, indent=2)))
+                _bot_loggers["botengine"].debug("Stats: {}".format(json.dumps(stats, indent=2)))
                 if 'rating' in stats:
                     print(Color.BOLD + "RATINGS" + Color.END)
                     print("Average rating across all versions: " + str(stats['rating']['average']))
@@ -890,7 +921,7 @@ USAGE
                 try:
                     j = _get_bot_errors(server, user_key, bundle, errors_only=False)
                 except Exception as e:
-                    _bot_logger.warning("Failed to gather Logs: {}".format(e))
+                    _bot_loggers["botengine"].warning("Failed to gather Logs: {}".format(e))
                     continue
 
                 print(json.dumps(j, indent=2, sort_keys=True))
@@ -984,8 +1015,13 @@ USAGE
 
                     elif bot['status'] == 2:
                         status = Color.RED + "PAUSED (--play to resume)" + Color.END
-
-                    print("Bot Instance " + str(bot["appInstanceId"]) + ": " + bot["bundle"] + "; Version " + bot["version"] + " " + developer_text + "; " + status)
+                    bundle = bot.get("bundle")
+                    if bundle is None:
+                        bundle = bot.get("bot",{}).get("bundle")
+                    version = bot.get("version")
+                    if not isinstance(version, str):
+                        version = version.get("version")
+                    print("Bot Instance " + str(bot["appInstanceId"]) + ": " + bundle + "; Version " + version + " " + developer_text + "; " + status)
             else:
                 sys.stderr.write(Color.RED + "You have not obtained or purchased any bots." + Color.END)
 
@@ -1471,7 +1507,7 @@ USAGE
 
                 if bots is not None:
                     for bot in bots:
-                        if bot["bundle"] == bundle:
+                        if bot.get("bundle", bot.get("bot",{}).get("bundle")) == bundle:
                             # Cool beans. You already own this bot. Cya.
                             print(the_bot() + "Done!")
                             return 0
@@ -1501,7 +1537,7 @@ USAGE
             # Update the runtime of a bot bundle
             # View a particular bot on the bot store
             if not _is_server_version_newer_than(server, 1, 33):
-                _bot_logger.warning("This feature is not available on this cloud!")
+                _bot_loggers["botengine"].warning("This feature is not available on this cloud!")
                 return 0
             if user_key is None:
                 user_key = _login(server, username, password)
@@ -1531,7 +1567,7 @@ USAGE
                             memory = f['memory']
                             timeout = f['timeout']
 
-                            _bot_logger.debug("version: {}; status: {}; memory: {}; timeout: {}".format(version, status, memory, timeout))
+                            _bot_loggers["botengine"].debug("version: {}; status: {}; memory: {}; timeout: {}".format(version, status, memory, timeout))
                             potential_versions.append((version, status != 4, memory, timeout))
                 
                 if len(potential_versions) == 0:
@@ -1560,7 +1596,7 @@ USAGE
                     if development is None or current_memory is None or current_timeout is None:
                         raise BotError("Please select a version to update!", -1)
             except Exception as e:
-                _bot_logger.warning("This request is not allowed: {}".format(e))
+                _bot_loggers["botengine"].warning("This request is not allowed: {}".format(e))
                 return 0
 
 
@@ -1585,7 +1621,7 @@ USAGE
                 return 0
                 
             except Exception as e:
-                _bot_logger.warning("Failed to update runtime: {}".format(e))
+                _bot_loggers["botengine"].warning("Failed to update runtime: {}".format(e))
                 return 0
 
 
@@ -2534,9 +2570,9 @@ USAGE
 
             start_timestamp_ms = round(time.time() * 1000)
 
-            playback_notifications_log = "playback_notifications-{}.txt".format(playback_session_id)
-            playback_narratives_log = "playback_narratives-{}.txt".format(playback_session_id)
-            playback_states_log = "playback_states-{}.txt".format(playback_session_id)
+            playback_notifications_log = "playback_{}_notifications.txt".format(playback_session_id)
+            playback_narratives_log = "playback_{}_narratives.txt".format(playback_session_id)
+            playback_states_log = "playback_{}_states.txt".format(playback_session_id)
 
             try:
                 os.remove(playback_notifications_log)
@@ -2567,14 +2603,14 @@ USAGE
                 file_name = os.path.basename(playback).split('.')[0]
                 playback_path = os.path.join(os.getcwd(), 'playback_tmp')
                 unzipped_file_name = os.path.join(playback_path, file_name)
-                playback_file_directory = playback_path
+                playback_file_directory = unzipped_file_name
                 playback_json_files = []
                 extracted_filenames = []
 
                 with zipfile.ZipFile(playback, "r") as z:
                     for extracted_filename in z.namelist():
-                        z.extract(extracted_filename, playback_path)
-                        extracted_path = os.path.join(playback_path, extracted_filename)
+                        z.extract(extracted_filename, unzipped_file_name)
+                        extracted_path = os.path.join(unzipped_file_name, extracted_filename)
 
                         if ".json" in extracted_filename and "__MACOSX" not in extracted_filename:
                             extracted_filenames.append(extracted_filename)
@@ -2700,7 +2736,7 @@ USAGE
             runtime = json.loads(runtime_text)['version']
 
             # Location to trigger off of
-            if runtime['trigger'] & 0x2 != 0:
+            if runtime.get('trigger', 0) & 0x2 != 0:
                 # Trigger off of location mode changes
                 raw_access_content["location"] = {
                     "category": 1,
@@ -2724,7 +2760,7 @@ USAGE
             # Keep track of the last parameters for this device so we can update them properly on the next measurement. Dictionary(device_id) of dictionaries(param names).
             device_id_params = {}
 
-            for device in runtime['deviceTypes']:
+            for device in runtime.get('deviceTypes', []):
                 device_type_triggers.append(device['id'])
 
             botengine = BotEngine({"apiKey": None, "apiHosts": None}, playback=True)
@@ -2732,7 +2768,6 @@ USAGE
             botengine._download_binary_variable = playback_download_binary_variable
             botengine.flush_binary_variables = playback_flush_binary_variables
             botengine.flush_commands = playback_flush_commands
-            botengine.flush_questions = playback_flush_questions
             botengine.flush_rules = playback_flush_rules
             botengine.flush_tags = playback_flush_tags
             botengine.delete_all_rules = playback_delete_all_rules
@@ -2746,14 +2781,21 @@ USAGE
             botengine._flush_states = playback_flush_states
             botengine.get_state = playback_get_states
             botengine.get_timeseries_state = playback_get_timeseries_state
+            botengine.set_mode = playback_set_mode
             botengine.get_mode_history = playback_get_mode_history
-            botengine.request_data = playback_request_data
+            # botengine.request_data = playback_request_data
 
             # Run it
+            original_start_timestamp_ms = int(time.time() * 1000)
             original_timestamp_ms = None
             latest_timestamp_ms = None
 
+            # The last playback timestamp we executed
+            # Used to determine if we need to trigger a schedule
+            previous_timestamp_ms = None
+
             playback_data_requests = None
+            playback_data_requests_triggered = False
             with open(playback_json_file, 'r') as f:
                 ijson_requests_properties = ijson.items(f, 'data_requests')
 
@@ -2781,6 +2823,7 @@ USAGE
                         timestamp = int(d['timestamp_ms'])
                         timezone_str = None
 
+                        previous_timestamp_ms = latest_timestamp_ms
                         latest_timestamp_ms = timestamp
                         if original_timestamp_ms is None:
                             original_timestamp_ms = timestamp
@@ -2799,78 +2842,155 @@ USAGE
                             raw_access_content[access_id]['trigger'] = False
 
                         dt_now = playback_get_datetime_from_timestamp(timestamp, timezone_str)
-
-                        print("Playback: {} => {}".format(timestamp, dt_now))
+                        
+                        # print("" \
+                        #     "\n" \
+                        #     "\n=============== Playback Time Statistics ===============" \
+                        #     "\n" \
+                        #     "\n\tPlayback : {}" \
+                        #     "\n\tRunning  : {}" \
+                        #     "\n\tDelta    : {}" \
+                        #     "\n" \
+                        #     "\n========================================================" \
+                        #     "\n".format(
+                        #         timestamp - original_timestamp_ms, # Running time in ms relative to data start time
+                        #         int(time.time() * 1000) - original_start_timestamp_ms, # Running time in ms relative to current start time
+                        #         (timestamp - original_timestamp_ms) - (int(time.time() * 1000) - original_start_timestamp_ms))) # Difference between the two
 
                         if playback_execution_datetime is None:
                             playback_execution_datetime = dt_now
 
-                        # Schedules: MIDNIGHT and HOUR
-                        dt_next_hour = playback_execution_datetime.replace(minute=0, second=0, microsecond=0) + datetime.timedelta(hours=1)
-                        while dt_next_hour <= dt_now:
-                            # Trigger hour timer at this next hour datetime.
-                            timestamp_schedule = int(dt_next_hour.timestamp() * 1000)
+                        # Run on schedules defined by each microservice, if available
+                        # `schedules` are a key:value list of schedule_id:cron_expression like this:
+                        # "schedules": {
+                        #     "MIDNIGHT": "0 0 0 1/1 * ? *",
+                        #     "HOUR": "0 0 0/1 1/1 * ? *"
+                        # }
+                        if 'schedules' in runtime and len(runtime['schedules']) > 0 and previous_timestamp_ms is not None:
+                            import croniter
+                                
+                            # Enumerate all schedules and sort them by the next scheduled timestamp
+                            schedule_datetimes = [] # (schedule_id, next_datetime)
 
-                            # Run multiple timers that may trigger before the schedule
-                            while playback_timer_timestamp is not None:
-                                if playback_timer_timestamp < timestamp_schedule:
-                                    # Run but with inputs that reflect a timer
-                                    timer_inputs = {}
-                                    timer_inputs['locationId'] = location_id
-                                    timer_inputs['time'] = playback_timer_timestamp
-                                    timer_inputs['trigger'] = 64
-                                    timer_inputs['access'] = []
-                                    for access_id in raw_access_content:
-                                        timer_inputs['access'].append(raw_access_content[access_id])
+                            for schedule_id in runtime['schedules']:
+                                
+                                # Get the cron expression
+                                # Translate Quartz expressions (second minute hour day-of-week month day ?year) to Cron expressions (minute hour day-of-week month day)
+                                cron_expression = ' '.join([e for e in runtime['schedules'][schedule_id].replace('?', '*').split(' ')[1:][:5]])
 
-                                    playback_timestamp_ms = playback_timer_timestamp
-                                    playback_timer_timestamp = None
-                                    # print(Color.RED + "Executing timer {}; right now is {}".format(playback_timestamp_ms, timestamp) + Color.END)
-                                    _run(bot, {"inputs": [timer_inputs]}, _bot_logger, botengine_override=botengine, local=True, playback=True)
-                                    playback_variables = botengine.variables
+                                # print("Check Cron... => {}".format(cron_expression))
+                                cron = croniter.croniter(cron_expression)
+                                
+                                dt_previous = playback_get_datetime_from_timestamp(previous_timestamp_ms, timezone_str)
+                                dt_next = cron.get_next(dt_previous.__class__, dt_previous)
+                                # print("ID       == {}".format(schedule_id))
+                                # print("Previous => {}".format(dt_previous))
+                                # print("Now      => {}".format(dt_now))
+                                if dt_next > dt_now:
+                                    continue
+                                # print("Next     => {} - {}".format(dt_next, schedule_id))
+                                schedule_datetimes.append((schedule_id, dt_next))
 
-                                else:
-                                    break
+                                while dt_next <= dt_now:
+                                    dt_previous = dt_next
+                                    dt_next = cron.get_next(dt_previous.__class__, dt_previous)
+                                    if dt_next <= dt_now:
+                                        # print("Next     => {} - {}".format(dt_next, schedule_id))
+                                        schedule_datetimes.append((schedule_id, dt_next))
 
-                            playback_timestamp_ms = timestamp_schedule
-                            schedule_inputs = {
-                                "scheduleId": "HOUR",  # backward compatibility
-                                "scheduleIds": ["HOUR"],
-                                'trigger': 1,
-                                'locationId': location_id,
-                                'time': timestamp_schedule,
-                                'access': []
-                            }
-                            for access_id in raw_access_content:
-                                content = dict(raw_access_content[access_id])
-                                content['trigger'] = False
-                                schedule_inputs['access'].append(content)
-                            _run(bot, {"inputs": [schedule_inputs]}, _bot_logger, botengine_override=botengine, local=True, playback=True)
-                            playback_variables = botengine.variables
+                            schedule_datetimes.sort(key=lambda x: x[1])
+                            executed_datetimes = []
+                            
+                            # print("Schedule datetimes: {}".format(schedule_datetimes))
+                            # Enumerate all schedules
+                            processing_schedules = True
+                            while processing_schedules:
+                                if len(schedule_datetimes) == 0:
+                                    processing_schedules = False
+                                for schedule_id, datetime in schedule_datetimes:                                    
+                                    # Process this datetime schedule if we have not processed it before
+                                    if datetime not in executed_datetimes:
+                                        # Trigger this schedule
+                                        timestamp_schedule = int(datetime.timestamp() * 1000)
+                                        # Run multiple timers that may trigger before the schedule
+                                        while playback_timer_timestamp is not None:
+                                            if playback_timer_timestamp < timestamp_schedule:
+                                                # Run but with inputs that reflect a timer
+                                                timer_inputs = {}
+                                                timer_inputs['locationId'] = location_id
+                                                timer_inputs['time'] = playback_timer_timestamp
+                                                timer_inputs['trigger'] = 64
+                                                timer_inputs['access'] = []
+                                                for access_id in raw_access_content:
+                                                    timer_inputs['access'].append(raw_access_content[access_id])
 
-                            if playback_execution_datetime.timetuple().tm_yday != dt_next_hour.timetuple().tm_yday:
-                                # Midnight
-                                schedule_inputs = {
-                                    "scheduleId": "MIDNIGHT",  # backward compatibility
-                                    "scheduleIds": ["MIDNIGHT"],
-                                    'trigger': 1,
-                                    'locationId': location_id,
-                                    'time': timestamp_schedule,
-                                    'access': []
-                                }
+                                                playback_timestamp_ms = playback_timer_timestamp
+                                                playback_timer_timestamp = None
+                                                print(Color.RED + "Executing timer {}; right now is {}; waiting for schedule '{}' - {}".format(playback_timestamp_ms, timestamp, schedule_id, timestamp_schedule) + Color.END)
+                                                _run(bot, {"inputs": [timer_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
+                                                playback_variables = botengine.variables
+
+                                            else:
+                                                break
+
+                                        playback_timestamp_ms = timestamp_schedule
+
+                                        # Check for other schedules that may be triggered at the same time
+                                        schedule_ids = [schedule_id]
+                                        for schedule_id2, datetime2 in schedule_datetimes:
+                                            if schedule_id2 == schedule_id:
+                                                continue
+                                            if datetime2 == datetime:
+                                                schedule_ids.append(schedule_id2)
+                                                
+                                        # Run the schedule
+                                        schedule_inputs = {
+                                            "scheduleIds": schedule_ids,
+                                            'trigger': 1,
+                                            'locationId': location_id,
+                                            'time': timestamp_schedule,
+                                            'access': []
+                                        }
+                                        for access_id in raw_access_content:
+                                            content = dict(raw_access_content[access_id])
+                                            content['trigger'] = False
+                                            schedule_inputs['access'].append(content)
+                                        _run(bot, {"inputs": [schedule_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
+                                        playback_variables = botengine.variables
+
+                                        previous_timestamp_ms = timestamp_schedule
+
+                                        executed_datetimes.append(datetime)
+                                    
+                                    # Close out if this is our last schedule
+                                    if (schedule_id, datetime) == schedule_datetimes[-1]:
+                                        processing_schedules = False
+
+                        
+                        # Run multiple timers that may trigger before each other trigger, but after any predetermined schedules
+                        while playback_timer_timestamp is not None:
+                            if playback_timer_timestamp < timestamp:
+                                # Run but with inputs that reflect a timer
+                                timer_inputs = {}
+                                timer_inputs['locationId'] = location_id
+                                timer_inputs['time'] = playback_timer_timestamp
+                                timer_inputs['trigger'] = 64
+                                timer_inputs['access'] = []
                                 for access_id in raw_access_content:
-                                    content = dict(raw_access_content[access_id])
-                                    content['trigger'] = False
-                                    schedule_inputs['access'].append(content)
-                                _run(bot, {"inputs": [schedule_inputs]}, _bot_logger, botengine_override=botengine, local=True, playback=True)
+                                    timer_inputs['access'].append(raw_access_content[access_id])
+
+                                playback_timestamp_ms = playback_timer_timestamp
+                                playback_timer_timestamp = None
+                                print(Color.RED + "Executing timer {}; right now is {}; waiting for next trigger '{}'".format(playback_timestamp_ms, timestamp, trigger) + Color.END)
+                                _run(bot, {"inputs": [timer_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
                                 playback_variables = botengine.variables
 
-                            playback_execution_datetime = dt_next_hour
-                            dt_next_hour = playback_execution_datetime + datetime.timedelta(hours=1)
+                            else:
+                                break
 
                         playback_timestamp_ms = timestamp
 
-                        # Timers
+                        # Schedules
                         if trigger == 1:
                             schedule_inputs = {
                                 'trigger': 1,
@@ -2887,7 +3007,7 @@ USAGE
                                 content = dict(raw_access_content[access_id])
                                 content['trigger'] = False
                                 schedule_inputs['access'].append(content)
-                            _run(bot, {"inputs": [schedule_inputs]}, _bot_logger, botengine_override=botengine, local=True, playback=True)
+                            _run(bot, {"inputs": [schedule_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
                             playback_variables = botengine.variables
                             
                         # Modes
@@ -2901,6 +3021,7 @@ USAGE
                                 # Modes are not a runtime.json trigger
                                 continue
 
+                        # Alerts
                         elif trigger == 4:
                             if int(d['device_type']) in device_type_triggers:
                                 raw_access_content[d['device_id']] = {
@@ -2911,6 +3032,7 @@ USAGE
                                     "description": d['description'],
                                     "deviceId": d['device_id'],
                                     "deviceType": int(d['device_type']),
+                                    'goalId': int(d['behavior']),
                                     "locationId": int(location_id),
                                     "measureDate": timestamp,
                                     "startDate": 0,
@@ -2919,30 +3041,48 @@ USAGE
                                   "read": True,
                                   "trigger": True
                                 }
-
-                                # When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
-                                # When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
                                 # The alerts go into an 'alerts' object inside the inputs.
-                                for parameter in d:
-                                    if parameter == "[online]":
-                                        # Transform into an online or offline alert
-                                        online = bool(d[parameter].replace(COMMA_DELIMITER_REPLACEMENT_CHARACTER, ','))
 
-                                        if not online:
-                                            inputs['alerts'] = [{
-                                                'alertType': 'status',
-                                                'params': [{
-                                                    'name': 'deviceStatus',
-                                                    'value': '2'
-                                                }],
-                                                'deviceId': d['device_id']
-                                            }]
+                                if '[online]' in d:
+                                    # Included device activities (online/offline)
+                                    # When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
+                                    # When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
+                                    for parameter in d:
+                                        if parameter == "[online]":
+                                            online = bool(d[parameter].replace(COMMA_DELIMITER_REPLACEMENT_CHARACTER, ','))
 
-                                        else:
-                                            inputs['alerts'] = [{
-                                                'alertType': 'on',
-                                                'deviceId': d['device_id']
-                                            }]
+                                            if not online:
+                                                inputs['alerts'] = [{
+                                                    'alertType': 'status',
+                                                    'params': [{
+                                                        'name': 'deviceStatus',
+                                                        'value': '2'
+                                                    }],
+                                                    'deviceId': d['device_id']
+                                                }]
+
+                                            else:
+                                                inputs['alerts'] = [{
+                                                    'alertType': 'on',
+                                                    'deviceId': d['device_id']
+                                                }]
+                                else:
+                                    # Alerts provided by a data request, type 9
+                                    alert = {
+                                        'alertType': d['alert_type'],
+                                        'deviceId': d['device_id']
+                                    }
+                                    params = []
+                                    for parameter in d:
+                                        if parameter in ['trigger', 'location_id', 'device_type', 'device_id', 'description', 'timestamp_ms', 'timestamp_iso', 'timestamp_excel', 'behavior', 'alertType']:
+                                            continue
+                                        params.append({
+                                            'name': parameter,
+                                            'value': d[parameter]
+                                        })
+                                    if len(params) > 0:
+                                        alert['params'] = params
+                                    inputs['alerts'] = [alert]
 
                             else:
                                 # This device type is not a runtime.json trigger
@@ -2975,6 +3115,8 @@ USAGE
 
                                 inputs['measures'] = []
                                 for parameter in d:
+                                    if parameter in ['trigger', 'location_id', 'device_type', 'device_id', 'description', 'timestamp_ms', 'timestamp_iso', 'timestamp_excel', 'behavior', 'alertType']:
+                                        continue
                                     measure = {
                                         "deviceId": d['device_id'],
                                         "name": parameter
@@ -2998,6 +3140,13 @@ USAGE
                                 # This device type is not a runtime.json trigger
                                 continue
 
+                        # Data Streams
+                        elif trigger == 256:
+                            inputs["dataStream"] = {
+                                "address": d['address'],
+                                'feed': json.loads(d['feed'])
+                            }
+
                         for access_id in raw_access_content:
                             inputs['access'].append(raw_access_content[access_id])
 
@@ -3020,24 +3169,74 @@ USAGE
                                 playback_timestamp_ms = playback_timer_timestamp
                                 playback_timer_timestamp = None
                                 # print(Color.RED + "Executing timer {}; right now is {}".format(playback_timestamp_ms, timestamp) + Color.END)
-                                _run(bot, {"inputs": [timer_inputs]}, _bot_logger, botengine_override=botengine, local=True, playback=True)
+                                _run(bot, {"inputs": [timer_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
                                 playback_variables = botengine.variables
 
                         playback_timestamp_ms = timestamp
-                        if (timestamp - original_timestamp_ms) > 172800000:
-                            if playback_data_requests is not None:
-                                request_data = {}
+
+                        # After playback for 48 hours simulate a data_request if available and not yet triggered
+                        if not playback_data_requests_triggered:
+                            hours_later = 1 # 48
+                            if (timestamp - original_timestamp_ms) > 1000 * 60 * 60 * hours_later:
                                 for device_id, filepath in playback_data_requests.items():
                                     in_file = open("{}/{}".format(playback_file_directory, filepath), "rb")
                                     data = in_file.read()
-                                    request_data[device_id] = data
 
-                                request_inputs = {'time': timestamp, 'data': request_data, 'trigger': 1 << 11, 'locationId': location_id, 'access': []}
-                                for access_id in raw_access_content:
-                                    request_inputs['access'].append(raw_access_content[access_id])
-                                _run(bot, {"inputs": [request_inputs]}, _bot_logger, botengine_override=botengine, playback=True)
+                                    lines = [line.decode("utf-8").replace('\n', '').replace('\r', '').split(",") for line in data.splitlines()]
+                                    csv_headers = lines.pop(0)
+                                    param_idx = csv_headers.index("paramName")
 
-                                playback_data_requests = None
+                                    # Retrieve all unique parameter names
+                                    param_names = []
+                                    param_names = [line[param_idx] for line in lines if line[param_idx] not in param_names]
+
+                                    request = {
+                                        "type": botengine.DATA_REQUEST_TYPE_PARAMETERS,
+                                        "deviceId": device_id,
+                                        "startTime": original_timestamp_ms,
+                                        "endTime": botengine.get_timestamp(),
+                                        "paramNames": param_names,
+                                        "key": "all",
+                                        # "index": 
+                                        # "ordered": 
+                                    }
+                                    botengine.data_requests.append(request)
+
+                        # Run on any pending data_requests
+                        if len(botengine.data_requests) > 0:
+                            
+                            if playback_data_requests is not None:
+                                request_data = {}
+                                
+                                for device_id, filepath in playback_data_requests.items():
+                                    # Skip this device if it's not in the data request
+                                    if device_id not in [data_request["deviceId"] for data_request in botengine.data_requests]:
+                                        continue
+                                    in_file = open("{}/{}".format(playback_file_directory, filepath), "rb")
+                                    data = in_file.read()
+
+                                    # Include data constrained to the data request start and end time
+                                    constrained_data = []
+                                    lines = [line.decode("utf-8").replace('\n', '').replace('\r', '').split(",") for line in data.splitlines()]
+                                    
+                                    csv_headers = lines.pop(0)
+                                    constrained_data.append(csv_headers)
+
+                                    param_idx = csv_headers.index("measureTime")
+                                    [constrained_data.append(line) for line in lines if int(line[param_idx]) >= botengine.data_requests[0]["startTime"] and int(line[param_idx]) <= botengine.data_requests[0]["endTime"]]
+                                    if len(constrained_data) > 1:
+                                        request_data[device_id] = "\n".join([",".join(line) for line in constrained_data]).encode("utf-8")
+
+                                if len(request_data) > 0:
+                                    request_inputs = {'time': timestamp, 'data': request_data, 'trigger': botengine.TRIGGER_DATA_REQUEST, 'locationId': location_id, 'access': []}
+                                    botengine.get_logger(f"{'botengine'}").debug("playback injecting data request response: request_inputs={}".format(request_inputs))
+                                    for access_id in raw_access_content:
+                                        request_inputs['access'].append(raw_access_content[access_id])
+                                    _run(bot, {"inputs": [request_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, playback=True)
+
+                            # Expect the trigger was delivered even if there was no data available
+                            botengine.data_requests = []
+                            playback_data_requests_triggered = True
 
                         # Inject a data stream message before we begin, 'did_start_playback()'
                         if not did_start_playback:
@@ -3057,10 +3256,10 @@ USAGE
                                 content = dict(raw_access_content[access_id])
                                 content['trigger'] = False
                                 datastream_inputs['access'].append(content)
-                            _run(bot, {"inputs": [datastream_inputs]}, _bot_logger, botengine_override=botengine, local=True, playback=True)
+                            _run(bot, {"inputs": [datastream_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
 
                         # Run against our real trigger
-                        _run(bot, {"inputs": [inputs]}, _bot_logger, botengine_override=botengine, local=True, playback=True)
+                        _run(bot, {"inputs": [inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
                         playback_variables = botengine.variables
 
 
@@ -3082,7 +3281,7 @@ USAGE
             #         inputs['access'] = []
             #         for access_id in raw_access_content:
             #             inputs['access'].append(raw_access_content[access_id])
-            #         _run(bot, {"inputs": [inputs]}, _bot_logger, botengine_override=botengine, playback=True)
+            #         _run(bot, {"inputs": [inputs]}, _bot_loggers["botengine"], botengine_override=botengine, playback=True)
 
             # Conclude with a data stream message did_stop_playback()
             datastream_inputs = {
@@ -3099,7 +3298,7 @@ USAGE
                 content = dict(raw_access_content[access_id])
                 content['trigger'] = False
                 datastream_inputs['access'].append(content)
-            _run(bot, {"inputs": [datastream_inputs]}, _bot_logger, botengine_override=botengine, local=True, playback=True)
+            _run(bot, {"inputs": [datastream_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
 
             runtime_duration_ms = round(time.time() * 1000) - start_timestamp_ms
             virtual_duration_ms = latest_timestamp_ms - original_timestamp_ms
@@ -3124,18 +3323,20 @@ USAGE
             output_states = copy.deepcopy(playback_states)
             with open(playback_states_log, "w") as myfile:
                 if None in output_states:
-                    myfile.write(json.dumps(output_states[None], indent=2, sort_keys=True) + "\n\n-----\n\n")
+                    myfile.write(json.dumps(output_states[None], indent=2) + "\n\n-----\n\n")
 
                     del output_states[None]
                 if len(output_states) > 0:
-                    myfile.write(json.dumps(output_states, indent=2, sort_keys=True) + "\n\n")
+                    myfile.write(json.dumps(output_states, indent=2) + "\n\n")
 
+            print("Cleaning up... {}".format(unzipped_file_name))
             if unzipped_file_name is not None:
                 import shutil
                 shutil.rmtree(unzipped_file_name)
 
             print("Fast-forwarded {} hours of playback into only {} minutes - {}% time savings!".format(virtual_duration_hours, runtime_duration_minutes,                                                                                      round((1 - (runtime_duration_ms / virtual_duration_ms)) * 100, 2)))
-            print("\nExported runtime history to {}, {}, {}, etc.".format(playback_states_log, playback_narratives_log, playback_notifications_log))
+            print("Exported runtime history to {}, {}, {}".format(playback_states_log, playback_narratives_log, playback_notifications_log))
+            print("Exported raw logging to playback_{}_log.txt".format(session_id))
             print(the_bot() + " Done!")
 
             sys.exit(0)
@@ -3194,10 +3395,49 @@ USAGE
             print("\n" + the_bot() + "Done!")
             return 0
 
+        if args.actions == "logging":
+            
+            try:
+                if args.app_instance_id is None:
+                    raise BotError("Missing the app instance ID.", -1)
+                if args.execution_flow is None:
+                    raise BotError("Missing the execution flow.", -1)
+            except Exception as e:
+                _bot_loggers["botengine"].error(e)
+                return
+
+            if user_key is None:
+                user_key = _login(server, username, password)
+
+            if args.set_cloudwatch_logging:
+                set_cloudwatch_logging(server, user_key, args.app_instance_id, args.execution_flow, args.logging_status, args.logging_end_date_ms)
+                _bot_loggers["botengine"].info("Logging status set to {} for bot instance {}.".format(args.logging_status, args.app_instance_id))
+                if args.logging_status == "1":
+                    _bot_loggers["botengine"].info("Logging will finish on {}".format(BotEngine._strftimestamp(int(args.logging_end_date_ms) // 1000)))
+            if args.get_cloudwatch_log_info:
+                try:
+                    info = get_cloudwatch_log_info(server, user_key, args.app_instance_id, args.execution_flow)
+
+                    _bot_loggers["botengine"].info("Logging status is {}.".format(info['status']))
+                    if info['status'] == 1:
+                        _bot_loggers["botengine"].info("Your bot instance {} is logging to AWS CloudWatch Log Group {} and Log Stream {}.".format(args.app_instance_id, info['groupName'], info['streamName']))
+                        _bot_loggers["botengine"].info("Logging will finish on {}".format(info['endDate']))
+                        if "lastEventDate" in info:
+                            _bot_loggers["botengine"].info("The most recent log event in the log stream was on {}".format(info['lastEventDate']))
+                    else:
+                        _bot_loggers["botengine"].info("Your bot instance {} is not logging to AWS CloudWatch.".format(args.app_instance_id))
+                except BotError as e:
+                    if e.code == 6:
+                        _bot_loggers["botengine"].info("Your bot instance {} is not logging to AWS CloudWatch.".format(args.app_instance_id))
+                    else:
+                        _bot_loggers["botengine"].error(e)
+
+            return
+        
         if not botname and not instance:
             sys.stderr.write("No bot selected to run, use --help\n")
             if _servermode:
-                _bot_logger.error("No bot selected to run\n\n")
+                _bot_loggers["botengine"].error("No bot selected to run\n\n")
             return 1
 
         # Here's where we actually run our bot
@@ -3277,10 +3517,10 @@ USAGE
 
                 else:
                     # Run the bot one time. Usually this is done only on the server.
-                    _run(bot, inputs, _bot_logger, local=True)
+                    _run(bot, inputs, _bot_loggers["botengine"], local=True)
             else:
                 sys.stderr.write("This bot does not contain a 'run' method\n\n")
-                _bot_logger.error("This bot does not contain a 'run' method")
+                _bot_loggers["botengine"].error("This bot does not contain a 'run' method")
                 return 1
 
         return 0
@@ -3291,9 +3531,9 @@ USAGE
     except SystemExit:
         return 0
     except BotError as e:
-        _bot_logger.error("BotEngine Error: " + e.msg)
+        _bot_loggers["botengine"].error("BotEngine Error: " + e.msg)
         if _servermode:
-            _bot_logger.error("BotEngine Error: code=%s, msg=%s" % (e.code, e.msg))
+            _bot_loggers["botengine"].error("BotEngine Error: code=%s, msg=%s" % (e.code, e.msg))
         return 2
     except:
         e = sys.exc_info()[0]
@@ -3302,9 +3542,9 @@ USAGE
         import traceback
         s = traceback.format_exc();
         sys.stderr.write(s + "\n\n")
-        _bot_logger.error(s)
+        _bot_loggers["botengine"].error(s)
         if _servermode:
-            _bot_logger.error(s)
+            _bot_loggers["botengine"].error(s)
         return 3
 
 def _merge_redirects(bot_directory, merge_directory, bundle_id, server=DEFAULT_BASE_SERVER_URL, core_directory=None):
@@ -3356,7 +3596,7 @@ def _merge_redirects(bot_directory, merge_directory, bundle_id, server=DEFAULT_B
 
     # DISTRIBUTED STRUCTURE.JSON FILES
     pip_install = []
-    pip_install_remotely = ['dill', 'requests', 'python-dateutil', 'tzlocal', 'pytz', 'colorama']
+    pip_install_remotely = ['dill', 'requests<2.30.0', 'urllib3<2', 'python-dateutil', 'tzlocal', 'pytz', 'colorama']
     microservices = []
     safe_delete_microservices = []
 
@@ -4014,7 +4254,11 @@ def _get_instance_id_from_bundle_id(server, user_key, bundle_id, challenge_id=No
 
     potential_apps = []
     for bot in bots:
-        if bot['bundle'] == bundle_id and bot['status'] >= 0 and bot['status'] < 5:
+
+        bundle = bot.get("bundle")
+        if bundle is None:
+            bundle = bot.get("bot",{}).get("bundle")
+        if bundle == bundle_id and bot['status'] >= 0 and bot['status'] < 5:
             # The bundle ID matches and the bot is active
             try:
                 nickname = bot['nickname']
@@ -4124,16 +4368,60 @@ def _get_cloud_version(server):
     Get Cloud version
     :return: (major,minor)
     """
+    version = _get_cloud_server_version(server)
+    if version:
+        semantic_version = version.split(".")
+        major = int(semantic_version[0])
+        minor = 0
+        if len(semantic_version) > 1:
+            minor = int(semantic_version[1])
+        return (major,minor)
+    return (0,0)
+
+def _get_cloud_api_server(server):
+    """
+    Get Cloud API server
+    :return: Cloud API server string
+    """
+    j = _get_connection_settings(server)
+    host = server
+    if 'clouds' in j and len(j['clouds']) > 0 and 'servers' in j['clouds'][0]:
+        for server in j['clouds'][0]['servers']:
+            if 'type' in server and 'host' in server and server['type'] == 'appapi':
+                host = server['host']
+    
+
+    if "http" not in host:
+        host = "https://" + host
+    return host
+
+def _get_connection_settings(server):
+    """
+    Get Connection settings
+    https://iotapps.docs.apiary.io/#reference/cloud-connectivity/cloud-settings/get-connection-settings
+
+    :return: Cloud settings json
+    """
     global _https_proxy
     import requests
     http_headers = {"Content-Type": "application/json"}
     r = requests.get(server + "/cloud/json/settings", headers=http_headers, proxies=_https_proxy)
     j = json.loads(r.text)
     _check_for_errors(j)
-    if 'clouds' in j and len(j['clouds']) > 0 and 'version' in j['clouds'][0]:
-        big, little = str(j['clouds'][0]['version']).split(".")
-        return (big,little)
-    return (0,0)
+    return j
+
+def _get_cloud_server_version(server):
+    """
+    Get Cloud Version
+    https://iotapps.docs.apiary.io/#reference/cloud-connectivity/version
+
+    :return: Version string
+    """
+    global _https_proxy
+    import requests
+    http_headers = {"Content-Type": "text/html"}
+    r = requests.get(server + "/espapi/version?version=true", headers=http_headers, proxies=_https_proxy)
+    return r.text
 
 def _is_server_version_newer_than(server, major, minor):
     """
@@ -4143,7 +4431,7 @@ def _is_server_version_newer_than(server, major, minor):
     :return: True if the server version is greater than or equal to the major and minor values
     """
     _major, _minor = _get_cloud_version(server)
-    return int(_major) >= int(major) and int(_minor) >= int(minor)
+    return int(_major) > int(major) or (int(_major) == int(major) and int(_minor) >= int(minor))
 
 def _get_ensemble_server_url(server, device_id=None):
     """Get Ensemble server URL"""
@@ -4810,7 +5098,7 @@ def _set_state(server, user_key, location_id, address, json_content, overwrite=T
         requests.put(server + "/cloud/json/locations/{}/timeStates".format(location_id), params=params, data=json.dumps(body), headers=http_headers, proxies=_https_proxy)
 
 
-def _listen(device_server, user_key, bot_instance_id, timeout=2, clean=True, cleanTime=None):
+def _listen(device_server, user_key, bot_instance_id, timeout=180, clean=True, cleanTime=None):
     """
     Apps running on the developer's local computer will listen to Ensemble for incoming device data.
     :param device_server: Device Server URL
@@ -4832,7 +5120,7 @@ def _listen(device_server, user_key, bot_instance_id, timeout=2, clean=True, cle
         params['clean'] = clean
 
     http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
-    r = requests.get(device_server + "/deviceio/analytic", params=params, headers=http_headers, proxies=_https_proxy)
+    r = requests.get(device_server + "/deviceio/analytic", params=params, headers=http_headers, proxies=_https_proxy, timeout=timeout)
     j = json.loads(r.text)
     return j
 
@@ -4995,7 +5283,11 @@ def _summarize_apps(server, user_key, bundle=None):
     sys.stderr.write("\n")
 
     for bot in bots:
-        version_info = _get_versions(server, user_key, bot['bundle'])
+
+        bundle = bot.get("bundle")
+        if bundle is None:
+            bundle = bot.get("bot",{}).get("bundle")
+        version_info = _get_versions(server, user_key, bundle)
         try:
             status = version_info['versions'][0]['status']
         except:
@@ -5452,11 +5744,7 @@ def _botstore_mybots(server, user_key, app_instance_id=None, location_id=None, o
     # print("\nRESPONSE: {}\n".format(json.dumps(j, indent=2, sort_keys=True)))
     _check_for_errors(j)
 
-    try:
-        return j["apps"]
-    except:
-        # We don't have any bots
-        return None
+    return j.get("bots", j.get("apps"))
 
 
 def get_editable_bot_configuration(current_app_configuration):
@@ -5933,19 +6221,20 @@ def _create_logger(name, level, console_mode=False, filename=None, playback=Fals
     if playback:
         logging.Formatter.formatTime = _playback_logger_timestamp
         if session_id is not None:
-            filename = "playback_log-{}.txt".format(session_id)
+            filename = "playback_{}_log.txt".format(session_id)
         else:
             filename = "playback_log.txt"
 
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    fmt = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+    fmt = logging.Formatter('%(asctime)s %(levelname)-8s %(name)-12s %(message)s')
 
     if filename is not None:
-        try:
-            os.remove(filename)
-        except:
-            pass
+        if session_id is None:
+            try:
+                os.remove(filename)
+            except:
+                pass
 
         f = logging.FileHandler(filename)
         f.setFormatter(fmt)
@@ -5960,6 +6249,86 @@ def _create_logger(name, level, console_mode=False, filename=None, playback=Fals
         logger.addHandler(logging.NullHandler())
 
     return logger
+
+
+
+#===============================================================================
+# Logging
+#===============================================================================
+
+def set_cloudwatch_logging(server, user_key: str, app_instance_id: int, execution_flow: int, logging_status: int, logging_end_date_ms: int=None):
+    """
+    Enable/disable logging in AWS CloudWatch for a specific bot instance and flow.
+    
+    * Developer can enable logging for their bot instance at any time and for any period of time.
+    * Developer can disable logging for their bot instance at any time.
+    
+    While logging is enabled, the bot's input contains two additional parameters: `cloudWatchLogGroup` and `cloudWatchLogStream`
+    
+    :param server: Server to use
+    :param user_key: str User key
+    :param app_instance_id: int App instance ID
+    :param execution_flow: int Execution flow. Flow=0 stands for regular triggers, flow=1 stands for data requests (ML).
+    :param logging_status: int Logging status. 1 to enable, 2 to disable.
+    :param logging_end_date_ms: int Logging end date. Logging end date in milliseconds. Required if status=1.
+    :return: None
+    """
+    if logging_status == 1:
+        if logging_end_date_ms is None:
+            raise BotError("Logging end date required for status=1", -1)
+
+    import requests
+    global _https_proxy
+
+    params = {
+        "appInstanceId": app_instance_id,
+        "flow": execution_flow,
+        "status": logging_status
+    }
+    if logging_end_date_ms is not None:
+        params["endDate"] = BotEngine._strftimestamp(int(logging_end_date_ms) // 1000)
+
+    http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
+    r = requests.put(server + "/cloud/developer/cloudwatchlog", params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+
+    return None
+
+    
+def get_cloudwatch_log_info(server, user_key: str, app_instance_id: int, execution_flow: int):
+    """
+    Description of the bot instance log stream in AWS CloudWatch.
+    :param server: Server to use
+    :param user_key: str User key
+    :param app_instance_id: int App instance ID
+    :param execution_flow: int Execution flow. Flow=0 stands for regular triggers, flow=1 stands for data requests (ML).
+    :return: dict Cloudwatch log info
+
+    | Attribute |	Description |	Format |
+    | --------- |   ----------- |   ------ |
+    | groupName |	AWS CloudWatch Log Group name. The log group is common for all instances of the bot. |	/Bots/cloudIndex/appId. |
+    | streamName |	AWS CloudWatch Log Stream name. Each bot instance is assigned an individual log stream. |	Id=appInstanceId;flow=flow |
+    | retentionInDays |	The log group's retention setting.	|   |
+    | endDate |	Datetime after which logging automatically stops. |    |	
+    | lastEventDate |	The datetime of the most recent log event in the log stream. |    |
+    | status |	1 if logging is on, or 2 if logging is off. |    |
+    """
+    import requests
+    global _https_proxy
+
+    params = {
+        "appInstanceId": app_instance_id,
+        "flow": execution_flow
+    }
+
+    http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
+    r = requests.get(server + "/cloud/developer/cloudwatchlog", params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    return j['cloudWatchLog']
 
 def _download_device_property(server, user_key, location_id, device_id, name=None, index=None):
     """
@@ -6392,8 +6761,10 @@ def _run_locally_forever(bot_server, device_server, user_key, bot, bot_instance_
 
                 else:
                     try:
-                        _run(bot, inputs, _bot_logger, server_override=bot_server, local=True, local_execution_count=local_execution_count)
+                        _botengine = _run(bot, inputs, _bot_loggers["botengine"], server_override=bot_server, local=True, local_execution_count=local_execution_count)
                         local_execution_count += 1
+                        import json
+                        _bot_loggers["botengine"].debug("BotEngine Statistics: " + json.dumps(bot.get_intelligence_statistics(_botengine), indent=2, sort_keys=True))
 
                     except Exception as e:
                         print("Bot Exception: \n", e)
@@ -6419,12 +6790,14 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
     :param logger: logger object
     :param server_override: Override the server URL with the known server when executing on someone's computer
     :param botengine_override: For playback simulators, override the botengine object
+    :return botengine: BotEngine object
     """
-    global _bot_logger
-    _bot_logger = logger
+    global _bot_loggers
+    if _bot_loggers is None:
+        _bot_loggers = {}
+    _bot_loggers["botengine"] = logger
 
-    _bot_logger.debug("BotEngine Raw Inputs: ")
-    _bot_logger.debug(inputs)
+    _bot_loggers["botengine"].debug("\n\n" + Color.RED + "BotEngine Raw Inputs: {}".format(inputs) + Color.END + "\n\n")
 
     next_timer_at_server = None
     if botengine_override is None:
@@ -6484,12 +6857,16 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
             del execution_json['apiKey']
 
         botengine.triggers_index += 1
-        # print("BotEngine Current time: " + str(execution_json['time']) + "; Trigger: " + str(execution_json['trigger']))
-        #print("BotEngine Run Inputs: " + json.dumps(execution_json, indent=2, sort_keys=True))
+        try:
+            botengine.get_logger(f"{'botengine'}").info("Current time: " + str(execution_json['time']) + "; Trigger: " + str(execution_json['trigger']))
+            botengine.get_logger(f"{'botengine'}").debug("Run Inputs: " + json.dumps(execution_json, sort_keys=True))
+        except Exception as e:
+            # Ingore error. This might happen during bot playback due to data_request csv content being represented in bytes
+            botengine.get_logger(f"{'botengine'}").warning("BotEngine Failed checking execution json... {}".format(e))
         trigger = execution_json['trigger']
 
         if trigger == 2048 and len(inputs['inputs']) > 1:
-            botengine.get_logger().error("botengine: Asynchronous Data Request Trigger contained {} bot inputs, should have only contained a single trigger.".format(len(inputs['inputs'])))
+            botengine.get_logger(f"{'botengine'}").error("botengine: Asynchronous Data Request Trigger contained {} bot inputs, should have only contained a single trigger.".format(len(inputs['inputs'])))
 
         botengine.set_inputs(execution_json)
 
@@ -6500,9 +6877,9 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
             delete_timers = []
 
             if saved_timers is not None:
-                # botengine.get_logger().info(Color.PURPLE + "TIMER STACK: " + Color.END)
+                # botengine.get_logger(f"{'botengine'}").info(Color.PURPLE + "TIMER STACK: " + Color.END)
                 # for t in saved_timers:
-                #     botengine.get_logger().info(Color.PURPLE + "\t{}".format(t) + Color.END)
+                #     botengine.get_logger(f"{'botengine'}").info(Color.PURPLE + "\t{}".format(t) + Color.END)
                     
                 timers_existed |= len(saved_timers) > 1
 
@@ -6511,13 +6888,13 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
                     t = focused_timer[0]
                     if t != MAXINT:
                         if t <= execution_json['time']:
-                            # botengine.get_logger().info(Color.PURPLE + "Executing timer {}; now={}".format(t, execution_json['time']) + Color.END)
+                            # botengine.get_logger(f"{'botengine'}").info(Color.PURPLE + "Executing timer {}; now={}".format(t, execution_json['time']) + Color.END)
                             delete_timers.append(focused_timer)
                             botengine.all_trigger_types.append(64)
                             if callable(focused_timer[1]):
                                 focused_timer[1](botengine, focused_timer[2])
                             else:
-                                botengine.get_logger().error("BotEngine: Timer fired and popped, but cannot call the focused timer: " + str(focused_timer))
+                                botengine.get_logger(f"{'botengine'}").error("BotEngine: Timer fired and popped, but cannot call the focused timer: " + str(focused_timer))
 
                         elif t > 1921875905000:
                             # Great than year 2030 - mistake
@@ -6528,13 +6905,13 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
 
                 if len(delete_timers) > 0:
                     save_timers = botengine.load_variable(TIMERS_VARIABLE_NAME)
-                    # botengine.get_logger().info(Color.CYAN + "Re-Loaded Timers: {}".format(saved_timers) + Color.END)
+                    # botengine.get_logger(f"{'botengine'}").info(Color.CYAN + "Re-Loaded Timers: {}".format(saved_timers) + Color.END)
                     for d in delete_timers:
                         if d in save_timers:
-                            # botengine.get_logger().info(Color.BLUE + "Delete this timer: {}".format(d) + Color.END)
+                            # botengine.get_logger(f"{'botengine'}").info(Color.BLUE + "Delete this timer: {}".format(d) + Color.END)
                             save_timers.remove(d)
 
-                    # botengine.get_logger().info(Color.GREEN + "Timers to Save: {}".format(save_timers) + Color.END)
+                    # botengine.get_logger(f"{'botengine'}").info(Color.GREEN + "Timers to Save: {}".format(save_timers) + Color.END)
                     botengine.save_variable(TIMERS_VARIABLE_NAME, save_timers)
 
         if trigger != 64:
@@ -6550,8 +6927,8 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
             # But the timer is still queued up to execute from the server. So a microsecond later, the bot executes again
             # from the server saying the timer needs to fire, but we already handled the timer on the previous execution.
             # Since there's no way to tell on this execution that it was already handled, there's no way to accurately say this is an error.
-            botengine.get_logger().error("BotEngine: Timer fired but no recollection as to why.")
-            botengine.get_logger().error("Current timer variable is: " + str(saved_timers))
+            botengine.get_logger(f"{'botengine'}").error("BotEngine: Timer fired but no recollection as to why.")
+            botengine.get_logger(f"{'botengine'}").error("Current timer variable is: " + str(saved_timers))
             pass
 
         if not botengine.edge:
@@ -6573,21 +6950,23 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
                     if saved_timers[0][0] != MAXINT:
                         if saved_timers[0][0] != next_timer_at_server:
                             botengine._execute_again_at_timestamp(saved_timers[0][0])
-                            botengine.get_logger().info("< Set alarm: {}".format(saved_timers[0]))
+                            botengine.get_logger(f"{'botengine'}").info("< Set alarm: {}".format(saved_timers[0]))
 
                         else:
-                            botengine.get_logger().info("| Alarm already set: {}".format(saved_timers[0]))
+                            botengine.get_logger(f"{'botengine'}").info("| Alarm already set: {}".format(saved_timers[0]))
 
                     break
 
                 except Exception as e:
-                    botengine.get_logger().error("Could not _execute_again_at_timestamp to set timer: {}".format(str(e)))
+                    botengine.get_logger(f"{'botengine'}").error("Could not _execute_again_at_timestamp to set timer: {}".format(str(e)))
                     continue
 
     # Non-time-critical outputs to wrap up
     botengine.flush_rules()
     botengine.flush_tags()
     botengine.flush_asynchronous_requests()
+    botengine.get_logger(f"{'botengine'}").debug("BotEngine Execution Complete: {}".format(bot.get_intelligence_statistics(botengine)))
+    return botengine
 
 
 #===============================================================================
@@ -6711,8 +7090,8 @@ class BotEngine:
     # Low-frequency 'journal' entries for SUMMARIZED exec-level communications to humans
     NARRATIVE_TYPE_JOURNAL = 4
 
-    # High-frequency 'journal' entries for real-time CRITICAL exec-level communications to humans
-    NARRATIVE_TYPE_CRITICAL = 5
+    # High-frequency 'insight' entries for real-time CRITICAL exec-level communications to humans
+    NARRATIVE_TYPE_INSIGHT = 5
 
     # Alert Categories
     ALERT_CATAGORY_NONE = 0
@@ -6913,7 +7292,7 @@ class BotEngine:
                 debug_instance_id = 0
                 if bot_instance_id is not None:
                     debug_instance_id = bot_instance_id
-                self.get_logger().debug("Instance ID: {}; Triggers: {}".format(debug_instance_id, all_triggers))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Instance ID: {}; Triggers: {}".format(debug_instance_id, all_triggers))
 
                 if not self._start(raw_inputs['startKey'], context=context):
                     exit(0)
@@ -6956,20 +7335,20 @@ class BotEngine:
                 return r
 
             except self._requests.HTTPError as e:
-                self.get_logger().info("Generic HTTP error calling GET " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP error calling GET " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except self._requests.ConnectionError as e:
-                self.get_logger().info("Connection HTTP error calling GET " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Connection HTTP error calling GET " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except self._requests.Timeout as e:
-                self.get_logger().info(str(timeout) + " second HTTP Timeout calling POST " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info(str(timeout) + " second HTTP Timeout calling POST " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 timeout += 10
                 if timeout >= 30:
                     raise self._requests.Timeout()
@@ -6977,14 +7356,14 @@ class BotEngine:
                 self._server_index %= len(self._servers)
 
             except self._requests.TooManyRedirects as e:
-                self.get_logger().info("Too many redirects HTTP error calling GET " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Too many redirects HTTP error calling GET " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except Exception as e:
-                self.get_logger().info("Generic HTTP exception calling GET " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP exception calling GET " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
@@ -7012,20 +7391,20 @@ class BotEngine:
                 return r
 
             except self._requests.HTTPError as e:
-                self.get_logger().info("Generic HTTP error calling POST " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP error calling POST " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except self._requests.ConnectionError as e:
-                self.get_logger().info("Connection HTTP error calling POST " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Connection HTTP error calling POST " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except self._requests.Timeout as e:
-                self.get_logger().info(str(timeout) + " second HTTP Timeout calling POST " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info(str(timeout) + " second HTTP Timeout calling POST " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 timeout += 5
                 if timeout >= 25:
                     raise self._requests.Timeout()
@@ -7033,14 +7412,14 @@ class BotEngine:
                 self._server_index %= len(self._servers)
 
             except self._requests.TooManyRedirects as e:
-                self.get_logger().info("Too many redirects HTTP error calling POST " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Too many redirects HTTP error calling POST " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except Exception as e:
-                self.get_logger().info("Generic HTTP exception calling POST " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP exception calling POST " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
@@ -7067,20 +7446,20 @@ class BotEngine:
                 return r
 
             except self._requests.HTTPError as e:
-                self.get_logger().info("Generic HTTP error calling PUT " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP error calling PUT " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except self._requests.ConnectionError as e:
-                self.get_logger().info("Connection HTTP error calling PUT " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Connection HTTP error calling PUT " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except self._requests.Timeout as e:
-                self.get_logger().error(str(timeout) + " second HTTP Timeout calling PUT " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error(str(timeout) + " second HTTP Timeout calling PUT " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 timeout += 5
                 if timeout >= 25:
                     raise self._requests.Timeout()
@@ -7088,14 +7467,14 @@ class BotEngine:
                 self._server_index %= len(self._servers)
 
             except self._requests.TooManyRedirects as e:
-                self.get_logger().info("Too many redirects HTTP exception calling PUT " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Too many redirects HTTP exception calling PUT " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except Exception as e:
-                self.get_logger().info("Generic HTTP exception calling PUT " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP exception calling PUT " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
@@ -7123,20 +7502,20 @@ class BotEngine:
                 return r
 
             except self._requests.HTTPError as e:
-                self.get_logger().info("Generic HTTP error calling DELETE " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP error calling DELETE " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except self._requests.ConnectionError as e:
-                self.get_logger().info("Connection HTTP error calling DELETE " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Connection HTTP error calling DELETE " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except self._requests.Timeout as e:
-                self.get_logger().info(str(timeout) + " second HTTP Timeout calling DELETE " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info(str(timeout) + " second HTTP Timeout calling DELETE " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 timeout += 5
                 if timeout >= 25:
                     raise self._requests.Timeout()
@@ -7144,14 +7523,14 @@ class BotEngine:
                 self._server_index %= len(self._servers)
 
             except self._requests.TooManyRedirects as e:
-                self.get_logger().info("Too many redirects HTTP error calling DELETE " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Too many redirects HTTP error calling DELETE " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
             except Exception as e:
-                self.get_logger().info("Generic HTTP exception calling DELETE " + str(self._servers[self._server_index] + path))
-                self.get_logger().debug("Error:  {}".format(e))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP exception calling DELETE " + str(self._servers[self._server_index] + path))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
                 self._server_index += 1
                 self._server_index %= len(self._servers)
 
@@ -7242,7 +7621,7 @@ class BotEngine:
             params['logStreamName'] = context.log_stream_name
         r = self._http_post("/analytic/start", params=params, timeout=DEFAULT_RUNTIME_TIMEOUT_S/DEFAULT_RUNTIME_TIMEOUT_RETRY_LIMIT)
 
-        logger = self.get_logger()
+        logger = self.get_logger(f"{'botengine'}.{__class__.__name__}")
         logger.debug("Notify cloud that the bot is starting: /analytic/start params={}".format(params))
 
         try:
@@ -7259,12 +7638,12 @@ class BotEngine:
 
         except json.decoder.JSONDecodeError as e:
             # Probably because the server is restarting
-            logger.debug("Failure, the bot has not started. {}".format(e))
+            logger.warning("Failure, the bot has not started. {}".format(e))
             return False
 
         except BotError as e:
             # Probably because the server is restarting
-            logger.debug("Failure, the bot has not started.. {}".format(e))
+            logger.error("Failure, the bot has not started.. {}".format(e))
             return False
 
         logger.debug("Failure, the bot has not started...")
@@ -7579,6 +7958,15 @@ class BotEngine:
         
         return None
 
+    def get_input_key(self):
+        """
+        :return: the key provided by the input, if any
+        """
+        if 'key' in self.inputs:
+            return self.inputs['key']
+        
+        return None
+
     def get_file_block(self):
         """
         :return: the 'file' block for an uploaded file, if any
@@ -7655,18 +8043,25 @@ class BotEngine:
         if location_info is not None:
             if 'language' in location_info['location']:
                 return location_info['location']['language']
-
-        return None
+        
+        # Default to English
+        return "en"
 
     def is_server_version_newer_than(self, major, minor):
         """
         Compare the server version.
         :param major: Major value
         :param minor: Minor value
-        :return: True if the server version is greater than or equal to the major and minor values
+        :return: True if the server version is greater than or equal to the input version
         """
-        big, little = str(self._raw_inputs['version']).split(".")
-        return int(big) >= int(major) and int(little) >= int(minor)
+        semantic_version = str(self._raw_inputs['version']).split(".")
+        _major = semantic_version[0]
+        _minor = 0
+        if len(semantic_version) > 1:
+            _minor = semantic_version[1]
+        is_newer = int(_major) > int(major) or (int(_major) == int(major) and int(_minor) >= int(minor))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine.is_server_version_newer_than: {}.{} >> {}.{} == {}".format(_major, _minor, major, minor, is_newer))
+        return is_newer
 
     #===========================================================================
     # Users
@@ -7678,7 +8073,40 @@ class BotEngine:
         :param location_id: Location ID
         """
         if self.playback:
-            self._location_users_cache = []
+            self._location_users_cache = [
+                {
+                    "id": 123,
+                    "userName": "john.smith@gmail.com",
+                    "altUsername": "1234567890",
+                    "firstName": "John",
+                    "lastName": "Smith",
+                    "nickname": "Johnny",
+                    "email": {
+                        "email": "john.smith@gmail.com",
+                        "verified": True,
+                        "status": 0
+                    },
+                    "phone": "1234567890",
+                    "phoneType": 1,
+                    "smsStatus": 1,
+                    "locationAccess": 10,
+                    "temporary": True,
+                    "accessEndDate": "2019-01-29T02:45:30Z",
+                    "accessEndDateMs": 1548747995000,
+                    "category": 1,
+                    "role": 1,
+                    "smsPhone": "1234567890",
+                    "language": "en",
+                    "avatarFileId": 123,
+                    "schedules": [
+                        {
+                        "daysOfWeek": 127,
+                        "startTime": 10800,
+                        "endTime": 20800
+                        }
+                    ]
+                }
+            ]
 
         if self._location_users_cache is not None:
             return self._location_users_cache
@@ -7722,7 +8150,7 @@ class BotEngine:
             }
         }
 
-        self.get_logger().info("botengine.set_user_alert_category: \n{}".format(json.dumps(body, indent=2, sort_keys=True)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine.set_user_alert_category: \n{}".format(json.dumps(body, sort_keys=True)))
         r = self._http_put("/cloud/json/location/{}/users".format(self.get_location_id()), data=json.dumps(body))
         j = json.loads(r.text)
         _check_for_errors(j)
@@ -7742,7 +8170,7 @@ class BotEngine:
             }
         }
 
-        self.get_logger().info("botengine.set_location_user_access_category: \n{}".format(json.dumps(body, indent=2, sort_keys=True)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine.set_location_user_access_category: \n{}".format(json.dumps(body, sort_keys=True)))
         r = self._http_put("/cloud/json/location/{}/users".format(self.get_location_id()), data=json.dumps(body))
         j = json.loads(r.text)
         _check_for_errors(j)
@@ -7940,17 +8368,21 @@ class BotEngine:
         :param shared: True if this variable is shared with other bots within the location. Convenience method that forwards to load_shared_variable().
         :return: the value of the given variable name
         """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine:load_variable() name={}".format(name))
         if shared:
             return self.load_shared_variable(name)
 
         if CORE_VARIABLE_NAME in self.variables:
             if name in self.variables[CORE_VARIABLE_NAME]:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine:load_variable() core value={}".format(self.variables[CORE_VARIABLE_NAME][name]))
                 return self.variables[CORE_VARIABLE_NAME][name]
         
         if name in self.variables:
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine:load_variable() value={}".format(self.variables.get(name)))
             return self.variables.get(name)
 
         self._download_binary_variable(name)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine:load_variable() value={}".format(self.variables.get(name)))
         return self.variables.get(name)
         
         
@@ -8027,14 +8459,14 @@ class BotEngine:
         for name in self.variables_to_flush:
             # Used for debugging variables stored to the server
             if self.inputs['trigger'] == 2048 and name == CORE_VARIABLE_NAME:
-                self.get_logger().warning("botengine: Attempted to store core variable during a data request trigger")
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").warning("botengine: Attempted to store core variable during a data request trigger")
                 continue
 
             if SAVE_VARIABLES_TO_DEBUG_FILE:
                 with open('{}.variable'.format(name), 'wb') as f:
                     v = dill.dumps(self.variables_to_flush[name])
                     f.write(v)
-                    self.get_logger().info(Color.BOLD + "{}: Saved {} bytes".format('{}.variable'.format(name), len(v)) + Color.END)
+                    self.get_logger(f"{'botengine'}.{__class__.__name__}").info(Color.BOLD + "{}: Saved {} bytes".format('{}.variable'.format(name), len(v)) + Color.END)
 
             try:
                 v = dill.dumps(self.variables_to_flush[name])
@@ -8049,42 +8481,43 @@ class BotEngine:
                 dill.detect.trace(True)
                 dill.detect.errors(self.variables_to_flush[name])
                 sys.stdout = sys.__stdout__
-                self.get_logger().error("botengine: Cannot flush variable {}. \n\ninputs={};\n\ndill.detect.trace stdout={};\n\ndill.detect.baditems()={};\n\ndill.detect.badobjects()={};\n\ndill.detect.badtypes()={};\n\nexception={};\n\ntraceback={}".format(name, self.inputs, my_stdout.getvalue(), dill.detect.baditems(self.variables_to_flush[name]), dill.detect.badobjects(self.variables_to_flush[name]), dill.detect.badtypes(self.variables_to_flush[name]), e, traceback.format_exc()))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error("botengine: Cannot flush variable {}. \n\ninputs={};\n\ndill.detect.trace stdout={};\n\ndill.detect.baditems()={};\n\ndill.detect.badobjects()={};\n\ndill.detect.badtypes()={};\n\nexception={};\n\ntraceback={}".format(name, self.inputs, my_stdout.getvalue(), dill.detect.baditems(self.variables_to_flush[name]), dill.detect.badobjects(self.variables_to_flush[name]), dill.detect.badtypes(self.variables_to_flush[name]), e, traceback.format_exc()))
                 v = dill.dumps(None)
 
             pickles += v
             params += "name={}&length={}&".format(name, len(v))
 
             # These next 2 lines are purely for information/debugging
-            self.get_logger().info("< {}: Saved {} bytes".format(name, len(v)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("< {}: Saved {} bytes".format(name, len(v)))
             total_length += len(v)
 
-        self.get_logger().info("< Saving {} bytes total...".format(total_length))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("< Saving {} bytes total...".format(total_length))
 
-        while True:
-            r = None
-            try:
-                # self.get_logger().info(Color.BOLD + "Flushing: /analytic/variables?{}".format(params) + Color.END)
-                headers = {
-                    "Content-Type": "application/octet-stream"
-                }
+        if total_length > 0:
+            while True:
+                r = None
+                try:
+                    # self.get_logger(f"{'botengine'}.{__class__.__name__}").info(Color.BOLD + "Flushing: /analytic/variables?{}".format(params) + Color.END)
+                    headers = {
+                        "Content-Type": "application/octet-stream"
+                    }
 
-                import hashlib
-                md5 = hashlib.md5()
-                md5.update(pickles)
-                headers["Content-MD5"] = md5.digest().hex()
+                    import hashlib
+                    md5 = hashlib.md5()
+                    md5.update(pickles)
+                    headers["Content-MD5"] = md5.digest().hex()
 
-                r = self._http_post("/analytic/variables?{}".format(params), data=pickles, headers=headers, timeout=15)
-                j = json.loads(r.text)
-                _check_for_errors(j)
-                break
+                    r = self._http_post("/analytic/variables?{}".format(params), data=pickles, headers=headers, timeout=15)
+                    j = json.loads(r.text)
+                    _check_for_errors(j)
+                    break
 
-            except Exception as e:
-                self.get_logger().error("flush_binary_variables error: " + str(e))
-                if r is not None:
-                    self.get_logger().error("flush_binary_variables response from server: " + r.text)
+                except Exception as e:
+                    self.get_logger(f"{'botengine'}.{__class__.__name__}").error("flush_binary_variables error: " + str(e))
+                    if r is not None:
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").error("flush_binary_variables response from server: " + r.text)
 
-        self.get_logger().info("< Saved.")
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("< Saved.")
         self.variables_to_flush.clear()
 
     def save_shared_variable(self, name, value):
@@ -8101,7 +8534,7 @@ class BotEngine:
 
         import dill
         data = dill.dumps(value)
-        self.get_logger().info("< {}: Saving {} bytes to shared variable".format(name, len(data)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("< {}: Saving {} bytes to shared variable".format(name, len(data)))
         params = {
             "shared": True
         }
@@ -8116,7 +8549,9 @@ class BotEngine:
         :param name: Name of the variable to load
         :return: Variable value, or None if it doesn't exist
         """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine:load_shared_variable() name={}".format(name))
         if name in self.variables:
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine:load_shared_variable() value={}".format(self.variables[name]))
             return self.variables[name]
 
         if self.playback:
@@ -8134,12 +8569,12 @@ class BotEngine:
 
             except EOFError as e:
                 # Don't show the error because this error will always happen on new bot instances for every variable
-                self.get_logger().info("botengine.load_shared_variable(): EOFError in downloading variable {}".format(name))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine.load_shared_variable(): EOFError in downloading variable {}".format(name))
                 return None
 
             except Exception as e:
                 import traceback
-                self.get_logger().info("BotEngine: load_shared_variable(): Unable to unpickle variable: {}. {}; {}".format(name, str(e), traceback.format_exc()))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("BotEngine: load_shared_variable(): Unable to unpickle variable: {}. {}; {}".format(name, str(e), traceback.format_exc()))
                 return None
 
     def delete_shared_variable(self, name):
@@ -8204,7 +8639,7 @@ class BotEngine:
         if self.count is not None:
             if self._needs_resync():
                 error_string = "Expected trigger ID " + str(self.variables[CORE_VARIABLE_NAME][COUNT_VARIABLE_NAME] + 1) + " but got trigger ID " + str(self.count) + ". That's " + str(self.count - (self.variables[CORE_VARIABLE_NAME][COUNT_VARIABLE_NAME] + 1)) + " missed triggers."
-                self.get_logger().error(error_string)
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error(error_string)
                 if 'sbox' in self._server:
                     self.notify(email_content=error_string, email_subject="[sbox bot debugging] Missed trigger alert")
 
@@ -8240,15 +8675,15 @@ class BotEngine:
             # if os.path.isfile('{}.variable'.format(name)):
             #     with open('{}.variable'.format(name), 'rb') as f:
             #         saved_var = f.read()
-            #         self.get_logger().info(Color.GREEN + "{}: Loaded {} bytes".format('{}.variable'.format(name), len(saved_var)) + Color.END)
-            # self.get_logger().info(Color.GREEN + "{}: Downloaded {} bytes".format(name, len(r.content)) + Color.END)
+            #         self.get_logger(f"{'botengine'}.{__class__.__name__}").info(Color.GREEN + "{}: Loaded {} bytes".format('{}.variable'.format(name), len(saved_var)) + Color.END)
+            # self.get_logger(f"{'botengine'}.{__class__.__name__}").info(Color.GREEN + "{}: Downloaded {} bytes".format(name, len(r.content)) + Color.END)
             #
             # if saved_var is not None:
-            #     self.get_logger().info(Color.GREEN + "=> {} bytes difference for variable {}".format(abs(len(saved_var) - len(r.content)), name) + Color.END)
+            #     self.get_logger(f"{'botengine'}.{__class__.__name__}").info(Color.GREEN + "=> {} bytes difference for variable {}".format(abs(len(saved_var) - len(r.content)), name) + Color.END)
             #     if saved_var == r.content:
-            #         self.get_logger().info(Color.GREEN + "=> Saved content is the same as downloaded content" + Color.END)
+            #         self.get_logger(f"{'botengine'}.{__class__.__name__}").info(Color.GREEN + "=> Saved content is the same as downloaded content" + Color.END)
             #     else:
-            #         self.get_logger().error(Color.RED + "=> Saved content is DIFFERENT than downloaded content" + Color.END)
+            #         self.get_logger(f"{'botengine'}.{__class__.__name__}").error(Color.RED + "=> Saved content is DIFFERENT than downloaded content" + Color.END)
             
             try:
                 self.variables[name] = dill.loads(r.content)
@@ -8260,23 +8695,23 @@ class BotEngine:
                 if r.status_code == 200:
                     # Everything was okay, but our variable was corrupted
                     if name == CORE_VARIABLE_NAME:
-                        self.get_logger().error("BotEngine Core Variable Reset: EOFError in _download_binary_variable: Error message {}".format(str(e)))
-                        self.get_logger().error("\tBotEngine Core Variable Reset: HTTP status: {}".format(str(r.status_code)))
-                        self.get_logger().error("\tBotEngine Core Variable Reset: Variable text: {}".format(str(r.text)))
-                        self.get_logger().error("\tBotEngine Core Variable Reset: Variable content: {}".format(str(r.content)))
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").error("BotEngine Core Variable Reset: EOFError in _download_binary_variable: Error message {}".format(str(e)))
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").error("\tBotEngine Core Variable Reset: HTTP status: {}".format(str(r.status_code)))
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").error("\tBotEngine Core Variable Reset: Variable text: {}".format(str(r.text)))
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").error("\tBotEngine Core Variable Reset: Variable content: {}".format(str(r.content)))
 
                     return
 
                 elif r.status_code == 202:
                     # No variable content on the server
                     if name == CORE_VARIABLE_NAME:
-                        self.get_logger().info("BotEngine Core Variable Reset: No variable on the server.")
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("BotEngine Core Variable Reset: No variable on the server.")
                     return
 
                 elif r.status_code == 204:
                     # No variable content on the server
                     if name == CORE_VARIABLE_NAME:
-                        self.get_logger().info("BotEngine Core Variable Reset: No variable on the server.")
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("BotEngine Core Variable Reset: No variable on the server.")
                     return
 
                 else:
@@ -8287,19 +8722,19 @@ class BotEngine:
             except Exception as e:
                 if r.status_code == 200:
                     import traceback
-                    self.get_logger().error("BotEngine: _download_binary_variable(): Unable to unpickle variable: {}. {}; {}".format(name, str(e), traceback.format_exc()))
+                    self.get_logger(f"{'botengine'}.{__class__.__name__}").error("BotEngine: _download_binary_variable(): Unable to unpickle variable: {}. {}; {}".format(name, str(e), traceback.format_exc()))
                     return
 
                 elif r.status_code == 202:
                     # No variable content on the server
                     if name == CORE_VARIABLE_NAME:
-                        self.get_logger().info("BotEngine Core Variable Reset: No variable on the server.")
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("BotEngine Core Variable Reset: No variable on the server.")
                     return
 
                 elif r.status_code == 204:
                     # No variable content on the server
                     if name == CORE_VARIABLE_NAME:
-                        self.get_logger().info("BotEngine Core Variable Reset: No variable on the server.")
+                        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("BotEngine Core Variable Reset: No variable on the server.")
                     return
 
                 else:
@@ -8310,7 +8745,12 @@ class BotEngine:
     #===========================================================================
     # Notifications - push, SMS, email
     #===========================================================================
-    def notify(self, push_title=None, push_subtitle=None, push_content=None, push_category=None, push_sound=None, push_sms_fallback_content=None, push_template_filename=None, push_template_model=None, push_info=None, email_subject=None, email_content=None, email_html=False, email_attachments=None, email_template_filename=None, email_template_model=None, email_addresses=None, sms_content=None, sms_template_filename=None, sms_template_model=None, sms_group_chat=True, admin_domain_name=None, brand=None, language=None, user_id=None, user_id_list=None, to_residents=False, to_supporters=False, to_admins=False):
+    def notify(self, 
+               push_title=None, push_subtitle=None, push_content=None, push_category=None, push_sound=None, push_sms_fallback_content=None, push_template_filename=None, push_template_model=None, push_info=None, 
+               email_subject=None, email_content=None, email_html=False, email_attachments=None, email_template_filename=None, email_template_model=None, email_addresses=None, 
+               sms_content=None, sms_template_filename=None, sms_template_model=None, sms_group_chat=True, 
+               device_message_device_id=None, device_message_title=None, device_message_text=None, device_message_from=None, device_message_duration=None, device_message_icon=None, device_message_muted=None, device_message_imageUrl=None, device_message_image=None,
+               admin_domain_name=None, brand=None, language=None, user_id=None, user_id_list=None, to_residents=False, to_supporters=False, to_admins=False, device_message=None):
         """
         This method sends a push or email notification to the people you selected.
 
@@ -8336,6 +8776,16 @@ class BotEngine:
         :param sms_template_model: Dictionary of key/value pairs to inject into the sms template. Dependent upon what the template itself understands.
         :param sms_group_chat: True to send SMS messages as a group chat message instead of one-on-one individual messages.
 
+        :param device_message_device_id: (optional) Device ID",
+        :param device_message_title: Message title
+        :param device_message_text: Message text
+        :param device_message_from: (optional) From name
+        :param device_message_duration: (optional) Message duration. default '60'.
+        :param device_message_icon: (optional) Icon name
+        :param device_message_muted: (optional) Mute the message. default 'false'.
+        :param device_message_imageUrl: (optional) Image URL,
+        :param device_message_image: (optional) base64 encoded image"
+
         :param brand: Case-sensitive brand for templates
         :param language: Language, for example 'en'
         :param user_id: (optional) Specific user ID to send to if the bot is running at the organizational level.
@@ -8349,7 +8799,7 @@ class BotEngine:
         """
         if to_admins:
             import traceback
-            self.get_logger().error("botengine: notify() called with to_admins=True, which is no longer supported. Please update your code: {}".format(traceback.format_exc()))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").error("botengine: notify() called with to_admins=True, which is no longer supported. Please update your code: {}".format(traceback.format_exc()))
 
         notifications = {}
 
@@ -8469,14 +8919,34 @@ class BotEngine:
                 notifications['emailMessage']['attachments'] = email_attachments
 
             if email_addresses is not None:
-                if self.is_server_version_newer_than(1, 21):
-                    self.get_logger().info("BotEngine: Sending emails to {}".format(email_addresses))
-                    notifications['emailMessage']['recipients'] = email_addresses
+                notifications['emailMessage']['recipients'] = email_addresses
+
+        if device_message_text is not None:
+            send = True
+            notifications["deviceMessage"] = {}
+
+            notifications["deviceMessage"]["text"] = device_message_text
+            notifications["deviceMessage"]["duration"] = device_message_duration or 60
+
+            if device_message_device_id is not None:
+                notifications["deviceMessage"]["deviceId"] = device_message_device_id
+            if device_message_title is not None:
+                notifications["deviceMessage"]["title"] = device_message_title
+            if device_message_from is not None:
+                notifications["deviceMessage"]["from"] = device_message_from
+            if device_message_icon is not None:
+                notifications["deviceMessage"]["icon"] = device_message_icon
+            if device_message_muted is not None:
+                notifications["deviceMessage"]["muted"] = device_message_muted
+            if device_message_imageUrl is not None:
+                notifications["deviceMessage"]["imageUrl"] = device_message_imageUrl
+            if device_message_image is not None:
+                notifications["deviceMessage"]["image"] = device_message_image
 
         if send:
             j = json.dumps(notifications)
 
-            print("Notification content: {}".format(json.dumps(notifications, indent=2, sort_keys=True)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Notification content: {}".format(json.dumps(notifications, sort_keys=True)))
 
             location_id = self.get_location_id()
             # Location Notification API
@@ -8487,16 +8957,119 @@ class BotEngine:
             #=======================================================================
             # print("Params: " + str(params))
             # print("Data: " + str(j))
-            # self.get_logger().info("RESPONSE: " + str(r.text))
+            # self.get_logger(f"{'botengine'}.{__class__.__name__}").info("RESPONSE: " + str(r.text))
             #=======================================================================
 
             # This was barfing on us when sending a push notification to the end user in a bot that requests access to an organization when the user is not part of any organization
             try:
                 _check_for_errors(j)
             except BotError as e:
-                # _bot_logger.error("BotEngine SMS notify(): " + e.msg)
-                # _bot_logger.error("Notification data: " + str(notifications))
+                # _bot_loggers["botengine"].error("BotEngine SMS notify(): " + e.msg)
+                # _bot_loggers["botengine"].error("Notification data: " + str(notifications))
                 return
+
+    def send_mms(self, user_id, media_content=None, url=None, media_type=1, ext=None, caption=None):
+        """
+        Send an image or audio file to the user's phone.
+        :param user_id: User ID
+        :param media_content: File content
+        :param url: Image url
+        :param media_type: Media type (1 - image, 2 - audio)
+        :param ext: Ext
+        :param caption: Additional text to accompany the media file.
+        :return:
+        """
+        headers = {}
+
+        params = {
+            "userId": user_id,
+            "mediaType": media_type
+        }
+
+        if caption is not None:
+            params["caption"] = caption
+
+        if ext is not None:
+            params["ext"] = ext
+        if url is not None:
+            content = "application/octet-stream"
+            headers = {"Content-Type": content}
+            params["url"] = url
+            r = self._http_post("/analytic/mms", params=params, headers=headers)
+            j = json.loads(r.text)
+            _check_for_errors(j)
+        else:
+            content = ""
+            if media_type == 1:
+                content = "image/" + ext
+            else:
+                content = "application/octet-stream"
+
+            headers = {"Content-Type": content}
+
+            r = self._http_post("/analytic/mms", params=params, data=media_content, headers=headers)
+            j = json.loads(r.text)
+            _check_for_errors(j)
+
+    def make_voice_call(self, user_id, voice_model, call_time=None):
+        """
+        Define the voice call model for specific user.
+        :param user_id: User ID
+        :param voice_model: Voice call model
+        :param call_time: Call start time, in milliseconds since the epoch
+        :return:
+        """
+        body = {
+            "model": voice_model
+        }
+        params = {
+            "userId": user_id
+        }
+
+        if call_time is not None:
+            params["callTime"] = call_time
+        
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: make_voice_call() params={} body={}".format(json.dumps(params), json.dumps(body)))
+        if self.playback:
+            return
+
+        r = self._http_post("/analytic/voiceCall", params=params, data=json.dumps(body))
+        j = json.loads(r.text)
+        _check_for_errors(j)
+
+    def set_incoming_voicecall(self, user_id, voice_model):
+        """
+        Define the incoming voice call model for specific users at the bot's location.
+        :param user_id:
+        :param voice_model: Voice call model
+        :return:
+        """
+        body = {
+            "model": voice_model
+        }
+        params = {
+            "userId": user_id
+        }
+        
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: set_incoming_voicecall() params={} body={}".format(json.dumps(params), json.dumps(body)))
+        r = self._http_post("/analytic/voiceCallAnswer", params=params, data=json.dumps(body))
+        j = json.loads(r.text)
+        _check_for_errors(j)
+
+    def delete_incoming_voicecall(self, user_id):
+        """
+        Delete the incoming voice call model for specific users at the bot's location.
+        :param user_id:
+        :return:
+        """
+        params = {
+            "userId": user_id
+        }
+
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: delete_incoming_voicecall() params={} body={}".format(json.dumps(params)))
+        r = self._http_delete("/analytic/voiceCallAnswer", params=params)
+        j = json.loads(r.text)
+        _check_for_errors(j)
 
     def email_admins(self, email_subject=None, email_content=None, email_html=False, email_attachments=None, email_template_filename=None, email_template_model=None, email_addresses=None, brand=None, categories=[1,2]):
         """
@@ -8509,7 +9082,7 @@ class BotEngine:
         :param email_template_filename:
         :param email_template_model:
         :param email_addresses: List of email addresses
-        :param categories: List of Organization User Categories; 1 = Manager, 2 = Technician
+        :param categories: List of Organization User Categories; 1 = Manager, 2 = Technician, 3 = Billing
         :return:
         """
         body = {}
@@ -8560,7 +9133,7 @@ class BotEngine:
             return
 
         if self.playback:
-            self.get_logger().debug("botengine: email_admins() params={} body={}".format(json.dumps(params), json.dumps(body)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: email_admins() params={} body={}".format(json.dumps(params), json.dumps(body)))
             return
 
         r = self._http_post("/analytic/notifications", params=params, data=json.dumps(body))
@@ -8713,6 +9286,7 @@ class BotEngine:
         :param index: Index to download when parameters are available with multiple indices
         :param ordered: 1=Ascending (default); -1=Descending.
         """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Requesting data from {} to {} for device {} with param_name_list={}".format(oldest_timestamp_ms, newest_timestamp_ms, device_id, param_name_list))
         request = {
             "type": type
         }
@@ -8750,7 +9324,11 @@ class BotEngine:
         """
         Flush the complete set of asynchronous measurement requests to the server
         """
-        if len(self.data_requests) == 0 or self.playback:
+        if len(self.data_requests) == 0:
+            return
+
+        if self.playback:
+            # Data requests are inserted into playback queue as single trigger after to the current execution
             return
 
         j = json.dumps({
@@ -8763,9 +9341,42 @@ class BotEngine:
             _check_for_errors(j)
 
         except BotError as e:
-            _bot_logger.warn("Error sending asynchronous measurement requests. We sent this body: {}".format(json.dumps({"dataRequests": self.data_requests}, indent=2, sort_keys=True)))
+            _bot_loggers["botengine"].warn("Error sending asynchronous measurement requests. We sent this body: {}".format(json.dumps({"dataRequests": self.data_requests}, sort_keys=True)))
 
         self.data_requests = []
+
+    def send_data_request(self, url, timeout, stream=False):
+        """
+        Flush the complete set of asynchronous measurement requests to the server
+        """
+
+        while True:
+            try:
+                r = self.session.get(url, timeout=timeout, stream=stream)
+                return r
+
+            except self._requests.HTTPError as e:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP error calling GET " + url)
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
+
+            except self._requests.ConnectionError as e:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Connection HTTP error calling GET " + url)
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
+
+            except self._requests.Timeout as e:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info(str(timeout) + " second HTTP Timeout calling POST " + url)
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
+                timeout += 10
+                if timeout >= 30:
+                    raise self._requests.Timeout()
+
+            except self._requests.TooManyRedirects as e:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Too many redirects HTTP error calling GET " + url)
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
+
+            except Exception as e:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Generic HTTP exception calling GET " + url)
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Error:  {}".format(e))
 
     # ===========================================================================
     # Device Properties
@@ -8796,7 +9407,7 @@ class BotEngine:
             ]
         }
 
-        self.get_logger().info("Saving device property to {}: \n{}".format(device_id, json.dumps(body, indent=2, sort_keys=True)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Saving device property to {}: \n{}".format(device_id, json.dumps(body, sort_keys=True)))
 
         r = self._http_post("/cloud/json/devices/{}/properties".format(device_id), params=params, data=json.dumps(body))
 
@@ -8972,10 +9583,10 @@ class BotEngine:
             for d in self.commands_to_flush:
                 body["devices"].append(d)
 
-            _bot_logger.info("Sending commands: " + json.dumps(body, sort_keys=True))
+            _bot_loggers["botengine"].info("Sending commands: " + json.dumps(body, sort_keys=True))
             r = self._http_put("/analytic/parameters", data=json.dumps(body))
             j = json.loads(r.text)
-            _bot_logger.info("Command responses: " + json.dumps(j, sort_keys=True))
+            _bot_loggers["botengine"].info("Command responses: " + json.dumps(j, sort_keys=True))
             self.commands_to_flush = []
 
     #===========================================================================
@@ -9411,7 +10022,7 @@ class BotEngine:
             try:
                 _check_for_errors(j)
             except BotError as e:
-                self.get_logger().error(e.msg + "; data=" + str(j))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error(e.msg + "; data=" + str(j))
             
         # Delete tags - individual API calls
         for params in self.tags_to_delete:
@@ -9430,7 +10041,7 @@ class BotEngine:
             try:
                 _check_for_errors(j)
             except BotError as e:
-                self.get_logger().error(e.msg + "; user_id=" + str(user_id) + "; data=" + str(j))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error(e.msg + "; user_id=" + str(user_id) + "; data=" + str(j))
             
         # Organizational tags to delete - individual API calls for each tag
         for user_id in self.tags_to_delete_by_user:
@@ -9650,7 +10261,7 @@ class BotEngine:
         :param argument: Optional argument to inject into the fired timer
         :param reference: Optional ID to reference this timer. Useful if you plan on canceling the timer later.
         """
-        # self.get_logger().info("BotEngine: start_timer({}); now={} => fire at {}".format(seconds * 1000, self.get_timestamp(), int(self.get_timestamp() + (seconds * 1000))))
+        # self.get_logger(f"{'botengine'}.{__class__.__name__}").info("BotEngine: start_timer({}); now={} => fire at {}".format(seconds * 1000, self.get_timestamp(), int(self.get_timestamp() + (seconds * 1000))))
         self.set_alarm(int(self.get_timestamp() + (seconds * 1000)), function, argument, reference)
 
     def start_timer_ms(self, milliseconds, function, argument=None, reference=None):
@@ -9663,7 +10274,7 @@ class BotEngine:
         :param reference: Optional ID to reference this timer. Useful if you plan on canceling the timer later.
         """
         absolute_time = self.get_timestamp()
-        #self.get_logger().info("Set alarm {} for {} ms from {} => {}".format(reference, milliseconds, absolute_time, int(absolute_time + milliseconds)))
+        #self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Set alarm {} for {} ms from {} => {}".format(reference, milliseconds, absolute_time, int(absolute_time + milliseconds)))
         self.set_alarm(int(absolute_time + milliseconds), function, argument, reference)
 
     def set_alarm(self, timestamp_ms, function, argument=None, reference=None):
@@ -9677,13 +10288,13 @@ class BotEngine:
         if timestamp_ms < self.get_timestamp() - 31536000000:
             # Set a timer for over a year ago. Did you accidentally set an absolute alarm and think it was a relative timer?
             import traceback
-            self.get_logger().error("botengine: A microservice attempted to set a timer/alarm over a year ago back in time. Did you accidentally set an absolute alarm and think it was a relative timer? Please check your logic. timestamp_ms={}; function={}; argument={}; reference={}; traceback={}".format(timestamp_ms, function, argument, reference, traceback.format_stack()))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").error("botengine: A microservice attempted to set a timer/alarm over a year ago back in time. Did you accidentally set an absolute alarm and think it was a relative timer? Please check your logic. timestamp_ms={}; function={}; argument={}; reference={}; traceback={}".format(timestamp_ms, function, argument, reference, traceback.format_stack()))
 
-        if self.get_trigger_type() & self.TRIGGER_DATA_REQUEST != 0:
+        if not self.playback and self.get_trigger_type() & self.TRIGGER_DATA_REQUEST != 0:
             # Illegal operation - data request triggers execute concurrently with other bot executions and therefore your core variable cannot get updated.
-            self.get_logger().error("botengine: You cannot start a timer/alarm while executing a data request trigger. Timer/Alarm reference={}".format(reference))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").error("botengine: You cannot start a timer/alarm while executing a data request trigger. Timer/Alarm reference={}".format(reference))
             raise BotError("Cannot start a timer/alarm while executing a data request trigger.", -1)
-
+            
         saved_timers = self.load_variable(TIMERS_VARIABLE_NAME)
 
         if saved_timers is None:
@@ -9771,15 +10382,17 @@ class BotEngine:
         For running locally
         :return:
         """
-        self.get_logger().info(Color.PURPLE + "TIMER STACK: " + Color.END)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(Color.PURPLE + "TIMER STACK: " + Color.END)
         saved_timers = self.load_variable(TIMERS_VARIABLE_NAME)
         for t in saved_timers:
-            self.get_logger().info(Color.PURPLE + "\t{}".format(t) + Color.END)
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info(Color.PURPLE + "\t{}".format(t) + Color.END)
 
     def _execute_again_in_n_seconds(self, seconds):
         """Execute this bot again at a relative time, N seconds from now, without an external trigger
         :param seconds
         """
+
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Botengine: Executing again in {} seconds".format(seconds))
         params = {
                   "in": int(seconds)
                   }
@@ -9792,6 +10405,7 @@ class BotEngine:
         """Execute this bot again at an absolute time, at the given timestamp, without an external trigger
         :param unix_timestamp_ms:
         """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Botengine: Executing again at timestamp {}".format(unix_timestamp_ms))
         params = {
                   "at": int(unix_timestamp_ms)
                   }
@@ -9804,6 +10418,7 @@ class BotEngine:
         """
         Cancel any existing requests for delayed executions
         """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Botengine: Canceling execution request")
         self._http_delete("/analytic/execute")
 
 
@@ -9891,6 +10506,12 @@ class BotEngine:
         for q_id in self.questions_to_delete:
             question = self.questions_to_delete[q_id]
             
+            if self.playback:
+                if question.key_identifier in saved_questions:
+                    # Delete the question from our saved questions
+                    del saved_questions[question.key_identifier]
+                continue
+
             params = {
                       "questionId": question._question_id
                       }
@@ -9904,6 +10525,17 @@ class BotEngine:
                     del saved_questions[question.key_identifier]
 
         # Ask questions
+        if self.playback:
+            for q_id in self.questions_to_ask:
+                question = self.questions_to_ask[q_id]
+                question.answer_status = BotEngine.ANSWER_STATUS_QUEUED
+                saved_questions[question.key_identifier] = question
+
+            self.save_variable(QUESTIONS_VARIABLE_NAME, saved_questions)
+            self.questions_to_delete = {}
+            self.questions_to_ask = {}
+            return
+
         if len(self.questions_to_ask) > 0:
             body = {
                 "questions": []
@@ -9920,7 +10552,7 @@ class BotEngine:
 
                 body['questions'].append(json_question)
 
-            self.get_logger().info("botengine: Asking Questions: \n{}".format(json.dumps(body, sort_keys=True)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine: Asking Questions: \n{}".format(json.dumps(body, sort_keys=True)))
             r = self._http_post("/analytic/questions", data=json.dumps(body))
             response = json.loads(r.text)
             
@@ -9932,7 +10564,7 @@ class BotEngine:
                     saved_questions[question.key_identifier] = question
 
             elif response["resultCode"] == 6:
-                self.get_logger().error("botengine: Cannot ask questions. {}".format(response['resultCodeMessage']))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error("botengine: Cannot ask questions. {}".format(response['resultCodeMessage']))
                 
         if original_saved_questions != saved_questions:
             # Only save changes if we actually made changes
@@ -9986,7 +10618,7 @@ class BotEngine:
         :param new_answer: New answer to inject into the question back to the user
         """
         if question._question_id is None:
-            _bot_logger.warn("Cannot change answer to question: " + str(question.key_identifier) + " because is has never been asked. Set its default_answer instead, then ask it.")
+            _bot_loggers["botengine"].warn("Cannot change answer to question: " + str(question.key_identifier) + " because is has never been asked. Set its default_answer instead, then ask it.")
             return
         
         body = {
@@ -9997,8 +10629,7 @@ class BotEngine:
                   "questionId": question._question_id
                   }
 
-        j = json.dumps(body)
-        r = self._http_put("/analytic/questions", params=params, body=j)
+        r = self._http_put("/analytic/questions", params=params, data=json.dumps(body))
         j = json.loads(r.text)
         _check_for_errors(j)
 
@@ -10292,6 +10923,9 @@ class BotEngine:
         :param user_id: Optional user ID to be used by administrative / organizational bots.
         :return: List of rule_id's that were updated
         """
+        if self.playback:
+            return []
+
         # Rule status 0=incomplete; 1=active; 2=inactive
         status = 1
         if not enable:
@@ -10392,9 +11026,13 @@ class BotEngine:
             if STATE_KEY_DELETE_LIST in self.states_to_flush[timestamp_ms][address]:
                 fields_deleted += self.states_to_flush[timestamp_ms][address][STATE_KEY_DELETE_LIST]
 
+        # Remove duplicates
+        fields_updated = list(set(fields_updated))
+        fields_deleted = list(set(fields_deleted))
+
         if len(fields_updated) > 0 or len(fields_deleted) > 0:
             if not overwrite:
-                self.get_logger().error("botengine.set_state(address={}): Overwrite is incorrectly set to False. When providing a list of fields to update or remove, you must provide the entire copy of the JSON content and set overwrite=True".format(address))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine.set_state(address={}): Overwrite is incorrectly set to False. When providing a list of fields to update or remove, you must provide the entire copy of the JSON content and set overwrite=True".format(address))
                 overwrite = True
 
         self.states_to_flush[timestamp_ms][address] = {
@@ -10441,7 +11079,7 @@ class BotEngine:
             params['startDate'] = timestamp_ms
             r = self._http_get("/cloud/json/locations/{}/timeStates".format(self.get_location_id()), params=params)
             j = json.loads(r.text)
-            self.get_logger().debug("botengine.get_state({}, timestamp_ms={}) = {}".format(address, timestamp_ms, json.dumps(j, sort_keys=True)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine.get_state({}, timestamp_ms={}) = {}".format(address, timestamp_ms, json.dumps(j, sort_keys=True)))
             if 'states' in j:
                 if len(j['states']) > 0:
                     if 'value' in j['states'][0]:
@@ -10473,12 +11111,12 @@ class BotEngine:
 
         if not timeseries_property:
             # Non-time-series state variable
-            self.get_logger().info("botengine: Deleting state from state content '{}'".format(address))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine: Deleting state from state content '{}'".format(address))
             r = self._http_put("/cloud/json/locations/{}/state".format(self.get_location_id()), params=params, data=data)
 
         else:
             # Time-series state variable
-            self.get_logger().info("botengine: Deleting state from timeState content'{}'".format(address))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine: Deleting state from timeState content'{}'".format(address))
             self._http_put("/cloud/json/locations/{}/timeStates".format(self.get_location_id()), params=params, data=data)
 
     def get_timeseries_state(self, address, start_timestamp_ms, end_timestamp_ms=None):
@@ -10557,14 +11195,14 @@ class BotEngine:
             params['upd'] = fields_updated
             params['del'] = fields_deleted
 
-            self.get_logger().debug("botengine: Saving {} bytes to state content '{}'\n{}".format(len(data), address, json.dumps(body, sort_keys=True)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: Saving {} bytes to state content '{}'\n{}".format(len(data), address, json.dumps(body, sort_keys=True)))
             r = self._http_put("/cloud/json/locations/{}/state".format(self.get_location_id()), params=params, data=data)
 
         else:
             # Time-series State Variable
             params['date'] = timestamp_ms
 
-            self.get_logger().debug("botengine: Saving {} bytes to state content '{}' at timestamp {}\n{}".format(len(data), address, timestamp_ms, json.dumps(body, sort_keys=True)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: Saving {} bytes to state content '{}' at timestamp {}\n{}".format(len(data), address, timestamp_ms, json.dumps(body, sort_keys=True)))
             self._http_put("/cloud/json/locations/{}/timeStates".format(self.get_location_id()), params=params, data=data)
 
     def set_admin_content(self, organization_id, address, json_content, private=True):
@@ -10622,7 +11260,7 @@ class BotEngine:
         if location_id_list is not None:
             body['locations'] = location_id_list
 
-        self.get_logger().info("botengine: Sending data stream message to {}; scope={}; bots={}: \n{}".format(address, scope, bot_instance_list, json.dumps(body, indent=2, sort_keys=True)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine: Sending data stream message to {}; scope={}; bots={}: \n{}".format(address, scope, bot_instance_list, json.dumps(body, sort_keys=True)))
 
         r = self._http_post("/analytic/stream", params=params, data=json.dumps(body))
         j = json.loads(r.text)
@@ -10721,14 +11359,14 @@ class BotEngine:
                 "narrative" : narrative
                 }
 
-        self.get_logger().info("Narrate body: \n{}".format(json.dumps(narrative, indent=2, sort_keys=True)))
-        self.get_logger().info("Narrate params: {}".format(json.dumps(params, indent=2, sort_keys=True)))
-        self.get_logger().info("Narrate PUT URL: {}".format("/cloud/json/locations/{}/narratives".format(location_id)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Narrate body: \n{}".format(json.dumps(narrative, sort_keys=True)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Narrate params: {}".format(json.dumps(params, sort_keys=True)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Narrate PUT URL: {}".format("/cloud/json/locations/{}/narratives".format(location_id)))
 
         r = self._http_put("/cloud/json/locations/{}/narratives".format(location_id), params=params, data=json.dumps(body))
         j = json.loads(r.text)
 
-        self.get_logger().info("Narrate response: \n{}".format(json.dumps(j, indent=2, sort_keys=True)))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Narrate response: \n{}".format(json.dumps(j, sort_keys=True)))
 
         if 'narrativeTime' in j:
             # Working around an issue with the server where the narrativeId sometimes isn't returned
@@ -10738,7 +11376,7 @@ class BotEngine:
                 narrativeId = update_narrative_id
 
             if narrativeId is not None:
-                self.get_logger().info("BotEngine: Narrative {}: title={}; description={}; priority={}".format(narrativeId, title, description, priority))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("BotEngine: Narrative {}: title={}; description={}; priority={}".format(narrativeId, title, description, priority))
                 return {
                     "narrativeId": narrativeId,
                     "narrativeTime": j['narrativeTime']
@@ -10746,6 +11384,27 @@ class BotEngine:
 
         return None
 
+    #===========================================================================
+    # Open AI
+    #===========================================================================
+
+    def send_request_for_chat_completion(self, key, params):
+        """
+        Send asynchronous request to Open AI API to obtain a model response for the given chat conversation.
+        :param key: Key to identify this request
+        :param params: Parameters to send to the Open AI API
+        :return: JSON response from Care Daily API
+        """
+        if self.playback:
+            return None
+        r = self._http_post("/analytic/openai?key={}".format(key), data=json.dumps(params))
+        j = json.loads(r.text)
+        _check_for_errors(j)
+        return j
+
+    #===========================================================================
+    # Narratives
+    #===========================================================================
 
     def delete_narration(self, narrative_id, narrative_timestamp):
         """
@@ -11172,10 +11831,10 @@ class BotEngine:
         _check_for_errors(j)
 
         if 'ticketId' in j:
-            self.get_logger().info("Ticket created: \n{}".format(json.dumps(j, indent=2, sort_keys=True)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("Ticket created: \n{}".format(json.dumps(j, sort_keys=True)))
             return j['ticketId']
 
-        self.get_logger().info("No customer support ticket created!")
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("No customer support ticket created!")
         return None
 
     #===========================================================================
@@ -11220,9 +11879,75 @@ class BotEngine:
         return response
 
     @staticmethod
-    def get_logger():
-        global _bot_logger
-        return _bot_logger
+    def get_logger(service="botengine"):
+        global _bot_loggers
+        global _bot_logger_config
+        if _bot_logger_config is None:
+            # Lambda logging is maintained by a single logging instance
+            return _bot_loggers["botengine"]
+        if service not in _bot_loggers:
+            _bot_loggers[service] = _create_logger(service, **_bot_logger_config)
+        return _bot_loggers[service]
+
+    # AWS Secrets Manager
+    def get_secret(self, secret_name, region_name="us-east-1"):
+        """
+        Retrieve a secret from AWS Secrets Manager
+
+        :param secret_name: Name of this secret
+        :param region_name: AWS region. default "us-east-1"
+        :return: optional json secret. i.e., {"appname": "some", "appsecret": "thing"}
+        """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: get_secret() {} {}".format(secret_name, region_name))
+
+        secret = None
+
+        try:
+            if False: # Caching
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: get_secret() Prefer caching")
+                import botocore 
+                import botocore.session 
+                from aws_secretsmanager_caching import SecretCache, SecretCacheConfig 
+
+                client = botocore.session.get_session().create_client('secretsmanager')
+                cache_config = SecretCacheConfig()
+                cache = SecretCache( config = cache_config, client = client)
+
+                secret = cache.get_secret_string('mysecret')
+            
+            else: # No caching
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: get_secret() Prefer no caching")
+                import boto3
+                from botocore.exceptions import ClientError
+
+                # Create a Secrets Manager client
+                session = boto3.session.Session()
+                client = session.client(
+                    service_name='secretsmanager',
+                    region_name=region_name
+                )
+
+                try:
+                    self.get_logger(f"{'botengine'}.{__class__.__name__}").info("botengine: get_secret() Retrieving secret '{}'".format(secret_name))
+                    get_secret_value_response = client.get_secret_value(
+                        SecretId=secret_name
+                    )
+                except ClientError as e:
+                    # For a list of exceptions thrown, see
+                    # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+                    raise e
+
+                # Decrypts secret using the associated KMS key.
+                secret = get_secret_value_response['SecretString']
+
+            # Your code goes here.
+            if secret is None:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").warning("botengine: get_secret() Missing secret '{}'.".format(secret_name))
+
+        except Exception as e:
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").error("botengine: get_secret() Failed to retrieve secret '{}': {}".format(secret_name, e))
+
+        return secret
 
 
 
@@ -11684,6 +12409,9 @@ playback_timezone = None
 # Playback states
 playback_states = {}
 
+# Playback modes
+playback_modes = []
+
 # Datetime object in the local timezone representing the moment we're executing this playback trigger
 playback_execution_datetime = None
 
@@ -11693,16 +12421,33 @@ def playback_download_binary_variable(name):
     global playback_variables
     return playback_variables
 
+def playback_set_mode(location_id, mode, comment=None):
+    global playback_modes
+    global playback_timestamp_ms
+    global playback_location_info
+    import pytz
+    event = {
+        "event": mode,
+        "eventDate": playback_get_datetime_from_timestamp(playback_timestamp_ms, playback_location_info['timezone']['id']),
+        "eventDateMs": playback_timestamp_ms,
+        "sourceType": 2
+    }
+    if comment:
+        event["comment"] = comment
+    playback_modes.append(event)
+    return
+
 def playback_get_mode_history(location_id, oldest_timestamp_ms=None, newest_timestamp_ms=None):
-    return {}
+    global playback_modes
+    if oldest_timestamp_ms is not None and newest_timestamp_ms is not None:
+        assert Exception("playback_get_mode_history() does not support both oldest_timestamp_ms and newest_timestamp_ms")
+        return [playback_mode for playback_mode in playback_modes if oldest_timestamp_ms <= playback_mode['eventDateMs'] <= newest_timestamp_ms]
+    return {"events": playback_modes}
 
 def playback_flush_binary_variables():
     return
 
 def playback_flush_commands():
-    return
-
-def playback_flush_questions():
     return
 
 def playback_flush_rules():
@@ -11758,16 +12503,19 @@ def playback_get_timeseries_state(address, start_timestamp_ms, end_timestamp_ms=
     for t_ms in playback_states:
         if t_ms is None:
             continue
-
-        if start_timestamp_ms <= t_ms <= end_timestamp_ms:
-            if address in playback_states[t_ms]:
-                response[t_ms] = playback_states[t_ms][address]
+        try:
+            if start_timestamp_ms <= t_ms <= end_timestamp_ms:
+                if address in playback_states[t_ms]:
+                    response[t_ms] = playback_states[t_ms][address]
+        except Exception as e:
+            print("playback_get_timeseries_state() Exception: {}".format(e))
+            print("playback_get_timeseries_state() => Data: {} {}".format(t_ms, playback_states[t_ms]))
 
     return response
 
 def playback_execute_again_at_timestamp(timestamp_ms):
     global playback_timer_timestamp
-    print("playback_execute_again_at_timestamp({})".format(timestamp_ms))
+    # print("playback_execute_again_at_timestamp({})".format(timestamp_ms))
     playback_timer_timestamp = timestamp_ms
 
 def playback_request_data(type=1, device_id=None, oldest_timestamp_ms=None, newest_timestamp_ms=None, param_name_list=None, reference=None, index=None, ordered=1):
@@ -11783,19 +12531,19 @@ def playback_notify(push_title=None, push_subtitle=None, push_content=None, push
     if sms_content is not None:
         out = "[" + str(playback_timestamp_ms) + " - " + dt.isoformat() + " - SMS] " + sms_content + "\n"
         print(out)
-        with open("playback_notifications_{}.txt".format(playback_session_id), "a") as myfile:
+        with open("playback_{}_notifications.txt".format(playback_session_id), "a") as myfile:
             myfile.write(out)
 
     if push_content is not None:
         out = "[" + str(playback_timestamp_ms) + " - " + dt.isoformat() + " - PUSH NOTIFICATION] " + push_content + "\n"
         print(out)
-        with open("playback_notifications_{}.txt".format(playback_session_id), "a") as myfile:
+        with open("playback_{}_notifications.txt".format(playback_session_id), "a") as myfile:
             myfile.write(out)
 
     if email_subject is not None:
         out = "[" + str(playback_timestamp_ms) + " - " + dt.isoformat() + " - EMAIL] " + email_subject + "\n"
         print(out)
-        with open("playback_notifications_{}.txt".format(playback_session_id), "a") as myfile:
+        with open("playback_{}_notifications.txt".format(playback_session_id), "a") as myfile:
             myfile.write(out)
 
 def playback_narrate(title=None, description=None, priority=None, icon=None, icon_font=None, status=None, timestamp_ms=None, narrative_type=None, file_ids=None, extra_json_dict=None, event_type=None, update_narrative_id=None, update_narrative_timestamp=None, admin=False, publish_to_partner=None):
@@ -11808,7 +12556,7 @@ def playback_narrate(title=None, description=None, priority=None, icon=None, ico
     out = "[{} - {} - NARRATIVE]: event_type={}; priority={}; narrative_type={}; title={}; description={}; properties={}, status={}; to_admin={}\n".format(playback_timestamp_ms, dt.isoformat(), event_type, priority, narrative_type, title, description, extra_json_dict, status, admin)
 
     print(out)
-    with open("playback_narratives_{}.txt".format(playback_session_id), "a") as myfile:
+    with open("playback_{}_narratives.txt".format(playback_session_id), "a") as myfile:
         myfile.write(out)
 
 def playback_resynchronize_questions():
@@ -11892,6 +12640,8 @@ def tag_release(logger, new_version: str=None, core_directory: str=None):
                 # Get new core version
                 changes = keepachangelog.to_dict(core_filepath)
                 new_core_version = list(changes.keys())[0]
+        else:
+            new_core_version = new_version
 
 
         logger.info("New version {}".format(new_version))

@@ -11,11 +11,14 @@ from intelligence.intelligence import Intelligence
 import utilities.utilities as utilities
 import signals.analytics as analytics
 import signals.machinelearning as machinelearning
-import domain
+import properties
 
 from devices.entry.entry import EntryDevice
 from devices.motion.motion import MotionDevice
+from devices.vayyar.vayyar import VayyarDevice
 from devices.pressure.pressure import PressurePadDevice
+from devices.health.health_withings_sleep import WithingsSleepHealthDevice
+from devices.health.health import HealthDevice
 
 # For debugging, export CSV data to local files
 EXPORT_CSV_TO_LOCAL_FILES = False
@@ -57,9 +60,9 @@ class LocationDataRequestMicroservice(Intelligence):
         # Download data
         machinelearning.request_data(botengine, location_object=self.parent)
 
-    def initialize(self, botengine):
+    def new_version(self, botengine):
         """
-        Initialize
+        Upgraded to a new bot version
         :param botengine: BotEngine environment
         """
         if self.version != VERSION:
@@ -104,11 +107,15 @@ class LocationDataRequestMicroservice(Intelligence):
         :param content:
         :return:
         """
+        botengine.get_logger().debug("location_datarequest_microservice.download_data() content={}".format(content))
         self.version = VERSION
 
         force = False
-        if 'force' in content:
-            force = content['force']
+        try:
+            if 'force' in content:
+                force = content['force']
+        except:
+            pass
 
         reference = machinelearning.DATAREQUEST_REFERENCE_ALL
 
@@ -137,7 +144,7 @@ class LocationDataRequestMicroservice(Intelligence):
 
                 if DOWNLOAD_FOCUSED_DEVICES_ONLY:
                     # Download focused devices only based on the list below.
-                    if isinstance(focused_object, MotionDevice) or isinstance(focused_object, EntryDevice) or isinstance(focused_object, PressurePadDevice):
+                    if isinstance(focused_object, MotionDevice) or isinstance(focused_object, EntryDevice) or isinstance(focused_object, PressurePadDevice) or isinstance(focused_object, VayyarDevice) or isinstance(focused_object, HealthDevice) or isinstance(focused_object, WithingsSleepHealthDevice):
                         focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, oldest_timestamp_ms=oldest_timestamp_ms, reference=reference)
 
                 else:
@@ -186,10 +193,11 @@ class LocationDataRequestMicroservice(Intelligence):
 
             self.parent.narrate(botengine,
                                 title=_("Learning"),
-                                description=_("{} is reviewing everything it observed recently and is learning from it.").format(domain.SERVICE_NAME),
+                                description=_("{} is reviewing everything it observed recently and is learning from it.").format(properties.get_property(botengine, "SERVICE_NAME")),
                                 priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                                 extra_json_dict={ "timestamp_ms": botengine.get_timestamp() },
-                                icon="brain")
+                                icon="brain",
+                                event_type="data_request.ready")
 
             analytics.track(botengine, self.parent, "data_request_ready", properties={"reference": reference})
 

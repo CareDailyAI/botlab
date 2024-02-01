@@ -27,7 +27,7 @@ class TestDevice():
         assert mut.device_type == device_type
         assert mut.description == device_desc
         assert mut.measurements == {}
-        assert mut.last_alert == None
+        assert mut.last_alert == {}
         assert mut.spaces == []
         assert mut.last_updated_params == []
         assert mut.battery_level == 100
@@ -64,6 +64,9 @@ class TestDevice():
         device_desc = "Test"
 
         mut = Device(botengine, location_object, device_id, device_type, device_desc)
+        location_object.devices[device_id] = mut
+
+        location_object.initialize(botengine)
 
         assert len(mut.intelligence_modules) > 0
 

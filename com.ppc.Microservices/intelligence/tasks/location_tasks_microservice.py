@@ -10,7 +10,7 @@ file 'LICENSE.txt', which is part of this source code package.
 from intelligence.intelligence import Intelligence
 from devices.entry.entry import EntryDevice
 
-import domain
+import properties
 import utilities.utilities as utilities
 import signals.tasks as tasks
 import signals.dailyreport as dailyreport
@@ -126,6 +126,16 @@ class LocationTasksMicroservice(Intelligence):
         """
         return
 
+    def language_updated(self, botengine, language):
+        """
+        Language updated
+        :param botengine:
+        :param language:
+        :return:
+        """
+        if self.parent.get_location_property(botengine, "task.__init__") is not None:
+            self._create_first_task(botengine)
+
     def device_added(self, botengine, device_object):
         """
         A new Device was added to this Location
@@ -137,25 +147,32 @@ class LocationTasksMicroservice(Intelligence):
             location_property = self.parent.get_location_property(botengine, "task.__init__")
 
             if already_created is None and location_property is None:
-                botengine.save_variable("task.__init__", True)
-                self.parent.set_location_property(botengine, "task.__init__", True, track=False)
-                if hasattr(domain, "CARE_SERVICES"):
-                    if domain.CARE_SERVICES:
-                        tasks.update_task(botengine,
-                                          location_object=self.parent,
-                                          task_id="__init__",
-                                          title=_("Learn how to create tasks."),
-                                          comment=_("Use {} to easily create and assign household tasks to family and friends!\n"
-                                                    "\n"
-                                                    "\t1. Tap the [+] button on your Dashboard.\n"
-                                                    "\t2. Select 'Add a Task'.\n"
-                                                    "\t3. Fill out details of the task.\n"
-                                                    "\n"
-                                                    "To assign a task to someone, first invite them to your home. Set their Smart Home Access to 'Allow App Access' and Alert Texting to anything except 'No Alerts'.\n"
-                                                    "\n"
-                                                    "People can use their {} app to mark their tasks complete, and you will get notified. Enjoy!").format(domain.SERVICE_NAME, domain.SERVICE_NAME))
-
+                self._create_first_task(botengine)
         return
+
+    def _create_first_task(self, botengine):
+        """
+        Create the first task
+        :param botengine:
+        :return:
+        """
+        botengine.save_variable("task.__init__", True)
+        self.parent.set_location_property(botengine, "task.__init__", True, track=False)
+        if properties.get_property(botengine, "CARE_SERVICES") is not None:
+            if properties.get_property(botengine, "CARE_SERVICES"):
+                tasks.update_task(botengine,
+                                  location_object=self.parent,
+                                  task_id="__init__",
+                                  title=_("Learn how to create tasks."),
+                                  comment=_("Use {} to easily create and assign household tasks to family and friends!\n"
+                                            "\n"
+                                            "\t1. Tap the [+] button on your Dashboard.\n"
+                                            "\t2. Select 'Add a Task'.\n"
+                                            "\t3. Fill out details of the task.\n"
+                                            "\n"
+                                            "To assign a task to someone, first invite them to your home. Set their Smart Home Access to 'Allow App Access' and Alert Texting to anything except 'No Alerts'.\n"
+                                            "\n"
+                                            "People can use their {} app to mark their tasks complete, and you will get notified. Enjoy!").format(properties.get_property(botengine, "SERVICE_NAME"), properties.get_property(botengine, "SERVICE_NAME")))
 
     def device_deleted(self, botengine, device_object):
         """
@@ -219,7 +236,7 @@ class LocationTasksMicroservice(Intelligence):
         """
         return
 
-    def user_role_updated(self, botengine, user_id, alert_category, location_access, previous_alert_category, previous_location_access):
+    def user_role_updated(self, botengine, user_id, role, alert_category, location_access, previous_alert_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment
@@ -270,7 +287,7 @@ class LocationTasksMicroservice(Intelligence):
             botengine.get_logger().warning("location_tasks_microservice: update_task() called with no 'id' in content: {}; trigger={}; inputs={}".format(content, botengine.get_trigger_type(), botengine.inputs))
             raise ValueError
 
-        tasks = botengine.get_ui_content("tasks")
+        tasks = botengine.get_state("tasks")
         if tasks is None:
             tasks = {}
 
@@ -309,23 +326,17 @@ class LocationTasksMicroservice(Intelligence):
 
                 elif created_by_name is None and assigned_to_name is not None:
                     description = _("A task was assigned to {}: {}").format(assigned_to_name, content['title'])
-                    botengine.notify(push_content=_("You've been assigned a new task."), user_id=content['assigned_to'])
+                    analytics.track_and_notify(botengine, self.parent, 'assigned_new_task', push_content=_("You've been assigned a new task."), user_id=content['assigned_to'])
 
                 else:
                     if created_by_name == assigned_to_name:
                         description = _("{} will take on a new task: {}").format(created_by_name, content['title'])
                     else:
                         description = _("{} assigned a task to {}: {}").format(created_by_name, assigned_to_name, content['title'])
-                        push_sms_fallback_content = _("{} assigned you a new task. To view it and mark it complete, please download and sign into the {} app.").format(created_by_name, domain.SERVICE_NAME)
+                        push_sms_fallback_content = _("{} assigned you a new task. To view it and mark it complete, please download and sign into the {} app.").format(created_by_name, properties.get_property(botengine, "SERVICE_NAME"))
 
-                        ios_url = None
-                        android_url = None
-
-                        if hasattr(domain, 'APP_IOS_URL'):
-                            ios_url = domain.APP_IOS_URL
-
-                        if hasattr(domain, 'APP_ANDROID_URL'):
-                            android_url = domain.APP_ANDROID_URL
+                        ios_url = properties.get_property(botengine, "APP_IOS_URL")
+                        android_url = properties.get_property(botengine, "APP_ANDROID_URL")
 
                         if ios_url is not None:
                             # Note: iOS app download URL qualifier
@@ -335,7 +346,7 @@ class LocationTasksMicroservice(Intelligence):
                             # Note: Android download URL qualifier
                             push_sms_fallback_content += "\n\n{}: {}".format(_("Android"), android_url)
 
-                        botengine.notify(push_content=_("{} assigned you a new task: '{}'").format(created_by_name, content['title']), user_id=content['assigned_to'], push_sms_fallback_content=push_sms_fallback_content)
+                        analytics.track_and_notify(botengine, self.parent, 'assigned_new_task', push_content=_("{} assigned you a new task: '{}'").format(created_by_name, content['title']), user_id=content['assigned_to'], push_sms_fallback_content=push_sms_fallback_content)
 
                 self.parent.narrate(botengine,
                                     title=_("Task created"),
@@ -344,7 +355,8 @@ class LocationTasksMicroservice(Intelligence):
                                     icon="tasks",
                                     extra_json_dict={
                                         "task_id": task_id
-                                    })
+                                    },
+                                    event_type="tasks.task_created")
 
                 dailyreport.add_entry(botengine, self.parent, dailyreport.SECTION_ID_TASKS, comment=description, include_timestamp=True)
                 content['created'] = botengine.get_timestamp()
@@ -363,14 +375,14 @@ class LocationTasksMicroservice(Intelligence):
 
                 elif created_by_name is None and assigned_to_name is not None:
                     description = _("Updated a task assigned to {}: {}").format(assigned_to_name, content['title'])
-                    botengine.notify(push_content=_("A task assigned to you has been updated.").format(content['title']), user_id=content['assigned_to'])
+                    analytics.track_and_notify(botengine, self.parent, 'task_updated', push_content=_("A task assigned to you has been updated.").format(content['title']), user_id=content['assigned_to'])
 
                 else:
                     if created_by_name == assigned_to_name:
                         description = _("{} updated a task: {}").format(created_by_name, content['title'])
                     else:
                         description = _("{} updated a task assigned to {}: {}").format(created_by_name, assigned_to_name, content['title'])
-                        botengine.notify(push_content=_("{} updated a task assigned to you.").format(created_by_name), user_id=content['assigned_to'])
+                        analytics.track_and_notify(botengine, self.parent, 'updated_assigned_task', push_content=_("{} updated a task assigned to you.").format(created_by_name), user_id=content['assigned_to'])
 
                 self.parent.narrate(botengine,
                                     title=_("Task created"),
@@ -379,7 +391,8 @@ class LocationTasksMicroservice(Intelligence):
                                     icon="tasks",
                                     extra_json_dict={
                                         "task_id": task_id
-                                    })
+                                    },
+                                    event_type="tasks.task_updated")
 
             content['updated'] = botengine.get_timestamp()
             tasks[task_id] = content
@@ -398,7 +411,7 @@ class LocationTasksMicroservice(Intelligence):
                 if 'created_by' in tasks[task_id]:
                     if tasks[task_id]['created_by'] is not None:
                         if int(tasks[task_id]['created_by']) != int(content['deleted_by']):
-                            botengine.notify(push_content=_("{} completed a task: '{}'").format(deleted_by_name, tasks[task_id]['title']), user_id=tasks[task_id]['created_by'])
+                            analytics.track_and_notify(botengine, self.parent, 'task_completed', push_content=_("{} completed a task: '{}'").format(deleted_by_name, tasks[task_id]['title']), user_id=tasks[task_id]['created_by'])
 
             else:
                 description = _("A task was marked complete: {}").format(tasks[task_id]['title'])
@@ -407,17 +420,18 @@ class LocationTasksMicroservice(Intelligence):
                                 title=_("Task completed"),
                                 description=description,
                                 priority=botengine.NARRATIVE_PRIORITY_INFO,
-                                icon="check-square")
+                                icon="check-square",
+                                event_type="tasks.task_completed")
 
             dailyreport.add_entry(botengine, self.parent, dailyreport.SECTION_ID_TASKS, comment=description, include_timestamp=True)
 
             if not task_id.startswith("__"):
                 # This is not a system task, track it
-                properties = None
+                task_properties = None
                 if 'created' in tasks[task_id]:
-                    properties = {"elapsed_ms": botengine.get_timestamp() - tasks[task_id]['created']}
+                    task_properties = {"elapsed_ms": botengine.get_timestamp() - tasks[task_id]['created']}
 
-                analytics.track(botengine, self.parent, "task_completed", properties=properties)
+                analytics.track(botengine, self.parent, "task_completed", properties=task_properties)
 
             del(tasks[task_id])
 

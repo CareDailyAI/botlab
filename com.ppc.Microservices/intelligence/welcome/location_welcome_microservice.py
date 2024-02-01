@@ -11,7 +11,7 @@ from intelligence.intelligence import Intelligence
 
 import utilities.utilities as utilities
 import signals.analytics as analytics
-import domain
+import properties
 
 # Timer references
 TIMER_REFERENCE_BIRTH = "birth"
@@ -37,11 +37,16 @@ class LocationWelcomeMicroservice(Intelligence):
         """
         Intelligence.__init__(self, botengine, parent)
 
+        # NOTE: AI Bot started / rebooted. (machine readable)
+        analytics.track(botengine, self.parent, "reset")
+
+        # NOTE: AI Bot started / rebooted. (human readable)
         self.parent.narrate(botengine,
                             title=_("Reset"),
                             description=_("The AI bot has rebooted."),
                             priority=botengine.NARRATIVE_PRIORITY_DETAIL,
-                            icon="power-off")
+                            icon="power-off",
+                            event_type="welcome.reset")
 
         welcomed = self.parent.get_location_property(botengine, "welcomed")
 
@@ -49,22 +54,25 @@ class LocationWelcomeMicroservice(Intelligence):
             welcomed = False
 
         if not welcomed:
-            if hasattr(domain, "SERVICE_NAME"):
-                title = _("Welcome to {}").format(domain.SERVICE_NAME)
+            if properties.get_property(botengine, "SERVICE_NAME") is not None:
+                title = _("Welcome to {}").format(properties.get_property(botengine, "SERVICE_NAME"))
             else:
                 title = _("Welcome")
 
-            if hasattr(domain, "IN_APP_WELCOME_MESSAGE"):
-                description = domain.IN_APP_WELCOME_MESSAGE
+            if properties.get_property(botengine, "IN_APP_WELCOME_MESSAGE", complain_if_missing=False) is not None:
+                description = properties.get_property(botengine, "IN_APP_WELCOME_MESSAGE")
             else:
                 description = _("This screen will capture the history of events that are happening in your home. Please remember to add other people to help watch over your home inside the Trusted Circle tab.")
 
+            # NOTE: Log that the user welcomed for the first and only time. (human readable)
             self.parent.narrate(botengine,
                                 title=title,
                                 description=description,
                                 icon="comment-smile",
-                                priority=botengine.NARRATIVE_PRIORITY_INFO)
+                                priority=botengine.NARRATIVE_PRIORITY_INFO,
+                                event_type="welcome.welcomed")
 
+            # NOTE: Log that the user welcomed for the first and only time. (machine readable)
             analytics.track(botengine, self.parent, "welcomed")
 
             self.parent.set_location_property(botengine, "welcomed", True)
@@ -72,15 +80,11 @@ class LocationWelcomeMicroservice(Intelligence):
             # Send welcome SMS/push notifications to download the app.
             self.start_timer_ms(botengine, utilities.ONE_MINUTE_MS * 5, reference=TIMER_REFERENCE_BIRTH, argument=TIMER_REFERENCE_BIRTH)
 
-            try:
+            delay_ms = properties.get_property(botengine, "CS_VIRTUAL_CONNECT_SMS_DELAY_MS")
+            if delay_ms is None:
                 delay_ms = utilities.ONE_HOUR_MS * 4
-                if hasattr(domain, 'CS_VIRTUAL_CONNECT_SMS_DELAY_MS'):
-                    delay_ms = int(domain.CS_VIRTUAL_CONNECT_SMS_DELAY_MS)
 
-                self.start_timer_ms(botengine, delay_ms, reference=TIMER_REFERENCE_INSTALL, argument=TIMER_REFERENCE_INSTALL)
-
-            except Exception as e:
-                botengine.get_logger().error("location_welcome_microservice: " + e)
+            self.start_timer_ms(botengine, delay_ms, reference=TIMER_REFERENCE_INSTALL, argument=TIMER_REFERENCE_INSTALL)
 
 
     def initialize(self, botengine):
@@ -201,17 +205,11 @@ class LocationWelcomeMicroservice(Intelligence):
         """
         if argument == TIMER_REFERENCE_BIRTH:
             # This fires one time, 5 minutes after birth
-            ios_url = None
-            android_url = None
-
-            if hasattr(domain, 'APP_IOS_URL'):
-                ios_url = domain.APP_IOS_URL
-
-            if hasattr(domain, 'APP_ANDROID_URL'):
-                android_url = domain.APP_ANDROID_URL
+            ios_url = properties.get_property(botengine, "APP_IOS_URL")
+            android_url = properties.get_property(botengine, "APP_ANDROID_URL")
 
             if ios_url is not None or android_url is not None:
-                message = _("Thanks for signing up! Here's how to download {}.").format(domain.SERVICE_NAME)
+                message = _("Thanks for signing up! Here's how to download {}.").format(properties.get_property(botengine, "SERVICE_NAME"))
 
                 if ios_url is not None:
                     # Note: iOS app download URL qualifier
@@ -221,25 +219,25 @@ class LocationWelcomeMicroservice(Intelligence):
                     # Note: Android download URL qualifier
                     message += "\n\n{}: {}".format(_("Android"), android_url)
 
-                botengine.notify(push_content=_("{} services are activated at \"{}\"!").format(domain.SERVICE_NAME, self.parent.get_location_name(botengine)), push_sms_fallback_content=message, to_residents=True)
+                analytics.track_and_notify(botengine, self.parent, 'services_activated', push_content=_("{} services are activated at \"{}\"!").format(properties.get_property(botengine, "SERVICE_NAME"), self.parent.get_location_name(botengine)), push_sms_fallback_content=message, to_residents=True)
 
         elif argument == TIMER_REFERENCE_INSTALL:
             # This is a recommendation to schedule time with customer support for an assisted connect session
             if len(self.parent.devices) < TOTAL_MINIMUM_DEVICES:
-                if hasattr(domain, 'CS_SCHEDULE_URL') and hasattr(domain, 'SERVICE_NAME'):
-                    if domain.CS_SCHEDULE_URL is not None:
-                        if len(domain.CS_SCHEDULE_URL) > 0:
-                            message = _("Want a real person to help you set up {} at {}? Check out -> {}.").format(domain.SERVICE_NAME, botengine.get_location_name(), domain.CS_SCHEDULE_URL)
+                if properties.get_property(botengine, "CS_SCHEDULE_URL") is not None and properties.get_property(botengine, "SERVICE_NAME") is not None:
+                    if len(properties.get_property(botengine, "CS_SCHEDULE_URL")) > 0:
+                        # Notify: Want a person to help you set up?
+                        message = _("Want a real person to help you set up {} at {}? Check out -> {}.").format(properties.get_property(botengine, "SERVICE_NAME"), botengine.get_location_name(), properties.get_property(botengine, "CS_SCHEDULE_URL"))
 
-                            import signals.sms as sms
-                            sms.send(botengine,
-                                     self.parent,
-                                     sms_content=message,
-                                     to_residents=True,
-                                     to_supporters=False,
-                                     sms_group_chat=False,
-                                     user_id=None,
-                                     add_delay=False)
+                        import signals.sms as sms
+                        sms.send(botengine,
+                                 self.parent,
+                                 sms_content=message,
+                                 to_residents=True,
+                                 to_supporters=False,
+                                 sms_group_chat=False,
+                                 user_id=None,
+                                 add_delay=False)
 
     def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
         """
@@ -261,7 +259,7 @@ class LocationWelcomeMicroservice(Intelligence):
         """
         return
 
-    def user_role_updated(self, botengine, user_id, alert_category, location_access, previous_alert_category, previous_location_access):
+    def user_role_updated(self, botengine, user_id, role, alert_category, location_access, previous_alert_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment

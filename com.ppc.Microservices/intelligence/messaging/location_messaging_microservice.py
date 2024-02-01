@@ -158,7 +158,7 @@ class LocationMessagingMicroservice(Intelligence):
         """
         return
 
-    def user_role_updated(self, botengine, user_id, alert_category, location_access, previous_alert_category, previous_location_access):
+    def user_role_updated(self, botengine, user_id, role, alert_category, location_access, previous_alert_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment
@@ -311,22 +311,45 @@ class LocationMessagingMicroservice(Intelligence):
                                                       },
                                                       internal=True,
                                                       external=False)
+        
+        if to_admins:
+            import utilities.utilities as utilities
+            import properties
 
-        botengine.notify(push_content=push_content,
-                         push_sound=push_sound,
-                         push_sms_fallback_content=push_sms_fallback_content,
-                         email_subject=email_subject,
-                         email_content=email_content,
-                         email_html=email_html,
-                         email_template_filename=email_template_filename,
-                         email_template_model=email_template_model,
-                         admin_domain_name=admin_domain_name,
-                         brand=brand,
-                         user_id=user_id,
-                         user_id_list=user_id_list,
-                         to_residents=to_residents,
-                         to_supporters=to_supporters,
-                         to_admins=to_admins)
+            url = utilities.get_admin_url_for_location(botengine)
+
+            if url is not None:
+                # Send the email to admins.
+                botengine.get_logger().info("location_messaging_microservice: Sending email notification to admins.")
+
+                # Notify Organization Users
+                botengine.email_admins(
+                    email_subject=email_subject,
+                    email_content=email_content,
+                    email_html=email_html,
+                    email_template_filename=email_template_filename,
+                    email_template_model=email_template_model,
+                    brand=properties.get_property(botengine, "ORGANIZATION_BRAND"),
+                    categories=utilities.get_organization_user_notification_categories(botengine, self.parent))
+            return
+        
+        import signals.analytics as analytics
+        analytics.track_and_notify(botengine, self.parent, 'send_message',
+                              push_content=push_content,
+                              push_sound=push_sound,
+                              push_sms_fallback_content=push_sms_fallback_content,
+                              email_subject=email_subject,
+                              email_content=email_content,
+                              email_html=email_html,
+                              email_template_filename=email_template_filename,
+                              email_template_model=email_template_model,
+                              admin_domain_name=admin_domain_name,
+                              brand=brand,
+                              user_id=user_id,
+                              user_id_list=user_id_list,
+                              to_residents=to_residents,
+                              to_supporters=to_supporters,
+                              to_admins=to_admins)
 
 
 

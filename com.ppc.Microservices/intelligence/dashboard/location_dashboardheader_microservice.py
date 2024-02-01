@@ -11,7 +11,7 @@ from intelligence.intelligence import Intelligence
 
 import signals.dashboard as dashboard
 import utilities.utilities as utilities
-import domain
+import properties
 
 # Name of the UI state variable
 DASHBOARD_HEADER_VARIABLE_NAME = "dashboard_header"
@@ -41,8 +41,10 @@ class LocationDashboardHeaderMicroservice(Intelligence):
         # True if the last narration we made on a dashboard update was for a "lastseen" header, so we don't overdo it
         self.last_seen = False
 
-        self.clear_dashboard_headers(botengine)
+        self.is_service_running = True
 
+        self.clear_dashboard_headers(botengine)
+    
     def initialize(self, botengine):
         """
         Initialize
@@ -55,6 +57,10 @@ class LocationDashboardHeaderMicroservice(Intelligence):
         # Added December 8, 2020
         if not hasattr(self, 'last_seen'):
             self.last_seen = False
+
+        # Added October 11, 2021
+        if not hasattr(self, 'is_service_running'):
+            self.is_service_running = True
 
         if len(self.saved_headers) == 0:
             self.clear_dashboard_headers(botengine)
@@ -85,6 +91,12 @@ class LocationDashboardHeaderMicroservice(Intelligence):
         :param last_status: Last occupancy status
         :param last_reason: Last occupancy reason
         """
+        if "_DEVICE_DISCONNECTED" in status:
+            self.is_service_running = False
+            self.clear_dashboard_headers(botengine)
+        else:
+            self.is_service_running = True
+
         return
 
     def device_measurements_updated(self, botengine, device_object):
@@ -184,7 +196,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
         """
         return
 
-    def user_role_updated(self, botengine, user_id, alert_category, location_access, previous_alert_category, previous_location_access):
+    def user_role_updated(self, botengine, user_id, role, alert_category, location_access, previous_alert_category, previous_location_access):
         """
         A user changed roles
         :param botengine: BotEngine environment
@@ -243,7 +255,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
             "updated_ms": botengine.get_timestamp(),
             "icon": "cogs",
             "icon_font": utilities.ICON_FONT_FONTAWESOME_REGULAR,
-            "title": domain.SERVICE_NAME,
+            "title": properties.get_property(botengine, "SERVICE_NAME"),
             "comment": _("Listening for activity")
         }
         self.update_dashboard_header(botengine, default_header)
@@ -272,73 +284,62 @@ class LocationDashboardHeaderMicroservice(Intelligence):
         Update the dashboard header : Data Stream Message
 
             {
-                # App Required: Unique identifying name
+                # Unique identifying name
                 "name": name,
 
-                # App Required: Priority of this dashboard header, which dictates color
+                # Priority of this dashboard header, which dictates color
                 "priority": priority,
 
-                # App Required: Title at the top of the dashboard
+                # Title at the top of the dashboard
                 "title": title,
 
-                # App Required: Comment to display under the title
+                # Comment to display under the title
                 "comment": comment,
 
-                # App Required: Icon
+                # Icon
                 "icon": icon,
 
-                # Icon font package (app default is 'far')
+                # Icon font package
                 "icon_font": icon_font,
 
-                # Auto-Populated by a Conversation: True to show the emergency call button (app default is False)
+                # Auto-Populated by a Conversation: True to show the emergency call button
                 "call": False,
 
-                # If the emergency call button is present, this flag allows the user to contact the emergency call center by sending data stream message "contact_ecc" with a "user_id" in the content. (app default is False)
+                # If the emergency call button is present, this flag allows the user to contact the emergency call center.
                 "ecc": False,
 
-                # Time at which this was updated - you can use this to show a human friendly update time on the dashboard if you want. Like "a few seconds ago" or "earlier today"
-                "updated_ms": <timestamp in milliseconds>,
-
-                # Question for the resolution question (app default is not to show a resolution option)
+                # Question ID for the resolution question
                 "resolution": {
-                    # Button to show on the dashboard
-                    "button": "CHANGE STATUS >",
+                    "question": "CHANGE STATUS >",
 
-                    # Title at the top of the bottom modal action sheet
+                    # Title at the top of the action sheet
                     "title": "Change Status",
 
                     # To answer this question, send a data stream message to this address ...
                     "datastream_address": "conversation_resolved",
 
                     # ... and include this content merged with the 'content' from the selected option
-                    # The only required field is 'microservice_id'
-                    # Your final data stream content should look like:
-                    #   {
-                    #       "microservice_id": "26e636d2-c9e6-4caa-a2dc-a9738505c9f2",
-                    #       "conversation_id": "68554d0f-da4a-408c-80fb-0c8f60b0ebc3",
-                    #       "user_id": 1234,
-                    #       "answer": 0
-                    #   }
                     "content": {
-                        # Required microservice ID
-                        "microservice_id": callback_microservice.intelligence_id,
+                        "microservice_id": "26e636d2-c9e6-4caa-a2dc-a9738505c9f2",
+                        "conversation_id": "68554d0f-da4a-408c-80fb-0c8f60b0ebc3",
+                    }
 
-                        # Optional conversation ID
-                        "conversation_id": self.conversation_id,
-
-                        # User ID resolving this problem
-                        "user_id": None,
-                    },
-
+                    # The options are already ordered by virtue of being in a list.
                     "response_options": [
                         {
-                            "text": "Resolved"
+                            "text": "Resolved",
+                            "ack": "Okay, resolving the notification...",
+                            "icon": "thumbs-up",
+                            "icon_font": "far",
                             "content": {
                                 "answer": 0
                             },
                         },
                         {
-                            "text": "False Alarm"
+                            "text": "False Alarm",
+                            "ack": "Okay, marking this a false alarm...",
+                            "icon": "thumbs-up",
+                            "icon_font": "far",
                             "content": {
                                 "answer": 1
                             },
@@ -348,36 +349,32 @@ class LocationDashboardHeaderMicroservice(Intelligence):
 
                 # Question IDs for feedback
                 "feedback": {
+                    # Question for quantified thumbs-up / thumbs-down feedback
+                    "quantified": "Did we do a good job?",
 
-                    # Question to pose for the thumbs-up / thumbs-down area
-                    "quantified": "Did People Power Family do a good job?",
-
-                    # Suggested text in the open-ended text field
+                    # Question for the open-ended text box
                     "verbatim": "What do you think caused the alert?",
 
                     # To answer this question, send a data stream message to this address ...
-                    "datastream_address": "conversation_feedback",
+                    "datastream_address": "conversation_feedback_quantified",
 
-                    # ... and include this content - you fill in the 'quantified', 'verbatim', and 'user_id' fields.
+                    # ... and include this content - you fill in the 'quantified', 'verbatim', and optional 'user_id' fields.
                     "content": {
                         "microservice_id": "26e636d2-c9e6-4caa-a2dc-a9738505c9f2",
+                        "conversation_id": "68554d0f-da4a-408c-80fb-0c8f60b0ebc3",
 
-                        # Quantified: 0=thumbs-down; 1=thumbs-up
-                        "quantified": None,
-
-                        # Verbatim: Open-ended string
-                        "verbatim": None,
-
-                        # Optional user ID who filled out this feedback
-                        "user_id": None
+                        # You'll fill these fields out in the app.
+                        "quantified": <0=bad; 1=good>,
+                        "verbatim": "Open-ended text field.",
+                        "user_id": 1234
                     }
                 },
 
-                # Internal usage only: Future timestamp to apply this header
+                # Internal usage: Future timestamp to apply this header
                 "future_timestamp_ms": <timestamp in milliseconds>
 
-                # Internal usage only: Conversation object, so we can make sure headers are auto-deleted if the conversation no longer exists.
-                "conversation_object": <conversation object>,
+                # Internal usage only: Conversation object reference, so we don't keep a dashboard header around for a conversation that expired.
+                "conversation_object": <conversation_object>,
 
                 # Internal usage only: Percentage good, to help rank two identical priority headers against each other. Lower percentages get shown first because they're not good.
                 "percent": <0-100 weight>
@@ -479,7 +476,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
         highest_priority = dashboard.DASHBOARD_PRIORITY_EMPTY
         highest_priority_header = None
         for name in list(self.saved_headers.keys()):
-            print("location_dashboard_header possibility: {}".format(self.saved_headers[name]))
+            botengine.get_logger().debug("location_dashboard_header possibility: {}".format(self.saved_headers[name]))
             # Delete dashboard headers related to active conversations
             if highest_priority_header is None:
                 highest_priority_header = self.saved_headers[name]
@@ -507,7 +504,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
                 botengine.get_logger().info("location_dashboardheader_microservice: 'conversation_object' exists in the header we're about to publish.")
                 conversation_object = publish_header['conversation_object']
                 if conversation_object is not None:
-                    publish_header['call'] = conversation_object.contact_professional_monitoring
+                    publish_header['call'] = conversation_object.contact_homeowners or conversation_object.contact_supporters
                     publish_header['ecc'] = not conversation_object.is_contacting_ecc(botengine)
 
                     if 'resolution' not in publish_header:
@@ -531,13 +528,17 @@ class LocationDashboardHeaderMicroservice(Intelligence):
                 percent = publish_header['percent']
                 del(publish_header['percent'])
 
+            import copy
+            announcement_header = copy.copy(publish_header)
+            announcement_header['percent'] = percent
+
             import binascii
             crc32 = binascii.crc32(str(publish_header).encode('utf-8'))
 
             if self.last_crc32 != crc32:
                 self.last_crc32 = crc32
                 self.parent.set_location_property_separately(botengine, DASHBOARD_HEADER_VARIABLE_NAME, publish_header, overwrite=True)
-                botengine.set_location_priority(highest_priority, percent, "{} - {}".format(publish_header['title'], publish_header['comment']))
+                dashboard.updated_dashboard_headers(botengine, self.parent, announcement_header, self.saved_headers)
 
                 # Don't narrate every time a person is last seen.
                 # Do narrate when the dashboard changes from something else back to 'lastseen'.
@@ -550,12 +551,14 @@ class LocationDashboardHeaderMicroservice(Intelligence):
                 else:
                     self.last_seen = False
 
+                # NOTE: Update dashboard header.
                 self.parent.narrate(botengine,
                                     title=_("Dashboard: {}").format(publish_header['title']),
                                     description=publish_header['comment'],
                                     priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                                     icon=publish_header['icon'],
-                                    icon_font=publish_header['icon_font'])
+                                    icon_font=publish_header['icon_font'],
+                                    event_type="dashboard.update_header")
 
             else:
                 botengine.get_logger().info("location_dashboardheader_microservice: Duplicate header content, skip publishing...")

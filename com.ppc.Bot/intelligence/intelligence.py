@@ -30,6 +30,35 @@ class Intelligence:
         """
         return
     
+    def reset_statistics(self, botengine):
+        """
+        Reset statistics
+        :param botengine: BotEngine environment
+        """
+        self._init_statistics()
+        return
+    
+    def track_statistics(self, botengine, time_elapsed_ms):
+        """
+        Track statistics for this microservice
+        :param botengine: BotEngine environment
+        """
+        # Catch-all in case subclass forgets to call super().initialize()
+        if not hasattr(self, "statistics"):
+            self._init_statistics()
+        self.statistics["calls"] += 1
+        self.statistics["time"] += time_elapsed_ms
+        return
+
+    def get_statistics(self, botengine):
+        """
+        get statistics
+        :param botengine: BotEngine environment
+        """
+        if not hasattr(self, "statistics"):
+            self._init_statistics()
+        return self.statistics
+    
     def destroy(self, botengine):
         """
         This device or object is getting permanently deleted - it is no longer in the user's account.
@@ -147,6 +176,15 @@ class Intelligence:
         Approximate coordinates of the parent proxy device object have been updated
         :param latitude: Latitude
         :param longitude: Longitude
+        """
+        return
+
+    def language_updated(self, botengine, language):
+        """
+        The location's preferred language has been updated.
+        Please translate any Synthetic API state variables and history that may be exposed in user experiences.
+        :param botengine: BotEngine environment
+        :param language: New language identifier, i.e. 'en'
         """
         return
 
@@ -306,3 +344,13 @@ class Intelligence:
         # It's not a mistake that this is forwarding to `cancel_timers`.
         # They're all the same thing underneath, and this is a convenience method help to avoid confusion and questions.
         botengine.cancel_timers(self.intelligence_id + str(reference))
+
+    # ===============================================================================
+    # Private methods
+    # ===============================================================================
+    
+    def _init_statistics(self):
+        self.statistics = {
+            "calls": 0,
+            "time": 0,
+        }

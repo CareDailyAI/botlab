@@ -15,16 +15,16 @@ DATASTREAM_CONTENT = {
             "name": "placeholder",
 
             # Priority of this dashboard header, which dictates color
-            "priority": 5,
+            "priority": 6,
 
             # Title at the top of the dashboard
-            "title": "Trouble Sleeping",
+            "title": "Fall Detected",
 
             # Comment to display under the title
-            "comment": "Appears to have had trouble sleeping last night. Please check in.",
+            "comment": "Please check in immediately.",
 
             # Icon
-            "icon": "snooze",
+            "icon": "siren-on",
 
             # Icon font package
             "icon_font": "far",
@@ -36,7 +36,7 @@ DATASTREAM_CONTENT = {
             "ecc": False,
 
             # Internal usage only: Percentage good, to help rank two identical priority headers against each other. Lower percentages get shown first because they're not good.
-            "percent": 100
+            "percent": 0
         }
 
 
@@ -63,7 +63,7 @@ def main(argv=None):
     
     parser.add_argument("-u", "--username", dest="username", help="Username")
     parser.add_argument("-p", "--password", dest="password", help="Password")
-    parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.presencepro.com)")
+    parser.add_argument("-s", "--server", dest="server", help="Base server URL (app.peoplepowerco.com)")
     parser.add_argument("-l", "--location", dest="location_id", help="Location ID")
     parser.add_argument("-a", "--api_key", dest="apikey", help="User's API key instead of a username/password")
     parser.add_argument("--httpdebug", dest="httpdebug", action="store_true", help="HTTP debug logger output");
@@ -85,7 +85,7 @@ def main(argv=None):
 
     # Define the bot server
     if not server:
-        server = "https://app.presencepro.com"
+        server = "https://app.peoplepowerco.com"
     
     if "http" not in server:
         server = "https://" + server

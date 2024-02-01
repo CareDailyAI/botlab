@@ -25,6 +25,7 @@ class VayyarDevice(Device):
     MEASUREMENT_NAME_OCCUPANCY = "occupancy"
     MEASUREMENT_NAME_OCCUPANCY_TARGET = "occupancyTarget"
     MEASUREMENT_NAME_OCCUPANCY_MAP = "occupancyMap"
+    MEASUREMENT_NAME_FALL_LEARNING = "fallLearning"
 
     # Measurement parameters list for machine learning data extraction
     MEASUREMENT_PARAMETERS_LIST = [
@@ -42,16 +43,16 @@ class VayyarDevice(Device):
     FALL_STATUS_EXIT = "fall_exit"
 
     # Min and max values
-    X_MIN_METERS_WALL = -2.0
-    X_MAX_METERS_WALL = 2.0
+    X_MIN_METERS_WALL = -2.5
+    X_MAX_METERS_WALL = 2.5
     Y_MIN_METERS_WALL = 0.3
     Y_MAX_METERS_WALL = 4.0
     Z_MIN_METERS_WALL = 0
     Z_MAX_METERS_WALL = 2.0
-    X_MIN_METERS_CEILING = -2.0
-    X_MAX_METERS_CEILING = 2.0
-    Y_MIN_METERS_CEILING = -2.5
-    Y_MAX_METERS_CEILING = 2.5
+    X_MIN_METERS_CEILING = -2.5
+    X_MAX_METERS_CEILING = 2.5
+    Y_MIN_METERS_CEILING = -3
+    Y_MAX_METERS_CEILING = 3
     SENSOR_HEIGHT_MIN_METERS_CEILING = 2.3
     SENSOR_HEIGHT_MAX_METERS_CEILING = 3.0
 
@@ -76,8 +77,13 @@ class VayyarDevice(Device):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [2000]
 
-    # Maximum fall counter value
-    MAXIMUM_FALL_COUNT = 20
+    # Maximum stability event counter value
+    MAXIMUM_STABILITY_EVENT_COUNT = 20
+
+    # Learning mode status
+    LEARNING_MODE_REST = 0
+    LEARNING_MODE_GOING = 1
+    LEARNING_MODE_DONE = 2
 
     def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
         """
@@ -100,7 +106,14 @@ class VayyarDevice(Device):
         # Every fall detect from a target increments this value to the MAXIMUM_FALL_COUNT
         # Every non-fall target measurement decrements the count.
         # This is used like a 'capacitor' of fall events, giving us confidence to call for help or that a person is still on the ground.
+        # NOTE: Deprecated 9/29/22.  Falls are directly aligned with the "calling" fall_status measurement.  Logic is repurposed to measure stability events.  See `stability_event_count`
         self.fall_count = 0
+
+        # Count of times a target measurement has detected a stability event on this device.
+        # Every fall detect from a target increments this value to the MAXIMUM_STABILITY_EVENT_COUNT
+        # Every non-stability-event target measurement decrements the count.
+        # This is used like a 'capacitor' of stability events, giving us confidence to declare that the person has stability issues and may be a precurser to a fall event.
+        self.stability_event_count = 0
 
         # True if this device is declared to be near an exit door.
         self.near_exit = False
@@ -114,12 +127,22 @@ class VayyarDevice(Device):
         # List of occupied subregion knowledge (low frequency / higher reliability) - [ "unique_id", ... ]
         self.knowledge_occupied_subregions = []
 
+        # True if the device is in learning mode
+        self.learning_mode_status = VayyarDevice.LEARNING_MODE_REST
+
+        # Default Behavior
+        self.goal_id = VayyarDevice.BEHAVIOR_TYPE_OTHER
+
     def new_version(self, botengine):
         """
         New version
         :param botengine: BotEngine environment
         """
         Device.new_version(self, botengine)
+        
+        # Added May 18, 2022
+        if not hasattr(self, 'learning_mode_status'):
+            self.learning_mode_status = VayyarDevice.LEARNING_MODE_REST
 
         # Added November 24, 2021
         if not hasattr(self, 'information_total_occupants'):
@@ -132,6 +155,10 @@ class VayyarDevice(Device):
         # Added November 24, 2021
         if not hasattr(self, 'fall_count'):
             self.fall_count = 0
+
+        # Added September 29, 2022
+        if not hasattr(self, 'stability_event_count'):
+            self.stability_event_count = 0
 
         # Added November 30, 2021
         if not hasattr(self, 'near_exit'):
@@ -178,13 +205,16 @@ class VayyarDevice(Device):
         :param botengine:
         :return: True if this device is in a bedroom
         """
-        bedroom_names = ['bed', 'bett', 'bdrm', 'moms room', 'dads room', 'mom\'s room', 'dad\'s room']
+        if self.goal_id == VayyarDevice.BEHAVIOR_TYPE_BEDROOM:
+            return True
+        
+        bedroom_names = [_('bed'), _('bett'), _('bdrm'), _('moms room'), _('dads room'), _('mom\'s room'), _('dad\'s room')]
 
         for name in bedroom_names:
             if name in self.description.lower():
                 return True
 
-        return self.is_in_space(botengine, 'bedroom')
+        return self.is_in_space(botengine, 'bedroom') or self.is_goal_id(VayyarDevice.BEHAVIOR_TYPE_BEDROOM)
 
     def is_in_bathroom(self, botengine):
         """
@@ -194,13 +224,13 @@ class VayyarDevice(Device):
         if self.goal_id == VayyarDevice.BEHAVIOR_TYPE_BATHROOM:
             return True
 
-        bathroom_names = ['schlaf', 'bath', 'toilet', 'shower', 'powder']
+        bathroom_names = [_('schlaf'), _('bath'), _('toilet'), _('shower'), _('powder')]
 
         for name in bathroom_names:
             if name in self.description.lower():
                 return True
 
-        return self.is_in_space(botengine, 'bathroom')
+        return self.is_in_space(botengine, 'bathroom') or self.is_goal_id(VayyarDevice.BEHAVIOR_TYPE_BATHROOM)
 
     #===========================================================================
     # Attributes
@@ -215,6 +245,63 @@ class VayyarDevice(Device):
             if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.last_updated_params:
                 return True
 
+        return False
+
+    def did_update_leds(self, botengine):
+        """
+        :param botengine:
+        :return: True if this Vayyar device updated its leds
+        """
+        if "vyrc.ledMode" in self.measurements:
+            if "vyrc.ledMode" in self.last_updated_params:
+                return True
+
+        return False
+
+    def get_leds(self, botengine):
+        """
+        :param botengine:
+        :return: LED status
+        """
+        if "vyrc.ledMode" in self.measurements:
+            if len(self.measurements["vyrc.ledMode"]) > 0:
+                return self.measurements["vyrc.ledMode"][0][0]
+
+        return None
+
+    def did_update_volume(self, botengine):
+        """
+        :param botengine:
+        :return: True if this Vayyar device updated its volume
+        """
+        if "vyrc.volume" in self.measurements:
+            if "vyrc.volume" in self.last_updated_params:
+                return True
+
+        return False
+
+    def get_volume(self, botengine):
+        """
+        :param botengine:
+        :return: Volume
+        """
+        if "vyrc.volume" in self.measurements:
+            if len(self.measurements["vyrc.volume"]) > 0:
+                return self.measurements["vyrc.volume"][0][0]
+
+        return None
+
+    def get_telemetry_policy(self, botengine):
+        """
+        :param botengine:
+        :return: Volume
+        """
+        if "vyrc.telemetryPolicy" in self.measurements:
+            if len(self.measurements["vyrc.telemetryPolicy"]) > 0:
+                return self.measurements["vyrc.telemetryPolicy"][0][0]
+
+        return None
+        
     def get_fall_status(self, botengine):
         """
         Retrieve the most recent fall status value
@@ -224,31 +311,91 @@ class VayyarDevice(Device):
         if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
             return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][0][0]
         return None
-
-    def did_start_detecting_fall(self, botengine):
+        
+    def get_previous_fall_status(self, botengine):
         """
+        Retrieve the most recent fall status value
         :param botengine:
-        :return: True if a fall is newly detected
+        :return:
         """
-        if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
-            if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.last_updated_params:
-                return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][0][0] == VayyarDevice.FALL_STATUS_CONFIRMED
+        if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements and len(self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS]) > 1:
+            return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][1][0]
+        return None
 
+    def is_detecting_stability_event(self, botengine):
+        """
+        Is this Vayyar device detecting any kind of stability event
+        :param botengine: BotEngine
+        :return: True if this Vayyar device is detecting a stability event (fall_confirmed or fall_detected)
+        """
+        status = self.get_fall_status(botengine)
+        botengine.get_logger().debug(utilities.Color.RED + "is_detecting_stability_event: status={} learning_mode_status={}".format(status, self.learning_mode_status) + utilities.Color.END)
+        if status is not None and not self.learning_mode_status != VayyarDevice.LEARNING_MODE_DONE:
+            return status == VayyarDevice.FALL_STATUS_CONFIRMED or status == VayyarDevice.FALL_STATUS_DETECTED
+        return False
+
+    def is_detecting_fall(self, botengine):
+        """
+        Is this Vayyar device detecting any kind of fall
+        :param botengine: BotEngine
+        :return: True if this Vayyar device is detecting a fall (calling)
+        """
+        status = self.get_fall_status(botengine)
+        if status is not None and not self.learning_mode_status != VayyarDevice.LEARNING_MODE_DONE:
+            return status == VayyarDevice.FALL_STATUS_CALLING
         return False
 
     def did_stop_detecting_fall(self, botengine):
         """
+        Did this Vayyar device finish detecting a fall after having previously detecting one?
         :param botengine:
         :return: True if a fall is no longer detected
         """
-        if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
-            if VayyarDevice.MEASUREMENT_NAME_FALL_STATUS in self.last_updated_params:
-                if len(self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS]) > 1:
-                    # We have more than one fallStatus measurement captured, and the latest parameter to get updated was fallStatus.
-                    # Make sure this newest parameter says we are not calling for help, and the last parameter did say we were calling for help.
-                    return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_STATUS][0][0] == VayyarDevice.FALL_STATUS_EXIT
+        status = self.get_fall_status(botengine)
+        previous_status = self.get_previous_fall_status(botengine)
+        did_update = self.did_change_fall_status(botengine)
+        botengine.get_logger().debug(utilities.Color.RED + "did_stop_detecting_fall: status={} previous_status={} did_update={} learning_mode_status={}".format(status, previous_status, did_update, self.learning_mode_status) + utilities.Color.END)
+        if status is not None and previous_status is not None and did_update and not self.learning_mode_status != VayyarDevice.LEARNING_MODE_DONE:
+            # We have more than one fallStatus measurement captured, and the latest parameter to get updated was fallStatus.
+            # Make sure this newest parameter says we have exited a fall, and the last parameter did say we were calling a fall.
+            return status == VayyarDevice.FALL_STATUS_FINISHED and previous_status == VayyarDevice.FALL_STATUS_CALLING
 
         return False
+
+    def did_cancel_confirmed_fall(self, botengine):
+        """
+        Did this Vayyar device cancel a confirmed fall after having previously confirming one?
+        :param botengine:
+        :return: True if a fall is no longer detected
+        """
+        status = self.get_fall_status(botengine)
+        previous_status = self.get_previous_fall_status(botengine)
+        did_update = self.did_change_fall_status(botengine)
+        botengine.get_logger().debug(utilities.Color.RED + "did_cancel_confirmed_fall: status={} previous_status={} did_update={} learning_mode_status={}".format(status, previous_status, did_update, self.learning_mode_status) + utilities.Color.END)
+        if status is not None and previous_status is not None and did_update and not self.learning_mode_status != VayyarDevice.LEARNING_MODE_DONE:
+            # We have more than one fallStatus measurement captured, and the latest parameter to get updated was fallStatus.
+            # Make sure this newest parameter says we have exited a fall, and the last parameter did say we were calling a fall.
+            return status == VayyarDevice.FALL_STATUS_CANCELLED and previous_status == VayyarDevice.FALL_STATUS_CONFIRMED
+
+        return False
+
+    def did_update_fall_learning(self, botengine):
+        """
+        Check if fall learning has changed
+        :param botengine: BotEngine environment
+        :return: True if we updated targets
+        """
+        return VayyarDevice.MEASUREMENT_NAME_FALL_LEARNING in self.last_updated_params
+
+    def get_fall_learning(self, botengine):
+        """
+        Get the current fall learning status
+        :param botengine:
+        :return:
+        """
+        if VayyarDevice.MEASUREMENT_NAME_FALL_LEARNING in self.measurements:
+            return self.measurements[VayyarDevice.MEASUREMENT_NAME_FALL_LEARNING][0][0]
+        return None
 
     def did_update_occupancy_targets(self, botengine):
         """
@@ -264,7 +411,7 @@ class VayyarDevice(Device):
 
         You can optionally pass in a range of time to extract from the locally available 1-hour cache, with oldest_timestamp_ms and newest_timestamp_ms.
 
-        If a range (both oldest and newest timestamp) is not specified, then this will only return the latest measurement and will ignore targets that are older than 10 minutes or from a disconnected device
+        If a range (both oldest and newest timestamp) is not specified, then this will only return the latest measurement and will ignore targets that are older than 30 minutes or from a disconnected device
 
         :param botengine:
         :param oldest_timestamp_ms:
@@ -275,13 +422,14 @@ class VayyarDevice(Device):
 
         if self.is_connected:
             if VayyarDevice.MEASUREMENT_NAME_OCCUPANCY_TARGET in self.measurements:
+                botengine.get_logger().debug("get_occupancy_targets: pure targets={}".format(self.measurements[VayyarDevice.MEASUREMENT_NAME_OCCUPANCY_TARGET]))
                 extract_multiple = newest_timestamp_ms is not None and oldest_timestamp_ms is not None
 
                 if newest_timestamp_ms is None:
                     newest_timestamp_ms = botengine.get_timestamp()
 
                 if oldest_timestamp_ms is None:
-                    oldest_timestamp_ms = newest_timestamp_ms - (utilities.ONE_MINUTE_MS * 10)
+                    oldest_timestamp_ms = newest_timestamp_ms - (utilities.ONE_MINUTE_MS * 30)
 
                 for t in self.measurements[VayyarDevice.MEASUREMENT_NAME_OCCUPANCY_TARGET]:
                     if t[1] < oldest_timestamp_ms:
@@ -294,7 +442,7 @@ class VayyarDevice(Device):
 
                     if not extract_multiple:
                         break
-
+        botengine.get_logger().info("get_occupancy_targets: targets={}".format(targets))
         return targets
 
     def get_newest_targets(self, botengine):
@@ -342,6 +490,9 @@ class VayyarDevice(Device):
     #                 if total > 2:
     #                     total = 2
     #     return total
+
+    def need_start_learning(self, botengine):
+        return self.learning_mode_status == VayyarDevice.LEARNING_MODE_REST
 
     def did_start_detecting_motion(self, botengine):
         """
@@ -401,6 +552,18 @@ class VayyarDevice(Device):
         if hasattr(self, "last_alert"):
             if "boot" in self.last_alert:
                 return self.last_alert["boot"]["timestamp_ms"] == botengine.get_timestamp()
+
+    def did_update_firmware(self, botengine):
+        """
+        Did the device firmware get updated?
+        :param botengine:
+        :return:
+        """
+        if hasattr(self, "firmware"):
+            if "firmware" in self.last_updated_params:
+                return True
+
+        return False
 
     def did_press_button(self, botengine):
         """
@@ -468,6 +631,22 @@ class VayyarDevice(Device):
         :param telemetry_policy: 0 is off; 1 is on; 2 is only on falls (default)
         """
         botengine.send_command(self.device_id, "vyrc.telemetryPolicy", int(telemetry_policy))
+
+    def set_learning_mode(self, botengine, learning_mode):
+        """
+        Set end of learning mode in milliseconds.
+        :param botengine: BotEngine environment
+        :param learning_mode: True/False on/off
+        """
+        if learning_mode:
+            if self.learning_mode_status != VayyarDevice.LEARNING_MODE_GOING:
+                self.learning_mode_status = VayyarDevice.LEARNING_MODE_GOING
+                end_timestamp_ms = botengine.get_timestamp() + (2 * utilities.ONE_WEEK_MS)
+
+                botengine.send_command(self.device_id, "vyrc.learningModeEnd", end_timestamp_ms)
+
+        else:
+            self.learning_mode_status = VayyarDevice.LEARNING_MODE_DONE
 
     def set_reporting_rate_ms(self, botengine, reporting_rate_ms):
         """
@@ -676,6 +855,11 @@ class VayyarDevice(Device):
             "value": z_max_meters
         })
 
+        all_params.append({
+            "name": "near_exit",
+            "value": near_exit
+        })
+
         botengine.send_commands(self.device_id, all_params)
 
     def did_update_room_boundaries(self, botengine):
@@ -684,7 +868,7 @@ class VayyarDevice(Device):
         :param botengine: BotEngine environment
         :return: True if we updated the room boundaries in this execution
         """
-        return "vyrc.xMin" in self.last_updated_params or "vyrc.xMax" in self.last_updated_params or "vyrc.yMin" in self.last_updated_params or "vyrc.yMax" in self.last_updated_params or "vyrc.zMin" in self.last_updated_params or "vyrc.zMax" in self.last_updated_params or "vyrc.zMin" in self.last_updated_params
+        return "vyrc.xMin" in self.last_updated_params or "vyrc.xMax" in self.last_updated_params or "vyrc.yMin" in self.last_updated_params or "vyrc.yMax" in self.last_updated_params or "vyrc.zMin" in self.last_updated_params or "vyrc.zMax" in self.last_updated_params or "vyrc.zMin" in self.last_updated_params or "vyrc.sensorMounting" in self.last_updated_params
 
     def get_mounting_type(self, botengine):
         """
@@ -790,6 +974,131 @@ class VayyarDevice(Device):
             "updated_ms": updated_ms,
             "near_exit": self.near_exit
         }
+    
+    def get_room_boundaries_properties(self, botengine):
+        """
+        Return the boundaries of this room FROM THE DEVICE PROPERTY in the form of a dictionary, and include an "updated_ms" value declaring the newest update timestamp in milliseconds.
+        Note that some values will be internal default values if they haven't be reported by the device yet.
+        :param botengine:
+        :return: Dictionary with room boundaries
+        """
+        x_min = VayyarDevice.X_MIN_METERS_WALL
+        x_max = VayyarDevice.X_MAX_METERS_WALL
+        y_min = VayyarDevice.Y_MIN_METERS_WALL
+        y_max = VayyarDevice.Y_MAX_METERS_WALL
+        z_min = VayyarDevice.Z_MIN_METERS_WALL
+        z_max = VayyarDevice.Z_MAX_METERS_WALL
+        mounting_type = 0
+        sensor_height_m = 1.5
+        updated_ms = 0
+        content = None
+
+        device_properties = botengine.get_device_property(self.device_id, "room")
+
+        import json
+        for device_property in device_properties:
+            property_name = device_property['name']
+            if property_name == 'room':
+                content = json.loads(device_property['value'])
+                break
+
+        if content is None:
+            # Check if the room boundaries are defined in the non-volatile memory
+            nv_room = botengine.get_state("vayyar_room")
+            if nv_room is not None and self.device_id in nv_room:
+                botengine.get_logger().info("VayyarDevice.get_room_boundaries_properties() Room has not been set, using non-volatile location state")
+                content = nv_room[self.device_id]
+
+        if content is not None:
+            if 'x_min_meters' in content:
+                x_min = content['x_min_meters']
+
+            if 'x_max_meters' in content:
+                x_max = content['x_max_meters']
+
+            if 'y_min_meters' in content:
+                y_min = content['y_min_meters']
+
+            if 'y_max_meters' in content:
+                y_max = content['y_max_meters']
+
+            if 'z_min_meters' in content:
+                z_min = content['z_min_meters']
+
+            if 'z_max_meters' in content:
+                z_max = content['z_max_meters']
+
+            if 'mounting_type' in content:
+                mounting_type = content['mounting_type']
+
+            if 'sensor_height_m' in content:
+                sensor_height_m = content['sensor_height_m']
+
+        if "vyrc.xMin" in self.measurements:
+            if len(self.measurements["vyrc.xMin"]) > 0:
+                if self.measurements["vyrc.xMin"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.xMin"][0][1]
+
+        if "vyrc.xMax" in self.measurements:
+            if len(self.measurements["vyrc.xMax"]) > 0:
+                if self.measurements["vyrc.xMax"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.xMax"][0][1]
+
+        if "vyrc.yMin" in self.measurements:
+            if len(self.measurements["vyrc.yMin"]) > 0:
+                if self.measurements["vyrc.yMin"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.yMin"][0][1]
+
+        if "vyrc.yMax" in self.measurements:
+            if len(self.measurements["vyrc.yMax"]) > 0:
+                if self.measurements["vyrc.yMax"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.yMax"][0][1]
+
+        if "vyrc.zMin" in self.measurements:
+            if len(self.measurements["vyrc.zMin"]) > 0:
+                if self.measurements["vyrc.zMin"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.zMin"][0][1]
+
+        if "vyrc.zMax" in self.measurements:
+            if len(self.measurements["vyrc.zMax"]) > 0:
+                if self.measurements["vyrc.zMax"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.zMax"][0][1]
+
+        if "vyrc.sensorMounting" in self.measurements:
+            if len(self.measurements["vyrc.sensorMounting"]) > 0:
+                if self.measurements["vyrc.sensorMounting"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.sensorMounting"][0][1]
+
+        if "vyrc.sensorHeight" in self.measurements:
+            if len(self.measurements["vyrc.sensorHeight"]) > 0:
+                if self.measurements["vyrc.sensorHeight"][0][1] > updated_ms:
+                    updated_ms = self.measurements["vyrc.sensorHeight"][0][1]
+
+        # Undo our wall padding
+        if mounting_type == VayyarDevice.SENSOR_MOUNTING_WALL:
+            x_min = round(x_min - WALL_PADDING_M, 3)
+            x_max = round(x_max + WALL_PADDING_M, 3)
+            y_max = round(y_max + WALL_PADDING_M, 3)
+            z_max = round(z_max + WALL_PADDING_M, 3)
+
+        else:
+            x_min = round(x_min - WALL_PADDING_M, 3)
+            x_max = round(x_max + WALL_PADDING_M, 3)
+            y_max = round(y_max + WALL_PADDING_M, 3)
+            y_min = round(y_min - WALL_PADDING_M, 3)
+
+        return {
+            "x_min_meters": x_min,
+            "x_max_meters": x_max,
+            "y_min_meters": y_min,
+            "y_max_meters": y_max,
+            "z_min_meters": z_min,
+            "z_max_meters": z_max,
+            "mounting_type": mounting_type,
+            "sensor_height_m": sensor_height_m,
+            "updated_ms": updated_ms,
+            "near_exit": self.near_exit
+        }
 
     def record_subregion(self, botengine, unique_id, context_id, name):
         """
@@ -800,16 +1109,16 @@ class VayyarDevice(Device):
         :param context_id: Context ID of the subregion
         :param name: Name of the subregion
         """
+        botengine.get_logger().info("VayyarDevice '{}': Recording subregion - unique_id={}; context_id={}; name={}".format(self.description, unique_id, context_id, name))
         self.subregions[unique_id] = (context_id, name)
 
-    def delete_recorded_subregion(self, botengine, unique_id):
+    def delete_recorded_subregions(self, botengine):
         """
         Delete a subregion record without saving it to the device.
         :param botengine: BotEngine
         :param unique_id: Unique ID to delete
         """
-        if unique_id in self.subregions:
-            del self.subregions[unique_id]
+        self.subregions = {}
 
     def subregions_with_context(self, botengine, target_context_id):
         """

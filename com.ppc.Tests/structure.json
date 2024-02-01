@@ -4,7 +4,19 @@
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
   "microservices": [
-    "com.ppc.Lesson1-Microservices/intelligence/lesson1"
+    "com.ppc.Microservices/intelligence/absent_ml_example",
+    "com.ppc.Microservices/intelligence/analytics_amplitude",
+    "com.ppc.Microservices/intelligence/analytics_mixpanel",
+    "com.ppc.Microservices/intelligence/dailyreport",
+    "com.ppc.Microservices/intelligence/dashboard",
+    "com.ppc.Microservices/intelligence/data_request",
+    "com.ppc.Microservices/intelligence/daylight",
+    "com.ppc.Microservices/intelligence/last_seen",
+    "com.ppc.Microservices/intelligence/messaging",
+    "com.ppc.Microservices/intelligence/multistream",
+    "com.ppc.Microservices/intelligence/tasks",
+    "com.ppc.Microservices/intelligence/videoai",
+    "com.ppc.Microservices/intelligence/welcome"
   ],
 
   # Safely delete these microservice packages from the service, without resetting live bot instances
