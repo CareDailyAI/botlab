@@ -14,10 +14,10 @@ import json
 from botocore.client import Config
 
 # Copy/paste your Amazon AWS Access Key ID here
-ACCESS_KEY_ID = 'AKIAIRN6HROWXQCZVNRA'
+ACCESS_KEY_ID = ''
 
 # Copy/paste your Amazon AWS Access Secret Key here
-ACCESS_SECRET_KEY = '2Jf9Rxi4YOgMjZLGPya6Xr14GR8jmelD7mhEW6Kp'
+ACCESS_SECRET_KEY = ''
 
 # Copy/paste your Amazon AWS S3 bucket name here to store videos
 BUCKET_NAME = 'test-video-file-upload'

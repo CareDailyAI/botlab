@@ -89,3 +89,7 @@ class TestUtilities(unittest.TestCase):
 
         get_property_mock.return_value = {"app.peoplepowerco.com": "https://app.caredaily.ai"}
         assert utilities.get_admin_url_for_location(botengine) == "https://app.caredaily.ai/org/123/locations/123/dashboard"
+
+    def test_utilities_getsize(self):
+        assert utilities.getsize({}) is not None
+        assert utilities.getsize({}) == 64

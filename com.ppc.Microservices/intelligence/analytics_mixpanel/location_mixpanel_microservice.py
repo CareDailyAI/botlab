@@ -39,9 +39,9 @@ class LocationMixpanelMicroservice(Intelligence):
 
         :param botengine: BotEngine environment
         :param content: (dict) A dictionary containing:
-            event_name, (string) A name describing the event, and 
-            properties, (dict) additional data to record; keys should be strings and values should be strings, numbers, or booleans
-        :return:
+            event_name: (string) A name describing the event
+            event_time: (int) The time of the event in milliseconds since the epoch
+            event_properties: (dict) Additional data to record; keys should be strings and values should be strings, numbers, or booleans
         """
         if botengine.is_test_location():
             return

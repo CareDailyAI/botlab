@@ -34,20 +34,27 @@ class LocationAmplitudeMicroservice(Intelligence):
 
         :param botengine: BotEngine environment
         :param content: (dict) A dictionary containing:
-            event_name, (string) A name describing the event, and 
-            properties, (dict) additional data to record; keys should be strings and values should be strings, numbers, or booleans
+            event_name: (string) A name describing the event
+            event_time: (int) (optional) The time of the event in milliseconds since the epoch
+            properties: (dict) additional data to record; keys should be strings and values should be strings, numbers, or booleans
         :return:
         """
         if botengine.is_test_location():
             return
 
-        event_name = content['event_name']
-        event_properties = content['properties']
-
-        import datetime
-        import pytz
-        timezone = self.parent.get_local_timezone_string(botengine)
-        event_time = int(datetime.datetime.fromtimestamp(datetime.datetime.now().timestamp(), pytz.timezone(timezone)).timestamp() * 1000)
+        event_name = content.get('event_name')
+        event_properties = content.get('properties')
+        if event_name is None or event_properties is None:
+            botengine.get_logger().warning("Analytics: Missing event_name or properties")
+            return
+        
+        event_time = content.get('event_time')
+        if event_time is None:
+            import datetime
+            import pytz
+            timezone = self.parent.get_local_timezone_string(botengine)
+            event_time = int(datetime.datetime.fromtimestamp(datetime.datetime.now().timestamp(), pytz.timezone(timezone)).timestamp() * 1000)
+            
         botengine.get_logger().info("Analytics: Tracking {} (trigger_time={} event_time={})".format(event_name, botengine.get_timestamp(), event_time))
 
         if event_properties is None:
@@ -183,7 +190,7 @@ class LocationAmplitudeMicroservice(Intelligence):
         :param botengine: BotEngine
         """
         if botengine.is_test_location() or botengine.is_playback():
-            botengine.get_logger().info("Analytics: This test location will not record analytics.")
+            botengine.get_logger().debug("Analytics: This test location will not record analytics.")
             return
 
         import properties

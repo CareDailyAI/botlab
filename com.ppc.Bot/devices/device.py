@@ -96,7 +96,7 @@ class Device:
         self.measurements = {}
 
         # Last alert received { "alert_type": { "parameter_one" : "value_one", "timestamp_ms": timestamp_ms_set_locally } }
-        self.last_alert = None
+        self.last_alert = {}
 
         # Spaces this device is associated with. For example:
         # "spaces": [
@@ -230,7 +230,7 @@ class Device:
                             break
 
                     if not found:
-                        botengine.get_logger().debug("\tDeleting device microservice: " + str(module_name))
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("\tDeleting device microservice: " + str(module_name))
                         delete.append(module_name)
 
                 for d in delete:
@@ -242,19 +242,19 @@ class Device:
                         try:
                             intelligence_module = importlib.import_module(intelligence_info['module'])
                             class_ = getattr(intelligence_module, intelligence_info['class'])
-                            botengine.get_logger().debug("\tAdding device microservice: " + str(intelligence_info['module']))
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("\tAdding device microservice: " + str(intelligence_info['module']))
                             intelligence_object = class_(botengine, self)
                             self.intelligence_modules[intelligence_info['module']] = intelligence_object
                         except Exception as e:
                             import traceback
-                            botengine.get_logger().error("Could not add device microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").error("Could not add device microservice: {}: {}; {}".format(str(intelligence_info), str(e), traceback.format_exc()))
                             if botengine.playback:
                                 import time
                                 time.sleep(10)
 
         elif len(self.intelligence_modules) > 0:
             # There are no intelligence modules for this device type, and yet we have some intelligence modules locally. Delete everything.
-            botengine.get_logger().debug("\tDeleting all device microservices")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("\tDeleting all device microservices")
             self.intelligence_modules = {}
 
         # Tell all device microservices we're running a new version
@@ -265,9 +265,9 @@ class Device:
                 microservice.new_version(botengine)
                 microservice.track_statistics(botengine, (time.time() - t) * 1000)
             except Exception as e:
-                botengine.get_logger().warning("location.py - Error delivering new_version to device microservice (continuing execution): " + str(e))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("location.py - Error delivering new_version to device microservice (continuing execution): " + str(e))
                 import traceback
-                botengine.get_logger().error(traceback.format_exc())
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(traceback.format_exc())
 
     def initialize(self, botengine):
         """
@@ -396,17 +396,16 @@ class Device:
         try:
             measurements = botengine.get_measurements(self.device_id, oldest_timestamp_ms=oldest_timestamp_ms, newest_timestamp_ms=newest_timestamp_ms)
 
-        except:
+        except Exception as e:
             # This can happen because this bot may not have read permissions for this device.
-            # botengine.get_logger().warning("Cannot synchronize measurements for device {}; device ID {}".format(self.description, self.device_id))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("Cannot synchronize measurements for device {} '{}': {}".format(self.description, self.device_id, e))
             return
 
-        botengine.get_logger().info("Synchronizing measurements for device: " + str(self.description))
-
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("Synchronizing measurements for device: " + str(self.description))
         if 'measures' in measurements:
             for measure in measurements['measures']:
                 if 'value' not in measure:
-                    #botengine.get_logger().error("device.py: Measurement has no value: " + str(measure) + ";\n Measurement was: " + str(measure))
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").error("device.py: Measurement has no value: " + str(measure))
                     continue
 
                 value = utilities.normalize_measurement(measure['value'])
@@ -418,12 +417,13 @@ class Device:
                     if measure['index'] is not None:
                         if str(measure['index']).lower() != "none":
                             param_name = "{}.{}".format(param_name, measure['index'])
-
+                
                 if param_name in self.measurements:
                     if self.measurements[param_name][0][0] == value and self.measurements[param_name][0][1] == time:
                         # Already captured this measurement
                         continue
-
+                
+                # Add the measurement to the cache
                 self.add_measurement(botengine, param_name, value, time)
 
     def update(self, botengine, measures):
@@ -442,19 +442,19 @@ class Device:
         #             if 'index' in measure:
         #                 if measure['index'] is not None:
         #                     param_name = "{}.{}".format(measure['name'], measure['index'])
-        #
+        
         #             if param_name in self.measurements:
         #                 if len(self.measurements[param_name]) > 0:
         #                     if 'time' in measure:
         #                         if not measure['updated'] and measure['time'] == self.measurements[param_name][NEWEST_MEASUREMENT][TIMESTAMP]:
         #                             # Nothing to update
-        #                             botengine.get_logger().info(utilities.Color.GREEN + "\tSAME:      {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
+        #                             botengine.get_logger(f"{__name__}.{__class__.__name__}").info(utilities.Color.GREEN + "\tSAME:      {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
         #                             continue
-        #
+        
         #             if measure['updated']:
-        #                 botengine.get_logger().info(utilities.Color.GREEN + "\tUPDATED:   {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
+        #                 botengine.get_logger(f"{__name__}.{__class__.__name__}").info(utilities.Color.GREEN + "\tUPDATED:   {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
         #             else:
-        #                 botengine.get_logger().info(utilities.Color.GREEN + "\tTIME DIFF: {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
+        #                 botengine.get_logger(f"{__name__}.{__class__.__name__}").info(utilities.Color.GREEN + "\tTIME DIFF: {} @ {} = {}".format(param_name, measure['time'], measure['value']) + utilities.Color.END)
 
         if measures is not None:
             for measure in measures:
@@ -462,7 +462,7 @@ class Device:
                     param_name = measure['name']
                     if param_name == 'batteryLevel' and measure['updated']:
                         if 'value' not in measure or measure['value'] == "":
-                            botengine.get_logger().info("device.py: Updated parameter provided no updated value: {}".format(measure))
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("device.py: Updated parameter provided no updated value: {}".format(measure))
                             continue
                         # Update the battery_level
                         self.battery_level = int(measure['value'])
@@ -470,7 +470,7 @@ class Device:
                         
                     elif param_name not in self.measurements or measure['updated']:
                         if 'value' not in measure:
-                            botengine.get_logger().info("device.py: Updated parameter provided no updated value: {}".format(measure))
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("device.py: Updated parameter provided no updated value: {}".format(measure))
                             continue
                             
                         value = utilities.normalize_measurement(measure['value'])
@@ -480,9 +480,8 @@ class Device:
                             if measure['index'] is not None:
                                 if str(measure['index']).lower() != "none":
                                     param_name = "{}.{}".format(param_name, measure['index'])
-
                         is_param_get_new_value = self.add_measurement(botengine, param_name, value, measure['time'])
-                        if is_param_get_new_value:
+                        if is_param_get_new_value and not param_name in self.last_updated_params:
                             self.last_updated_params.append(param_name)
 
         # List of devices (this one and its proxy) that were updated, to later synchronize with the location outside of this object
@@ -504,7 +503,7 @@ class Device:
                 updated_devices += d
                 updated_metadata += m
 
-        botengine.get_logger().info("Updated '{}' with params: {}".format(self.description, self.last_updated_params))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("Updated '{}' with params: {}".format(self.description, self.last_updated_params))
         return (updated_devices, updated_metadata)
 
     def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
@@ -543,10 +542,10 @@ class Device:
     def add_measurement(self, botengine, name, value, timestamp):
         """
         Update the device's status
-        :param botengine:
-        :param name:
-        :param value:
-        :param timestamp:
+        :param botengine: BotEngine environment
+        :param name: Parameter name
+        :param value: Parameter value
+        :param timestamp: Timestamp in milliseconds
         :return:
         """
         measurement_updated = False
@@ -558,8 +557,13 @@ class Device:
             self.measurement_odometer += 1
             self.measurements[name].insert(0, (value, timestamp))
         else:
-            last_value = self.measurements[name][0][0]
-            if value != last_value:
+            is_new_measurement = True
+            for i in range(len(self.measurements[name])):
+                if value == self.measurements[name][i][0] and timestamp == self.measurements[name][i][1]:
+                    is_new_measurement = False
+                    break
+
+            if is_new_measurement:
                 measurement_updated = True
                 self.measurement_odometer += 1
                 self.measurements[name].insert(0, (value, timestamp))
@@ -717,7 +721,7 @@ class Device:
             try:
                 space_type = int(space_description_or_type)
             except:
-                botengine.get_logger().error("device.is_in_space(): Couldn't identify what space type you're talking about - {}".format(space_description_or_type))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error("device.is_in_space(): Couldn't identify what space type you're talking about - {}".format(space_description_or_type))
                 return False
 
         for space in self.spaces:
@@ -746,7 +750,7 @@ class Device:
                     space_types.append(space_type)
 
                 except:
-                    botengine.get_logger().error("device.is_in_spaces(): Couldn't identify what space type you're talking about - {}".format(s))
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").error("device.is_in_spaces(): Couldn't identify what space type you're talking about - {}".format(s))
                     continue
 
         comparison_types = []
@@ -784,9 +788,10 @@ class Device:
         :param ordered:
         :return:
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("{}: request_data() - Requesting data from {} to {} for parameters {}".format(self.description, oldest_timestamp_ms, newest_timestamp_ms, param_name_list))
         if oldest_timestamp_ms is None:
             oldest_timestamp_ms = botengine.get_timestamp() - utilities.ONE_MONTH_MS * 6
-
+        
         botengine.request_data(type=botengine.DATA_REQUEST_TYPE_PARAMETERS,
                                device_id=self.device_id,
                                oldest_timestamp_ms=oldest_timestamp_ms,
@@ -818,7 +823,7 @@ class Device:
         :return: .csv string, largely matching the .csv data you would receive from the "botengine --download_device [device_id]" command line interface. Or None if this device doesn't have data.
         """
         if len(self.measurements) == 0:
-            botengine.get_logger().info("{}: get_csv() - This device has no measurements")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("{}: get_csv() - This device has no measurements")
             return None
 
         if params:
@@ -837,7 +842,7 @@ class Device:
         # Check to see that all the parameters we're requesting have valid measurements in this device object
         # Remember that an index number will modify the name of the parameter to make it unique, and we need to match against the unique name of each parameter
         if not set(params).issubset(last_measurements.keys()):
-            botengine.get_logger().info("{}: get_csv() - Not all of the requested parameters exist for this device")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("{}: get_csv() - Not all of the requested parameters exist for this device")
             return None
 
         output = "device_type,device_id,description,timestamp_ms,timestamp_iso,"
@@ -852,7 +857,7 @@ class Device:
 
         except:
             # This can happen because this bot may not have read permissions for this device.
-            # botengine.get_logger().warning("Cannot synchronize measurements for device: " + str(self.description))
+            # botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("Cannot synchronize measurements for device: " + str(self.description))
             return None
 
         processed_readings = {}
@@ -877,7 +882,7 @@ class Device:
         import gc
         gc.collect()
 
-        botengine.get_logger().info("{}: get_csv() - Processing {} measurements ...".format(self.description, str(len(processed_readings))))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("{}: get_csv() - Processing {} measurements ...".format(self.description, str(len(processed_readings))))
 
         for timestamp_ms in sorted(processed_readings.keys()):
             dt = self.location_object.get_local_datetime_from_timestamp(botengine, timestamp_ms)
@@ -906,7 +911,7 @@ def send_command_reliably(botengine, device_id, param_name, param_value):
     :param param_name: Parameter name
     :param param_value: Parameter value
     """
-    botengine.get_logger().info("{}: Send command reliably".format(device_id))
+    botengine.get_logger(f"{__name__}").info("{}: Send command reliably".format(device_id))
     queue = botengine.load_variable(RELIABILITY_VARIABLE_NAME)
     if queue is None:
         queue = {}
@@ -967,12 +972,12 @@ def _attempt_reliable_delivery(botengine, args):
     Attempt reliable delivery of everything in our queue
     This is executed by a timer.
     """
-    botengine.get_logger().info(">reliability")
+    botengine.get_logger(f"{__name__}").info(">reliability")
     queue = botengine.load_variable(RELIABILITY_VARIABLE_NAME)
     if queue is None:
         return
     
-    logger = botengine.get_logger()
+    logger = botengine.get_logger(f"{__name__}")
     
     logger.debug("RELIABILITY: Queue looks like " + str(queue))
 

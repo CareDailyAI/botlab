@@ -19,7 +19,7 @@ class DevelcoButtonDevice(Device):
     """
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [9101]
+    DEVICE_TYPES = [] # [9101] < Deprecated, see button_panic_develco.py >
 
     # Measurement name for the button status
     MEASUREMENT_NAME_BUTTON_STATUS = 'buttonStatus'

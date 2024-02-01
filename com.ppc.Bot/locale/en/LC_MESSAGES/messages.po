@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: English (BotLab)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-30 13:59-0700\n"
+"POT-Creation-Date: 2023-04-21 16:09-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -63,72 +63,68 @@ msgstr "'{}': Learned night time preferences."
 msgid "'{}': Sleep mode"
 msgstr "'{}': Sleep mode"
 
-#: utilities/utilities.py:283
+#: utilities/utilities.py:276
 #, read-only
 msgid "0 seconds"
 msgstr "0 seconds"
 
-#: utilities/utilities.py:267
+#: utilities/utilities.py:260
 #, read-only
 msgid "1 hour"
 msgstr "1 hour"
 
-#: utilities/utilities.py:272
+#: utilities/utilities.py:265
 #, read-only
 msgid "1 minute"
 msgstr "1 minute"
 
-#: utilities/utilities.py:278
+#: utilities/utilities.py:271
 #, read-only
 msgid "1 second"
 msgstr "1 second"
 
-#: signals/dashboard.py:13
-msgid "ALERTS"
-msgstr ""
-
-#: confidence/occupancy_confidence_machine.py:82
-#: confidence/occupancy_confidence_machine.py:129
-#: confidence/occupancy_confidence_machine.py:134
+#: confidence/occupancy_confidence_machine.py:86
+#: confidence/occupancy_confidence_machine.py:136
+#: confidence/occupancy_confidence_machine.py:141
 #, read-only
 msgid "Add 1 Entry device to improve the confidence."
 msgstr "Add 1 Entry device to improve the confidence."
 
-#: confidence/occupancy_confidence_machine.py:85
-#: confidence/occupancy_confidence_machine.py:125
-#: confidence/occupancy_confidence_machine.py:137
-#, fuzzy, read-only
-msgid "Add 1 Motion device to improve the confidence."
-msgstr "Add 1 Motion device to improve the confidence."
-
-#: confidence/occupancy_confidence_machine.py:73
-#: confidence/sleep_confidence_machine.py:87
-#, fuzzy, read-only
-msgid "Add 1 more Motion device to improve the confidence."
-msgstr "Add 1 more Motion device to improve the confidence."
+#: confidence/occupancy_confidence_machine.py:89
+#: confidence/occupancy_confidence_machine.py:132
+#: confidence/occupancy_confidence_machine.py:144
+#, read-only
+msgid "Add 1 Motion or Vayyar device to improve the confidence."
+msgstr "Add 1 Motion or Vayyar device to improve the confidence."
 
 #: confidence/occupancy_confidence_machine.py:77
+#: confidence/sleep_confidence_machine.py:105
+#, read-only
+msgid "Add 1 more Motion or Vayyar device to improve the confidence."
+msgstr "Add 1 more Motion or Vayyar device to improve the confidence."
+
+#: confidence/occupancy_confidence_machine.py:81
 #, read-only
 msgid "Add 1 more entry device to improve the confidence."
 msgstr "Add 1 more entry device to improve the confidence."
 
-#: confidence/sleep_confidence_machine.py:95
-#, fuzzy, read-only
+#: confidence/sleep_confidence_machine.py:113
+#, read-only
 msgid ""
-"Add more Motion devices installed inside bedroom to improve the "
-"confidence."
+"Add more Motion or Vayyar devices installed inside bedroom to improve the"
+" confidence."
 msgstr ""
-"Add more Motion devices installed inside bedroom to improve the "
-"confidence."
+"Add more Motion or Vayyar devices installed inside bedroom to improve the"
+" confidence."
 
-#: confidence/sleep_confidence_machine.py:92
-#, fuzzy, read-only
+#: confidence/sleep_confidence_machine.py:110
+#, read-only
 msgid ""
-"Add more Motion devices installed outside bedroom to improve the "
-"confidence."
+"Add more Motion or Vayyar devices installed outside bedroom to improve "
+"the confidence."
 msgstr ""
-"Add more Motion devices installed outside bedroom to improve the "
-"confidence."
+"Add more Motion or Vayyar devices installed outside bedroom to improve "
+"the confidence."
 
 #. Abstract device type name, doesn't show up in end user documentation
 #: devices/alarm/alarm.py:27 devices/alarm/alarm_eu_develco.py:35
@@ -149,7 +145,7 @@ msgid "Android Picture Frame"
 msgstr "Android Picture Frame"
 
 #. Device type name
-#: devices/health/health_apple.py:30
+#: devices/health/health_apple.py:24
 #, read-only
 msgid "Apple Health"
 msgstr "Apple Health"
@@ -161,7 +157,7 @@ msgid "Apple Proxy"
 msgstr "Apple Proxy"
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/button/button_multi.py:60 devices/button/button_panic.py:49
+#: devices/button/button_multi.py:63 devices/button/button_panic.py:49
 #, read-only
 msgid "Assist Button"
 msgstr "Assist Button"
@@ -186,6 +182,12 @@ msgid "Carbon Monoxide Sensor"
 msgstr "Carbon Monoxide Sensor"
 
 #. Device type name
+#: devices/careactive/watch.py:56
+#, read-only
+msgid "Care Active Watch"
+msgstr "Care Active Watch"
+
+#. Device type name
 #: devices/thermostat/thermostat_centralite_pearl.py:65
 #, read-only
 msgid "Centralite Pearl Thermostat"
@@ -196,12 +198,8 @@ msgstr "Centralite Pearl Thermostat"
 msgid "Cooling set point adjusted"
 msgstr "Cooling set point adjusted"
 
-#: signals/dashboard.py:400
-msgid "DISABLED"
-msgstr ""
-
 #. Super abstract device type name
-#: devices/device.py:300
+#: devices/device.py:287
 #, read-only
 msgid "Device"
 msgstr "Device"
@@ -231,7 +229,7 @@ msgid "GE In-Wall Switch"
 msgstr "GE In-Wall Switch"
 
 #. Device type name
-#: devices/health/health.py:92
+#: devices/health/health.py:91
 #, read-only
 msgid "Health"
 msgstr "Health"
@@ -246,10 +244,6 @@ msgstr "Heating set point adjusted"
 #, read-only
 msgid "Honeywell Lyric Thermostat"
 msgstr "Honeywell Lyric Thermostat"
-
-#: utilities/genai.py:167
-msgid "I'm sorry, I don't know how to respond to that."
-msgstr ""
 
 #. Abstract device type name, doesn't show up in end user documentation
 #: devices/io/io.py:55
@@ -317,14 +311,6 @@ msgstr "M-Series Smart Home Center"
 msgid "Motion Sensor"
 msgstr "Motion Sensor"
 
-#: signals/dashboard.py:12
-msgid "NOW"
-msgstr ""
-
-#: signals/dashboard.py:435
-msgid "Okay, resolving the notification..."
-msgstr ""
-
 #. Device type name
 #: devices/pictureframe/pictureframe_peoplepower.py:107
 #, read-only
@@ -348,20 +334,6 @@ msgstr "Pressure Pad"
 #, read-only
 msgid "Proxy"
 msgstr "Proxy"
-
-#: signals/dashboard.py:398
-msgid "RUNNING"
-msgstr ""
-
-#: signals/dashboard.py:435
-#, fuzzy, read-only
-msgid "Resolve"
-msgstr "stove"
-
-#: signals/dashboard.py:16
-#, fuzzy, read-only
-msgid "SERVICES"
-msgstr "Device"
 
 #. Device type name
 #: devices/thermostat/thermostat_sensibo_sky.py:53
@@ -391,6 +363,12 @@ msgstr "Setting your ecobee thermostat into Sleep mode."
 #, read-only
 msgid "Siren"
 msgstr "Siren"
+
+#. Device type name - Eaton Smart Breaker
+#: devices/smartplug/smartbreaker_eaton.py:87
+#, read-only
+msgid "Smart Breaker"
+msgstr "Smart Breaker"
 
 #. Device type name
 #: devices/smartplug/smartcable_develco.py:21
@@ -452,13 +430,14 @@ msgstr "Touch Sensor"
 msgid "Touchpad"
 msgstr "Touchpad"
 
-#: signals/dashboard.py:435
-msgid "UPDATE STATUS >"
-msgstr ""
-
-#: signals/dashboard.py:435
-msgid "Update Status"
-msgstr ""
+#. Deprecated 9/29/22.  Falls are directly aligned with the "calling"
+#. fall_status measurement.  Logic is repurposed to measure stability events.
+#. See `stability_event_count`
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/vayyar/vayyar.py:185
+#, read-only
+msgid "Vayyar Care"
+msgstr "Vayyar Care"
 
 #. Device type name
 #: devices/vibration/vibration.py:77
@@ -466,37 +445,45 @@ msgstr ""
 msgid "Vibration Sensor"
 msgstr "Vibration Sensor"
 
-#: confidence/occupancy_confidence_machine.py:117
-#, fuzzy, read-only
-msgid "We don't have Motion or Entry device for occupancy home service to work."
-msgstr "We don't have Motion or Entry device for occupancy home service to work."
+#: confidence/occupancy_confidence_machine.py:124
+#, read-only
+msgid ""
+"We don't have Motion or Vayyar or Entry device for occupancy home service"
+" to work."
+msgstr ""
+"We don't have Motion or Vayyar or Entry device for occupancy home service"
+" to work."
 
-#: confidence/occupancy_confidence_machine.py:65
-#, fuzzy, read-only
-msgid "We don't have enough Motion devices for occupancy away service to work."
-msgstr "We don't have enough Motion devices for occupancy away service to work."
+#: confidence/occupancy_confidence_machine.py:69
+#, read-only
+msgid ""
+"We don't have enough Motion or Vayyar devices for occupancy away service "
+"to work."
+msgstr ""
+"We don't have enough Motion or Vayyar devices for occupancy away service "
+"to work."
 
-#: confidence/sleep_confidence_machine.py:70
+#: confidence/sleep_confidence_machine.py:88
 #, read-only
 msgid "We don't have enough devices for sleep service to work."
 msgstr "We don't have enough devices for sleep service to work."
 
-#: confidence/occupancy_confidence_machine.py:69
+#: confidence/occupancy_confidence_machine.py:73
 #, read-only
 msgid "We have high confidence on the occupancy away service."
 msgstr "We have high confidence on the occupancy away service."
 
-#: confidence/occupancy_confidence_machine.py:121
+#: confidence/occupancy_confidence_machine.py:128
 #, read-only
 msgid "We have high confidence on the occupancy home service."
 msgstr "We have high confidence on the occupancy home service."
 
-#: confidence/sleep_confidence_machine.py:79
+#: confidence/sleep_confidence_machine.py:97
 #, read-only
 msgid "We have high confidence on the sleep service."
 msgstr "We have high confidence on the sleep service."
 
-#: confidence/sleep_confidence_machine.py:84
+#: confidence/sleep_confidence_machine.py:102
 #, read-only
 msgid ""
 "We have low confidence on the sleep service due to lack of recent "
@@ -505,7 +492,7 @@ msgstr ""
 "We have low confidence on the sleep service due to lack of recent "
 "measurements."
 
-#: confidence/sleep_confidence_machine.py:76
+#: confidence/sleep_confidence_machine.py:94
 #, read-only
 msgid ""
 "We have medium confidence on the sleep service due to lack of recent "
@@ -513,6 +500,18 @@ msgid ""
 msgstr ""
 "We have medium confidence on the sleep service due to lack of recent "
 "measurements."
+
+#. Device type name
+#: devices/health/health_wellvii.py:24
+#, read-only
+msgid "Wellvii"
+msgstr "Wellvii"
+
+#. Device type name
+#: devices/health/health_xandar_kardian.py:24
+#, read-only
+msgid "Xandar Kardian"
+msgstr "Xandar Kardian"
 
 #: devices/thermostat/thermostat.py:274
 #, read-only
@@ -587,65 +586,141 @@ msgstr ""
 msgid "Your new cooling set point is {} and heating setpoint is {}."
 msgstr "Your new cooling set point is {} and heating setpoint is {}."
 
-#: devices/motion/motion.py:76
+#: devices/smartplug/smartbreaker_eaton.py:233
+#, read-only
+msgid "air"
+msgstr "air"
+
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "bath"
 msgstr "bath"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "bdrm"
 msgstr "bdrm"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "bed"
 msgstr "bed"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "bett"
 msgstr "bett"
 
-#: devices/motion/motion.py:63
+#: devices/smartplug/smartbreaker_eaton.py:295
+#, read-only
+msgid "charger"
+msgstr "charger"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+#, read-only
+msgid "condition"
+msgstr "condition"
+
+#: devices/smartplug/smartbreaker_eaton.py:189
+#, read-only
+msgid "cook"
+msgstr "cook"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+#, read-only
+msgid "cooler"
+msgstr "cooler"
+
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "dad's room"
 msgstr "dad's room"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "dads room"
 msgstr "dads room"
 
+#: devices/smartplug/smartbreaker_eaton.py:189
+#, read-only
+msgid "dinnete"
+msgstr "dinnete"
+
+#: devices/smartplug/smartbreaker_eaton.py:255
+#, read-only
+msgid "dishwasher"
+msgstr "dishwasher"
+
+#: devices/smartplug/smartbreaker_eaton.py:245
+#, read-only
+msgid "dryer"
+msgstr "dryer"
+
 #. "The Moss family <typed a Duress code into the Touchpad>."
-#: utilities/utilities.py:165
+#: utilities/utilities.py:158
 #, read-only
 msgid "entered a duress code, indicating a potential threat."
 msgstr "entered a duress code, indicating a potential threat."
 
+#: devices/smartplug/smartbreaker_eaton.py:295
+#, read-only
+msgid "ev"
+msgstr "ev"
+
+#: devices/smartplug/smartbreaker_eaton.py:189
+#, read-only
+msgid "fridge"
+msgstr "fridge"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+#, read-only
+msgid "furnace"
+msgstr "furnace"
+
+#: devices/smartplug/smartbreaker_eaton.py:213
+#, read-only
+msgid "garage"
+msgstr "garage"
+
 #. "The Moss family <burglary alarm tripped>."
-#: utilities/utilities.py:145
+#: utilities/utilities.py:138
 #, read-only
 msgid "has a burglar alarm"
 msgstr "has a burglar alarm"
 
 #. "The Moss family <burglary alarm tripped because a door opened>."
-#: utilities/utilities.py:153
+#: utilities/utilities.py:146
 #, read-only
 msgid "has a burglar alarm because a door opened"
 msgstr "has a burglar alarm because a door opened"
 
 #. "The Moss family <burglary alarm tripped because a window opened>."
-#: utilities/utilities.py:149
+#: utilities/utilities.py:142
 #, read-only
 msgid "has a burglar alarm because a window opened"
 msgstr "has a burglar alarm because a window opened"
 
 #. "The Moss family <burglary alarm tripped shortly after arming>."
-#: utilities/utilities.py:161
+#: utilities/utilities.py:154
 #, read-only
 msgid "has a burglar alarm, shortly after arming"
 msgstr "has a burglar alarm, shortly after arming"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+#, read-only
+msgid "heater"
+msgstr "heater"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+#, read-only
+msgid "hvac"
+msgstr "hvac"
 
 #. Device type name
 #: devices/camera/camera_peoplepower_presenceios.py:22
@@ -660,58 +735,114 @@ msgid "iOS Picture Frame"
 msgstr "iOS Picture Frame"
 
 #. "The Moss family <is experiencing a water leak>."
-#: utilities/utilities.py:157
+#: utilities/utilities.py:150
 #, read-only
 msgid "is experiencing a water leak"
 msgstr "is experiencing a water leak"
 
+#: devices/smartplug/smartbreaker_eaton.py:189
+#, read-only
+msgid "kitch"
+msgstr "kitch"
+
+#: devices/smartplug/smartbreaker_eaton.py:201
+#, read-only
+msgid "lamp"
+msgstr "lamp"
+
+#: devices/smartplug/smartbreaker_eaton.py:201
+#, read-only
+msgid "lantern"
+msgstr "lantern"
+
+#: devices/smartplug/smartbreaker_eaton.py:201
+#, read-only
+msgid "light"
+msgstr "light"
+
 #. "The Moss family <may need some assistance>." - generic message
-#: utilities/utilities.py:169
+#: utilities/utilities.py:162
 #, read-only
 msgid "may need some assistance"
 msgstr "may need some assistance"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "mom's room"
 msgstr "mom's room"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "moms room"
 msgstr "moms room"
 
-#: devices/motion/motion.py:76
+#: devices/smartplug/smartbreaker_eaton.py:201
+#, read-only
+msgid "outlet"
+msgstr "outlet"
+
+#: devices/smartplug/smartbreaker_eaton.py:265
+#, read-only
+msgid "oven"
+msgstr "oven"
+
+#: devices/smartplug/smartbreaker_eaton.py:223
+#, read-only
+msgid "pool"
+msgstr "pool"
+
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "powder"
 msgstr "powder"
 
-#: devices/motion/motion.py:76
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "schlaf"
 msgstr "schlaf"
 
-#: devices/motion/motion.py:76
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "shower"
 msgstr "shower"
 
-#: devices/motion/motion.py:76
+#: devices/smartplug/smartbreaker_eaton.py:265
+#, read-only
+msgid "stove"
+msgstr "stove"
+
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "toilet"
 msgstr "toilet"
 
-#: utilities/utilities.py:269
+#: devices/smartplug/smartbreaker_eaton.py:285
+#, read-only
+msgid "tub"
+msgstr "tub"
+
+#: devices/smartplug/smartbreaker_eaton.py:275
+#, read-only
+msgid "water heater"
+msgstr "water heater"
+
+#: utilities/utilities.py:262
 #, read-only
 msgid "{} hours"
 msgstr "{} hours"
 
-#: utilities/utilities.py:274
+#: utilities/utilities.py:267
 #, read-only
 msgid "{} minutes"
 msgstr "{} minutes"
 
-#: utilities/utilities.py:280
+#: utilities/utilities.py:273
 #, read-only
 msgid "{} seconds"
 msgstr "{} seconds"

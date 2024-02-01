@@ -155,9 +155,15 @@ class LocationDashboardMicroservice(Intelligence):
             # Next try to find some existing content to update
             focused_content_index = None
             for index, content in enumerate(focused_card['content']):
-                if content['id'] == card_content['content']['id']:
-                    focused_content_index = index
-                    break
+                try:
+                    if content['id'] == card_content['content']['id']:
+                        focused_content_index = index
+                        break
+                except Exception as e:
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|update_dashboard_content() Error parsing content: " + str(e))
+                    import traceback
+                    botengine.get_logger().error(traceback.format_exc())
+                    pass
 
             if card_content['content']['id'] not in self.content_id:
                 self.content_id.append(card_content['content']['id'])
@@ -215,7 +221,7 @@ class LocationDashboardMicroservice(Intelligence):
 
                         if not okay:
                             # Kill it.
-                            botengine.get_logger().warning("location_dashboard_microservice: Deleting orphaned card '{}' which is older than a week and a day. Please check logic around this.".format(content['comment']))
+                            botengine.get_logger().warning("location_dashboard_microservice: Deleting orphaned card '{}' which is older than a week and a day. Please check logic around this.".format(content.get('comment')))
                             del(focused_dashboard['cards'][card_index]['content'][content_index])
 
                             if card_content['content']['id'] in self.content_id:

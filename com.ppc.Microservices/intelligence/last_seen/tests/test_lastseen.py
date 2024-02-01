@@ -3,12 +3,14 @@ from botengine_pytest import BotEnginePyTest
 
 from devices.motion.motion import MotionDevice
 from devices.entry.entry import EntryDevice
+from devices.vayyar.vayyar import VayyarDevice
 
 from locations.location import Location
 
 CURRENT_TEST_DOOR_OPEN = 0
 CURRENT_TEST_MOTION_DETECT = 1
 CURRENT_TEST_DOOR_CLOSE = 2
+CURRENT_TEST_VAYYAR = 3
 
 class TestLastSeenMicroservice():
 
@@ -30,8 +32,11 @@ class TestLastSeenMicroservice():
         self.entry = EntryDevice(self.botengine, self.location, "entry_id_1", "10014", "Test Entry")
         self.entry.initialize(self.botengine)
 
+        self.vayyar = VayyarDevice(self.botengine, self.location, "vayyar_id_1", 0, "Vayyar Device", precache_measurements=False)
+        self.vayyar.born_on = 0
         self.location.devices[self.entry.device_id] = self.entry
         self.location.devices[self.motion.device_id] = self.motion
+        self.location.devices[self.vayyar.device_id] = self.vayyar
 
         # Start up the bot
         self.location.new_version(self.botengine)
@@ -57,6 +62,10 @@ class TestLastSeenMicroservice():
         measurements = [{'deviceId': 'entry_id_1', 'updated': True, 'name': 'doorStatus', 'value': False, 'time': self.botengine.get_timestamp() - 1000}]
         self.entry.update(self.botengine, measurements)
 
+    def test_vayyar_lastseen(self):
+        self.current_test = CURRENT_TEST_VAYYAR
+        self.lastseen_intelligence.knowledge_did_update_vayyar_occupants(self.botengine, self.vayyar, None)
+
     def datastream_updated(self, botengine, address, content):
         """
         Data Stream Message Received
@@ -75,6 +84,9 @@ class TestLastSeenMicroservice():
 
         elif self.current_test == CURRENT_TEST_MOTION_DETECT:
             assert self.lastseen_intelligence.last_observed_motion_object == self.motion
+
+        elif self.current_test == CURRENT_TEST_VAYYAR:
+            assert insight_json["device_id"] == self.vayyar.device_id
 
     def initialize(self, botengine):
         """

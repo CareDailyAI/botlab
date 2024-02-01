@@ -90,9 +90,6 @@ class FilterExampleMicroservice(Filter):
         # This retrieves the measurement dictionary for this parameter name, using our super class's "get_parameter()" method.
         measured_rssi = self.get_parameter(measurements, "rssi")
 
-        if measured_rssi is None:
-            return
-
         # Here's the actual value. We'll print this out later and compare the original vs. new.
         rssi_value = measured_rssi['value']
 
@@ -110,9 +107,9 @@ class FilterExampleMicroservice(Filter):
         botengine.get_logger().info(utilities.Color.GREEN + "Filter: Transformed measured RSSI {} into low-pass RSSI {}".format(rssi_value, measured_rssi['value']) + utilities.Color.END)
         botengine.get_logger().info("Filter: Corrected rssi = {}".format(json.dumps(self.get_parameter(measurements, "rssi"), sort_keys=True)))
 
+
         # EXAMPLE of ignoring a parameter's updated value completely.
-        if self.get_parameter(measurements, "lqi"):
-            self.get_parameter(measurements, "lqi")['updated'] = False
+        self.get_parameter(measurements, "lqi")['updated'] = False
 
         return
 

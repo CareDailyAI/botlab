@@ -181,7 +181,7 @@ class BotEnginePyTest:
     def __init__(self, inputs={}):
         """Constructor"""
         self.inputs = inputs
-        self.logger = self.create_logger()
+        self.loggers = {}
         self.reset()
 
 
@@ -195,12 +195,14 @@ class BotEnginePyTest:
         self.execute_again_seconds = 0
         self.execute_again_timestamp = 0
         self.playback = False
-        self.notify_message = None
+        self.notification_content = None
         self.customer_support_body = None
         self.customer_support_comments = []
 
         import time
-        self.time_ms = int(time.time() * 1000)
+        # Execution time should be consistent
+        # Set by default to June 1st, 2023 12:00 PM PST
+        self.time_ms = 1685646000000
 
         # Created tags
         self.user_tags = []
@@ -301,9 +303,6 @@ class BotEnginePyTest:
         self.organization_properties = {}
         self.all_trigger_types = []
 
-        # True if this bot is being executed with previously recorded data
-        self.playback = True
-
         # What is this bot's instance ID
         self.bot_instance_id = 0
 
@@ -317,15 +316,34 @@ class BotEnginePyTest:
     #============================================================================
     # Loggers
     #============================================================================
-    def create_logger(self):
+        
+
+    def _playback_logger_timestamp(self, record, datefmt=None):
+        """
+        Logger playback timestamp override
+        :param record:
+        :param datefmt:
+        :return:
+        """
+        global playback_timestamp_ms
+        global playback_timezone
+
+        import pytz
+        import datetime
+        return datetime.datetime.fromtimestamp(self.get_timestamp() / 1000.0, pytz.timezone("US/Pacific"))
+    
+    def create_logger(self, name="bot"):
         """Create a logger"""
-        logger = logging.getLogger('app')
+        logging.Formatter.formatTime = self._playback_logger_timestamp
+        logger = logging.getLogger(name)
 
         if not logger.handlers:
             # Create a console handler
             console_handler = logging.StreamHandler()
             console_handler.setLevel(LOG_LEVEL)
-            console_handler.setFormatter(logging.Formatter(fmt="%(levelname)-8s %(message)s"))
+            fmt = logging.Formatter('%(asctime)s %(levelname)-8s %(name)-12s %(message)s')
+
+            console_handler.setFormatter(fmt)
 
             # Create a blank line handler
             blank_handler = logging.StreamHandler()
@@ -342,12 +360,14 @@ class BotEnginePyTest:
 
         return logger
 
-    def get_logger(self):
-        return self.logger
+    def get_logger(self, name="bot"):
+        if name not in self.loggers:
+            self.loggers[name] = self.create_logger(name)
+        return self.loggers[name]
 
     def log(self, message, num_of_blank_lines=1):
         """Log with blank lines before the message"""
-        logger = self.logger
+        logger = self.get_logger(f"{__name__}.{__class__.__name__}")
 
         # Switch the handler, output blank lines
         logger.removeHandler(logger.console_handler)
@@ -365,11 +385,11 @@ class BotEnginePyTest:
     # Inputs
     #============================================================================
     def get_inputs(self):
-        self.logger.debug(">get_inputs()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">get_inputs()")
 
         response = self.inputs
 
-        self.logger.debug("<get_inputs() response=" + str(response))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_inputs() response=" + str(response))
         return response
 
     def set_inputs(self, inputs):
@@ -394,7 +414,7 @@ class BotEnginePyTest:
         try:
             accessBlock = self.inputs['access']
         except KeyError:
-            self.logger.debug("<get_trigger_info")
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_trigger_info")
             return None
 
         triggerBlock = None
@@ -407,7 +427,7 @@ class BotEnginePyTest:
             except KeyError:
                 pass
 
-        self.logger.debug("<get_trigger_info")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_trigger_info")
         return triggerBlock
     
     def get_triggers(self):
@@ -487,6 +507,15 @@ class BotEnginePyTest:
         """
         if 'dataStream' in self.inputs:
             return self.inputs['dataStream']
+        
+        return None
+    
+    def get_input_key(self):
+        """
+        :return: the key provided by the input, if any
+        """
+        if 'key' in self.inputs:
+            return self.inputs['key']
         
         return None
     
@@ -688,7 +717,7 @@ class BotEnginePyTest:
                             1 - managed
                             2 - measured
         """
-        self.logger.warning("botengine_pytest: Attempting to add_occupancy() but we haven't implemented this yet.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning("botengine_pytest: Attempting to add_occupancy() but we haven't implemented this yet.")
         return
 
     def delete_occupancy(self, occupancy):
@@ -700,7 +729,7 @@ class BotEnginePyTest:
                             1 - managed
                             2 - measured
         """
-        self.logger.warning("botengine_pytest: Attempting to delete_occupancy() but we haven't implemented this yet.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning("botengine_pytest: Attempting to delete_occupancy() but we haven't implemented this yet.")
         return
 
     def get_language(self):
@@ -751,54 +780,54 @@ class BotEnginePyTest:
     # Variables
     #============================================================================
     def save_variable(self, name, value, required_for_each_execution=False, shared=False):
-        self.logger.debug("save_variable: {}:{}".format(name, value))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("save_variable: {}:{}".format(name, value))
         self.variables[name] = value
 
     def save_shared_variable(self, name, value):
-        self.logger.debug("save_shared_variable: {}:{}".format(name, value))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("save_shared_variable: {}:{}".format(name, value))
         self.variables[name] = value
 
     def save_variables(self, variables_dictionary):
-        self.logger.debug("save_variables: {}".format(variables_dictionary))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("save_variables: {}".format(variables_dictionary))
         pass
 
     def save_variables(self, variables_dictionary, required_for_each_execution=False, shared=False):
-        self.logger.debug("load_variable: {} (required_for_each_execution={}; shared={})".format(variables_dictionary, required_for_each_execution, shared))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("load_variable: {} (required_for_each_execution={}; shared={})".format(variables_dictionary, required_for_each_execution, shared))
         pass
 
     def load_variable(self, name):
-        self.logger.debug("load_variable: {}".format(name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("load_variable: {}".format(name))
         if name in self.variables:
             return self.variables[name]
         else:
             return None
 
     def load_shared_variable(self, name):
-        self.logger.debug("load_shared_variable: {}".format(name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("load_shared_variable: {}".format(name))
         if name in self.variables:
             return self.variables[name]
         else:
             return None
 
     def delete_variable(self, name):
-        self.logger.debug("delete_variable: {}".format(name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("delete_variable: {}".format(name))
         if name in self.variables:
             del self.variables[name]
 
     def delete_all_variables(self):
-        self.logger.debug("delete_all_variables")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("delete_all_variables")
         self.variables = {}
 
     def clear_variable(self, name):
-        self.logger.debug("clear_variable: {}".format(name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("clear_variable: {}".format(name))
         pass
 
     def flush_binary_variables(self):
-        self.logger.debug("flush_binary_variables")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("flush_binary_variables")
         pass
 
     def flush_variable(self):
-        self.logger.debug("flush_variable")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("flush_variable")
         pass
 
     
@@ -808,13 +837,165 @@ class BotEnginePyTest:
     #============================================================================
     # Notifications
     #============================================================================
-    def notify(self, push_title=None, push_subtitle=None, push_content=None, push_category=None, push_sound=None, push_sms_fallback_content=None, push_template_filename=None, push_template_model=None, push_info=None,
+    def notify(self, 
+               push_title=None, push_subtitle=None, push_content=None, push_category=None, push_sound=None, push_sms_fallback_content=None, push_template_filename=None, push_template_model=None, push_info=None,
                email_subject=None, email_content=None, email_html=False, email_attachments=None, email_template_filename=None, email_template_model=None, email_addresses=None,
-               sms_content=None, sms_template_filename=None, sms_template_model=None, sms_group_chat=True, admin_domain_name=None, brand=None, language=None, user_id=None, user_id_list=None, to_residents=False, to_supporters=False, to_admins=False):
+               sms_content=None, sms_template_filename=None, sms_template_model=None, sms_group_chat=True, 
+               device_message_device_id=None, device_message_title=None, device_message_text=None, device_message_from=None, device_message_duration=None, device_message_icon=None, device_message_muted=None, device_message_imageUrl=None, device_message_image=None,
+               admin_domain_name=None, brand=None, language=None, user_id=None, user_id_list=None, to_residents=False, to_supporters=False, to_admins=False):
+        
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">notify()")
+        if to_admins:
+            import traceback
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").error("|notify() called with to_admins=True, which is no longer supported. Please update your code: {}".format(traceback.format_exc()))
 
-        self.logger.info(">notify(): sms_content={}; sms_group_chat={}; push_content={}".format(sms_content, sms_group_chat, push_content))
-        self.notify_called = True
-        self.notify_message = push_content
+        notifications = {}
+
+        user_declared = False
+
+        if to_residents:
+            if 'userCategories' not in notifications:
+                notifications['userCategories'] = []
+            user_declared = True
+            notifications['userCategories'].append(1)
+
+        if to_supporters:
+            if 'userCategories' not in notifications:
+                notifications['userCategories'] = []
+            user_declared = True
+            notifications['userCategories'].append(2)
+
+        if user_id is not None:
+            if 'users' not in notifications:
+                notifications['users'] = []
+            user_declared = True
+            notifications['users'].append(user_id)
+
+        if user_id_list is not None:
+            if 'users' not in notifications:
+                notifications['users'] = []
+            user_declared = True
+            notifications['users'] += user_id_list
+
+        if email_addresses is not None:
+            if len(email_addresses) > 0:
+                user_declared = True
+
+        if not user_declared:
+            if 'userCategories' not in notifications:
+                notifications['userCategories'] = []
+            notifications['userCategories'].append(1)
+
+        if brand is not None:
+            notifications['brand'] = brand
+
+        if language is not None:
+            notifications['language'] = language
+
+        send = False
+
+        # The notification type is included in a push notification to the app to let the app know how to render it.
+        # It is also included in the GET Notifications API available to apps, which I don't believe are being used anymore.
+        # Type 4 says, "This message came from the bot."
+        notifications['type'] = 4
+
+        if sms_content is not None or sms_template_filename is not None:
+            send = True
+            notifications['smsMessage'] = {}
+
+            notifications['smsMessage']['individual'] = not sms_group_chat
+
+            if sms_content:
+                notifications['smsMessage']['content'] = sms_content
+
+            if sms_template_filename:
+                notifications['smsMessage']['template'] = sms_template_filename
+
+            if sms_template_model:
+                notifications['smsMessage']['model'] = sms_template_model
+
+        if push_content is not None or push_template_filename is not None or push_info is not None:
+            send = True
+            notifications['pushMessage'] = {}
+
+            if push_sms_fallback_content is not None:
+                notifications['pushMessage']['smsContent'] = push_sms_fallback_content
+        
+            if push_title is not None:
+                notifications['pushMessage']['title'] = push_title
+
+            if push_subtitle is not None:
+                notifications['pushMessage']['subtitle'] = push_subtitle
+
+            if push_content is not None:
+                notifications['pushMessage']['content'] = push_content
+            
+            if push_category is not None:
+                notifications['pushMessage']['category'] = push_category
+
+            if push_sound is not None:
+                notifications['pushMessage']['sound'] = push_sound
+
+            if push_template_filename is not None:
+                notifications['pushMessage']['template'] = push_template_filename
+
+            if push_template_model is not None:
+                notifications['pushMessage']['model'] = push_template_model
+
+            if push_info is not None:
+                notifications['pushMessage']['info'] = push_info
+
+        if email_content is not None or email_template_filename is not None:
+            send = True
+            notifications['emailMessage'] = {}
+
+            notifications['emailMessage']['html'] = email_html
+
+            if email_subject is not None:
+                notifications['emailMessage']['subject'] = email_subject
+
+            if email_content is not None:
+                notifications['emailMessage']['content'] = email_content
+
+            if email_template_filename is not None:
+                notifications['emailMessage']['template'] = email_template_filename
+
+            if email_template_model is not None:
+                notifications['emailMessage']['model'] = email_template_model
+
+            if email_attachments is not None:
+                notifications['emailMessage']['attachments'] = email_attachments
+
+            if email_addresses is not None:
+                notifications['emailMessage']['recipients'] = email_addresses
+
+        if device_message_text is not None:
+            send = True
+            notifications["deviceMessage"] = {}
+
+            notifications["deviceMessage"]["text"] = device_message_text
+            notifications["deviceMessage"]["duration"] = device_message_duration or 60
+
+            if device_message_device_id is not None:
+                notifications["deviceMessage"]["deviceId"] = device_message_device_id
+            if device_message_title is not None:
+                notifications["deviceMessage"]["title"] = device_message_title
+            if device_message_from is not None:
+                notifications["deviceMessage"]["from"] = device_message_from
+            if device_message_icon is not None:
+                notifications["deviceMessage"]["icon"] = device_message_icon
+            if device_message_muted is not None:
+                notifications["deviceMessage"]["muted"] = device_message_muted
+            if device_message_imageUrl is not None:
+                notifications["deviceMessage"]["imageUrl"] = device_message_imageUrl
+            if device_message_image is not None:
+                notifications["deviceMessage"]["image"] = device_message_image
+
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("|notify() notifications={}".format(notifications))
+        if send:
+            self.notify_called = True
+            self.notification_content = notifications
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("<notify() send={}".format(send))
 
     def is_notify_called(self):
         """Reset the notify called variable to be able to check it multiple times"""
@@ -842,7 +1023,7 @@ class BotEnginePyTest:
         if call_time is not None:
             params["callTime"] = call_time
         import json
-        self.get_logger().debug("botengine: make_voice_call() params={} body={}".format(json.dumps(params, indent=2), json.dumps(body, indent=2)))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine: make_voice_call() params={} body={}".format(json.dumps(params, indent=2), json.dumps(body, indent=2)))
         pass
 
     def set_incoming_voicecall(self, user_id, voice_model):
@@ -860,7 +1041,7 @@ class BotEnginePyTest:
         }
         
         import json
-        self.get_logger().debug("botengine: set_incoming_voicecall() params={} body={}".format(json.dumps(params), json.dumps(body)))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine: set_incoming_voicecall() params={} body={}".format(json.dumps(params), json.dumps(body)))
         pass
 
     def delete_incoming_voicecall(self, user_id):
@@ -873,7 +1054,7 @@ class BotEnginePyTest:
             "userId": user_id
         }
         import json
-        self.get_logger().debug("botengine: delete_incoming_voicecall() params={} body={}".format(json.dumps(params)))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine: delete_incoming_voicecall() params={} body={}".format(json.dumps(params)))
         pass
 
     def send_mms(self, user_id, media_content=None, url=None, media_type=1, ext=None, caption=None):
@@ -887,12 +1068,12 @@ class BotEnginePyTest:
         :param caption: Additional text to accompany the media file.
         :return:
         """
-        self.logger.info(">send_mss(): user_id={}; media_content={}; url={}; media_type={}; ext={}; caption={}".format(user_id, media_content, url, media_type, ext, caption))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">send_mss(): user_id={}; media_content={}; url={}; media_type={}; ext={}; caption={}".format(user_id, media_content, url, media_type, ext, caption))
         pass
 
     def email_admins(self, email_subject=None, email_content=None, email_html=False, email_attachments=None, email_template_filename=None, email_template_model=None, email_addresses=None, brand=None, categories=[1,2]):
         self.admin_mail_notified = True
-        self.logger.info(">email_admins(): email_subject={}; email_content={} email_html={} email_attachments={} email_template_filename={} email_template_model={} email_addresses={} brand={} categories={}".format(email_subject, email_content, email_html, email_attachments, email_template_filename, email_template_model, email_addresses, brand, categories))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">email_admins(): email_subject={}; email_content={} email_html={} email_attachments={} email_template_filename={} email_template_model={} email_addresses={} brand={} categories={}".format(email_subject, email_content, email_html, email_attachments, email_template_filename, email_template_model, email_addresses, brand, categories))
         return
 
     def get_resident_last_names(self):
@@ -1016,7 +1197,7 @@ class BotEnginePyTest:
         :params value: The value to set for this parameter
         :params index: Optional index number / letters. Default is None.
         """
-        self.logger.debug(
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
             ">form_command() param_name=" + str(param_name) + ", value=" + str(value) + ", index=" + str(index))
 
         response = None
@@ -1026,7 +1207,7 @@ class BotEnginePyTest:
         else:
             response = {"name": param_name, "index": index, "value": value}
 
-        self.logger.debug("<form_command() response=" + str(response))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<form_command() response=" + str(response))
         return response
 
     def send_command(self, device_id, param_name, value, index=None):
@@ -1053,7 +1234,7 @@ class BotEnginePyTest:
         
         :param tag The tag to give the user
         """
-        self.logger.info(">botengine.tag_user(" + str(tag) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.tag_user(" + str(tag) + ")")
         self.user_tags.append(tag)
 
     def tag_location(self, tag):
@@ -1062,7 +1243,7 @@ class BotEnginePyTest:
         :param tag The tag to give the location
         :param location_id The location ID to tag
         """
-        self.logger.info(">botengine.tag_location(" + str(tag) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.tag_location(" + str(tag) + ")")
         self.location_tags.append(tag)
 
     def tag_device(self, tag, device_id):
@@ -1071,7 +1252,7 @@ class BotEnginePyTest:
         :param tag The tag to give the device
         :param device_id The device ID to tag
         """
-        self.logger.info(">botengine.tag_device(" + str(tag) + ", " + str(device_id) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.tag_device(" + str(tag) + ", " + str(device_id) + ")")
         self.device_tags.append(tag)
 
     def tag_file(self, tag, file_id):
@@ -1080,7 +1261,7 @@ class BotEnginePyTest:
         :param tag The tag to give the file
         :param file_id The file ID to tag
         """
-        self.logger.info(">botengine.tag_File(" + str(tag) + ", " + str(file_id) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.tag_File(" + str(tag) + ", " + str(file_id) + ")")
         self.file_tags.append(tag)
 
     def delete_user_tag(self, tag):
@@ -1088,7 +1269,7 @@ class BotEnginePyTest:
         
         :param tag Tag to delete
         """
-        self.logger.info(">botengine.delete_user_tag(" + str(tag) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.delete_user_tag(" + str(tag) + ")")
         self.deleted_user_tags.append(tag)
 
     def delete_location_tag(self, tag):
@@ -1096,7 +1277,7 @@ class BotEnginePyTest:
         
         :param tag Tag to delete
         """
-        self.logger.info(">botengine.delete_location_tag(" + str(tag) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.delete_location_tag(" + str(tag) + ")")
         self.deleted_location_tags.append(tag)
 
     def delete_device_tag(self, tag, device_id):
@@ -1104,7 +1285,7 @@ class BotEnginePyTest:
 
         :param tag Tag to delete
         """
-        self.logger.info(">botengine.delete_device_tag(" + str(tag) + ", " + str(device_id) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.delete_device_tag(" + str(tag) + ", " + str(device_id) + ")")
         self.deleted_device_tags.append(tag)
 
     def delete_file_tag(self, tag, file_id):
@@ -1112,7 +1293,7 @@ class BotEnginePyTest:
         
         :param tag Tag to delete
         """
-        self.logger.info(">botengine.delete_device_tag(" + str(tag) + ", " + str(file_id) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.delete_device_tag(" + str(tag) + ", " + str(file_id) + ")")
         self.deleted_file_tags.append(tag)
 
     def get_location_tags(self):
@@ -1141,32 +1322,32 @@ class BotEnginePyTest:
     # Timers
     #============================================================================
     def set_alarm(self, timestamp_ms, function, argument=None, reference=None):
-        self.logger.info(">botengine.set_alarm(timestamp_ms={}, function={}, argument={}, reference={})".format(timestamp_ms, function, argument, reference))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.set_alarm(timestamp_ms={}, function={}, argument={}, reference={})".format(timestamp_ms, function, argument, reference))
         self.alarms[reference] = (timestamp_ms, argument, function)
 
     def start_timer_s(self, seconds, function, argument=None, reference=None):
-        self.logger.info(">botengine.start_timer_s(s={}, function={}, argument={}, reference={})".format(seconds, function, argument, reference))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.start_timer_s(s={}, function={}, argument={}, reference={})".format(seconds, function, argument, reference))
         self.timers[reference] = (self.get_timestamp() + seconds * 1000, argument, function)
 
     def start_timer_ms(self, milliseconds, function, argument=None, reference=None):
-        self.logger.info(">botengine.start_timer_ms(ms={}, function={}, argument={}, reference={})".format(milliseconds, function, argument, reference))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.start_timer_ms(ms={}, function={}, argument={}, reference={})".format(milliseconds, function, argument, reference))
         self.timers[reference] = (self.get_timestamp() + milliseconds, argument, function)
 
     def start_timer(self, seconds, function, argument=None, reference=None):
-        self.logger.info(">botengine.start_timer(s={}, function={}, argument={}, reference={})".format(seconds, function, argument, reference))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.start_timer(s={}, function={}, argument={}, reference={})".format(seconds, function, argument, reference))
         self.timers[reference] = (self.get_timestamp() + seconds * 1000, argument, function)
 
     def cancel_timers(self, reference):
         if reference in self.timers:
-            self.get_logger().debug("cancel_timers: {} timers:[{}]".format(reference, len(self.timers[reference])))
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug("cancel_timers: {} timers:[{}]".format(reference, len(self.timers[reference])))
             del(self.timers[reference])
 
         if reference in self.alarms:
-            self.get_logger().debug("cancel_timers: {} alarms:[{}]".format(reference, len(self.alarms[reference])))
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug("cancel_timers: {} alarms:[{}]".format(reference, len(self.alarms[reference])))
             del(self.alarms[reference])
 
     def is_timer_running(self, reference):
-        self.get_logger().debug("is_timer_running: {} {}".format(reference, reference in self.timers or reference in self.alarms))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("is_timer_running: {} {}".format(reference, reference in self.timers or reference in self.alarms))
         return reference in self.timers or reference in self.alarms
 
     def is_executing_timer(self):
@@ -1180,30 +1361,41 @@ class BotEnginePyTest:
         :return: Next timer tuple: (absolute timestamp the next timer will fire in milliseconds, argument, reference)
         """
         # Search through timers by timestamp
+        timer = None
         for ref, item in sorted(self.timers.items(), key=lambda x: x[1][0]):
             # Skip timers that are not for this reference if specified
             if reference is not None and reference not in ref:
                 continue
-            # Return the first alarm in our sorted list
-            return (item[0], item[1], ref, item[2])
+            # Assign the first timer in our sorted list
+            timer =  (item[0], item[1], ref, item[2])
+            # Override if it is an exact reference match
+            if reference is not None and reference == ref:
+                timer = (item[0], item[1], ref, item[2])
+                break
 
         # No timers found
-        return None
+        return timer
 
     def get_next_alarm(self, reference=None):
         """
         :return: Next alarm tuple: (absolute timestamp the next timer will fire in milliseconds, argument, reference, function)
         """
         # Search through alarms by timestamp
+        alarm = None
         for ref, item in sorted(self.alarms.items(), key=lambda x: x[1]):
             # Skip alarms that are not for this reference if specified
             if reference is not None and reference not in ref:
                 continue
-            # Return the first alarm in our sorted list
-            return (item[0], item[1], ref, item[2])
+            # Assign the first alarm in our sorted list
+            if alarm is None:
+                alarm = (item[0], item[1], ref, item[2])
+            # Override if it is an exact reference match
+            if reference is not None and reference == ref:
+                alarm = (item[0], item[1], ref, item[2])
+                break
 
         # No alarms found
-        return None
+        return alarm
 
     def get_next_alarm_or_timer(self, reference=None):
         next_alarm = self.get_next_alarm(reference)
@@ -1231,9 +1423,9 @@ class BotEnginePyTest:
         :return:
         """
         next_alarm_or_timer = self.get_next_alarm_or_timer(reference)
-        self.logger.debug(">botengine.fire_next_timer_or_alarm(): All alarms={}".format(self.alarms))
-        self.logger.debug(">botengine.fire_next_timer_or_alarm(): All timers={}".format(self.timers))
-        self.logger.debug(">botengine.fire_next_timer_or_alarm(): Next alarm={}".format(next_alarm_or_timer))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">botengine.fire_next_timer_or_alarm(): All alarms={}".format(self.alarms))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">botengine.fire_next_timer_or_alarm(): All timers={}".format(self.timers))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">botengine.fire_next_timer_or_alarm(): Next alarm={}".format(next_alarm_or_timer))
 
         if next_alarm_or_timer is not None:
             function = next_alarm_or_timer[3]
@@ -1244,7 +1436,7 @@ class BotEnginePyTest:
                 # If not, find the module that should fire the timer
                 for module in intelligence_module.parent.intelligence_modules:
                     intelligence_module_lookup = intelligence_module.parent.intelligence_modules[module]
-                    self.logger.debug(">botengine.fire_next_timer_or_alarm(): Microservice={} '{}'".format(module, intelligence_module_lookup.intelligence_id))
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(">botengine.fire_next_timer_or_alarm(): Microservice={} '{}'".format(module, intelligence_module_lookup.intelligence_id))
                     if intelligence_module_lookup.intelligence_id == argument[0]:
                         intelligence_module = intelligence_module_lookup
                         break
@@ -1256,14 +1448,14 @@ class BotEnginePyTest:
 
                 # Note that the microservice's real argument is placed in element 1,
                 # and element 0 contains the intelligence_id for the microservice to trigger.
-                self.logger.info("\n\n\n>botengine.fire_next_timer_or_alarm(): FIRING TIMER with argument={}".format(argument[1]))
+                self.get_logger(f"{__name__}.{__class__.__name__}").info("\n\n\n>botengine.fire_next_timer_or_alarm(): FIRING TIMER with argument={}".format(argument[1]))
                 import datetime
                 from dateutil.tz import tzlocal
-                self.logger.info(">botengine.fire_next_timer_or_alarm(): ISO time {}".format(datetime.datetime.fromtimestamp(int(self.get_timestamp()/1000), tzlocal()).isoformat()))
+                self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.fire_next_timer_or_alarm(): ISO time {}".format(datetime.datetime.fromtimestamp(int(self.get_timestamp()/1000), tzlocal()).isoformat()))
                 intelligence_module.timer_fired(self, argument[1])
 
         else:
-            self.logger.info("\n\n\n>botengine.fire_next_timer_or_alarm(): NO TIMERS AVAILABLE TO FIRE")
+            self.get_logger(f"{__name__}.{__class__.__name__}").info("\n\n\n>botengine.fire_next_timer_or_alarm(): NO TIMERS AVAILABLE TO FIRE")
 
 
     def get_cloud_address(self):
@@ -1354,7 +1546,7 @@ class BotEnginePyTest:
 
         :return: a dictionary of questions we've previously asked. The question's ID is the dictionary's key, the question itself is the value.
         """
-        self.logger.debug("botengine_pytest: Attempting to get_asked_questions but we haven't implemented this yet.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine_pytest: Attempting to get_asked_questions but we haven't implemented this yet.")
         return {}
 
     def change_answer(self, question, new_answer):
@@ -1370,7 +1562,7 @@ class BotEnginePyTest:
         :param question: Question to update the answer for
         :param new_answer: New answer to inject into the question back to the user
         """
-        self.logger.debug("botengine_pytest: Attempting to change_answer() but we haven't implemented this yet.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine_pytest: Attempting to change_answer() but we haven't implemented this yet.")
         return
 
     def resynchronize_questions(self):
@@ -1536,11 +1728,18 @@ class BotEnginePyTest:
         :param end_timestamp_ms: Optional end timestamp
         :return:
         """
-        if start_timestamp_ms in self.states:
-            if address in self.states[start_timestamp_ms]:
-                return self.states[start_timestamp_ms][address]
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("get_timeseries_state({}, {}, {})".format(address, start_timestamp_ms, end_timestamp_ms))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("get_timeseries_state: timestamps: {}".format(self.states.keys()))
 
-        return None
+        states = {}
+        for timestamp_ms in [key for key in self.states.keys() if isinstance(key, int)]:
+            if end_timestamp_ms is None:
+                end_timestamp_ms = self.get_timestamp()
+            if start_timestamp_ms <= timestamp_ms <= end_timestamp_ms:
+                if address in self.states[timestamp_ms]:
+                    states[timestamp_ms] = self.states[timestamp_ms][address]
+
+        return states
 
     def flush_states(self):
         """
@@ -1687,8 +1886,8 @@ class BotEnginePyTest:
                 }
 
         import json
-        self.logger.info("|narrate() params={}".format(json.dumps(params, sort_keys=True)))
-        self.logger.info("|narrate() body={}".format(json.dumps(body, sort_keys=True)))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("|narrate() params={}".format(json.dumps(params, sort_keys=True)))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("|narrate() body={}".format(json.dumps(body, sort_keys=True)))
         if extra_json_dict is not None:
             if "search_timestamp_ms" in extra_json_dict:
                 self.save_variable("search_timestamp_ms", extra_json_dict["search_timestamp_ms"])
@@ -1706,6 +1905,23 @@ class BotEnginePyTest:
         self.save_variable("body", body)
 
         return
+    
+    #===========================================================================
+    # Open AI
+    #===========================================================================
+
+    def send_request_for_chat_completion(self, key, params):
+        """
+        Send asynchronous request to Open AI API to obtain a model response for the given chat conversation.
+        :param key: Key to identify this request
+        :param params: Parameters to send to the Open AI API
+        :return: JSON response from Care Daily API
+        """
+        if key is None:
+            raise ValueError("send_request_for_chat_completion() key cannot be None")
+        if 0 == len(params.get("messages", [])):
+            raise ValueError("send_request_for_chat_completion() messages cannot be empty")
+        return {}
 
     def request_customer_support(self, ticket_type, ticket_priority, subject, comment, brand="default"):
         self.customer_support_body = {
@@ -1721,7 +1937,7 @@ class BotEnginePyTest:
         self.customer_support_comments.append(comment)
         
         import json
-        self.logger.info("request_customer_support() params={}".format(json.dumps(self.customer_support_body, sort_keys=True)))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("request_customer_support() params={}".format(json.dumps(self.customer_support_body, sort_keys=True)))
         return
 
     #============================================================================
@@ -1799,7 +2015,7 @@ class BotEnginePyTest:
         :params property_value: the value in searching criteria
         :params return_property_name: the key in the object indicates which corresponding value will be returned
         """
-        self.logger.debug(">get_property() obj_arr=" + str(obj_arr) + ", property_name=" + str(property_name)
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">get_property() obj_arr=" + str(obj_arr) + ", property_name=" + str(property_name)
                           + ", property_value=" + str(property_value) + ", return_property_name=" + str(
             return_property_name))
 
@@ -1809,7 +2025,7 @@ class BotEnginePyTest:
                 response = item[return_property_name]
                 break
 
-        self.logger.debug("<get_property() response=" + str(response))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_property() response=" + str(response))
         return response
 
     def add_email_attachment(self, destination_attachment_array, filename, base64_content, content_type, content_id):
@@ -1834,13 +2050,12 @@ class BotEnginePyTest:
     
     def get_location_scenes_history(self, location_id):
         """Get location scenes history - can't do much"""
-        self.logger.warning("WARNING: get_location_scenes_history() is called, but we can't return anything")
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning("WARNING: get_location_scenes_history() is called, but we can't return anything")
         return {}
     
-    def get_measurements(self, device_id, start_date=None, end_date=None, param_name=None, index=None, last_rows=None):
-        self.logger.warning("WARNING: get_measurements() called, but we can't return anything")
-        return None
-
+    def get_measurements(self, device_id, user_id=None, oldest_timestamp_ms=None, newest_timestamp_ms=None, param_name=None, index=None, last_rows=None):
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning("WARNING: get_measurements() called, but we can't return anything")
+        return {}
     def request_data(self, type=1, device_id=None, oldest_timestamp_ms=None, newest_timestamp_ms=None, param_name_list=None, reference=None, index=None, ordered=1):
         """
         Selecting a large amount of data from the database can take a significant amount of time and impact server
@@ -1863,7 +2078,7 @@ class BotEnginePyTest:
         :param index: Index to download when parameters are available with multiple indices
         :param ordered: 1=Ascending (default); -1=Descending.
         """
-        self.logger.warning("WARNING: Attempted to request_data(), but we can't do anything here.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning("WARNING: Attempted to request_data(), but we can't do anything here.")
 
     def get_user_info(self):
         return {

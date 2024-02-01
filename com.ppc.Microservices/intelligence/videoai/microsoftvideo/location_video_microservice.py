@@ -10,10 +10,9 @@ file 'LICENSE.txt', which is part of this source code package.
 from intelligence.intelligence import Intelligence
 import os, uuid, sys
 import urllib, base64
-
 try:
     import http.client as http_client
-        
+
 except ImportError:
     # Python 2
     import httplib as http_client

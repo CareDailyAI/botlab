@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-30 13:59-0700\n"
+"POT-Creation-Date: 2023-04-21 16:09-0700\n"
 "PO-Revision-Date: 2023-04-21 20:42+0000\n"
 "Last-Translator: Destry Teeter <destry@peoplepowerco.com>\n"
 "Language: es\n"
@@ -58,66 +58,58 @@ msgstr "'{}': Preferencias nocturnas aprendidas."
 msgid "'{}': Sleep mode"
 msgstr "'{}': Modo de sueño"
 
-#: utilities/utilities.py:283
+#: utilities/utilities.py:276
 msgid "0 seconds"
 msgstr "0 segundos"
 
-#: utilities/utilities.py:267
+#: utilities/utilities.py:260
 msgid "1 hour"
 msgstr "1 hora"
 
-#: utilities/utilities.py:272
+#: utilities/utilities.py:265
 msgid "1 minute"
 msgstr "1 minuto"
 
-#: utilities/utilities.py:278
+#: utilities/utilities.py:271
 msgid "1 second"
 msgstr "1 segundo"
 
-#: signals/dashboard.py:13
-msgid "ALERTS"
-msgstr ""
-
-#: confidence/occupancy_confidence_machine.py:82
-#: confidence/occupancy_confidence_machine.py:129
-#: confidence/occupancy_confidence_machine.py:134
+#: confidence/occupancy_confidence_machine.py:86
+#: confidence/occupancy_confidence_machine.py:136
+#: confidence/occupancy_confidence_machine.py:141
 msgid "Add 1 Entry device to improve the confidence."
 msgstr "Añade 1 Dispositivo de entrada para mejorar la confianza."
 
-#: confidence/occupancy_confidence_machine.py:85
-#: confidence/occupancy_confidence_machine.py:125
-#: confidence/occupancy_confidence_machine.py:137
-#, fuzzy
-msgid "Add 1 Motion device to improve the confidence."
-msgstr "Añade 1 Dispositivo de Motion para mejorar la confianza."
-
-#: confidence/occupancy_confidence_machine.py:73
-#: confidence/sleep_confidence_machine.py:87
-#, fuzzy
-msgid "Add 1 more Motion device to improve the confidence."
-msgstr "Añade 1 dispositivo de Motion más para mejorar la confianza."
+#: confidence/occupancy_confidence_machine.py:89
+#: confidence/occupancy_confidence_machine.py:132
+#: confidence/occupancy_confidence_machine.py:144
+msgid "Add 1 Motion or Vayyar device to improve the confidence."
+msgstr "Añade 1 dispositivo Motion o Vayyar más para mejorar la confianza."
 
 #: confidence/occupancy_confidence_machine.py:77
+#: confidence/sleep_confidence_machine.py:105
+msgid "Add 1 more Motion or Vayyar device to improve the confidence."
+msgstr "Añade 1 dispositivo Motion o Vayyar más para mejorar la confianza."
+
+#: confidence/occupancy_confidence_machine.py:81
 msgid "Add 1 more entry device to improve the confidence."
 msgstr "Añade 1 dispositivo de entrada más para mejorar la confianza."
 
-#: confidence/sleep_confidence_machine.py:95
-#, fuzzy
+#: confidence/sleep_confidence_machine.py:113
 msgid ""
-"Add more Motion devices installed inside bedroom to improve the "
-"confidence."
+"Add more Motion or Vayyar devices installed inside bedroom to improve the"
+" confidence."
 msgstr ""
-"Añade más dispositivos Motion instalados dentro del dormitorio para "
-"mejorar la confianza."
+"Añade más dispositivos Motion o Vayyar instalados dentro del dormitorio "
+"para mejorar la confianza."
 
-#: confidence/sleep_confidence_machine.py:92
-#, fuzzy
+#: confidence/sleep_confidence_machine.py:110
 msgid ""
-"Add more Motion devices installed outside bedroom to improve the "
-"confidence."
+"Add more Motion or Vayyar devices installed outside bedroom to improve "
+"the confidence."
 msgstr ""
-"Añade más dispositivos Motion instalados fuera del dormitorio para "
-"mejorar la confianza."
+"Añade más dispositivos Motion o Vayyar instalados fuera del dormitorio "
+"para mejorar la confianza."
 
 #. Abstract device type name, doesn't show up in end user documentation
 #: devices/alarm/alarm.py:27 devices/alarm/alarm_eu_develco.py:35
@@ -135,7 +127,7 @@ msgid "Android Picture Frame"
 msgstr "Marco de fotos de Android"
 
 #. Device type name
-#: devices/health/health_apple.py:30
+#: devices/health/health_apple.py:24
 msgid "Apple Health"
 msgstr "Salud de la Manzana"
 
@@ -145,7 +137,7 @@ msgid "Apple Proxy"
 msgstr "Proxy de Apple"
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/button/button_multi.py:60 devices/button/button_panic.py:49
+#: devices/button/button_multi.py:63 devices/button/button_panic.py:49
 msgid "Assist Button"
 msgstr "Botón de asistencia"
 
@@ -166,6 +158,11 @@ msgid "Carbon Monoxide Sensor"
 msgstr "Sensor de monóxido de carbono"
 
 #. Device type name
+#: devices/careactive/watch.py:56
+msgid "Care Active Watch"
+msgstr "Care Active Watch"
+
+#. Device type name
 #: devices/thermostat/thermostat_centralite_pearl.py:65
 msgid "Centralite Pearl Thermostat"
 msgstr "Termostato Centralite Pearl"
@@ -174,12 +171,8 @@ msgstr "Termostato Centralite Pearl"
 msgid "Cooling set point adjusted"
 msgstr "Punto de ajuste de refrigeración ajustado"
 
-#: signals/dashboard.py:400
-msgid "DISABLED"
-msgstr ""
-
 #. Super abstract device type name
-#: devices/device.py:300
+#: devices/device.py:287
 msgid "Device"
 msgstr "Dispositivo"
 
@@ -204,7 +197,7 @@ msgid "GE In-Wall Switch"
 msgstr "Interruptor de pared GE"
 
 #. Device type name
-#: devices/health/health.py:92
+#: devices/health/health.py:91
 msgid "Health"
 msgstr "Salud"
 
@@ -216,10 +209,6 @@ msgstr "Punto de ajuste de calefacción ajustado"
 #: devices/thermostat/thermostat_honeywell_lyric.py:35
 msgid "Honeywell Lyric Thermostat"
 msgstr "Termostato Lyric Honeywell"
-
-#: utilities/genai.py:167
-msgid "I'm sorry, I don't know how to respond to that."
-msgstr ""
 
 #. Abstract device type name, doesn't show up in end user documentation
 #: devices/io/io.py:55
@@ -276,14 +265,6 @@ msgstr "Centro para el hogar inteligente de la serie M"
 msgid "Motion Sensor"
 msgstr "Sensor de movimiento"
 
-#: signals/dashboard.py:12
-msgid "NOW"
-msgstr ""
-
-#: signals/dashboard.py:435
-msgid "Okay, resolving the notification..."
-msgstr ""
-
 #. Device type name
 #: devices/pictureframe/pictureframe_peoplepower.py:107
 msgid "Picture Frame"
@@ -303,20 +284,6 @@ msgstr "Almohadilla de presión"
 #: devices/proxy/proxy.py:26
 msgid "Proxy"
 msgstr "Proxy"
-
-#: signals/dashboard.py:398
-msgid "RUNNING"
-msgstr ""
-
-#: signals/dashboard.py:435
-#, fuzzy
-msgid "Resolve"
-msgstr "estufa"
-
-#: signals/dashboard.py:16
-#, fuzzy
-msgid "SERVICES"
-msgstr "Dispositivo"
 
 #. Device type name
 #: devices/thermostat/thermostat_sensibo_sky.py:53
@@ -341,6 +308,11 @@ msgstr "Configurar su termostato ecobee en modo de suspensión."
 #: devices/siren/siren.py:36
 msgid "Siren"
 msgstr "Sirena"
+
+#. Device type name - Eaton Smart Breaker
+#: devices/smartplug/smartbreaker_eaton.py:87
+msgid "Smart Breaker"
+msgstr "Interruptor inteligente"
 
 #. Device type name
 #: devices/smartplug/smartcable_develco.py:21
@@ -394,52 +366,54 @@ msgstr "Sensor tactil"
 msgid "Touchpad"
 msgstr "Panel táctil"
 
-#: signals/dashboard.py:435
-msgid "UPDATE STATUS >"
-msgstr ""
-
-#: signals/dashboard.py:435
-msgid "Update Status"
-msgstr ""
+#. Deprecated 9/29/22.  Falls are directly aligned with the "calling"
+#. fall_status measurement.  Logic is repurposed to measure stability events.
+#. See `stability_event_count`
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/vayyar/vayyar.py:185
+msgid "Vayyar Care"
+msgstr "Vayyar Care"
 
 #. Device type name
 #: devices/vibration/vibration.py:77
 msgid "Vibration Sensor"
 msgstr "Sensor de vibración"
 
-#: confidence/occupancy_confidence_machine.py:117
-#, fuzzy
-msgid "We don't have Motion or Entry device for occupancy home service to work."
+#: confidence/occupancy_confidence_machine.py:124
+msgid ""
+"We don't have Motion or Vayyar or Entry device for occupancy home service"
+" to work."
 msgstr ""
-"No tenemos Motion o dispositivo de entrada para que funcione el servicio "
-"a domicilio de ocupación."
+"No tenemos Motion o Vayyar o dispositivo de entrada para que funcione el "
+"servicio a domicilio de ocupación."
 
-#: confidence/occupancy_confidence_machine.py:65
-#, fuzzy
-msgid "We don't have enough Motion devices for occupancy away service to work."
+#: confidence/occupancy_confidence_machine.py:69
+msgid ""
+"We don't have enough Motion or Vayyar devices for occupancy away service "
+"to work."
 msgstr ""
-"No tenemos suficientes dispositivos Motion para que funcione el servicio "
-"de ocupación a distancia."
+"No tenemos suficientes dispositivos Motion o Vayyar para que funcione el "
+"servicio de ocupación a distancia."
 
-#: confidence/sleep_confidence_machine.py:70
+#: confidence/sleep_confidence_machine.py:88
 msgid "We don't have enough devices for sleep service to work."
 msgstr ""
 "No tenemos suficientes dispositivos para que funcione el servicio de "
 "sueño."
 
-#: confidence/occupancy_confidence_machine.py:69
+#: confidence/occupancy_confidence_machine.py:73
 msgid "We have high confidence on the occupancy away service."
 msgstr "Confiamos plenamente en el servicio de desocupación."
 
-#: confidence/occupancy_confidence_machine.py:121
+#: confidence/occupancy_confidence_machine.py:128
 msgid "We have high confidence on the occupancy home service."
 msgstr "Confiamos plenamente en el servicio a domicilio."
 
-#: confidence/sleep_confidence_machine.py:79
+#: confidence/sleep_confidence_machine.py:97
 msgid "We have high confidence on the sleep service."
 msgstr "Confiamos plenamente en el servicio de sueño."
 
-#: confidence/sleep_confidence_machine.py:84
+#: confidence/sleep_confidence_machine.py:102
 msgid ""
 "We have low confidence on the sleep service due to lack of recent "
 "measurements."
@@ -447,13 +421,23 @@ msgstr ""
 "Tenemos poca confianza en el servicio de sueño debido a la falta de "
 "mediciones recientes."
 
-#: confidence/sleep_confidence_machine.py:76
+#: confidence/sleep_confidence_machine.py:94
 msgid ""
 "We have medium confidence on the sleep service due to lack of recent "
 "measurements."
 msgstr ""
 "Tenemos una confianza media en el servicio de sueño debido a la falta de "
 "mediciones recientes."
+
+#. Device type name
+#: devices/health/health_wellvii.py:24
+msgid "Wellvii"
+msgstr "Wellvii"
+
+#. Device type name
+#: devices/health/health_xandar_kardian.py:24
+msgid "Xandar Kardian"
+msgstr "Xandar Kardian"
 
 #: devices/thermostat/thermostat.py:274
 msgid "Your '{}' cooling set point is set to {}."
@@ -521,54 +505,116 @@ msgstr ""
 "Su nuevo punto de ajuste de refrigeración es {} y el punto de ajuste de "
 "calefacción es {}."
 
-#: devices/motion/motion.py:76
+#: devices/smartplug/smartbreaker_eaton.py:233
+msgid "air"
+msgstr "aire"
+
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 msgid "bath"
 msgstr "baño"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 msgid "bdrm"
 msgstr "bdrm"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 msgid "bed"
 msgstr "cama"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 msgid "bett"
 msgstr "bett"
 
-#: devices/motion/motion.py:63
+#: devices/smartplug/smartbreaker_eaton.py:295
+msgid "charger"
+msgstr "cargador"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+msgid "condition"
+msgstr "condición"
+
+#: devices/smartplug/smartbreaker_eaton.py:189
+msgid "cook"
+msgstr "cocinero"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+msgid "cooler"
+msgstr "refrigerador"
+
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 msgid "dad's room"
 msgstr "la habitación de papá"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 msgid "dads room"
 msgstr "la habitación de papá"
 
+#: devices/smartplug/smartbreaker_eaton.py:189
+msgid "dinnete"
+msgstr "dinnete"
+
+#: devices/smartplug/smartbreaker_eaton.py:255
+msgid "dishwasher"
+msgstr "lavavajillas"
+
+#: devices/smartplug/smartbreaker_eaton.py:245
+msgid "dryer"
+msgstr "secador"
+
 #. "The Moss family <typed a Duress code into the Touchpad>."
-#: utilities/utilities.py:165
+#: utilities/utilities.py:158
 msgid "entered a duress code, indicating a potential threat."
 msgstr "ingresó un código de coacción, lo que indica una amenaza potencial."
 
+#: devices/smartplug/smartbreaker_eaton.py:295
+msgid "ev"
+msgstr "ev"
+
+#: devices/smartplug/smartbreaker_eaton.py:189
+msgid "fridge"
+msgstr "frigorífico"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+msgid "furnace"
+msgstr "horno"
+
+#: devices/smartplug/smartbreaker_eaton.py:213
+msgid "garage"
+msgstr "garaje"
+
 #. "The Moss family <burglary alarm tripped>."
-#: utilities/utilities.py:145
+#: utilities/utilities.py:138
 msgid "has a burglar alarm"
 msgstr "tiene una alarma antirrobo"
 
 #. "The Moss family <burglary alarm tripped because a door opened>."
-#: utilities/utilities.py:153
+#: utilities/utilities.py:146
 msgid "has a burglar alarm because a door opened"
 msgstr "tiene alarma antirrobo porque se abrió una puerta"
 
 #. "The Moss family <burglary alarm tripped because a window opened>."
-#: utilities/utilities.py:149
+#: utilities/utilities.py:142
 msgid "has a burglar alarm because a window opened"
 msgstr "tiene alarma antirrobo porque se abrió una ventana"
 
 #. "The Moss family <burglary alarm tripped shortly after arming>."
-#: utilities/utilities.py:161
+#: utilities/utilities.py:154
 msgid "has a burglar alarm, shortly after arming"
 msgstr "tiene una alarma antirrobo, poco después de armarse"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+msgid "heater"
+msgstr "calentador"
+
+#: devices/smartplug/smartbreaker_eaton.py:233
+msgid "hvac"
+msgstr "hvac"
 
 #. Device type name
 #: devices/camera/camera_peoplepower_presenceios.py:22
@@ -581,48 +627,94 @@ msgid "iOS Picture Frame"
 msgstr "Marco de imagen de iOS"
 
 #. "The Moss family <is experiencing a water leak>."
-#: utilities/utilities.py:157
+#: utilities/utilities.py:150
 msgid "is experiencing a water leak"
 msgstr "está experimentando una fuga de agua"
 
+#: devices/smartplug/smartbreaker_eaton.py:189
+msgid "kitch"
+msgstr "cocina"
+
+#: devices/smartplug/smartbreaker_eaton.py:201
+msgid "lamp"
+msgstr "lámpara"
+
+#: devices/smartplug/smartbreaker_eaton.py:201
+msgid "lantern"
+msgstr "linterna"
+
+#: devices/smartplug/smartbreaker_eaton.py:201
+msgid "light"
+msgstr "luz"
+
 #. "The Moss family <may need some assistance>." - generic message
-#: utilities/utilities.py:169
+#: utilities/utilities.py:162
 msgid "may need some assistance"
 msgstr "puede necesitar algo de ayuda"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 msgid "mom's room"
 msgstr "la habitación de mamá"
 
-#: devices/motion/motion.py:63
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/vayyar/vayyar.py:211
 msgid "moms room"
 msgstr "la habitación de mamá"
 
-#: devices/motion/motion.py:76
+#: devices/smartplug/smartbreaker_eaton.py:201
+msgid "outlet"
+msgstr "salidatoilet"
+
+#: devices/smartplug/smartbreaker_eaton.py:265
+msgid "oven"
+msgstr "horno"
+
+#: devices/smartplug/smartbreaker_eaton.py:223
+msgid "pool"
+msgstr "piscina"
+
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 msgid "powder"
 msgstr "polvo"
 
-#: devices/motion/motion.py:76
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 msgid "schlaf"
 msgstr "schlaf"
 
-#: devices/motion/motion.py:76
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 msgid "shower"
 msgstr "ducha"
 
-#: devices/motion/motion.py:76
+#: devices/smartplug/smartbreaker_eaton.py:265
+msgid "stove"
+msgstr "estufa"
+
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/vayyar/vayyar.py:227
 msgid "toilet"
 msgstr "aseo"
 
-#: utilities/utilities.py:269
+#: devices/smartplug/smartbreaker_eaton.py:285
+msgid "tub"
+msgstr "bañera"
+
+#: devices/smartplug/smartbreaker_eaton.py:275
+msgid "water heater"
+msgstr "calentador de agua"
+
+#: utilities/utilities.py:262
 msgid "{} hours"
 msgstr "{} horas"
 
-#: utilities/utilities.py:274
+#: utilities/utilities.py:267
 msgid "{} minutes"
 msgstr "{} minutos"
 
-#: utilities/utilities.py:280
+#: utilities/utilities.py:273
 msgid "{} seconds"
 msgstr "{} segundos"
 

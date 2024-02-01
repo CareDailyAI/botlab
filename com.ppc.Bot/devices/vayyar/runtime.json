@@ -1,0 +1,33 @@
+{
+  "version": {
+    "triggerParameters": [
+      "fallLearning",
+      "fallSilent",
+      "fallStatus",
+      "occupancy",
+      "occupancyTarget",
+      "aliveTime",
+      "rssi",
+      "status",
+      "firmware",
+      "vyrc.trackerSubRegions",
+      "vyrc.xMin",
+      "vyrc.xMax",
+      "vyrc.yMin",
+      "vyrc.yMax",
+      "vyrc.zMin",
+      "vyrc.zMax",
+      "vyrc.fallingSensitivity",
+      "vyrc.confirmedToAlertTimeoutSec",
+      "vyrc.ledMode",
+      "vyrc.volume",
+      "vyrc.telemetryPolicy",
+      "vyrc.presenceReportMinRateMills",
+      "vyrc.targetPositionChangeThresholdMeters",
+      "vyrc.silentMode",
+      "vyrc.sensorHeight",
+      "vyrc.sensorMounting",
+      "occupancyMap"
+    ]
+  }
+}

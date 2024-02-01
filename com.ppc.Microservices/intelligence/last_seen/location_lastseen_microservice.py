@@ -11,10 +11,12 @@ file 'LICENSE.txt', which is part of this source code package.
 from intelligence.intelligence import Intelligence
 from devices.motion.motion import MotionDevice
 from devices.entry.entry import EntryDevice
+from devices.vayyar.vayyar import VayyarDevice
 
 import utilities.utilities as utilities
 import signals.dashboard as dashboard
 import signals.insights as insights
+import signals.vayyar as vayyar
 
 # Time between narrations
 TIME_BETWEEN_NARRATIONS_MS = utilities.ONE_MINUTE_MS
@@ -169,6 +171,164 @@ class LocationLastSeenMicroservice(Intelligence):
             else:
                 # Nothing to do
                 return
+
+    #===========================================================================
+    # Vayyar Home events
+    #===========================================================================
+    def knowledge_did_update_vayyar_occupants(self, botengine, device_object, total_occupants):
+        """
+        Updated vayyar occupants for the given device
+        Declare what room the occupants are in
+        :param botengine:
+        :param device_object:
+        :param total_occupants:
+        :return:
+        """
+        max_occupants = 0
+        max_device = None
+        for device in list(self.parent.devices.values()):
+            if isinstance(device, VayyarDevice):
+                if device.knowledge_total_occupants > max_occupants:
+                    max_occupants = device.knowledge_total_occupants
+                    max_device = device
+
+        if max_device is None:
+            # Left all rooms
+            dashboard.update_dashboard_header(botengine,
+                                              location_object=self.parent,
+                                              name="lastseen",
+                                              priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                              percent_good=100,
+                                              title=_("Last Detected"),
+                                              comment=_("Last detected leaving the '{}'").format(device_object.description),
+                                              icon=device_object.get_icon(),
+                                              icon_font=device_object.get_icon_font())
+
+            insights.capture_insight(botengine,
+                                     location_object=self.parent,
+                                     insight_id="occupancy.last_seen",
+                                     value=1,
+                                     title=_("Last Detected"),
+                                     description=_("Last detected leaving the '{}'").format(device_object.description),
+                                     device_object=device_object,
+                                     icon=device_object.get_icon(),
+                                     icon_font=device_object.get_icon_font())
+
+        else:
+            # Inside at least 1 room
+            if self.parent.is_sleeping(botengine) and not device_object.is_in_bedroom(botengine):
+                dashboard.update_dashboard_header(botengine,
+                                                  location_object=self.parent,
+                                                  name="lastseen",
+                                                  priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                                  percent_good=100,
+                                                  title=_("Last Detected"),
+                                                  comment=_("Occupants should be asleep, but someone was last detected near the '{}'").format(device_object.description),
+                                                  icon=device_object.get_icon(),
+                                                  icon_font=device_object.get_icon_font())
+
+            else:
+                dashboard.update_dashboard_header(botengine,
+                                                  location_object=self.parent,
+                                                  name="lastseen",
+                                                  priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                                  percent_good=100,
+                                                  title=_("Last Detected"),
+                                                  comment=_("Someone was last detected near the '{}'").format(device_object.description),
+                                                  icon=device_object.get_icon(),
+                                                  icon_font=device_object.get_icon_font())
+
+            insights.capture_insight(botengine,
+                                     location_object=self.parent,
+                                     insight_id="occupancy.last_seen",
+                                     value=1,
+                                     title=_("Last Detected"),
+                                     description=_("Last detected in the '{}'").format(device_object.description),
+                                     device_object=device_object,
+                                     icon=device_object.get_icon(),
+                                     icon_font=device_object.get_icon_font())
+
+    # We leave this information-level to allow it to refresh periodically throughout the night.
+    def information_did_arrive_bed(self, botengine, device_object, unique_id, context_id, name):
+        botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_arrive_bed()" + utilities.Color.END)
+        dashboard.update_dashboard_header(botengine,
+                                          location_object=self.parent,
+                                          name="lastseen",
+                                          priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                          percent_good=100,
+                                          title=_("Last Detected"),
+                                          comment=_("'{}' - Last detected in bed.").format(device_object.description),
+                                          icon="bed",
+                                          icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR)
+
+        insights.capture_insight(botengine,
+                                 location_object=self.parent,
+                                 insight_id="occupancy.last_seen",
+                                 value=1,
+                                 title=_("Last Detected"),
+                                 description=_("Last detected in bed."),
+                                 device_object=device_object,
+                                 icon="bed",
+                                 icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR)
+
+    # We leave this information-level to allow it to refresh periodically throughout the night.
+    def information_did_leave_bed(self, botengine, device_object, unique_id, context_id, name):
+        botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_leave_bed()" + utilities.Color.END)
+        self.knowledge_did_update_vayyar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
+
+    def knowledge_did_arrive_shower(self, botengine, device_object, unique_id, context_id, name):
+        botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_arrive_shower()" + utilities.Color.END)
+        dashboard.update_dashboard_header(botengine,
+                                          location_object=self.parent,
+                                          name="lastseen",
+                                          priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                          percent_good=100,
+                                          title=_("Taking a shower"),
+                                          comment=_("'{}' - Last detected in the shower.").format(device_object.description),
+                                          icon="shower",
+                                          icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR)
+
+        insights.capture_insight(botengine,
+                                 location_object=self.parent,
+                                 insight_id="occupancy.last_seen",
+                                 value=1,
+                                 title=_("Taking a shower"),
+                                 description=_("Last detected in the shower."),
+                                 device_object=device_object,
+                                 icon="shower",
+                                 icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR)
+
+    def knowledge_did_leave_shower(self, botengine, device_object, unique_id, context_id, name):
+        botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_leave_shower()" + utilities.Color.END)
+        self.knowledge_did_update_vayyar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
+
+    # We keep this 'information'-based because it's higher frequency and makes for a better live demo of the technology
+    def information_did_arrive_chair(self, botengine, device_object, unique_id, context_id, name):
+        botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_arrive_chair()" + utilities.Color.END)
+        dashboard.update_dashboard_header(botengine,
+                                          location_object=self.parent,
+                                          name="lastseen",
+                                          priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                          percent_good=100,
+                                          title=_("Sitting"),
+                                          comment=_("'{}' - Last detected in the {}.").format(device_object.description, name),
+                                          icon="chair",
+                                          icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR)
+
+        insights.capture_insight(botengine,
+                                 location_object=self.parent,
+                                 insight_id="occupancy.last_seen",
+                                 value=1,
+                                 title=_("Sitting"),
+                                 description=_("Sitting in the '{}'.").format(name),
+                                 device_object=device_object,
+                                 icon="chair",
+                                 icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR)
+
+    # We keep this 'information'-based because it's higher frequency and makes for a better live demo of the technology
+    def information_did_leave_chair(self, botengine, device_object, unique_id, context_id, name):
+        botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_leave_chair()" + utilities.Color.END)
+        self.knowledge_did_update_vayyar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
 
     def timer_fired(self, botengine, argument):
         """

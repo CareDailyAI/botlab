@@ -1,14 +1,16 @@
 
 from botengine_pytest import BotEnginePyTest
-from devices.device import Device
+from devices.health.health import HealthDevice
+from devices.health.health_apple import AppleHealthDevice
+from devices.health.health_google import GoogleHealthDevice
 
 from locations.location import Location
 import utilities.utilities as utilities
 
 
-class TestDevice():
+class TestHealthDevice():
 
-    def test_device_init(self):
+    def test_device_health_init(self):
         botengine = BotEnginePyTest({})
         # Clear out any previous tests
         botengine.reset()
@@ -20,7 +22,7 @@ class TestDevice():
         device_type = 0
         device_desc = "Test"
 
-        mut = Device(botengine, location_object, device_id, device_type, device_desc)
+        mut = HealthDevice(botengine, location_object, device_id, device_type, device_desc)
 
         assert mut.location_object == location_object
         assert mut.device_id == device_id
@@ -51,7 +53,7 @@ class TestDevice():
         assert mut.last_communications_timestamp == None
         assert mut.intelligence_modules == {}
 
-    def test_device_intelligence_modules(self):
+    def test_device_health_intelligence_modules(self):
         botengine = BotEnginePyTest({})
         # Clear out any previous tests
         botengine.reset()
@@ -59,20 +61,14 @@ class TestDevice():
         # Initialize the location
         location_object = Location(botengine, 0)
 
-        device_id = "A"
-        device_type = 23
-        device_desc = "Test"
-
-        mut = Device(botengine, location_object, device_id, device_type, device_desc)
-        location_object.devices[device_id] = mut
+        mut = HealthDevice(botengine, location_object, "123", AppleHealthDevice.DEVICE_TYPES[0], "Device")
+        location_object.devices[mut.device_id] = mut
 
         location_object.initialize(botengine)
         location_object.new_version(botengine)
 
-        # Depending on the bot bundle under testing there may or may not be device intelligence modules
-        # If available, ensure the parent and intelligence_id are set
+        assert len(mut.intelligence_modules) > 0
+
         for i in mut.intelligence_modules:
             assert mut.intelligence_modules[i].intelligence_id != None
             assert mut.intelligence_modules[i].parent == mut
-
-

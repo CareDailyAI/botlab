@@ -4,10 +4,9 @@
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory
   "microservices": [
-    # Intelligence
     "com.ppc.Microservices/intelligence/absent_ml_example",
-    # "com.ppc.Microservices/intelligence/analytics_amplitude",
-    # "com.ppc.Microservices/intelligence/analytics_mixpanel",
+    "com.ppc.Microservices/intelligence/analytics_amplitude",
+    "com.ppc.Microservices/intelligence/analytics_mixpanel",
     "com.ppc.Microservices/intelligence/dailyreport",
     "com.ppc.Microservices/intelligence/dashboard",
     "com.ppc.Microservices/intelligence/data_request",
@@ -17,9 +16,7 @@
     "com.ppc.Microservices/intelligence/multistream",
     "com.ppc.Microservices/intelligence/sms_delivery",
     "com.ppc.Microservices/intelligence/tasks",
-    # "com.ppc.Microservices/intelligence/videoai/amazonvideo",
-    # "com.ppc.Microservices/intelligence/videoai/googlevideo",
-    # "com.ppc.Microservices/intelligence/videoai/microsoftvideo",
+    "com.ppc.Microservices/intelligence/videoai",
     "com.ppc.Microservices/intelligence/welcome",
 
     # Lessons

@@ -14,6 +14,7 @@ from confidence.confidence_state import CONFIDENCE_HIGH
 
 from devices.motion.motion import MotionDevice
 from devices.entry.entry import EntryDevice
+from devices.vayyar.vayyar import VayyarDevice
 from devices.lock.lock import LockDevice
 
 import utilities.utilities as utilities
@@ -53,6 +54,9 @@ class OccupancyConfidenceStateMachine:
                 if device.is_goal_id(MotionDevice.GOAL_MOTION_PROTECT_HOME):
                     confidence_motion_points += 1
 
+            elif isinstance(device, VayyarDevice):
+                confidence_motion_points += 1
+
             elif isinstance(device, EntryDevice):
                 if device.is_goal_id(EntryDevice.GOAL_PERIMETER_NORMAL):
                     confidence_entry_points += 1
@@ -62,7 +66,7 @@ class OccupancyConfidenceStateMachine:
 
         if confidence_motion_points == 0 and confidence_entry_points == 0:
             state = CONFIDENCE_OFFLINE
-            self.away_reason = _("We don't have enough Motion devices for occupancy away service to work.")
+            self.away_reason = _("We don't have enough Motion or Vayyar devices for occupancy away service to work.")
 
         elif confidence_motion_points > 1 and confidence_entry_points > 0:
             state = CONFIDENCE_HIGH
@@ -70,7 +74,7 @@ class OccupancyConfidenceStateMachine:
 
         elif confidence_motion_points > 0 and confidence_entry_points > 0:
             state = CONFIDENCE_MEDIUM
-            self.away_reason = _("Add 1 more Motion device to improve the confidence.")
+            self.away_reason = _("Add 1 more Motion or Vayyar device to improve the confidence.")
 
         elif confidence_motion_points > 1:
             state = CONFIDENCE_MEDIUM
@@ -82,7 +86,7 @@ class OccupancyConfidenceStateMachine:
                 self.away_reason = _("Add 1 Entry device to improve the confidence.")
 
             else:
-                self.away_reason = _("Add 1 Motion device to improve the confidence.")
+                self.away_reason = _("Add 1 Motion or Vayyar device to improve the confidence.")
 
         if self.away_confidence_state is None or self.away_confidence_state != state:
             self.away_confidence_state = state
@@ -106,6 +110,9 @@ class OccupancyConfidenceStateMachine:
                     continue
                 confidence_motion_points += 1
 
+            elif isinstance(device, VayyarDevice):
+                confidence_motion_points += 1
+
             elif isinstance(device, EntryDevice):
                 confidence_entry_points += 1
 
@@ -114,7 +121,7 @@ class OccupancyConfidenceStateMachine:
 
         if confidence_motion_points == 0 and confidence_entry_points == 0:
             state = CONFIDENCE_OFFLINE
-            self.home_reason = _("We don't have Motion or Entry device for occupancy home service to work.")
+            self.home_reason = _("We don't have Motion or Vayyar or Entry device for occupancy home service to work.")
 
         elif confidence_motion_points > 1 and confidence_entry_points > 0:
             state = CONFIDENCE_HIGH
@@ -122,7 +129,7 @@ class OccupancyConfidenceStateMachine:
 
         elif confidence_motion_points > 0 and confidence_entry_points > 0:
             state = CONFIDENCE_MEDIUM
-            self.home_reason = _("Add 1 Motion device to improve the confidence.")
+            self.home_reason = _("Add 1 Motion or Vayyar device to improve the confidence.")
 
         elif confidence_motion_points > 1:
             state = CONFIDENCE_MEDIUM
@@ -134,7 +141,7 @@ class OccupancyConfidenceStateMachine:
                 self.home_reason = _("Add 1 Entry device to improve the confidence.")
 
             else:
-                self.home_reason = _("Add 1 Motion device to improve the confidence.")
+                self.home_reason = _("Add 1 Motion or Vayyar device to improve the confidence.")
 
         if self.home_confidence_state is None or self.home_confidence_state != state:
             self.home_confidence_state = state
