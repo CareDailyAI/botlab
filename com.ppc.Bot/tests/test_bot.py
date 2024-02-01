@@ -3,6 +3,8 @@ from botengine_pytest import BotEnginePyTest
 from locations.location import Location
 
 import utilities.utilities as utilities
+import properties
+import domain
 
 import bot
 
@@ -317,3 +319,18 @@ class TestBot():
 
         bot.run(botengine)
         assert len(controller.locations) == 1
+
+    def test_properties(self):
+        botengine = BotEnginePyTest({})
+
+        property_name = "ORGANIZATION_SHORT_NAME"
+        property_value = getattr(domain, property_name)
+
+        assert properties.get_property(botengine, "ORGANIZATION_SHORT_NAME") == property_value
+        
+        botengine.organization_properties[property_name] = "test"
+        assert properties.get_property(botengine, "ORGANIZATION_SHORT_NAME") == "test"
+
+        botengine.organization_properties[property_name] = "null"
+        assert properties.get_property(botengine, "ORGANIZATION_SHORT_NAME") == None
+

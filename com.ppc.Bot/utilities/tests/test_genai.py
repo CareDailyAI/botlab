@@ -6,43 +6,51 @@ from botengine_pytest import BotEnginePyTest
 from locations.location import Location
 import properties
 
-import utilities.genai as genai
-import openai
+from utilities.genai import *
+
+import pytest
 
 class TestGenAI(unittest.TestCase):
 
-    @patch('openai.Completion.create')
-    def test_genai_open_ai_response(self, completion_create_mock):
-        
+    def test_genai_chat_completion_model(self):
         # Initial setup
         botengine = BotEnginePyTest({})
-        location_object = Location(botengine, 0)
 
-        # Mock the OpenAI API
-        completion = openai.Completion().create()
-        completion.choices = [{"text": "Hi!"}]
-        completion_create_mock.return_value = completion
-        
-        # Test the function
-        response = genai.open_ai_response(botengine, location_object, {"prompt": genai.STOP_SEQUENCE_INPUT + "Hello" + genai.STOP_SEQUENCE_OUTPUT})
-        assert response is not None
-    
-    @patch('botengine_pytest.BotEnginePyTest.get_secret', MagicMock(return_value='{"appname": "test", "appsecret": "__OPEN_AI_API_KEY__"}'))
-    def test_genai_open_ai_response_debug(self):
-        """
-        Insert your OpenAI API key into the `appsecret` field to test the OpenAI API.
-        This test will only run if the `appsecret` above has been replaced with a new string.
-        """
+        messages = [{ "role": "user", "content": "tell me a joke" }]
+        mut = chat_completion_model(
+            botengine,
+            messages=messages
+        )
+
+        assert mut is not None
+        assert mut.get("model") == DEFAULT_CHAT_MODEL
+        assert mut.get("messages") == messages
+        assert mut.get("functions") == None
+        assert mut.get("function_call") == None
+        assert mut.get("max_tokens") == DEFAULT_MAX_TOKEN
+        assert mut.get("temperature") == DEFAULT_TEMPERATURE
+        assert mut.get("top_p") == DEFAULT_TOP_P
+        assert mut.get("n") == DEFAULT_N
+        assert mut.get("stream") == DEFAULT_STREAM
+        assert mut.get("stop") == DEFAULT_STOP_SEQUENCES
+        assert mut.get("presence_penalty") == DEFAULT_PRESENCE_PENALTY
+        assert mut.get("frequency_penalty") == DEFAULT_FREQUENCY_PENALTY
+        assert mut.get("logit_bias") == {}
+        assert mut.get("user") == None
+
+    def test_genai_chat_completion_model_exception(self):
         # Initial setup
         botengine = BotEnginePyTest({})
-        location_object = Location(botengine, 0)
-        secret = botengine.get_secret(genai.AWS_SECRET_NAME)
-        import json
-        secret = json.loads(secret)
-        if secret["appsecret"] == "__OPEN_AI_API_KEY__":
-            # Ignore this test
-            return
         
-        # Test the function
-        response = genai.open_ai_response(botengine, location_object, {"prompt": genai.STOP_SEQUENCE_INPUT + "Hello" + genai.STOP_SEQUENCE_OUTPUT})
-        assert response is not None
+        with pytest.raises(Exception):
+            chat_completion_model(
+                botengine,
+                messages=None
+            )
+
+    def test_genai_open_ai_completion(self):
+        # Initial setup
+        botengine = BotEnginePyTest({})
+        
+        with pytest.raises(Exception):
+            open_ai_response(botengine, None, None)

@@ -23,6 +23,7 @@ def lambda_handler(data, context):
     if data is None:
         return 0
     
+    # TODO: Allow multiple loggers to differentiate logs from different microservices
     logger = LambdaLogger()
     
     try:

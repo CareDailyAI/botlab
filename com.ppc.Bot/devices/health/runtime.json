@@ -1,6 +1,7 @@
 {
   "version": {
     "triggerParameters": [
+      "bedStatus",
       "movementStatus",
       "hr",
       "steps",

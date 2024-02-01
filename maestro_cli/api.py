@@ -9,11 +9,11 @@ RULES OF THE API IMPLEMENTATIONS IN THIS FILE:
   Application APIs. You must use data requests for anything that can be accessed with a data request.
 * Always reference a link to the API documentation in the header of your functions
 
-@author:     David Moss, Destry Teeter
+@author:     David Moss
 
-@copyright:  2012 - 2023 People Power Company. All rights reserved.
+@copyright:  2012 - 2022 People Power Company. All rights reserved.
 
-@contact:    dmoss@caredaily.ai, destry@caredaily.ai
+@contact:    dmoss@peoplepowerco.com
 """
 
 import requests
@@ -155,7 +155,10 @@ def login(server, username, password, admin=False, cache_api_key=True):
         }
 
         if admin:
+            pref_delivery_type = input('To use your email to get your passcode type "y"?: ')
+            pref_delivery_type = 3 if len(pref_delivery_type) == 0 or pref_delivery_type[0].lower() == 'y' else 2
             params['keyType'] = 11
+            params['prefDeliveryType'] = pref_delivery_type
 
         http_headers = {"PASSWORD": password, "Content-Type": "application/json"}
         r = requests.get(server + "/cloud/json/login", params=params, headers=http_headers)
@@ -643,6 +646,39 @@ def get_location_ids(cloud_url, admin_key, organization_id, has_gateway=True, de
     return locations
 
 
+def generate_bill(cloud_url, admin_key, organization_id, date=None):
+    """
+    Practice generating a bill.
+
+    The API (re)generates a bill for one billing period (month). The generated bill is saved in the database and displayed in the response body.
+    The response body also displays the input data used to calculate the bill.
+
+    By default, the target billing period is the previous month. You can specify any other target period using the parameter 'date'.
+
+    The API is mainly intended for testing purposes. There is a recurring background process that generates bills for all organizations on a monthly basis.
+
+    https://iotadmins.docs.apiary.io/#reference/billing/billing/generate-bill
+    :param cloud_url: Cloud URL
+    :param admin_key: Admin API Key
+    :param organization_id: Organization ID
+    :param date: The date following the end of the target billing period. By default, the current date is used.
+    :return:
+    """
+    headers = {
+        'API_KEY': admin_key
+    }
+
+    params = {}
+
+    if date is not None:
+        params['date'] = date
+    r = _session().put(cloud_url + "/admin/json/organizations/{}/billing".format(organization_id), params=params,
+                       headers=headers)
+    j = json.loads(r.text)
+    _check_for_errors(j)
+    return j
+
+
 def data_request(cloud_url, admin_key, type, location_id=None, organization_id=None, start_time_ms=None, end_time_ms=None, device_types=None, ordered=1, compression=1, no_download=False):
     """
     Submit a data request. Blocks until the data request is ready, downloads it, extracts it, and returns the file reference.
@@ -771,6 +807,14 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
                 if device_types is not None:
                     if int(device['type']) not in device_types:
                         continue
+
+                # print("Device {} start date is {}. Current range is {} to {}".format(device["id"], device["startDateMs"], this_download_start_time_ms, this_download_end_time_ms))
+                if this_download_end_time_ms < int(device["startDateMs"]):
+                    # print("Device {} has a start date of {} which is after the end time of this download request. Skipping.".format(device["id"], device["startDateMs"]))
+                    continue
+                if this_download_start_time_ms < int(device["startDateMs"]):
+                    # print("Device {} has a start date of {} which is after the start time of this download request. Adjusting.".format(device["id"], device["startDateMs"]))
+                    this_download_start_time_ms = int(device["startDateMs"])
                 request_key = str(uuid.uuid4())
                 device_by_requestkey[request_key] = device
                 device_by_id[device["id"]] = device
@@ -815,6 +859,15 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
             if device_types is not None:
                 if int(device['type']) not in device_types:
                     continue
+
+            this_download_start_time_ms = start_time_ms
+            if end_time_ms < int(device["startDateMs"]):
+                # print("Device {} has a start date of {} which is after the end time of this download request. Skipping.".format(device["id"], device["startDateMs"]))
+                continue
+            if start_time_ms < int(device["startDateMs"]):
+                # print("Device {} has a start date of {} which is after the start time of this download request. Adjusting.".format(device["id"], device["startDateMs"]))
+                this_download_start_time_ms = int(device["startDateMs"])
+
             request_key = str(uuid.uuid4())
             device_by_requestkey[request_key] = device
             request_keys.append(request_key)
@@ -829,13 +882,13 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
                 "ordered": ordered,
                 "compression": compression,
                 'deviceId': device['id'],
-                'startTime': start_time_ms,
+                'startTime': this_download_start_time_ms,
                 'endTime': end_time_ms
             }
 
             data_requests.append(request)
         
-        # Grab device activities in one swoop.
+        # Grab device alerts in one swoop.
         # There usually isn't a ton of data here so we don't need to break it up.
         #
         # The resulting CSV will look like this below, where startTime = online and endTime = went offline
@@ -851,6 +904,14 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
             if device_types is not None:
                 if int(device['type']) not in device_types:
                     continue
+            this_download_start_time_ms = start_time_ms
+            if end_time_ms < int(device["startDateMs"]):
+                # print("Device {} has a start date of {} which is after the end time of this download request. Skipping.".format(device["id"], device["startDateMs"]))
+                continue
+            if start_time_ms < int(device["startDateMs"]):
+                # print("Device {} has a start date of {} which is after the start time of this download request. Adjusting.".format(device["id"], device["startDateMs"]))
+                this_download_start_time_ms = int(device["startDateMs"])
+
             request_key = str(uuid.uuid4())
             device_by_requestkey[request_key] = device
             request_keys.append(request_key)
@@ -865,7 +926,7 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
                 "ordered": ordered,
                 "compression": compression,
                 'deviceId': device['id'],
-                'startTime': start_time_ms,
+                'startTime': this_download_start_time_ms,
                 'endTime': end_time_ms
             }
 
@@ -951,14 +1012,12 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
         # print("Params: {}".format(json.dumps(params, indent=2, sort_keys=True)))
         # print("Body: {}".format(json.dumps(body, indent=2, sort_keys=True)))
 
-
-        # print("DATA REQUEST RESPONSE: {}".format(json.dumps(j, indent=2, sort_keys=True)))
-
         downloaded = False
         while not downloaded:
             try:
                 r = _session().post(cloud_url + "/cloud/json/dataRequests", params=params, headers=headers, data=json.dumps(body))
                 j = json.loads(r.text)
+                # print("DATA REQUEST RESPONSE: {}".format(json.dumps(j, indent=2, sort_keys=True)))
                 _check_for_errors(j)
                 downloaded = True
 
@@ -1268,8 +1327,8 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
                 f.write("measureTime,paramName,index,group,value")
                 for d in data:
                     f.write(d + "\n")
-
-            transformed_files.append(transform_device_csv(out_file, device_by_id[device_id]))
+            if device_id in device_by_id:
+                transformed_files.append(transform_device_csv(out_file, device_by_id[device_id]))
 
             # Clean up the merged CSVs
             if os.path.exists(out_file):
@@ -1302,7 +1361,8 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
                 for d in data:
                     f.write(d + "\n")
 
-            transformed_files.append(transform_device_csv(out_file, device_by_id[device_id], DATA_REQUEST_TYPE_DEVICE_ALERTS))
+            if device_id in device_by_id:
+                transformed_files.append(transform_device_csv(out_file, device_by_id[device_id], DATA_REQUEST_TYPE_DEVICE_ALERTS))
 
             # Clean up the merged CSVs
             if os.path.exists(out_file):
@@ -1864,14 +1924,19 @@ def transform_modes_csv(original_csv_file, location_object):
                         timezone_string = location_object['timezone']['id']
                     timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0,
                                                                       pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
+                    event = line_list[EVENT_COLUMN].strip()
+                    source_type = line_list[SOURCE_TYPE_COLUMN].strip()
+                    if source_type == 2:
+                        # Ignore bot-driven modes to allow for playback of user-driven modes only
+                        continue
 
                     out.write("{},{},{},{},{},{},{}\n".format(2,
                                                               location_id,
                                                               timestamp_ms,
                                                               timestamp_iso,
                                                               timestamp_excel,
-                                                              line_list[EVENT_COLUMN].strip(),
-                                                              line_list[SOURCE_TYPE_COLUMN].strip()))
+                                                              event,
+                                                              source_type))
 
     return new_file_path
 
@@ -1929,6 +1994,160 @@ def transform_datastreams_csv(original_csv_file, location_object):
                                                               line_list[ADDRESS_COLUMN].strip(),
                                                               feed_content.strip()))
     return new_file_path
+
+
+def care_active(folder_name, option):
+    care_folders = []
+    data_folder = os.path.join(folder_name, "Data")
+    for file in os.listdir(data_folder):
+        care_folders.append(os.path.join(data_folder, file))
+
+    location_zip_files = []
+    for file in os.listdir(folder_name):
+        if 'location' in file and file.endswith(".zip"):
+            location_zip_files.append(os.path.join(folder_name, file))
+
+    excel_file = os.path.join(folder_name, "PPC Location - CareActive Account.xlsx")
+    care_map_location = {}
+
+    df = pd.read_excel(excel_file, dtype={"PPCLocationID": str})
+    for value in df.values:
+        care_map_location[str(value[1])] = str(value[3])
+
+    for location_id, care_user in care_map_location.items():
+        location_zip_file = None
+        for file in location_zip_files:
+            if location_id in file:
+                location_zip_file = file
+
+        if location_zip_file is None:
+            continue
+
+        care_data_files = []
+        del_folder = None
+        for care_folder in care_folders:
+            if care_user in care_folder:
+                del_folder = care_folder
+
+                for root, dirs, files in os.walk(care_folder):
+                    for file in files:
+                        if '.csv' in file:
+                            care_data_files.append(os.path.join(root, file))
+
+                break
+
+        if del_folder is not None:
+            care_folders.remove(del_folder)
+
+        if care_data_files:
+            has_valid_data = False
+            unzip_folder, extension = os.path.splitext(location_zip_file)
+            file_path, file_name = os.path.split(unzip_folder)
+
+            if not os.path.exists(unzip_folder):
+                unzip_dest = unzip_folder
+                with zipfile.ZipFile(location_zip_file, "r") as z:
+                    for extracted_filename in z.namelist():
+                        if "__MACOSX" in extracted_filename:
+                            unzip_dest = file_path
+                            break
+
+                with zipfile.ZipFile(location_zip_file, "r") as z:
+                    for extracted_filename in z.namelist():
+                        if "__MACOSX" not in extracted_filename:
+                            z.extract(extracted_filename, unzip_dest)
+
+            recording_file = os.path.join(unzip_folder, "recording-{}.json".format(file_name))
+            if os.path.exists(recording_file):
+                recording = json.load(open(recording_file))
+                data = recording["data"]
+
+                location_info = json.dumps(recording["location_info"])
+                device_properties = json.dumps(recording["device_properties"])
+                import gc
+                del recording
+                recording = None
+                gc.collect()
+                start_timestamp = None
+                end_timestamp = None
+
+                for care_data_file in care_data_files:
+
+                    with open(care_data_file, 'r') as f:
+                        index = 0
+                        for line in f:
+                            if index > 0:
+                                has_valid_data = True
+                                values = line.split(",")
+                                timestamp_ms = int(values[0]) * 1000
+                                if start_timestamp is None or timestamp_ms < start_timestamp:
+                                    start_timestamp = timestamp_ms
+
+                                if end_timestamp is None or end_timestamp < timestamp_ms:
+                                    end_timestamp = timestamp_ms
+
+                                data.append({"trigger": "8", "location_id": location_id, "device_type": "999", "device_id": values[5], "description": values[6],
+                                             "timestamp_ms": str(timestamp_ms), "timestamp_iso": values[1], "timestamp_excel": values[1], "behavior": "0", "station_id": values[2],
+                                             "station_tag": values[3], "momentum": values[9], "momentummax": values[10], "rssi": values[8], "battery": values[12], "[online]": "1"})
+
+                            index += 1
+
+                        print("Done handle file: {}".format(care_data_file))
+
+                print("Start timestamp_ms: {} ---- End timestamp_ms: {}".format(start_timestamp, end_timestamp))
+                if has_valid_data:
+                    data = list(filter(lambda x: end_timestamp >= int(x["timestamp_ms"]) >= start_timestamp, data))
+                    data = sorted(data, key=lambda x: x["timestamp_ms"])
+
+                    output_filename = "merged-{}.json".format(file_name)
+                    if option == "merged":
+                        result_folder = os.path.join(folder_name, "MergedData")
+                        if not os.path.isdir(result_folder):
+                            os.mkdir(result_folder)
+
+                    output_file = os.path.join(result_folder, output_filename)
+                    print("Writing merged data: {}... it needs a while...".format(output_filename))
+
+                    first_item = True
+                    with open(output_file, 'w') as out:
+                        out.write("{\n")
+                        out.write("\"location_info\":" + location_info + ",\n")
+                        out.write("\"device_properties\":" + device_properties + ",\n")
+                        out.write("\"data\":[")
+                        for item in data:
+                            if first_item:
+                                first_item = False
+                                out.write(json.dumps(item, indent=2))
+                            else:
+                                out.write(",\n")
+                                out.write(json.dumps(item, indent=2))
+
+                        out.write("\n]}")
+                        out.close()
+
+                    if option == "default":
+                        print("Staring zip merged datas...")
+                        result_folder = os.path.join(folder_name, "MergedData")
+                        if not os.path.isdir(result_folder):
+                            os.mkdir(result_folder)
+
+                        with zipfile.ZipFile(os.path.join(result_folder, "{}.zip".format(file_name)), 'w', zipfile.ZIP_DEFLATED) as zipf:
+                            __zipdir(unzip_folder, zipf)
+
+                    print("{} generate done!".format(output_file))
+                else:
+                    print("No valid Care Active Data for {}, skip it...".format(file_name))
+
+                shutil.rmtree(unzip_folder)
+
+                import time
+                del data
+                data = None
+                time.sleep(10)
+                gc.collect()
+
+    print("All Done!")
+
 
 def __zipdir(path, z):
     for root, dirs, files in os.walk(path):
@@ -2076,7 +2295,7 @@ def _generate_ism(transformed_files, ism_path):
     """
     Generate an integrated sensor matrix
     TODO add modes
-    TODO integrate behaviors to add context to devices
+    TODO integrate behaviors to add context to devices - for example, a Vayyar device near an exit acts like an entry sensor.
     :param transformed_files: List of transformed files from our data request download
     :param ism_path: File path to save the resulting ISM file
     :return: ism_path if successful
@@ -2091,14 +2310,15 @@ def _generate_ism(transformed_files, ism_path):
         print("\t=> Processing {}".format(transformed_filename))
         device_type = int(os.path.basename(transformed_filename).split('_')[0])
         # device_id = transformed_device_ids[file_index]
-        # TODO: Need improvement to make the device type be easier to fetch and more solid.
+        # Need improvement to make the device type be easier to fetch and more solid.
+        is_vayyar = device_type in [2000]
         is_motion = device_type in [9138, 10038]
         is_entry = device_type in [9114, 10014, 10074]
         is_pressurepad = device_type in [9039]
 
         # Currently not supporting other devices besides Entry and Motion
         # Currently not supporting index numbers
-        if is_motion or is_pressurepad or is_entry:
+        if is_motion or is_pressurepad or is_entry or is_vayyar:
             focused_csv = "device_type,device_id,description,behavior,timestamp_ms,timestamp_iso"
             with open(transformed_filename, 'r') as f:
                 for index, line in enumerate(f.readlines()):
@@ -2111,6 +2331,11 @@ def _generate_ism(transformed_files, ism_path):
                         for i in range(0, 9):
                             # Only keep the device param
                             del (original_headers[0])
+
+                        # Add a placeholder for PIR motion detection events with Vayyar Home
+                        # Note that this now produces more CSV headers than we have columns for in our data
+                        if is_vayyar:
+                            original_headers.append("motionStatus")
 
                         if is_entry and 'doorStatus' not in original_headers:
                             is_file_broken = True
@@ -2158,12 +2383,24 @@ def _generate_ism(transformed_files, ism_path):
                             index = i - 9
                             try:
                                 value = normalize_measurement(line_list[i])
-                            except Exception as e:
-                                print("Error parsing value: {}".format(line_list[i]))
+                            except:
+                                # Probably a Vayyar Home device where the 'motionStatus' header we added isn't in the real original headers of this device.
                                 continue
 
                             if value != '':
                                 current_parameter_state[original_headers[index]] = value
+
+                                if is_vayyar:
+                                    # Special handling for Vayyar Home to transform it into a PIR motion detector.
+                                    if original_headers[index] == "occupancy":
+                                        try:
+                                            current_parameter_state["motionStatus"] = value > 0
+                                        except Exception as e:
+                                            print("Exception")
+
+                                    elif original_headers[index] == "occupancyTarget":
+                                        current_parameter_state[original_headers[index]] = str(value).replace("-", ";")
+                                        current_parameter_state["motionStatus"] = value != ""
 
                         focused_csv += "{},{},{},{},{},{}".format(line_list[2], line_list[3],
                                                                   line_list[4], line_list[8],
@@ -2180,7 +2417,7 @@ def _generate_ism(transformed_files, ism_path):
             # CONCLUDE
             csv_strings.append(focused_csv)
 
-            if is_motion:
+            if is_motion or is_vayyar:
                 csv_types.append("motion")
 
             elif is_entry:

@@ -909,7 +909,6 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = ../README.md \
-                         ../botengine \
                          ../com.ppc.Lesson0-Botengine \
                          ../com.ppc.Lesson1-Microservices \
                          ../com.ppc.Lesson2-LiveUpdates \
@@ -932,15 +931,14 @@ INPUT                  = ../README.md \
                          ../com.ppc.Lesson19-Behaviors \
                          ../com.ppc.Lesson20-Rules \
                          ../com.ppc.Lesson21-EdgeComputing \
-                         ../com.ppc.Bot \
-                         ../com.ppc.Microservices \
-                         ../com.ppc.Tests \
                          ../com.ppc.VideoRecognitionAmazon \
                          ../com.ppc.VideoRecognitionGoogle \
                          ../com.ppc.VideoRecognitionMicrosoft \
                          ../virtual_devices \
-
-
+                         ../botengine \
+                         ../com.ppc.Bot \
+                         ../com.ppc.Microservices \
+                         ../com.ppc.Tests
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1059,6 +1057,7 @@ EXCLUDE_SYMLINKS       = NO
 
 EXCLUDE_PATTERNS       = */tests/test*
 EXCLUDE_PATTERNS       += com.ppc.Tests/*
+EXCLUDE_PATTERNS       += com.ppc.Microservices/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the

@@ -16,7 +16,7 @@ class Centralite3SeriesSmartplugDevice(SmartplugDevice):
     """Camera Device"""
     
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [10035]
+    DEVICE_TYPES = [] # [10035] < Deprecated, see smartplug.py >
     
     def get_device_type_name(self):
         """

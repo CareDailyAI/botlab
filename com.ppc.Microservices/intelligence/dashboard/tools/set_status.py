@@ -72,7 +72,7 @@ DATASTREAM_ADDRESS = "update_dashboard_content"
 #     "weight": 0,
 #     "content": {
 #         "status": 0,
-#         "comment": "Judy Bessee reached out today.",
+#         "comment": "Someone reached out today.",
 #         "weight": 30,
 #         "id": "temporary",
 #         "icon": "comment-smile",

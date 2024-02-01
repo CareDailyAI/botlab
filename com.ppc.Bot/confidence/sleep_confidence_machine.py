@@ -13,6 +13,7 @@ from confidence.confidence_state import CONFIDENCE_MEDIUM
 from confidence.confidence_state import CONFIDENCE_HIGH
 
 from devices.motion.motion import MotionDevice
+from devices.vayyar.vayyar import VayyarDevice
 
 import utilities.utilities as utilities
 
@@ -65,6 +66,23 @@ class SleepConfidenceStateMachine:
                 else:
                     confidence_out_bedroom_points += 1
 
+            elif isinstance(device, VayyarDevice):
+                confidence_normal_points += 1
+
+                if VayyarDevice.MEASUREMENT_NAME_OCCUPANCY_TARGET in device.measurements:
+                    if botengine.get_timestamp() - device.measurements[VayyarDevice.MEASUREMENT_NAME_OCCUPANCY_TARGET][0][1] >= (utilities.ONE_HOUR_MS * 12):
+                        confidence_timeout_exceeded = True
+                    else:
+                        confidence_timeout_exceeded = False
+                else:
+                    confidence_timeout_exceeded = True
+                    
+                if device.is_in_bedroom(botengine):
+                    confidence_in_bedroom_points += 1
+
+                else:
+                    confidence_out_bedroom_points += 1
+
         if confidence_normal_points == 0:
             state = CONFIDENCE_OFFLINE
             self.reason = _("We don't have enough devices for sleep service to work.")
@@ -84,15 +102,15 @@ class SleepConfidenceStateMachine:
                     self.reason = _("We have low confidence on the sleep service due to lack of recent measurements.")
                 else:    
                     state = CONFIDENCE_MEDIUM
-                    self.reason = _("Add 1 more Motion device to improve the confidence.")
+                    self.reason = _("Add 1 more Motion or Vayyar device to improve the confidence.")
 
             else:
                 state = CONFIDENCE_LOW
                 if confidence_in_bedroom_points > 0:
-                    self.reason = _("Add more Motion devices installed outside bedroom to improve the confidence.")
+                    self.reason = _("Add more Motion or Vayyar devices installed outside bedroom to improve the confidence.")
 
                 else:
-                    self.reason = _("Add more Motion devices installed inside bedroom to improve the confidence.")
+                    self.reason = _("Add more Motion or Vayyar devices installed inside bedroom to improve the confidence.")
 
         if self.state is None or self.state != state:
             self.state = state

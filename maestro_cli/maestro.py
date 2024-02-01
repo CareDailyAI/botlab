@@ -3,8 +3,6 @@
 """
 Maestro CLI for developers
 
-To get started you will need an Organization.  Visit https://app.caredaily.ai/signup to create one now!
-
 To see a list of organizations, use an Organization Admin or Super Admin account.
     --print
 
@@ -12,11 +10,11 @@ Then, to use the rest of the tool, you need to create a new user account and ass
 and associated that user account with the organization as an administrator. Then type:
     --help
 
-@author:     David Moss, Destry Teeter
+@author:     David Moss
 
-@copyright:  2012 - 2023 People Power Company. All rights reserved.
+@copyright:  2012 - 2022 People Power Company. All rights reserved.
 
-@contact:    dmoss@caredaily.ai, destry@caredaily.ai
+@contact:    dmoss@peoplepowerco.com
 """
 
 import sys
@@ -47,7 +45,7 @@ def main():
 
       Created by David Moss
 
-      Copyright 2023 People Power Company. All rights reserved.
+      Copyright 2022 People Power Company. All rights reserved.
 
       Distributed on an "AS IS" basis without warranties
       or conditions of any kind, either express or implied.
@@ -71,14 +69,18 @@ def main():
     functional_group.add_argument("--media", dest="media", action="store_true", help="Download all media from the given organization or location")
     functional_group.add_argument("--subscriptions", dest="subscriptions", action="store_true", help="Capture a list of active subscriptions.")
     functional_group.add_argument("--installations", dest="installations", action="store_true", help="Capture the installation date of the earliest smart home center.")
+    functional_group.add_argument("--vayyar_falls", dest="vayyar_falls", action="store_true", help="Extract recent Vayyar Home narrative alerts from the given organization and export to CSV.")
     functional_group.add_argument("--get_properties", dest="get_properties", action="store_true", help="Download a list of properties from this organization.")
     functional_group.add_argument("--set_properties", dest="set_properties", help="Properties in JSON format such '{\"name1\": \"value1\", \"name2\": \"value2\"} or '{\"bot.LIST\": \"[1, 2, 3]\"}' or '{\"bot.DICT\": \"{\\\"Hello\\\": \\\"World\\\"}\"}'. All parameters beginning with 'bot.' will be sent to bots and can overrride default bot properties.")
     functional_group.add_argument("--properties", dest="properties", help="Specify a properties module (i.e. 'properties/something.py') to apply/update directly from a file.")
+    functional_group.add_argument("--generate_bill", dest="generate_bill", action="store_true", help="Practice generating an invoice for this organization.")
     functional_group.add_argument("--ism", dest="generate_ism", action="store_true", help="Generate an integrated sensor matrix from all device data from this location, useful for building machine learning models.")
     functional_group.add_argument("--lz4_request", dest="lz4_request", help="Generate a download link for the resulting .lz4 data request.")
     functional_group.add_argument("--start_time_ms", dest="start_time_ms", help="For data downloads, this is an optional absolute Unix epoch start time in milliseconds")
     functional_group.add_argument("--days_ago", dest="days_ago", help="Number of days ago to start a data request. Instead of looking up a start_time_ms, this will figure it out for you.")
     functional_group.add_argument("--end_time_ms", dest="end_time_ms", help="For data downloads, this is an optional absolute Unix epoch end time in milliseconds")
+    functional_group.add_argument("--care_active", dest="care_active", help="CareActive folder path, merge care active datas with PPC location datas.")
+    functional_group.add_argument("--care_option", dest="care_option", choices=['default', 'merged'], default='default', help="The option for zip file, default is the whole data json file.")
 
     # Process arguments
     args, unknown = parser.parse_known_args()
@@ -86,6 +88,10 @@ def main():
     if args.help:
         parser.print_help()
         return 0
+
+    if args.care_active is not None:
+        api.care_active(args.care_active, args.care_option)
+        return
 
     if not args.cloud_url:
         args.cloud_url = DEFAULT_BASE_SERVER_URL
@@ -142,7 +148,10 @@ def main():
         for location_id in locations:
             index += 1
             print("({} of {}) Narrative request for this location ID: {}".format(index, len(locations), location_id))
-            api.data_request(args.cloud_url, args.admin_key, api.DATA_REQUEST_TYPE_LOCATION_NARRATIVES, location_id=location_id, start_time_ms=start_time_ms, end_time_ms=args.end_time_ms)
+            try:
+                api.data_request(args.cloud_url, args.admin_key, api.DATA_REQUEST_TYPE_LOCATION_NARRATIVES, location_id=location_id, start_time_ms=start_time_ms, end_time_ms=args.end_time_ms)
+            except Exception as e:
+                print("Error requesting narratives for location ID {} - {}".format(location_id, str(e)))
 
     if args.data:
         if args.organization_id is None and args.location_id is None:
@@ -356,6 +365,116 @@ def main():
         print("\nTotal locations: {}; Total locations without devices: {}".format(len(locations), empty))
         return
 
+    if args.vayyar_falls:
+        import datetime
+        import pytz
+
+        if args.organization_id is None:
+            print(Color.RED + "Please provide an organization ID from which to extract fall events.\n" + Color.END)
+            return
+
+        print(Color.BOLD + "\nDOWNLOADING VAYYAR FALL ALERTS FROM ORGANIZATION NARRATIVES" + Color.END)
+
+        narratives, next_marker = api.get_organization_narratives(args.cloud_url, args.admin_key, args.organization_id, minimum_priority=api.NARRATIVE_PRIORITY_WARNING)
+        organization = api.get_organizations(args.cloud_url, args.admin_key, organization_id=args.organization_id)
+
+        # The get_organizations() API returns a list - we're just interested in the first and only one.
+        organization = organization[0]
+        organization_desc = organization['name']
+
+        csv_out = "timestamp_ms,timestamp_utc,date_utc,timestamp_local,organization_id,organization_desc,location_id,location_desc,device_id,device_desc,targets,title,Explanation Type (Vayyar),Explanation (Vayyar)\n"
+
+        # Cached list of locations by ID { id : location_json_object }
+        locations = {}
+
+        # Cached list of devices by location ID { location_id : device_json_list }
+        devices = {}
+
+        for n in narratives:
+            # Timestamp in milliseconds
+            timestamp_ms = n['creationDateMs']
+            title = n['title']
+
+            # UTC human-readable ISO timestamp
+            dt = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0)
+            timestamp_utc = dt.replace(microsecond=0).isoformat()
+
+            # UTC Date in year.month.day format
+            date_utc = dt.strftime("%Y.%m.%d")
+
+            # Location ID
+            location_id = n['locationId']
+
+            # Cache the location
+            if location_id not in locations:
+                locations[location_id] = api.get_location(args.cloud_url, args.admin_key, location_id)
+
+            # Location description
+            location_desc = locations[location_id]['name']
+
+            # Local timestamp
+            location_timezone = locations[location_id]['timezone']['id']
+            dt_local = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(location_timezone))
+            timestamp_local = dt_local.replace(microsecond=0).isoformat()
+
+            # Device ID
+            device_id = ""
+            device_desc = "Unknown"
+            targets = None
+            if 'target' in n:
+                if 'device_id' in n['target']:
+                    device_id = n['target']['device_id']
+                    del n['target']['device_id']
+
+                if 'device_desc' in n['target']:
+                    device_desc = n['target']['device_desc']
+                    del n['target']['device_desc']
+
+                targets = str(n['target']).replace(","," && ")
+
+            if not device_id.startswith("id_"):
+                # This isn't a Vayyar Home device - skip it.
+                continue
+
+            if len(n['target']) == 0:
+                # This doesn't have good information - skip it.
+                continue
+
+            if device_desc == "Unknown":
+                # Now we need an API call to get the device description. Cache devices information for this location.
+                if location_id not in devices:
+                    devices[location_id] = api.get_devices(args.cloud_url, args.admin_key, location_id)
+
+                for d in devices[location_id]:
+                    if d['id'] == device_id:
+                        device_desc = d['desc']
+
+            csv_out += "{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(
+                timestamp_ms,
+                timestamp_utc,
+                date_utc,
+                timestamp_local,
+                args.organization_id,
+                organization_desc,
+                location_id,
+                location_desc,
+                device_id,
+                device_desc,
+                targets,
+                title,
+                "",
+                ""
+            )
+
+        print(csv_out)
+
+        filename = "vayyar_falls_{}.csv".format(args.organization_id)
+        with open(filename, 'w') as f:
+            f.write(csv_out)
+
+        print("\n\n=> Saved to {}".format(filename))
+        return
+
     if args.get_properties:
         if args.organization_id is None:
             print(Color.RED + "Please provide an organization ID.\n" + Color.END)
@@ -414,6 +533,16 @@ def main():
             api.set_organization_properties(args.cloud_url, args.admin_key, organization_id, property)
         return
 
+    if args.generate_bill:
+        if args.organization_id is None:
+            print(Color.RED + "Please provide an organization ID.\n" + Color.END)
+            return
+
+        response = api.generate_bill(args.cloud_url, args.admin_key, args.organization_id)
+
+        print("Done!\n{}".format(json.dumps(response, indent=2, sort_keys=True)))
+        return
+
     if args.generate_ism:
         if args.organization_id is None and args.location_id is None:
             print(Color.RED + "Please provide an organization or location ID.\n" + Color.END)
@@ -435,7 +564,7 @@ def main():
 
         print(Color.BOLD + "\nISM FILE GENERATED" + Color.END)
 
-    if not args.narratives and not args.data and not args.subscriptions and not args.get_properties and not args.set_properties and not args.generate_ism and not args.properties:
+    if not args.narratives and not args.data and not args.subscriptions and not args.get_properties and not args.set_properties and not args.generate_bill and not args.generate_ism and not args.properties:
         print_organizations(args.cloud_url, args.admin_key, args.organization_id)
         parser.print_help()
         return 0

@@ -42,12 +42,20 @@ class TestLocation(unittest.TestCase):
         # Initial setup
         botengine = BotEnginePyTest({})
         mut = Location(botengine, 0)
+
+        # Get the total time it takes to execute the new_version() function in milliseconds
         import time
         t = time.time()
         mut.new_version(botengine)
-        x = (time.time() - t)
+        x = (time.time() - t) * 1000
 
+        # Get the reported time from each microservice that it takes to execute the new_version() function in milliseconds
         dt = 0.0
+        # print("Time to create a new version: {}".format(x))
         for i in mut.intelligence_modules.values():
+            # print("Time to create a new version for {}: {}".format(i.__class__.__name__, i.statistics["time"]))
             dt += i.statistics["time"]
-        assert abs(dt - x) < 1.0 # Allow for some error in the timing
+        # print("Total time described by microservices: {}".format(dt))
+
+        # The reported time should be relatively close to the total time
+        assert abs(dt - x) < 1000 # Allow for some error in the timing

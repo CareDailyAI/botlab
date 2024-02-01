@@ -463,7 +463,7 @@ def get_admin_url_for_location(botengine):
                 url = properties.get_property(botengine, "COMMAND_CENTER_URLS")[u]
 
     if url is None:
-        botengine.get_logger().warn("utilities.get_admin_url_for_location(): No COMMAND_CENTER_URLS defined in domain.py")
+        botengine.get_logger(f"{__name__}").warn("utilities.get_admin_url_for_location(): No COMMAND_CENTER_URLS defined in domain.py for address {}".format(bundle.CLOUD_ADDRESS))
         return ""
 
     # Check if the url contains caredaily
@@ -487,7 +487,7 @@ def get_organization_user_notification_categories(botengine, location, excluded_
     # [1.0] Disable notifications for all categories
     if properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_MONITORING") is not None:
         if not properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_MONITORING"):
-            botengine.get_logger().info("utilities: Do not contact admins")
+            botengine.get_logger(f"{__name__}").info("utilities: Do not contact admins")
             return []
     
     # [1.1] Limit the time of day for Technicians
@@ -499,11 +499,11 @@ def get_organization_user_notification_categories(botengine, location, excluded_
 
     categories = [ORGANIZATION_USER_NOTIFICATION_CATEGORY_MANAGER]
     if before_hour is not None and after_hour is not None:
-        botengine.get_logger().info("utilities: Check if we should contact technicians: {} <= {} <= {}".format(before_hour, location.get_relative_time_of_day(botengine, timezone=timezone), after_hour))
+        botengine.get_logger(f"{__name__}").info("utilities: Check if we should contact technicians: {} <= {} <= {}".format(before_hour, location.get_relative_time_of_day(botengine, timezone=timezone), after_hour))
         if before_hour <= location.get_relative_time_of_day(botengine, timezone=timezone) <= after_hour:
             categories.append(ORGANIZATION_USER_NOTIFICATION_CATEGORY_TECHNICIAN)
         else:
-            botengine.get_logger().info("utilities: Do not contact technicians because it's after hours")
+            botengine.get_logger(f"{__name__}").info("utilities: Do not contact technicians because it's after hours")
 
     # Excluded categories
     categories = [c for c in categories if c not in excluded_categories]

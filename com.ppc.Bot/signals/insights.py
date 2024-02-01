@@ -15,6 +15,7 @@ def capture_insight(botengine, location_object, insight_id, value, title, descri
     :param location_object: Location object
     :param insight_id: Unique Insight ID
     :param value: Insight value
+    :param title: Human-readable title for end-users
     :param description: Human-readable description for end-users
     :return:
     """
@@ -22,17 +23,23 @@ def capture_insight(botengine, location_object, insight_id, value, title, descri
         "insight_id": insight_id,
         "value": value,
         "title": title,
-        "description": description,
-        "icon": icon,
-        "icon_font": icon_font
+        "description": description
     }
+
+    if icon is not None:
+        content['icon'] = icon
+        if icon_font is not None:
+            content['icon_font'] = icon_font
 
     if device_object is not None:
         content['device_id'] = device_object.device_id
         content['device_desc'] = device_object.description
         content['device_type'] = device_object.device_type
-    else:
-        content['device_desc'] = None
+
+    if confidence_state is not None:
+        content['confidence_state'] = confidence_state
+        if confidence_reason is not None:
+            content['confidence_reason'] = confidence_reason
 
     if confidence_state is not None:
         content['confidence_state'] = confidence_state
@@ -55,8 +62,7 @@ def delete_insight(botengine, location_object, insight_id):
     location_object.distribute_datastream_message(botengine,
                                                   "capture_insight",
                                                   content={
-                                                      "insight_id": insight_id,
-                                                      "value": None
+                                                      "insight_id": insight_id
                                                   },
                                                   internal=True,
                                                   external=False)

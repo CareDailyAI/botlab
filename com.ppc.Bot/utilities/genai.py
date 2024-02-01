@@ -1,12 +1,7 @@
-import openai
 import requests
 
-# AWS Secret Manager
-AWS_SECRET_NAME = "OpenAI/CareDaily"
-
 # ID of the model to use. You can use the [List models API](https://platform.openai.com/docs/api-reference/models/list) to see all of your available models, or see our [Model](https://platform.openai.com/docs/models/overview) overview for descriptions of them.
-DEFAULT_COMPLETION_MODEL = "text-davinci-003"
-DEFAULT_CHAT_MODEL = "gpt-3.5-turbo"
+DEFAULT_CHAT_MODEL = "gpt-4-0613" # Snapshot of gpt-4 from June 13th 2023 with function calling data. Unlike gpt-4, this model will not receive updates, and will be deprecated 3 months after a new version is released.	Supports upt to 8,192 tokens
 
 # What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
 DEFAULT_TEMPERATURE = 0.9
@@ -17,6 +12,9 @@ DEFAULT_MAX_TOKEN = 300
 # An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
 DEFAULT_TOP_P = 1
 
+# How many completions to generate for each prompt.
+DEFAULT_N = 1
+
 # Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
 DEFAULT_FREQUENCY_PENALTY = 0.2
 
@@ -26,235 +24,115 @@ DEFAULT_PRESENCE_PENALTY = 0
 # Up to 4 sequences where the API will stop generating further tokens. The returned text will not contain the stop sequence.
 STOP_SEQUENCE_INPUT         = "USER:"
 STOP_SEQUENCE_OUTPUT        = "SERVICE:"
+STOP_SEQUENCE_NEWLINE       = "\n"
 DEFAULT_STOP_SEQUENCES = [
     STOP_SEQUENCE_INPUT,
     STOP_SEQUENCE_OUTPUT,
+    STOP_SEQUENCE_NEWLINE
 ]
 
-def _get_api_key(botengine):
-    """
-    Get the API key from the AWS Secret Manager
-    :param botengine: BotEngine environment
-    :return: API key
-    """
-    secret = botengine.get_secret(secret_name=AWS_SECRET_NAME)
-    if secret is None:
-        botengine.get_logger().warning("genai: Failed to authenticate. Missing authentication.")
-        return None
-    botengine.get_logger().debug("genai: Secret: {}".format(secret))
-    import json
-    secret = json.loads(secret)
-    if "appname" not in secret or "appsecret" not in secret:
-        botengine.get_logger().warning("genai: Failed to authenticate. Missing authentication.")
-        return None
-    return secret["appsecret"]
+# Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become available, with the stream terminated by a data: [DONE] message.
+DEFAULT_STREAM = False
 
-def open_ai_response(botengine, location_object, content):
-    """
-    Generate a resposne from OpenAI
-    :param botengine: BotEngine environment
-    :param location_object: Location object
-    :param content: Content to send to OpenAI
-    :return: Response from OpenAI
+# Generates best_of completions server-side and returns the "best"
+DEFAULT_BEST_OF = 1
 
-    Example content:
-    {
-        "prompt": "Hello",
-        "openai_params": {
-            temperature: 0.9,
-            max_token: 150,
-            top_p: 1,
-            frequency_penalty: 0.2,
-            presence_penalty: 0,
-        },
-        "model": 'gpt-3.5-turbo',
-        "endpoint": 'https://api.openai.com/v1/chat/completions'
-    }
+# Mode hit a natural stop point or a provided stop sequence.
+FINISH_REASON_STOP = "stop"
+
+# Maximum number of tokens specified in the request was reached.
+FINISH_REASON_LENGTH = "length"
+
+# Content was omitted due to a flag from our content filters.
+FINISH_REASON_CONTENT_FILTER = "content_filter"
+
+# The model called a function
+FINISH_REASON_FUNCTION = "function"
+
+def chat_completion_model(botengine, messages, model=DEFAULT_CHAT_MODEL, functions=None, function_call=None, max_tokens=DEFAULT_MAX_TOKEN, temperature=DEFAULT_TEMPERATURE, top_p=DEFAULT_TOP_P, n=DEFAULT_N, stream=DEFAULT_STREAM, stop=DEFAULT_STOP_SEQUENCES, presence_penalty=DEFAULT_PRESENCE_PENALTY, frequency_penalty=DEFAULT_FREQUENCY_PENALTY, logit_bias={}, user=None):
     """
-    api_key = _get_api_key(botengine)
-    if api_key is None:
-        # TODO: Clean up this error handling
-        botengine.get_logger().warning("genai.open_ai_response(): Missing API Key")
-        return None
+    Creates an openai chat completion request body for the given parameters.
     
-    if content is None or 'prompt' not in content or content['prompt'] is None:
-        botengine.get_logger().warning("genai.open_ai_response(): No prompt provided")
-        return None
+    For CareDaily Bot OpenAI documentation, see https://iotbots.docs.apiary.io/#/reference/bot-server-ap-is/open-ai
 
-    # Set up the model and prompt
-    model_engine = DEFAULT_COMPLETION_MODEL
-    temperature = DEFAULT_TEMPERATURE
-    max_token = DEFAULT_MAX_TOKEN
-    top_p = DEFAULT_TOP_P
-    frequency_penalty = DEFAULT_FREQUENCY_PENALTY
-    presence_penalty = DEFAULT_PRESENCE_PENALTY
-    stop = DEFAULT_STOP_SEQUENCES
+    See https://platform.openai.com/docs/api-reference/chat/create for more information
 
-    # Override the model and prompt if they're provided
-    if 'model' in content and content['model'] is not None:
-        model_engine = content['model']
-    if 'openai_params' in content and content['openai_params'] is not None:
-        openai_params = content['openai_params']
-        if 'temperature' in openai_params and openai_params['temperature'] is not None:
-            temperature = openai_params['temperature']
-        if 'max_token' in openai_params and openai_params['max_token'] is not None:
-            max_token = openai_params['max_token']
-        if 'top_p' in openai_params and openai_params['top_p'] is not None:
-            top_p = openai_params['top_p']
-        if 'frequency_penalty' in openai_params and openai_params['frequency_penalty'] is not None:
-            frequency_penalty = openai_params['frequency_penalty']
-        if 'presence_penalty' in openai_params and openai_params['presence_penalty'] is not None:
-            presence_penalty = openai_params['presence_penalty']
-        if 'stop' in openai_params and openai_params['stop'] is not None:
-            stop = openai_params['stop']
-
-    # Set up the OpenAI API client
-    openai.api_key = api_key
-
-    # Generate a response
-    try:
-        import json
-
-        botengine.get_logger().info("genai.open_ai_response(): Content: {}".format(json.dumps(content)))
+    :param messages: array (Required) A list of messages comprising the conversation so far.
+        See https://cookbook.openai.com/examples/how_to_format_inputs_to_chatgpt_models for more information.
         
-        import timeit
-        timestamp = timeit.default_timer()
-        completion = openai.Completion.create(engine=model_engine, prompt=content['prompt'], temperature=temperature,
-                                            max_tokens=max_token, top_p=top_p, frequency_penalty=frequency_penalty,
-                                            presence_penalty=presence_penalty, stop=stop)
-        try:
-            # Track everything but the response and the prompt to limit the amount of data we're storing
-            # print("genai.open_ai_response(): Completion: {}".format(completion.__dict__))
-            """
-            {
-                "_previous": {
-                    "choices": [{"finish_reason": "stop", "index": 0, "logprobs": null, "text": "Hi"}], 
-                    "created": 1688061227, 
-                    "id": "cmpl-7Wq7vCLbCAInd6dPPJBUxiehdmw1G", 
-                    "model": "text-davinci-003", 
-                    "object": "text_completion", 
-                    "usage": {"completion_tokens": 1, "prompt_tokens": 6, "total_tokens": 7}}, 
-                    "_response_ms": 293, 
-                    "_retrieve_params": {}, 
-                    "api_base_override": null, 
-                    "api_key": "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", 
-                    "api_type": null, 
-                    "api_version": null, 
-                    "engine": "text-davinci-003", 
-                    "organization": "care-daily-xf7fyx", 
-                    "test": true}
-            """
-            import signals.analytics as analytics
-            properties = completion.__dict__["_previous"]
-            analytics.track(botengine, location_object, "genai_completion", properties={
-                "created" : completion.created,
-                "model" : completion.model,
-                "object" : completion.object,
-                "usage" : completion.usage,
-                "organization": completion.organization,
-                "response_time_ms": int((timeit.default_timer() - timestamp) * 1000),
-            })
-        except:
-            botengine.get_logger().warning("genai.open_ai_response(): Error tracking completion analytics: {}".format(e))
-            pass
-        botengine.get_logger().info("genai.open_ai_response(): Completion: {}".format(json.dumps(completion)))
+        Message Properties:
 
-        response = completion.choices[0]['text']
-        botengine.get_logger().info("genai.open_ai_response(): Open AI Response: {}".format(response))
-        return response
-    except Exception as e:
-        botengine.get_logger().error("genai.open_ai_response(): Error generating response: {}".format(e))
-        return _("I'm sorry, I don't know how to respond to that.")
+        :param role: string (Required) The role of the messages author. One of system, user, assistant, or function.
+        :param content: string or null (Required) The contents of the message. content is required for all messages, and may be null for assistant messages with function calls.
+        :param name: string (Optional) The name of the author of this message. name is required if role is function, and it should be the name of the function whose response is in the content. May contain a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters.
+        :param function_call: object (Optional) The name and arguments of a function that should be called, as generated by the model.
 
-def open_ai_image(botengine, prompt):
-    # Make the request to the OpenAI API
-    resp = requests.post(
-        'https://api.openai.com/v1/images/generations',
-        headers={'Authorization': f'Bearer {API_KEY}'},
-        json={'prompt': prompt, 'n': 1, 'size': '1024x1024'},
-        timeout=10
-    )
-    response_text = json.loads(resp.text)
+            Function Call Properties:
 
-    return response_text['data'][0]['url']
+            :param name: string (Required) The name of the function to call.
+            :param arguments: string (Required) The arguments to call the function with, as generated by the model in JSON format. Note that the model does not always generate valid JSON, and may hallucinate parameters not defined by your function schema. Validate the arguments in your code before calling your function.
 
-def open_ai_response_expert(botengine, content):
-    """
-    Example content:
+    :param model: string (Optional, Default to "gpt-4-0613") ID of the model to use. Use https://platform.openai.com/docs/api-reference/models/list API to see all available models, or see https://platform.openai.com/docs/models/overview for descriptions of them.
+    :param functions: array (Optional) A list of functions the model may generate JSON inputs for.
+        Function Properties:
 
-    content = {
-            "prompt": prompt,
-            "openai_params": None,
-            "model": 'gpt-3.5-turbo',
-            "endpoint": 'https://api.openai.com/v1/chat/completions'
-        }
-    """
+        :param name: string (Required) The name of the function to be called. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.
+        :param description: string (Optional) A description of what the function does, used by the model to choose when and how to call the function.
+        :param parameters: object (Required) The parameters the functions accepts, described as a JSON Schema object. See https://platform.openai.com/docs/guides/gpt/function-calling for examples, and https://json-schema.org/understanding-json-schema/ for documentation about the format.
 
-    temperature = None
-    max_token = None
-    top_p1 = None
-    frequency_penalty = None
-    presence_penalty = None
-
-    model = None
-    api_key = None
-    prompt = None
-
-
-    openai_params = content['openai_params']
-    prompt = content['prompt']
-    endpoint = content['endpoint']
-    model = content['model']
-
-    if prompt is None or endpoint is None:
-        return
-
-    if openai_params is None:
-        temperature = 0.9
-        max_token = 150
-        top_p1 = 1
-        frequency_penalty = 0.2
-        presence_penalty = 0
-    else:
-        temperature = openai_params[0]
-        max_token = openai_params[1]
-        top_p1 = openai_params[2]
-        frequency_penalty = openai_params[3]
-        presence_penalty = openai_params[4]
-
-    data = {'model': model,
-            'messages': [{"role": "user", "content": prompt}],
-            'temperature': temperature,
-            'max_tokens': max_token,
-            'top_p': top_p1,
-            'frequency_penalty': frequency_penalty,
-            'presence_penalty': presence_penalty}
-
-    headers = {'Authorization': f'Bearer {API_KEY}'}
-    # Make the request to the OpenAI API
-    try:
-        response = requests.post(
-            endpoint,
-            headers=headers,
-            json=data,
-            timeout=10
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as err:
-        botengine.get_logger().warning("genai.open_ai(): Error: {}".format(err))
-        return None
+    :param function_call: string or object (Optional) Controls how the model calls functions. "none" means the model will not call a function and instead generates a message. "auto" means the model can pick between generating a message or calling a function. Specifying a particular function via {"name": "my_function"} forces the model to call that function. "none" is the default when no functions are present. "auto" is the default if functions are present.
+        To describe a function that accepts no parameters, provide the value {"type": "object", "properties": {}}.
+    :param max_tokens: integer or null (Optional, Defaults to 16) The maximum number of tokens to generate in the completion.
+        The token count of your prompt plus max_tokens cannot exceed the model's context length.
+        See https://platform.openai.com/tokenizer and https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken 
+    :param temperature: number or null (Optional, Defaults to 1) What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+        We generally recommend altering this or top_p but not both.
+    :param top_p: number or null (Optional, Defaults to 1) An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
+        We generally recommend altering this or temperature but not both.
+    :param n: integer or null (Optional, Defaults to 1) How many completions to generate for each prompt.
+        Note: Because this parameter generates many completions, it can quickly consume your token quota. Use carefully and ensure that you have reasonable settings for max_tokens and stop.
+    :param stream: boolean or null (Optional, Defaults to false) Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become available, with the stream terminated by a data: [DONE] message. Example Python code.
+    :param stop: string / array / null (Optional, Defaults to null) Up to 4 sequences where the API will stop generating further tokens. The returned text will not contain the stop sequence.
+    :param presence_penalty: number or null (Optional, Defaults to 0) Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+        See more information about frequency and presence penalties.
+    :param frequency_penalty: number or null (Optional, Defaults to 0) Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+        See more information about frequency and presence penalties.
+    :param logit_bias: map (Optional, Defaults to null) Modify the likelihood of specified tokens appearing in the completion.
+        Accepts a json object that maps tokens (specified by their token ID in the GPT tokenizer) to an associated bias value from -100 to 100. You can use this tokenizer tool (which works for both GPT-2 and GPT-3) to convert text to token IDs. Mathematically, the bias is added to the logits generated by the model prior to sampling. The exact effect will vary per model, but values between -1 and 1 should decrease or increase likelihood of selection; values like -100 or 100 should result in a ban or exclusive selection of the relevant token.
+        As an example, you can pass {"50256": -100} to prevent the <|endoftext|> token from being generated.
+    :param user: (string, Optional) A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.
     
-    try:
-        from json import JSONDecodeError
-        result = response.json()
-    except JSONDecodeError as err:
-        botengine.get_logger().warning("genai.open_ai(): Error: {}".format(err))
-        return None
+    :return: JSON body to send to the CareDaily OpenAI API
+    """
 
+    if messages is None or len(messages) == 0:
+        raise "genai.chat_completion_model(): No messages provided"
+    
+    body = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "top_p": top_p,
+        "n": n,
+        "stream": stream,
+        "stop": stop,
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty,
+        "logit_bias": logit_bias,
+        "user": user,
+    }
 
-    final_result = ''
-    for i in range(0, len(result['choices'])):
-        final_result+=result['choices'][i]['message']['content']
+    if stream:
+        botengine.get_logger(f"{__name__}").warning("genai.chat_completion_model(): Stream is not currently supported by this utility. Setting stream to False.")
+        body['stream'] = False
 
-    botengine.get_logger().info("genai.open_ai(): Open AI Response: {}".format(final_result))
-    return final_result
+    if functions is not None:
+        # TODO: Include exeption handling for invalid function schemas
+        body['functions'] = functions
+        if function_call is not None:
+            body['function_call'] = function_call
+    return body
+
+def open_ai_response(botengine, location_object, content, microservice=None, callback_address=None, callback_metadata={}):
+    raise "genai.open_ai_response(): This method is deprecated. Please use signals/openai.py:submit_chatgpt_prompt instead."

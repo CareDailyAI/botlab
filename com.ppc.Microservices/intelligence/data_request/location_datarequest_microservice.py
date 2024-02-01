@@ -15,7 +15,10 @@ import properties
 
 from devices.entry.entry import EntryDevice
 from devices.motion.motion import MotionDevice
+from devices.vayyar.vayyar import VayyarDevice
 from devices.pressure.pressure import PressurePadDevice
+from devices.health.health_withings_sleep import WithingsSleepHealthDevice
+from devices.health.health import HealthDevice
 
 # For debugging, export CSV data to local files
 EXPORT_CSV_TO_LOCAL_FILES = False
@@ -104,6 +107,7 @@ class LocationDataRequestMicroservice(Intelligence):
         :param content:
         :return:
         """
+        botengine.get_logger().debug("location_datarequest_microservice.download_data() content={}".format(content))
         self.version = VERSION
 
         force = False
@@ -140,7 +144,7 @@ class LocationDataRequestMicroservice(Intelligence):
 
                 if DOWNLOAD_FOCUSED_DEVICES_ONLY:
                     # Download focused devices only based on the list below.
-                    if isinstance(focused_object, MotionDevice) or isinstance(focused_object, EntryDevice) or isinstance(focused_object, PressurePadDevice):
+                    if isinstance(focused_object, MotionDevice) or isinstance(focused_object, EntryDevice) or isinstance(focused_object, PressurePadDevice) or isinstance(focused_object, VayyarDevice) or isinstance(focused_object, HealthDevice) or isinstance(focused_object, WithingsSleepHealthDevice):
                         focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, oldest_timestamp_ms=oldest_timestamp_ms, reference=reference)
 
                 else:
