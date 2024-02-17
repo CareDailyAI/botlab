@@ -11950,66 +11950,6 @@ class BotEngine:
 
         return secret
 
-    # AWS Secrets Manager
-    def get_secret(self, secret_name, region_name="us-east-1"):
-        """
-        Retrieve a secret from AWS Secrets Manager
-
-        :param secret_name: Name of this secret
-        :param region_name: AWS region. default "us-east-1"
-        :return: optional json secret. i.e., {"appname": "some", "appsecret": "thing"}
-        """
-        self.get_logger().debug("botengine: get_secret() {} {}".format(secret_name, region_name))
-
-        secret = None
-
-        try:
-            if False: # Caching
-                self.get_logger().debug("botengine: get_secret() Prefer caching")
-                import botocore 
-                import botocore.session 
-                from aws_secretsmanager_caching import SecretCache, SecretCacheConfig 
-
-                client = botocore.session.get_session().create_client('secretsmanager')
-                cache_config = SecretCacheConfig()
-                cache = SecretCache( config = cache_config, client = client)
-
-                secret = cache.get_secret_string('mysecret')
-            
-            else: # No caching
-                self.get_logger().debug("botengine: get_secret() Prefer no caching")
-                import boto3
-                from botocore.exceptions import ClientError
-
-                # Create a Secrets Manager client
-                session = boto3.session.Session()
-                client = session.client(
-                    service_name='secretsmanager',
-                    region_name=region_name
-                )
-
-                try:
-                    self.get_logger().info("botengine: get_secret() Retrieving secret '{}'".format(secret_name))
-                    get_secret_value_response = client.get_secret_value(
-                        SecretId=secret_name
-                    )
-                except ClientError as e:
-                    # For a list of exceptions thrown, see
-                    # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-                    raise e
-
-                # Decrypts secret using the associated KMS key.
-                secret = get_secret_value_response['SecretString']
-
-            # Your code goes here.
-            if secret is None:
-                self.get_logger().warning("botengine: get_secret() Missing secret '{}'.".format(secret_name))
-
-        except Exception as e:
-            self.get_logger().error("botengine: get_secret() Failed to retrieve secret '{}': {}".format(secret_name, e))
-
-        return secret
-
 
 
 #===============================================================================
