@@ -5,19 +5,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.3.0] - 2024-02-27
+
+### Added
+- Botengine execution history cli command group
+- OpenAI chat response handling during playback
+- Smart Breaker device class
+- Vayyar falling mitigator device method to enable/disable
+- Daily Report services to support email and sms delivery
+- Daily Report interpretation of insights and trends
+- Location User Role enum
+
+### Fixed
+- Logging detail and specific services
+- Question answer status handling
+- Remove trailing slash on Care Daily API requests
+- Daylight microservice should represent sunrise/sunset at current location timezome during playback
+- Maestro data download should represent individual device start times
+
 ## [9.2.2] - 2024-01-31
 
-#### Fixed
+### Fixed
 - JSON handling and initial values in various botengine functionalities.
 - Duplicate values and timer issues in location state fields and data request triggers.
 - Several bugs and performance issues across bot measurement executions, analytics, statistics, insights, data streaming, python import exceptions, SMS delivery, video AI support, cloud server version checks, device type extraction, and logging.
 - Error handling for question triggers, default runtime timeout adjustments, and other miscellaneous fixes.
 
-#### Changed
+### Changed
 - Updated Python runtime to 3.9.
 - Modifications to memory and runtime configurations, execution time limits, and asynchronous data requests for device startup and bot variables.
 
-#### Added
+### Added
 - Support for device message notifications, Withings Sleep device, and various signals for daily and weekly report entries.
 - Execution statistics, Cloudwatch Logging for CLI, AWS Secret Manager support, utility methods for notifications, and enhancements to botengine playback features.
 - CLI updates for runtime parameters, cloud version checks, scheduling supports, analytics timeout, ML error logging, push notification parameters, and the tag_release command.
@@ -109,7 +127,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Push notification title, subtitle and category parameters
 - tag_release cli command
 
-[Unreleased]: https://github.com/caredailyai/botlab/compare/v9.2.2...HEAD
+[Unreleased]: https://github.com/caredailyai/botlab/compare/v9.3.0...HEAD
+[9.3.0]: https://github.com/caredailyai/botlab/compare/v8.2.2...v9.3.0
 [9.2.2]: https://github.com/caredailyai/botlab/compare/v8.2.0...v9.2.2
 [9.0.6]: https://github.com/caredailyai/botlab/compare/v8.2.0...v9.0.6
 [8.2.0]: https://github.com/caredailyai/botlab/tag/releases/v8.2.0
