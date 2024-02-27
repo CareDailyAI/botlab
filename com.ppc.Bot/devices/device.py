@@ -204,9 +204,6 @@ class Device:
             self.is_goal_changed = False
 
         # Synchronize device microservices
-        print("device.py - Synchronizing device microservices for device type: " + str(self.device_type))
-        print("device.py - Device microservices: " + str(index.MICROSERVICES['DEVICE_MICROSERVICES']))
-        
         if str(self.device_type) in index.MICROSERVICES['DEVICE_MICROSERVICES']:
             # Synchronize microservices
             changed = False

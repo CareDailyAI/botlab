@@ -64,6 +64,21 @@ class Step(object):
     """
     Voice Call Step
     """
+    
+    # Step Identifiers
+    STEP_INTRO = 0
+    STEP_CONVERSATION_RESOLUTION = 100
+    STEP_CONVERSATION_RESOLUTION_OPTION = 110
+    STEP_CONVERSATION_RESOLUTION_ACK = 120
+    STEP_CONVERSATION_ESCALATION_OPTION = 130
+    STEP_CONVERSATION_ESCALATION_ACK = 140
+    STEP_CONVERSATION_FEEDBACK = 200
+    STEP_CONVERSATION_FEEDBACK_OPTION = 210
+    STEP_CONVERSATION_FEEDBACK_ACK = 220
+
+    # Step Answer Keys
+    STEP_ANSWER_KEY_RESOLUTION_OPTION = 'RESOLUTION_OPTION'
+    STEP_ANSWER_KEY_ESCALATION_OPTION = 'ESCALATION_OPTION'
 
     def __init__(self, id, text, actions=[], timeout_alerts=[], mis_hit_alerts=[], answer_key=None):
         """

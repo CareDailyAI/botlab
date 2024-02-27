@@ -673,6 +673,14 @@ class VayyarDevice(Device):
         """
         botengine.send_command(self.device_id, "vyrc.targetPositionChangeThresholdMeters", float(target_change_threshold_m))
 
+    def set_falling_mitigator(self, botengine, falling_mitigator):
+        """
+        Set the falling mitigator
+        :param botengine: BotEngine
+        :param falling_mitigator: True or False
+        """
+        botengine.send_command(self.device_id, "vyrc.fallingMitigatorEnabled", falling_mitigator)
+
     def set_ceiling_mount(self, botengine, sensor_height_m=2.0):
         """
         Configure this Vayyar Home for a ceiling mount

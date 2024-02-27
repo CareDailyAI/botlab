@@ -17,6 +17,7 @@ DATA_SLEEP_DURATION_MS = -2
 
 # Logging
 LOG_LEVEL=logging.INFO
+SERVICE_LOG_LEVEL=logging.DEBUG
 
 # Name of our core variable
 CORE_VARIABLE_NAME = "-core-"
@@ -313,6 +314,9 @@ class BotEnginePyTest:
         # Enabling us to know if it's the first run and a new_version() should be triggered, or gather stats if we want.
         self.local_execution_count = None
 
+        # Logging service names to render
+        self.logging_service_names = []
+
     #============================================================================
     # Loggers
     #============================================================================
@@ -337,21 +341,26 @@ class BotEnginePyTest:
         logging.Formatter.formatTime = self._playback_logger_timestamp
         logger = logging.getLogger(name)
 
+        if len(self.logging_service_names) > 0 and not any([service_name in name for service_name in self.logging_service_names]):
+            return logger
+        
+        log_level = LOG_LEVEL if len(self.logging_service_names) == 0 else SERVICE_LOG_LEVEL
+        
         if not logger.handlers:
             # Create a console handler
             console_handler = logging.StreamHandler()
-            console_handler.setLevel(LOG_LEVEL)
+            console_handler.setLevel(log_level)
             fmt = logging.Formatter('%(asctime)s %(levelname)-8s %(name)-12s %(message)s')
 
             console_handler.setFormatter(fmt)
 
             # Create a blank line handler
             blank_handler = logging.StreamHandler()
-            blank_handler.setLevel(LOG_LEVEL)
+            blank_handler.setLevel(log_level)
             blank_handler.setFormatter(logging.Formatter(fmt=''))
 
             # Configure the logger
-            logger.setLevel(LOG_LEVEL)
+            logger.setLevel(log_level)
             logger.addHandler(console_handler)
 
             # Add handlers

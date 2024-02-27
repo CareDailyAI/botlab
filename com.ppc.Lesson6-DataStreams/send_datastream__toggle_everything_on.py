@@ -113,7 +113,7 @@ def send_datastream_message(server, app_key, address, content):
         "feed": content
     }
 
-    r = requests.post(server + "/cloud/appstore/stream/", params=params, data=json.dumps(body), headers=http_headers)
+    r = requests.post(server + "/cloud/appstore/stream", params=params, data=json.dumps(body), headers=http_headers)
     j = json.loads(r.text)
     _check_for_errors(j)
 

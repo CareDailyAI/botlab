@@ -70,7 +70,7 @@ class TestLocationAnalyticsAmplitudeMicroservice(unittest.TestCase):
             'api_key': '267ab5573fc279e3ddaa4da272518a15', 'events': [
                 {
                     'user_id': 'bot_0', 
-                    'device_id': 'com.ppc.ExampleBot', 
+                    'device_id': 'com.ppc.Tests', 
                     'time': 1696014860506, 
                     'event_type': 'test', 
                     'event_properties': {
@@ -85,7 +85,7 @@ class TestLocationAnalyticsAmplitudeMicroservice(unittest.TestCase):
         
         assert request_json['api_key'] == token
         assert request_json['events'][-1]['user_id'] == 'bot_0'
-        assert request_json['events'][-1]['device_id'] == 'com.ppc.ExampleBot'
+        assert request_json['events'][-1]['device_id'] == 'com.ppc.Tests'
         assert request_json['events'][-1]['time'] == timestamp
         assert request_json['events'][-1]['event_type'] == 'test'
         assert request_json['events'][-1]['event_properties'] == {'test': 'test', 'locationId': 0, 'organizationId': 0}

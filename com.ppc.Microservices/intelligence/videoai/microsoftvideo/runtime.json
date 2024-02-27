@@ -18,7 +18,6 @@
     "deviceTypes": [
       {
         "id": 23,
-        "minOccurrence": 0,
         "trigger": true,
         "read": true,
         "control": true,
@@ -28,7 +27,6 @@
       },
       {
         "id": 24,
-        "minOccurrence": 0,
         "trigger": true,
         "read": true,
         "control": true,
@@ -86,23 +84,21 @@
         }
       }
     ],
-
+    
     # COMMUNICATIONS
     # Bots request permission to communicate over specific channels with different people and groups. Users can
     # opt-out of communications.
     #
-    # Categories:
-    #   0 = Me only
-    #   1 = Friends
-    #   2 = Family / Caregivers
-    #   3 = Neighbors in my group in an organization
-    #   4 = Organizational administrators
+    # Categories
+    #   0 = Location Users
+    #   1 = Specific Address
+    #   2 = Organization Users
     #
-    # Communication types:
-    #   "email" - Email notifications
-    #   "push" - Push notifications to phones signed into your account
-    #   "sms" - SMS message to designated phone numbers or groups
-    #   "msg" - in-app messaging
+    # Communication types
+    #   email - Email notifications
+    #   push - Push notifications to phones signed into your account
+    #   sms - SMS message to designated phone numbers or groups
+    #   msg - in-app messaging
     "communications": [
       {
         "category": 0,

@@ -1,43 +1,16 @@
 #!/usr/bin/env python
 # encoding: utf-8
 '''
-Created on January 4, 2019
+Created on February 21, 2024
 
-@author: David Moss
+@author: Destry Teeter
 '''
-# Push notification sound library
-PUSH_SOUND_ALARM = "alarm.wav"
-PUSH_SOUND_BEEP = "beep.wav"
-PUSH_SOUND_BELL = "bell.wav"
-PUSH_SOUND_BIRD = "bird.wav"
-PUSH_SOUND_BLING = "bling.wav"
-PUSH_SOUND_CAMERA = "camera_shutter.wav"
-PUSH_SOUND_CLICK = "click.wav"
-PUSH_SOUND_DOG = "dog.wav"
-PUSH_SOUND_DROID = "droid.wav"
-PUSH_SOUND_ENTRY_DELAY = "entry_delay.wav"
-PUSH_SOUND_FULLY_ARMED = "fullyarmed.wav"
-PUSH_SOUND_GUN_COCK = "guncock.wav"
-PUSH_SOUND_GUN_SHOT = "gunshot.wav"
-PUSH_SOUND_LOCK = "lock.wav"
-PUSH_SOUND_PHASER = "phaser.wav"
-PUSH_SOUND_PONG = "pong.wav"
-PUSH_SOUND_SILENCE = "silence.wav"
-PUSH_SOUND_TOGGLE = "toggle.wav"
-PUSH_SOUND_TRUMPET = "trumpet.wav"
-PUSH_SOUND_WARNING = "warning.wav"
-PUSH_SOUND_WHISTLE = "whistle.wav"
-PUSH_SOUND_WHOOPS = "whoops.wav"
 
 # Data Stream Address
-DATASTREAM_ADDRESS = "message"
+DATASTREAM_ADDRESS = "daylight_fire_sunset"
 
 # Data Stream Content
-DATASTREAM_CONTENT = {
-    "push_content": "This is a test push notification",
-    "push_sound": PUSH_SOUND_BEEP
-}
-
+DATASTREAM_CONTENT = {}
 
 # input function behaves differently in Python 2.x and 3.x. And there is no raw_input in 3.x.
 if hasattr(__builtins__, 'raw_input'):

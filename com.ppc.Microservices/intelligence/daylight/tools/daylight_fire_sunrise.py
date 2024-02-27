@@ -1,37 +1,16 @@
 #!/usr/bin/env python
 # encoding: utf-8
 '''
-Created on January 4, 2019
+Created on February 21, 2024
 
-@author: David Moss
+@author: Destry Teeter
 '''
 
-# Section ID's
-SECTION_ID_ALERTS = "alerts"
-SECTION_ID_NOTES = "notes"
-SECTION_ID_TASKS = "tasks"
-SECTION_ID_SLEEP = "sleep"
-SECTION_ID_ACTIVITIES = "activities"
-SECTION_ID_MEALS = "meals"
-SECTION_ID_MEDICATION = "medication"
-SECTION_ID_BATHROOM = "bathroom"
-SECTION_ID_SOCIAL = "social"
-SECTION_ID_MEMORIES = "memories"
-SECTION_ID_SYSTEM = "system"
-
 # Data Stream Address
-DATASTREAM_ADDRESS = "daily_report_entry"
+DATASTREAM_ADDRESS = "daylight_fire_sunrise"
 
 # Data Stream Content
-DATASTREAM_CONTENT = {
-        "section_id": SECTION_ID_SLEEP,
-        "comment": None,
-        "subtitle": "Subtitle here.",
-        "identifier": "sleep_test",
-        "include_timestamp": True,
-        "timestamp_override_ms": None
-    }
-
+DATASTREAM_CONTENT = {}
 
 # input function behaves differently in Python 2.x and 3.x. And there is no raw_input in 3.x.
 if hasattr(__builtins__, 'raw_input'):
@@ -124,7 +103,7 @@ def send_datastream_message(server, app_key, location_id, address, content):
     print("Body: " + json.dumps(body, indent=2, sort_keys=True))
     print("Server: " + server)
     
-    r = requests.post(server + "/cloud/appstore/stream/", params=params, data=json.dumps(body), headers=http_headers)
+    r = requests.post(server + "/cloud/appstore/stream", params=params, data=json.dumps(body), headers=http_headers)
     j = json.loads(r.text)
     _check_for_errors(j)
     print(str(r.text))

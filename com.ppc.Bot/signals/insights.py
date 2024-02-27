@@ -41,10 +41,6 @@ def capture_insight(botengine, location_object, insight_id, value, title, descri
         if confidence_reason is not None:
             content['confidence_reason'] = confidence_reason
 
-    if confidence_state is not None:
-        content['confidence_state'] = confidence_state
-        content['confidence_reason'] = confidence_reason
-
     location_object.distribute_datastream_message(botengine,
                                                   "capture_insight",
                                                   content=content,

@@ -812,9 +812,10 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
                 if this_download_end_time_ms < int(device["startDateMs"]):
                     # print("Device {} has a start date of {} which is after the end time of this download request. Skipping.".format(device["id"], device["startDateMs"]))
                     continue
+                this_device_download_start_time_ms = this_download_start_time_ms
                 if this_download_start_time_ms < int(device["startDateMs"]):
                     # print("Device {} has a start date of {} which is after the start time of this download request. Adjusting.".format(device["id"], device["startDateMs"]))
-                    this_download_start_time_ms = int(device["startDateMs"])
+                    this_device_download_start_time_ms = int(device["startDateMs"])
                 request_key = str(uuid.uuid4())
                 device_by_requestkey[request_key] = device
                 device_by_id[device["id"]] = device
@@ -830,7 +831,7 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
                     "ordered": ordered,
                     "compression": compression,
                     'deviceId': device['id'],
-                    'startTime': this_download_start_time_ms,
+                    'startTime': this_device_download_start_time_ms,
                     'endTime': this_download_end_time_ms
                 }
 

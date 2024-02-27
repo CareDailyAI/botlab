@@ -38,17 +38,6 @@ class LocationVoiceCallMicroservice(Intelligence):
         """
         pass
 
-    def update_conversation(self, botengine, conversation_object, message=None, resolved=False):
-        """
-        Update a conversation
-        :param botengine: BotEngine environment
-        :param conversation_object: Conversation object to update
-        :param message: Message to send out to either homeowners or supporters
-        :param resolved: True to resolve and end the conversation (default is False)
-        :return conversation_object for reference in update_conversation(..). Or None if this conversation will no longer be active.
-        """
-        pass
-
     def datastream_updated(self, botengine, address, content):
         """
         Data Stream Message Received
@@ -154,6 +143,34 @@ class LocationVoiceCallMicroservice(Intelligence):
             "answer": 0
         }
 
+        :param botengine:
+        :param content:
+        :return:
+        """
+        pass
+
+    def conversation_feedback(self, botengine, content):
+        """
+        Conversation feedback from the UI
+        :param botengine:
+        :param content:
+        :return:
+        """
+        pass
+
+
+    def security_state_updated(self, botengine, content):
+        """
+        Data stream message that the security state was updated
+        :param botengine:
+        :param content:
+        :return:
+        """
+        pass
+
+    def occupancy_status_updated(self, botengine, status, reason, last_status, last_reason):
+        """
+        Data stream message that the internal mode was updated
         :param botengine:
         :param content:
         :return:

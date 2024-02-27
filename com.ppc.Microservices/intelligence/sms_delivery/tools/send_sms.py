@@ -115,7 +115,7 @@ def send_datastream_message(server, app_key, location_id, address, content):
     print("Body: " + json.dumps(body, indent=2, sort_keys=True))
     print("Server: " + server)
     
-    r = requests.post(server + "/cloud/appstore/stream/", params=params, data=json.dumps(body), headers=http_headers)
+    r = requests.post(server + "/cloud/appstore/stream", params=params, data=json.dumps(body), headers=http_headers)
     j = json.loads(r.text)
     _check_for_errors(j)
     print(str(r.text))

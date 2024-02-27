@@ -14,11 +14,20 @@
     # 64 = Reserved for timers
     # 128 = Device configuration or metadata was updated
     # 256 = Data Stream Message received
-    "trigger": 1,
+    "trigger": 321,
 
     "schedules": {
       "MIDNIGHT": "0 0 0 1/1 * ? *",
       "HOUR": "0 0 0/1 1/1 * ? *"
-    }
+    },
+
+    "dataStreams": [
+      {
+        "address": "daylight_fire_sunrise"
+      },
+      {
+        "address": "daylight_fire_sunset"
+      }
+    ]
   }
 }

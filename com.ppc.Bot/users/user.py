@@ -27,6 +27,13 @@ class User:
     ALERT_CATEGORY_SUPPORTER = 2
     ALERT_CATEGORY_SOCIALONLY = 3
 
+    # User Roles
+    ROLE_TYPE_DEFAULT = 0
+    ROLE_TYPE_CARE_RECIPIENT = 1
+    ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER = 2
+    ROLE_TYPE_SECONDARY_FAMILY_CAREGIVER = 3
+    ROLE_TYPE_PROFESSIONAL_CAREGIVER = 4
+
 
     def __init__(self, botengine, user_id):
         """
@@ -46,6 +53,9 @@ class User:
 
         # Last name
         self.last_name = ""
+
+        # Role
+        self.role = None
 
         # Location Access
         self.location_access = None
@@ -76,6 +86,8 @@ class User:
         :param botengine:
         :return:
         """
+        if not hasattr(self, 'role'):
+            self.role = None
         return
 
     def initialize(self, botengine):
@@ -99,8 +111,9 @@ class User:
         A user changed roles
         :param botengine: BotEngine environment
         :param user_id: User ID that changed roles
-        :param alert_category: User's current alert/communications category (1=resident; 2=supporter)
-        :param location_access: User's access to the location and devices. (0=None; 10=read location/device data; 20=control devices and modes; 30=update location info and manage devices)
+        :param role: User's new role (User.ROLE_TYPE_*)
+        :param alert_category: User's current alert/communications category (User.ALERT_CATEGORY_*)
+        :param location_access: User's access to the location and devices. (User.LOCATION_ACCESS_*)
         :param previous_alert_category: User's previous category, if any
         :param previous_location_access: User's previous access to the location, if any
         """

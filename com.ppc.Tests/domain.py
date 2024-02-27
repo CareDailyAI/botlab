@@ -82,8 +82,8 @@ MIXPANEL_TOKEN = None
 
 # Amplitude tokens
 AMPLITUDE_TOKENS = {
-    "app.peoplepowerco.com": "",
-    "sboxall.peoplepowerco.com": ""
+    "app.peoplepowerco.com": "asdf",
+    "sboxall.peoplepowerco.com": "asdf"
 }
 
 

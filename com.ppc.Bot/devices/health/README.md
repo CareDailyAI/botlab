@@ -8,8 +8,6 @@ Supplementary guide on coordinating device types and data through HealthKit: htt
 
 - com.ppc.Bot/devices/health.py
 - com.ppc.Bot/devices/health_apple.py
-- com.ppc.Bot/devices/health_xandar_kardian.py
-- com.ppc.Bot/devices/health_wellvii.py
 - com.ppc.BotProprietary/signals/health_apple.py
 - com.ppc.Microservices/intelligence/health/device_healthtrends_microservice.py
 - com.ppc.Microservices/intelligence/health/location_health_microservice.py

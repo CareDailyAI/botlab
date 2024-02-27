@@ -317,7 +317,7 @@ def get_answer(question_object):
     if question_object is None:
         return None
 
-    if question_object.answer_status == 4:
+    if question_object.answer_status == 4 and question_object.answer is not None:
         return normalize_measurement(question_object.answer)
     return normalize_measurement(question_object.default_answer)
 

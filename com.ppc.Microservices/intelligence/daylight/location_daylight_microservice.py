@@ -35,6 +35,8 @@ class LocationDaylightMicroservice(Intelligence):
         Instantiate this object
         :param parent: Parent object, either a location or a device object.
         """
+
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">__init__()")
         Intelligence.__init__(self, botengine, parent)
 
         if self.parent.latitude is not None and self.parent.longitude is not None:
@@ -42,16 +44,19 @@ class LocationDaylightMicroservice(Intelligence):
 
         # Initialize the 'is_daylight' class variable in the Location object.
         self.parent.is_daylight = self.is_daylight(botengine)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<__init__() intelligence_id={}".format(self.intelligence_id))
 
     def initialize(self, botengine):
         """
         Initialize
         :param botengine: BotEngine environment
         """
+
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">initialize()")
         if not self.is_timer_running(botengine) and not botengine.is_executing_timer():
             if self.parent.latitude is not None and self.parent.longitude is not None:
                 self._set_sunrise_sunset_alarm(botengine)
-
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<initialize()")
         return
 
     def destroy(self, botengine):
@@ -119,85 +124,105 @@ class LocationDaylightMicroservice(Intelligence):
         """
         return
 
+    def daylight_fire_sunrise(self, botengine, content):
+        """
+        Fire the sunrise event
+        :param botengine: BotEngine environment
+        :param content: Json Content
+        """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">daylight_fire_sunrise()")
+
+        self.parent.narrate(botengine,
+                            title = _("Sunrise"),
+                            description = _("It is sunrise at '{}'.").format(self.parent.get_location_name(botengine)),
+                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                            icon = 'sunrise',
+                            event_type="daylight.sunrise")
+
+        dashboard.update_dashboard_header(botengine,
+                                            location_object=self.parent,
+                                            name="daylight",
+                                            priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                            percent_good=85,
+                                            title=_("Sunrise"),
+                                            comment=_("It is sunrise here.").format(self.parent.get_location_name(botengine)),
+                                            icon="sunrise",
+                                            icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
+                                            resolution_object=dashboard.oneshot_resolution_object(botengine,
+                                                                                                "daylight",
+                                                                                                dashboard_button=_("DISMISS >"),
+                                                                                                actionsheet_title=_("Update Status"),
+                                                                                                resolution_button=_("Dismiss"),
+                                                                                                ack=_("And now back to your regularly scheduled program..."),
+                                                                                                icon="thumbs-up",
+                                                                                                icon_font="far",
+                                                                                                response_options=None),
+                                            conversation_object=None,
+                                            future_timestamp_ms=None,
+                                            ttl_ms=utilities.ONE_MINUTE_MS * 15)
+
+        analytics.track(botengine, self.parent, 'sunrise')
+        self.parent.is_daylight = True
+        daylight.sunrise_fired(botengine, self.parent)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<daylight_fire_sunrise()")
+    
+    def daylight_fire_sunset(self, botengine, content):
+        """
+        Fire the sunset event
+        :param botengine: BotEngine environment
+        :param content: Json Content
+        """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">daylight_fire_sunset()")
+
+        self.parent.narrate(botengine,
+                            title = _("Sunset"),
+                            description = _("It is sunset at '{}'.").format(self.parent.get_location_name(botengine)),
+                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                            icon = 'sunset',
+                            event_type="daylight.sunset")
+
+        dashboard.update_dashboard_header(botengine,
+                                            location_object=self.parent,
+                                            name="daylight",
+                                            priority=dashboard.DASHBOARD_PRIORITY_OKAY,
+                                            percent_good=85,
+                                            title=_("Sunset"),
+                                            comment=_("It is sunset here.").format(self.parent.get_location_name(botengine)),
+                                            icon="sunset",
+                                            icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
+                                            resolution_object=dashboard.oneshot_resolution_object(botengine,
+                                                                                                "daylight",
+                                                                                                dashboard_button=_("DISMISS >"),
+                                                                                                actionsheet_title=_("Update Status"),
+                                                                                                resolution_button=_("Dismiss"),
+                                                                                                ack=_("And now back to your regularly scheduled program..."),
+                                                                                                icon="thumbs-up",
+                                                                                                icon_font="far",
+                                                                                                response_options=None),
+                                            conversation_object=None,
+                                            future_timestamp_ms=None,
+                                            ttl_ms=utilities.ONE_MINUTE_MS * 15)
+
+        analytics.track(botengine, self.parent, 'sunset')
+        self.parent.is_daylight = False
+        daylight.sunset_fired(botengine, self.parent)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<daylight_fire_sunset()")
+
     def timer_fired(self, botengine, argument):
         """
         The bot's intelligence timer fired
         :param botengine: Current botengine environment
         :param argument: Argument applied when setting the timer
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">timer_fired() argument={}".format(argument))
         if argument == SUNRISE:
-            botengine.get_logger().info("SUNRISE timer fired")
-
-            self.parent.narrate(botengine,
-                                title = _("Sunrise"),
-                                description = _("It is sunrise at '{}'.").format(self.parent.get_location_name(botengine)),
-                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                icon = 'sunrise',
-                                event_type="daylight.sunrise")
-
-            dashboard.update_dashboard_header(botengine,
-                                              location_object=self.parent,
-                                              name="daylight",
-                                              priority=dashboard.DASHBOARD_PRIORITY_OKAY,
-                                              percent_good=85,
-                                              title=_("Sunrise"),
-                                              comment=_("It is sunrise here.").format(self.parent.get_location_name(botengine)),
-                                              icon="sunrise",
-                                              icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
-                                              resolution_object=dashboard.oneshot_resolution_object(botengine,
-                                                                                                    "daylight",
-                                                                                                    dashboard_button=_("DISMISS >"),
-                                                                                                    actionsheet_title=_("Update Status"),
-                                                                                                    resolution_button=_("Dismiss"),
-                                                                                                    ack=_("And now back to your regularly scheduled program..."),
-                                                                                                    icon="thumbs-up",
-                                                                                                    icon_font="far",
-                                                                                                    response_options=None),
-                                              conversation_object=None,
-                                              future_timestamp_ms=None,
-                                              ttl_ms=utilities.ONE_MINUTE_MS * 15)
-
-            analytics.track(botengine, self.parent, 'sunrise')
-            self.parent.is_daylight = True
-            daylight.sunrise_fired(botengine, self.parent)
+            self.daylight_fire_sunrise(botengine, {})
 
         elif argument == SUNSET:
-            botengine.get_logger().info("SUNSET timer fired")
-
-            self.parent.narrate(botengine,
-                                title = _("Sunset"),
-                                description = _("It is sunset at '{}'.").format(self.parent.get_location_name(botengine)),
-                                priority = botengine.NARRATIVE_PRIORITY_DEBUG,
-                                icon = 'sunset',
-                                event_type="daylight.sunset")
-
-            dashboard.update_dashboard_header(botengine,
-                                              location_object=self.parent,
-                                              name="daylight",
-                                              priority=dashboard.DASHBOARD_PRIORITY_OKAY,
-                                              percent_good=85,
-                                              title=_("Sunset"),
-                                              comment=_("It is sunset here.").format(self.parent.get_location_name(botengine)),
-                                              icon="sunset",
-                                              icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
-                                              resolution_object=dashboard.oneshot_resolution_object(botengine,
-                                                                                                    "daylight",
-                                                                                                    dashboard_button=_("DISMISS >"),
-                                                                                                    actionsheet_title=_("Update Status"),
-                                                                                                    resolution_button=_("Dismiss"),
-                                                                                                    ack=_("And now back to your regularly scheduled program..."),
-                                                                                                    icon="thumbs-up",
-                                                                                                    icon_font="far",
-                                                                                                    response_options=None),
-                                              conversation_object=None,
-                                              future_timestamp_ms=None,
-                                              ttl_ms=utilities.ONE_MINUTE_MS * 15)
-
-            analytics.track(botengine, self.parent, 'sunset')
-            self.parent.is_daylight = False
-            daylight.sunset_fired(botengine, self.parent)
+            self.daylight_fire_sunset(botengine, {})
 
         self._set_sunrise_sunset_alarm(botengine)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<timer_fired() argument={}".format(argument))
 
     def coordinates_updated(self, botengine, latitude, longitude):
         """
@@ -205,7 +230,7 @@ class LocationDaylightMicroservice(Intelligence):
         :param latitude: Latitude
         :param longitude: Longitude
         """
-        botengine.get_logger().info("location_daylight_microservice: Lat/Long updated - recalculating sunrise/sunset times")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("location_daylight_microservice: Lat/Long updated - recalculating sunrise/sunset times")
         self._set_sunrise_sunset_alarm(botengine)
 
     #===========================================================================
@@ -239,6 +264,7 @@ class LocationDaylightMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :return: The next sunrise timestamp in ms
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">next_sunrise_timestamp_ms()")
         try:
             ephem = importlib.import_module("ephem")
         except ImportError:
@@ -253,16 +279,24 @@ class LocationDaylightMicroservice(Intelligence):
             return int(dt.timestamp()) * 1000
 
         o = ephem.Observer()
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunrise_timestamp_ms() current_date={}".format(self.parent.get_local_datetime(botengine)))
+        o.date = self.parent.get_local_datetime(botengine)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunrise_timestamp_ms() latitude={} longitude".format(self.parent.latitude, self.parent.longitude))
         o.lat = str(self.parent.latitude)
         o.long = str(self.parent.longitude)
-        dt = ephem.localtime(o.next_rising(ephem.Sun()))
-        return int(dt.timestamp()) * 1000
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunrise_timestamp_ms() next_rising={}".format(o.next_rising(ephem.Sun())))
+        from zoneinfo import ZoneInfo
+        zone = ZoneInfo(self.parent.get_local_timezone_string(botengine))
+        local_dt = ephem.to_timezone(o.next_rising(ephem.Sun()), zone)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<next_sunrise_timestamp_ms() local_dt={}".format(local_dt))
+        return int(local_dt.timestamp()) * 1000
 
     def next_sunset_timestamp_ms(self, botengine):
         """
         :param botengine: BotEngine environment
         :return: The next sunset timestamp in ms
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">next_sunset_timestamp_ms()")
         try:
             ephem = importlib.import_module("ephem")
         except ImportError:
@@ -278,10 +312,16 @@ class LocationDaylightMicroservice(Intelligence):
             return int(dt.timestamp()) * 1000
 
         o = ephem.Observer()
+        o.date = self.parent.get_local_datetime(botengine)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunset_timestamp_ms() current_date={}".format(self.parent.get_local_datetime(botengine)))
         o.lat = str(self.parent.latitude)
         o.long = str(self.parent.longitude)
-        dt = ephem.localtime(o.next_setting(ephem.Sun()))
-        return int(dt.timestamp()) * 1000
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunset_timestamp_ms() latitude={} longitude".format(self.parent.latitude, self.parent.longitude))
+        from zoneinfo import ZoneInfo
+        zone = ZoneInfo(self.parent.get_local_timezone_string(botengine))
+        local_dt = ephem.to_timezone(o.next_setting(ephem.Sun()), zone)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<next_sunset_timestamp_ms() local_dt={}".format(local_dt))
+        return int(local_dt.timestamp()) * 1000
 
     def _set_sunrise_sunset_alarm(self, botengine):
         """
@@ -289,6 +329,8 @@ class LocationDaylightMicroservice(Intelligence):
         :param botengine:
         :return:
         """
+
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">_set_sunrise_sunset_alarm()")
         self.cancel_timers(botengine)
 
         try:
@@ -296,6 +338,7 @@ class LocationDaylightMicroservice(Intelligence):
         except ImportError:
             # We don't have this ephem library. Avoid re-executing this code in the meantime and revisit in a future bot update.
             self.start_timer_ms(botengine, utilities.ONE_DAY_MS)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_set_sunrise_sunset_alarm()")
             return
 
         try:
@@ -304,14 +347,16 @@ class LocationDaylightMicroservice(Intelligence):
 
         except ephem.AlwaysUpError:
             # Sun never sets at this location
-            botengine.get_logger().info("location_daylight_microservice: Sun doesn't set. Try again tomorrow.")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("location_daylight_microservice: Sun doesn't set. Try again tomorrow.")
             self.start_timer_ms(botengine, utilities.ONE_DAY_MS)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_set_sunrise_sunset_alarm()")
             return
 
         except ephem.NeverUpError:
             # Sun never rises at this location
-            botengine.get_logger().info("location_daylight_microservice: Sun doesn't rise. Try again tomorrow.")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("location_daylight_microservice: Sun doesn't rise. Try again tomorrow.")
             self.start_timer_ms(botengine, utilities.ONE_DAY_MS)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_set_sunrise_sunset_alarm()")
             return
 
         # We're getting double sunrise and double sunset events, and I believe it's from the ephem library not knowing that sunrise/sunset is right now.
@@ -332,12 +377,12 @@ class LocationDaylightMicroservice(Intelligence):
 
         if sunrise_timestamp_ms < sunset_timestamp_ms:
             # Sunrise is next
-            botengine.get_logger().info("Location: Setting sunrise alarm for " + str(sunrise_timestamp_ms))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("Location: Setting sunrise alarm for " + str(sunrise_timestamp_ms))
             self.set_alarm(botengine, sunrise_timestamp_ms, argument=SUNRISE)
             
         else:
             # Sunset is next
-            botengine.get_logger().info("Location: Setting sunset alarm for " + str(sunset_timestamp_ms))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("Location: Setting sunset alarm for " + str(sunset_timestamp_ms))
             self.set_alarm(botengine, sunset_timestamp_ms, argument=SUNSET)
-
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_set_sunrise_sunset_alarm()")
         return

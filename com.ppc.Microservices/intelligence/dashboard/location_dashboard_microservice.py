@@ -88,10 +88,10 @@ class LocationDashboardMicroservice(Intelligence):
         :param card_content:
         :return:
         """
-        botengine.get_logger().info("location_dashboard_microservice.update_dashboard_content(): {}".format(card_content))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">update_dashboard_content() card_content={}".format(json.dumps(card_content)))
 
         if 'content' not in card_content or 'type' not in card_content or 'title' not in card_content:
-            botengine.get_logger().warning("location_dashboard_microservice: Missing elements in card_content: {}".format(card_content))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<update_dashboard_content() Missing 'content', 'type', or 'title' elements. card_content={}".format(json.dumps(card_content)))
             return
 
         section_title = card_content['title']
@@ -102,6 +102,7 @@ class LocationDashboardMicroservice(Intelligence):
         if comment is None:
             if card_content['content']['id'] not in self.content_id:
                 # This doesn't exist already, take no action.
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<update_dashboard_content() No content to updated. card_content={}".format(json.dumps(card_content)))
                 return
 
         # Delete all possible alarms associated with this content for command ID's -2, -1, 0, 1, 2:
@@ -115,7 +116,7 @@ class LocationDashboardMicroservice(Intelligence):
             focused_dashboard = botengine.get_state(SERVICES_UI_PROPERTY_NAME)
 
         else:
-            botengine.get_logger().error("location_dashboard_microservice: Unknown card type {}".format(card_content['type']))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").error("|update_dashboard_content() Unknown card type. card_content={}".format(json.dumps(card_content)))
 
         if focused_dashboard is None:
             focused_dashboard = {
@@ -160,9 +161,8 @@ class LocationDashboardMicroservice(Intelligence):
                         focused_content_index = index
                         break
                 except Exception as e:
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|update_dashboard_content() Error parsing content: " + str(e))
                     import traceback
-                    botengine.get_logger().error(traceback.format_exc())
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|update_dashboard_content() Error parsing content. Error={} trace={}".format(e, traceback.format_exc()))
                     pass
 
             if card_content['content']['id'] not in self.content_id:
@@ -221,7 +221,7 @@ class LocationDashboardMicroservice(Intelligence):
 
                         if not okay:
                             # Kill it.
-                            botengine.get_logger().warning("location_dashboard_microservice: Deleting orphaned card '{}' which is older than a week and a day. Please check logic around this.".format(content.get('comment')))
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|update_dashboard_content() Deleting orphaned card '{}' which is older than a week and a day. content={}".format(content.get('comment'), json.dumps(content)))
                             del(focused_dashboard['cards'][card_index]['content'][content_index])
 
                             if card_content['content']['id'] in self.content_id:
@@ -245,20 +245,23 @@ class LocationDashboardMicroservice(Intelligence):
                             next_alarm_ms = int(alarm_ms)
 
         if next_alarm_ms is not None:
-            botengine.get_logger().info("location_dashboard_microservice: Setting alarm for {} ms from now.".format(int(alarm_ms) - botengine.get_timestamp()))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|update_dashboard_content() Setting alarm for {} ms from now.".format(int(next_alarm_ms) - botengine.get_timestamp()))
             self.set_alarm(botengine, next_alarm_ms)
 
         # Sort it out
         for card in focused_dashboard['cards']:
-            card['content'].sort(key=lambda x: (x['weight'], x['updated']))
-        focused_dashboard['cards'].sort(key=lambda x: x['weight'])
+            card['content'].sort(key=lambda x: (x.get('weight', 50), x.get('updated', botengine.get_timestamp())))
+        focused_dashboard['cards'].sort(key=lambda x: x.get('weight', 50))
 
         # Save
         if card_content['type'] == CARD_TYPE_NOW:
-            self.parent.set_location_property_separately(botengine, NOW_UI_PROPERTY_NAME, focused_dashboard)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_content() Saving now dashboard content. focused_dashboard={}".format(json.dumps(focused_dashboard)))
+            self.parent.set_location_property_separately(botengine, NOW_UI_PROPERTY_NAME, focused_dashboard, overwrite=True)
 
         elif card_content['type'] == CARD_TYPE_SERVICES:
-            self.parent.set_location_property_separately(botengine, SERVICES_UI_PROPERTY_NAME, focused_dashboard)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_content() Saving services dashboard content. focused_dashboard={}".format(json.dumps(focused_dashboard)))
+            self.parent.set_location_property_separately(botengine, SERVICES_UI_PROPERTY_NAME, focused_dashboard, overwrite=True)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<update_dashboard_content()")
 
     def destroy(self, botengine):
         """
@@ -277,11 +280,11 @@ class LocationDashboardMicroservice(Intelligence):
         dashboard = botengine.get_state(NOW_UI_PROPERTY_NAME)
 
         if dashboard is None:
-            botengine.get_logger().warning("location_dashboard_microservice: No saved dashboard content.")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<timer_fired() No saved dashboard content.")
             return
 
         if 'cards' not in dashboard:
-            botengine.get_logger().warning("location_dashboard_microservice: No 'cards' in saved dashboard content.")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<timer_fired() No 'cards' in saved dashboard content.")
             return
 
         import copy
@@ -310,5 +313,6 @@ class LocationDashboardMicroservice(Intelligence):
                                     if int(timestamp_ms) < botengine.get_timestamp():
                                         del (updated_card_content['content']['alarms'][timestamp_ms])
 
-                                botengine.get_logger().info("location_dashboard_microservice: Alarm fired - Updating card content status: {}".format(updated_card_content))
+                                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|timer_fired() Alarm fired - Updating card content status: {}".format(updated_card_content))
                                 self.update_dashboard_content(botengine, updated_card_content)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<timer_fired()")

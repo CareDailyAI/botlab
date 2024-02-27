@@ -16,11 +16,17 @@
     # 512 = Command Response triggered when a command is completed or failed,
     # 1024 = Location configuration, triggered when a user or space is added or remove from the location,
     # 2048 = Data request, triggered in response to botengine.request_measurements_asynchronously(..)
-    "trigger": 256,
+    "trigger": 320,
 
     "dataStreams": [
       {
         "address": "daily_report_entry"
+      },
+      {
+        "address": "daily_report_status_updated"
+      },
+      {
+        "address": "sunrise_fired"
       }
     ]
   }

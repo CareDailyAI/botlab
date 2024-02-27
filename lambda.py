@@ -34,8 +34,7 @@ def lambda_handler(data, context):
         import traceback
         import sys
         (t, v, tb) = sys.exc_info()
-        logger.tracebacks = traceback.format_exception(t, v, tb)
-        logger.exception("Failed to execute bot: {}".format(str(e)))
+        logger.exception("Failed to execute bot: {}".format(traceback.format_exception(t, v, tb)))
         return logger.get_lambda_return()
 
     # Check for asynchronous data request triggers which handle errors differently than synchronous executions of the bot.
@@ -117,6 +116,9 @@ class LambdaLogger():
         # Start time
         self.start_time_ms = int(time.time() * 1000)
 
+        # Invoking service logging this message
+        self.service = "lambda"
+
     def log(self, level, message):
         if level == "debug":
             self.debug(message)
@@ -133,19 +135,19 @@ class LambdaLogger():
     def debug(self, message):
         if self.log_level in ["debug"]:
             # Too granular
-            # self.logs.append("{}: [{}] {}".format(time.time(), "DEBUG", message))
+            # self.logs.append("{}: [{}] {} {}".format(time.time(), "DEBUG", self.service, message))
             self.log_events.append({
                 'timestamp': int(time.time() * 1000),
-                'message': "[{}] {}".format("DEBUG", message)
+                'message': "[{}] {} {}".format("DEBUG", self.service, message)
             })
 
     def info(self, message):
         if self.log_level in ["debug", "info"]:
             # Too granular
-            # self.logs.append("{}: [{}] {}".format(time.time(), "INFO", message))
+            # self.logs.append("{}: [{}] {} {}".format(time.time(), "INFO", self.service, message))
             self.log_events.append({
                 'timestamp': int(time.time() * 1000),
-                'message': "[{}] {}".format("INFO", message)
+                'message': "[{}] {} {}".format("INFO", self.service, message)
             })
 
     def warning(self, message):
@@ -153,35 +155,35 @@ class LambdaLogger():
 
     def warn(self, message):
         if self.log_level in ["debug", "info", "warn"]:
-            self.logs.append("{}: [{}] {}".format(time.time(), "WARN", message))
-            self.error_message = message
+            self.logs.append("{}: [{}] {} {}".format(time.time(), "WARN", self.service, message))
+            self.error_message = "[{}] {} {}".format("WARN", self.service, message)
             self.log_events.append({
                 'timestamp': int(time.time() * 1000),
-                'message': "[{}] {}".format("WARN", message)
+                'message': "[{}] {} {}".format("WARN", self.service, message)
             })
 
     def error(self, message):
-        self.logs.append("{}: [{}] {}".format(time.time(), "ERROR", message))
-        self.error_message = message
+        self.logs.append("{}: [{}] {} {}".format(time.time(), "ERROR", self.service, message))
+        self.error_message = "[{}] {} {}".format("ERROR", self.service, message)
         self.log_events.append({
                 'timestamp': int(time.time() * 1000),
-                'message': "[{}] {}".format("ERROR", message)
+                'message': "[{}] {} {}".format("ERROR", self.service, message)
             })
 
     def critical(self, message):
-        self.logs.append("{}: [{}] {}".format(time.time(), "CRITICAL", message))
-        self.error_message = message
+        self.logs.append("{}: [{}] {} {}".format(time.time(), "CRITICAL", self.service, message))
+        self.error_message = "[{}] {} {}".format("CRITICAL", self.service, message)
         self.log_events.append({
                 'timestamp': int(time.time() * 1000),
-                'message': "[{}] {}".format("CRITICAL", message)
+                'message': "[{}] {} {}".format("CRITICAL", self.service, message)
             })
 
     def exception(self, message):
-        self.logs.append("{}: [{}] {}".format(time.time(), "EXCEPTION", message))
-        self.error_message = message
+        self.logs.append("{}: [{}] {} {}".format(time.time(), "EXCEPTION", self.service, message))
+        self.error_message = "[{}] {} {}".format("EXCEPTION", self.service, message)
         self.log_events.append({
                 'timestamp': int(time.time() * 1000),
-                'message': "[{}] {}".format("EXCEPTION", message)
+                'message': "[{}] {} {}".format("EXCEPTION", self.service, message)
             })
 
     def get_lambda_return(self, botengine=None, bot=None):

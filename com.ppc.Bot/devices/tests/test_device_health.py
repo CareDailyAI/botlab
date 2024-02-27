@@ -67,8 +67,8 @@ class TestHealthDevice():
         location_object.initialize(botengine)
         location_object.new_version(botengine)
 
-        assert len(mut.intelligence_modules) > 0
-
+        # Depending on the bot bundle under testing there may or may not be device intelligence modules
+        # If available, ensure the parent and intelligence_id are set
         for i in mut.intelligence_modules:
             assert mut.intelligence_modules[i].intelligence_id != None
             assert mut.intelligence_modules[i].parent == mut

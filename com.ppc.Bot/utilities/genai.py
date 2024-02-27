@@ -104,7 +104,7 @@ def chat_completion_model(botengine, messages, model=DEFAULT_CHAT_MODEL, functio
     
     :return: JSON body to send to the CareDaily OpenAI API
     """
-
+    botengine.get_logger(f"{__name__}").debug(">chat_completion_model() messages={} model={} functions={} function_call={} max_tokens={} temperature={} top_p={} n={} stream={} stop={} presence_penalty={} frequency_penalty={} logit_bias={} user={}".format(messages, model, functions, function_call, max_tokens, temperature, top_p, n, stream, stop, presence_penalty, frequency_penalty, logit_bias, user))
     if messages is None or len(messages) == 0:
         raise "genai.chat_completion_model(): No messages provided"
     
@@ -132,6 +132,8 @@ def chat_completion_model(botengine, messages, model=DEFAULT_CHAT_MODEL, functio
         body['functions'] = functions
         if function_call is not None:
             body['function_call'] = function_call
+    import json
+    botengine.get_logger(f"{__name__}").debug("<chat_completion_model() body={}".format(json.dumps(body)))
     return body
 
 def open_ai_response(botengine, location_object, content, microservice=None, callback_address=None, callback_metadata={}):
