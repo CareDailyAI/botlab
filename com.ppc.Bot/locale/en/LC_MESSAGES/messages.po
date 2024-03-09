@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: English (BotLab)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-21 16:09-0700\n"
+"POT-Creation-Date: 2024-03-08 16:54-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -63,25 +63,29 @@ msgstr "'{}': Learned night time preferences."
 msgid "'{}': Sleep mode"
 msgstr "'{}': Sleep mode"
 
-#: utilities/utilities.py:276
+#: utilities/utilities.py:283
 #, read-only
 msgid "0 seconds"
 msgstr "0 seconds"
 
-#: utilities/utilities.py:260
+#: utilities/utilities.py:267
 #, read-only
 msgid "1 hour"
 msgstr "1 hour"
 
-#: utilities/utilities.py:265
+#: utilities/utilities.py:272
 #, read-only
 msgid "1 minute"
 msgstr "1 minute"
 
-#: utilities/utilities.py:271
+#: utilities/utilities.py:278
 #, read-only
 msgid "1 second"
 msgstr "1 second"
+
+#: signals/dashboard.py:13
+msgid "ALERTS"
+msgstr ""
 
 #: confidence/occupancy_confidence_machine.py:86
 #: confidence/occupancy_confidence_machine.py:136
@@ -145,7 +149,7 @@ msgid "Android Picture Frame"
 msgstr "Android Picture Frame"
 
 #. Device type name
-#: devices/health/health_apple.py:24
+#: devices/health/health_apple.py:30
 #, read-only
 msgid "Apple Health"
 msgstr "Apple Health"
@@ -182,12 +186,6 @@ msgid "Carbon Monoxide Sensor"
 msgstr "Carbon Monoxide Sensor"
 
 #. Device type name
-#: devices/careactive/watch.py:56
-#, read-only
-msgid "Care Active Watch"
-msgstr "Care Active Watch"
-
-#. Device type name
 #: devices/thermostat/thermostat_centralite_pearl.py:65
 #, read-only
 msgid "Centralite Pearl Thermostat"
@@ -198,8 +196,12 @@ msgstr "Centralite Pearl Thermostat"
 msgid "Cooling set point adjusted"
 msgstr "Cooling set point adjusted"
 
+#: signals/dashboard.py:400
+msgid "DISABLED"
+msgstr ""
+
 #. Super abstract device type name
-#: devices/device.py:287
+#: devices/device.py:297
 #, read-only
 msgid "Device"
 msgstr "Device"
@@ -229,7 +231,13 @@ msgid "GE In-Wall Switch"
 msgstr "GE In-Wall Switch"
 
 #. Device type name
-#: devices/health/health.py:91
+#: devices/health/health_google.py:24
+#, fuzzy, read-only
+msgid "Google Health"
+msgstr "Apple Health"
+
+#. Device type name
+#: devices/health/health.py:128
 #, read-only
 msgid "Health"
 msgstr "Health"
@@ -311,6 +319,14 @@ msgstr "M-Series Smart Home Center"
 msgid "Motion Sensor"
 msgstr "Motion Sensor"
 
+#: signals/dashboard.py:12
+msgid "NOW"
+msgstr ""
+
+#: signals/dashboard.py:435
+msgid "Okay, resolving the notification..."
+msgstr ""
+
 #. Device type name
 #: devices/pictureframe/pictureframe_peoplepower.py:107
 #, read-only
@@ -334,6 +350,20 @@ msgstr "Pressure Pad"
 #, read-only
 msgid "Proxy"
 msgstr "Proxy"
+
+#: signals/dashboard.py:398
+msgid "RUNNING"
+msgstr ""
+
+#: signals/dashboard.py:435
+#, fuzzy, read-only
+msgid "Resolve"
+msgstr "stove"
+
+#: signals/dashboard.py:16
+#, fuzzy, read-only
+msgid "SERVICES"
+msgstr "Device"
 
 #. Device type name
 #: devices/thermostat/thermostat_sensibo_sky.py:53
@@ -364,8 +394,8 @@ msgstr "Setting your ecobee thermostat into Sleep mode."
 msgid "Siren"
 msgstr "Siren"
 
-#. Device type name - Eaton Smart Breaker
-#: devices/smartplug/smartbreaker_eaton.py:87
+#. Device type name - Smart Breaker
+#: devices/smartplug/smartbreaker.py:87
 #, read-only
 msgid "Smart Breaker"
 msgstr "Smart Breaker"
@@ -429,6 +459,14 @@ msgstr "Touch Sensor"
 #, read-only
 msgid "Touchpad"
 msgstr "Touchpad"
+
+#: signals/dashboard.py:435
+msgid "UPDATE STATUS >"
+msgstr ""
+
+#: signals/dashboard.py:435
+msgid "Update Status"
+msgstr ""
 
 #. Deprecated 9/29/22.  Falls are directly aligned with the "calling"
 #. fall_status measurement.  Logic is repurposed to measure stability events.
@@ -502,16 +540,9 @@ msgstr ""
 "measurements."
 
 #. Device type name
-#: devices/health/health_wellvii.py:24
-#, read-only
-msgid "Wellvii"
-msgstr "Wellvii"
-
-#. Device type name
-#: devices/health/health_xandar_kardian.py:24
-#, read-only
-msgid "Xandar Kardian"
-msgstr "Xandar Kardian"
+#: devices/health/health_withings_sleep.py:27
+msgid "Withings Sleep"
+msgstr ""
 
 #: devices/thermostat/thermostat.py:274
 #, read-only
@@ -586,138 +617,138 @@ msgstr ""
 msgid "Your new cooling set point is {} and heating setpoint is {}."
 msgstr "Your new cooling set point is {} and heating setpoint is {}."
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 #, read-only
 msgid "air"
 msgstr "air"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "bath"
 msgstr "bath"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "bdrm"
 msgstr "bdrm"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "bed"
 msgstr "bed"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "bett"
 msgstr "bett"
 
-#: devices/smartplug/smartbreaker_eaton.py:295
+#: devices/smartplug/smartbreaker.py:295
 #, read-only
 msgid "charger"
 msgstr "charger"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 #, read-only
 msgid "condition"
 msgstr "condition"
 
-#: devices/smartplug/smartbreaker_eaton.py:189
+#: devices/smartplug/smartbreaker.py:189
 #, read-only
 msgid "cook"
 msgstr "cook"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 #, read-only
 msgid "cooler"
 msgstr "cooler"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "dad's room"
 msgstr "dad's room"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "dads room"
 msgstr "dads room"
 
-#: devices/smartplug/smartbreaker_eaton.py:189
+#: devices/smartplug/smartbreaker.py:189
 #, read-only
 msgid "dinnete"
 msgstr "dinnete"
 
-#: devices/smartplug/smartbreaker_eaton.py:255
+#: devices/smartplug/smartbreaker.py:255
 #, read-only
 msgid "dishwasher"
 msgstr "dishwasher"
 
-#: devices/smartplug/smartbreaker_eaton.py:245
+#: devices/smartplug/smartbreaker.py:245
 #, read-only
 msgid "dryer"
 msgstr "dryer"
 
 #. "The Moss family <typed a Duress code into the Touchpad>."
-#: utilities/utilities.py:158
+#: utilities/utilities.py:165
 #, read-only
 msgid "entered a duress code, indicating a potential threat."
 msgstr "entered a duress code, indicating a potential threat."
 
-#: devices/smartplug/smartbreaker_eaton.py:295
+#: devices/smartplug/smartbreaker.py:295
 #, read-only
 msgid "ev"
 msgstr "ev"
 
-#: devices/smartplug/smartbreaker_eaton.py:189
+#: devices/smartplug/smartbreaker.py:189
 #, read-only
 msgid "fridge"
 msgstr "fridge"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 #, read-only
 msgid "furnace"
 msgstr "furnace"
 
-#: devices/smartplug/smartbreaker_eaton.py:213
+#: devices/smartplug/smartbreaker.py:213
 #, read-only
 msgid "garage"
 msgstr "garage"
 
 #. "The Moss family <burglary alarm tripped>."
-#: utilities/utilities.py:138
+#: utilities/utilities.py:145
 #, read-only
 msgid "has a burglar alarm"
 msgstr "has a burglar alarm"
 
 #. "The Moss family <burglary alarm tripped because a door opened>."
-#: utilities/utilities.py:146
+#: utilities/utilities.py:153
 #, read-only
 msgid "has a burglar alarm because a door opened"
 msgstr "has a burglar alarm because a door opened"
 
 #. "The Moss family <burglary alarm tripped because a window opened>."
-#: utilities/utilities.py:142
+#: utilities/utilities.py:149
 #, read-only
 msgid "has a burglar alarm because a window opened"
 msgstr "has a burglar alarm because a window opened"
 
 #. "The Moss family <burglary alarm tripped shortly after arming>."
-#: utilities/utilities.py:154
+#: utilities/utilities.py:161
 #, read-only
 msgid "has a burglar alarm, shortly after arming"
 msgstr "has a burglar alarm, shortly after arming"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 #, read-only
 msgid "heater"
 msgstr "heater"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 #, read-only
 msgid "hvac"
 msgstr "hvac"
@@ -735,114 +766,114 @@ msgid "iOS Picture Frame"
 msgstr "iOS Picture Frame"
 
 #. "The Moss family <is experiencing a water leak>."
-#: utilities/utilities.py:150
+#: utilities/utilities.py:157
 #, read-only
 msgid "is experiencing a water leak"
 msgstr "is experiencing a water leak"
 
-#: devices/smartplug/smartbreaker_eaton.py:189
+#: devices/smartplug/smartbreaker.py:189
 #, read-only
 msgid "kitch"
 msgstr "kitch"
 
-#: devices/smartplug/smartbreaker_eaton.py:201
+#: devices/smartplug/smartbreaker.py:201
 #, read-only
 msgid "lamp"
 msgstr "lamp"
 
-#: devices/smartplug/smartbreaker_eaton.py:201
+#: devices/smartplug/smartbreaker.py:201
 #, read-only
 msgid "lantern"
 msgstr "lantern"
 
-#: devices/smartplug/smartbreaker_eaton.py:201
+#: devices/smartplug/smartbreaker.py:201
 #, read-only
 msgid "light"
 msgstr "light"
 
 #. "The Moss family <may need some assistance>." - generic message
-#: utilities/utilities.py:162
+#: utilities/utilities.py:169
 #, read-only
 msgid "may need some assistance"
 msgstr "may need some assistance"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "mom's room"
 msgstr "mom's room"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 #, read-only
 msgid "moms room"
 msgstr "moms room"
 
-#: devices/smartplug/smartbreaker_eaton.py:201
+#: devices/smartplug/smartbreaker.py:201
 #, read-only
 msgid "outlet"
 msgstr "outlet"
 
-#: devices/smartplug/smartbreaker_eaton.py:265
+#: devices/smartplug/smartbreaker.py:265
 #, read-only
 msgid "oven"
 msgstr "oven"
 
-#: devices/smartplug/smartbreaker_eaton.py:223
+#: devices/smartplug/smartbreaker.py:223
 #, read-only
 msgid "pool"
 msgstr "pool"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "powder"
 msgstr "powder"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "schlaf"
 msgstr "schlaf"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "shower"
 msgstr "shower"
 
-#: devices/smartplug/smartbreaker_eaton.py:265
+#: devices/smartplug/smartbreaker.py:265
 #, read-only
 msgid "stove"
 msgstr "stove"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 #, read-only
 msgid "toilet"
 msgstr "toilet"
 
-#: devices/smartplug/smartbreaker_eaton.py:285
+#: devices/smartplug/smartbreaker.py:285
 #, read-only
 msgid "tub"
 msgstr "tub"
 
-#: devices/smartplug/smartbreaker_eaton.py:275
+#: devices/smartplug/smartbreaker.py:275
 #, read-only
 msgid "water heater"
 msgstr "water heater"
 
-#: utilities/utilities.py:262
+#: utilities/utilities.py:269
 #, read-only
 msgid "{} hours"
 msgstr "{} hours"
 
-#: utilities/utilities.py:267
+#: utilities/utilities.py:274
 #, read-only
 msgid "{} minutes"
 msgstr "{} minutes"
 
-#: utilities/utilities.py:273
+#: utilities/utilities.py:280
 #, read-only
 msgid "{} seconds"
 msgstr "{} seconds"

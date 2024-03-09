@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-21 16:09-0700\n"
+"POT-Creation-Date: 2024-03-08 16:54-0800\n"
 "PO-Revision-Date: 2023-04-21 21:05+0000\n"
 "Last-Translator: Destry Teeter <destry@peoplepowerco.com>\n"
 "Language: sv\n"
@@ -58,21 +58,25 @@ msgstr "'{}': Lärde sig nattliga preferenser."
 msgid "'{}': Sleep mode"
 msgstr "'{}': Sömnläge"
 
-#: utilities/utilities.py:276
+#: utilities/utilities.py:283
 msgid "0 seconds"
 msgstr "0 sekunder"
 
-#: utilities/utilities.py:260
+#: utilities/utilities.py:267
 msgid "1 hour"
 msgstr "1 timme"
 
-#: utilities/utilities.py:265
+#: utilities/utilities.py:272
 msgid "1 minute"
 msgstr "1 minut"
 
-#: utilities/utilities.py:271
+#: utilities/utilities.py:278
 msgid "1 second"
 msgstr "1 sekund"
+
+#: signals/dashboard.py:13
+msgid "ALERTS"
+msgstr ""
 
 #: confidence/occupancy_confidence_machine.py:86
 #: confidence/occupancy_confidence_machine.py:136
@@ -123,7 +127,7 @@ msgid "Android Picture Frame"
 msgstr "Android bildram"
 
 #. Device type name
-#: devices/health/health_apple.py:24
+#: devices/health/health_apple.py:30
 msgid "Apple Health"
 msgstr "Apple Health"
 
@@ -154,11 +158,6 @@ msgid "Carbon Monoxide Sensor"
 msgstr "Sensor för kolmonoxid"
 
 #. Device type name
-#: devices/careactive/watch.py:56
-msgid "Care Active Watch"
-msgstr "Care Active Watch"
-
-#. Device type name
 #: devices/thermostat/thermostat_centralite_pearl.py:65
 msgid "Centralite Pearl Thermostat"
 msgstr "Centralite Pearl termostat"
@@ -167,8 +166,12 @@ msgstr "Centralite Pearl termostat"
 msgid "Cooling set point adjusted"
 msgstr "Kylningssetpoint justerat"
 
+#: signals/dashboard.py:400
+msgid "DISABLED"
+msgstr ""
+
 #. Super abstract device type name
-#: devices/device.py:287
+#: devices/device.py:297
 msgid "Device"
 msgstr "Enhet"
 
@@ -193,7 +196,13 @@ msgid "GE In-Wall Switch"
 msgstr "GE In-Wall Switch"
 
 #. Device type name
-#: devices/health/health.py:91
+#: devices/health/health_google.py:24
+#, fuzzy
+msgid "Google Health"
+msgstr "Apple Health"
+
+#. Device type name
+#: devices/health/health.py:128
 msgid "Health"
 msgstr "Hälsa"
 
@@ -261,6 +270,14 @@ msgstr "M-serien Smart Home Center"
 msgid "Motion Sensor"
 msgstr "Rörelsesensor"
 
+#: signals/dashboard.py:12
+msgid "NOW"
+msgstr ""
+
+#: signals/dashboard.py:435
+msgid "Okay, resolving the notification..."
+msgstr ""
+
 #. Device type name
 #: devices/pictureframe/pictureframe_peoplepower.py:107
 msgid "Picture Frame"
@@ -280,6 +297,20 @@ msgstr "Tryckkudde"
 #: devices/proxy/proxy.py:26
 msgid "Proxy"
 msgstr "Fullmakt"
+
+#: signals/dashboard.py:398
+msgid "RUNNING"
+msgstr ""
+
+#: signals/dashboard.py:435
+#, fuzzy
+msgid "Resolve"
+msgstr "spis"
+
+#: signals/dashboard.py:16
+#, fuzzy
+msgid "SERVICES"
+msgstr "Enhet"
 
 #. Device type name
 #: devices/thermostat/thermostat_sensibo_sky.py:53
@@ -305,8 +336,8 @@ msgstr "Ställ in din ecobee-termostat i viloläge."
 msgid "Siren"
 msgstr "Siren"
 
-#. Device type name - Eaton Smart Breaker
-#: devices/smartplug/smartbreaker_eaton.py:87
+#. Device type name - Smart Breaker
+#: devices/smartplug/smartbreaker.py:87
 msgid "Smart Breaker"
 msgstr "Smart brytare"
 
@@ -361,6 +392,14 @@ msgstr "Beröringssensor"
 #: devices/touchpad/touchpad_peoplepower.py:76
 msgid "Touchpad"
 msgstr "Pekplatta"
+
+#: signals/dashboard.py:435
+msgid "UPDATE STATUS >"
+msgstr ""
+
+#: signals/dashboard.py:435
+msgid "Update Status"
+msgstr ""
 
 #. Deprecated 9/29/22.  Falls are directly aligned with the "calling"
 #. fall_status measurement.  Logic is repurposed to measure stability events.
@@ -424,14 +463,9 @@ msgstr ""
 "färska mätningar."
 
 #. Device type name
-#: devices/health/health_wellvii.py:24
-msgid "Wellvii"
-msgstr "Wellvii"
-
-#. Device type name
-#: devices/health/health_xandar_kardian.py:24
-msgid "Xandar Kardian"
-msgstr "Xandar Kardian"
+#: devices/health/health_withings_sleep.py:27
+msgid "Withings Sleep"
+msgstr ""
 
 #: devices/thermostat/thermostat.py:274
 msgid "Your '{}' cooling set point is set to {}."
@@ -499,114 +533,114 @@ msgstr ""
 "Ditt nya börvärde för kylning är {} och ditt börvärde för uppvärmning är "
 "{}."
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 msgid "air"
 msgstr "luft"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 msgid "bath"
 msgstr "bad"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 msgid "bdrm"
 msgstr "bdrm"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 msgid "bed"
 msgstr "säng"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 msgid "bett"
 msgstr "bett"
 
-#: devices/smartplug/smartbreaker_eaton.py:295
+#: devices/smartplug/smartbreaker.py:295
 msgid "charger"
 msgstr "laddare"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 msgid "condition"
 msgstr "villkor"
 
-#: devices/smartplug/smartbreaker_eaton.py:189
+#: devices/smartplug/smartbreaker.py:189
 msgid "cook"
 msgstr "kock"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 msgid "cooler"
 msgstr "svalare"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 msgid "dad's room"
 msgstr "pappas rum"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 msgid "dads room"
 msgstr "pappas rum"
 
-#: devices/smartplug/smartbreaker_eaton.py:189
+#: devices/smartplug/smartbreaker.py:189
 msgid "dinnete"
 msgstr "middag"
 
-#: devices/smartplug/smartbreaker_eaton.py:255
+#: devices/smartplug/smartbreaker.py:255
 msgid "dishwasher"
 msgstr "diskmaskin"
 
-#: devices/smartplug/smartbreaker_eaton.py:245
+#: devices/smartplug/smartbreaker.py:245
 msgid "dryer"
 msgstr "torktumlare"
 
 #. "The Moss family <typed a Duress code into the Touchpad>."
-#: utilities/utilities.py:158
+#: utilities/utilities.py:165
 msgid "entered a duress code, indicating a potential threat."
 msgstr "skrev in en tvångskod, vilket visade att det fanns ett potentiellt hot."
 
-#: devices/smartplug/smartbreaker_eaton.py:295
+#: devices/smartplug/smartbreaker.py:295
 msgid "ev"
 msgstr "ev"
 
-#: devices/smartplug/smartbreaker_eaton.py:189
+#: devices/smartplug/smartbreaker.py:189
 msgid "fridge"
 msgstr "kylskåp"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 msgid "furnace"
 msgstr "Ugn"
 
-#: devices/smartplug/smartbreaker_eaton.py:213
+#: devices/smartplug/smartbreaker.py:213
 msgid "garage"
 msgstr "garage"
 
 #. "The Moss family <burglary alarm tripped>."
-#: utilities/utilities.py:138
+#: utilities/utilities.py:145
 msgid "has a burglar alarm"
 msgstr "har ett inbrottslarm"
 
 #. "The Moss family <burglary alarm tripped because a door opened>."
-#: utilities/utilities.py:146
+#: utilities/utilities.py:153
 msgid "has a burglar alarm because a door opened"
 msgstr "har ett inbrottslarm eftersom en dörr har öppnats"
 
 #. "The Moss family <burglary alarm tripped because a window opened>."
-#: utilities/utilities.py:142
+#: utilities/utilities.py:149
 msgid "has a burglar alarm because a window opened"
 msgstr "har ett inbrottslarm på grund av att ett fönster har öppnats"
 
 #. "The Moss family <burglary alarm tripped shortly after arming>."
-#: utilities/utilities.py:154
+#: utilities/utilities.py:161
 msgid "has a burglar alarm, shortly after arming"
 msgstr "har ett inbrottslarm, kort efter det att det har aktiverats"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 msgid "heater"
 msgstr "värmare"
 
-#: devices/smartplug/smartbreaker_eaton.py:233
+#: devices/smartplug/smartbreaker.py:233
 msgid "hvac"
 msgstr "hvac"
 
@@ -621,94 +655,94 @@ msgid "iOS Picture Frame"
 msgstr "iOS bildram"
 
 #. "The Moss family <is experiencing a water leak>."
-#: utilities/utilities.py:150
+#: utilities/utilities.py:157
 msgid "is experiencing a water leak"
 msgstr "har en vattenläcka"
 
-#: devices/smartplug/smartbreaker_eaton.py:189
+#: devices/smartplug/smartbreaker.py:189
 msgid "kitch"
 msgstr "kök"
 
-#: devices/smartplug/smartbreaker_eaton.py:201
+#: devices/smartplug/smartbreaker.py:201
 msgid "lamp"
 msgstr "lampa"
 
-#: devices/smartplug/smartbreaker_eaton.py:201
+#: devices/smartplug/smartbreaker.py:201
 msgid "lantern"
 msgstr "lykta"
 
-#: devices/smartplug/smartbreaker_eaton.py:201
+#: devices/smartplug/smartbreaker.py:201
 msgid "light"
 msgstr "ljus"
 
 #. "The Moss family <may need some assistance>." - generic message
-#: utilities/utilities.py:162
+#: utilities/utilities.py:169
 msgid "may need some assistance"
 msgstr "kan behöva viss hjälp"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 msgid "mom's room"
 msgstr "mammas rum"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker_eaton.py:165
+#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
 #: devices/vayyar/vayyar.py:211
 msgid "moms room"
 msgstr "mammas rum"
 
-#: devices/smartplug/smartbreaker_eaton.py:201
+#: devices/smartplug/smartbreaker.py:201
 msgid "outlet"
 msgstr "utlopp"
 
-#: devices/smartplug/smartbreaker_eaton.py:265
+#: devices/smartplug/smartbreaker.py:265
 msgid "oven"
 msgstr "ugn"
 
-#: devices/smartplug/smartbreaker_eaton.py:223
+#: devices/smartplug/smartbreaker.py:223
 msgid "pool"
 msgstr "pool"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 msgid "powder"
 msgstr "pulver"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 msgid "schlaf"
 msgstr "schlaf"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 msgid "shower"
 msgstr "dusch"
 
-#: devices/smartplug/smartbreaker_eaton.py:265
+#: devices/smartplug/smartbreaker.py:265
 msgid "stove"
 msgstr "spis"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker_eaton.py:177
+#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
 #: devices/vayyar/vayyar.py:227
 msgid "toilet"
 msgstr "toalett"
 
-#: devices/smartplug/smartbreaker_eaton.py:285
+#: devices/smartplug/smartbreaker.py:285
 msgid "tub"
 msgstr "badkar"
 
-#: devices/smartplug/smartbreaker_eaton.py:275
+#: devices/smartplug/smartbreaker.py:275
 msgid "water heater"
 msgstr "varmvattenberedare"
 
-#: utilities/utilities.py:262
+#: utilities/utilities.py:269
 msgid "{} hours"
 msgstr "{} timmar"
 
-#: utilities/utilities.py:267
+#: utilities/utilities.py:274
 msgid "{} minutes"
 msgstr "{} minuter"
 
-#: utilities/utilities.py:273
+#: utilities/utilities.py:280
 msgid "{} seconds"
 msgstr "{} sekunder"
 
