@@ -74,6 +74,10 @@ SLEEP_TIME_BETWEEN_DATA_REQUESTS_SECONDS = 5
 # When downloading data that may contain commas, this character will replace those commas
 COMMA_DELIMITER_REPLACEMENT_CHARACTER = '&&'
 
+# When downloading data that may contain quotes like '[""This""]' to enclose fields, this character will replace those quotes with '[\"This\"]'
+# See https://stackoverflow.com/a/76784255
+QUOTE_DELIMITER_REPLACEMENT_CHARACTER = '""'
+
 def _session():
     """
     Retrieve the current HTTP session
@@ -2288,7 +2292,9 @@ def _csv_file_to_python(csv_file):
                         continue
                     if len(values[i]) == 0:
                         continue
-                    data[h] = values[i].replace(COMMA_DELIMITER_REPLACEMENT_CHARACTER, ",")
+                    data[h] = values[i] \
+                        .replace(COMMA_DELIMITER_REPLACEMENT_CHARACTER, ",") \
+                        .replace(QUOTE_DELIMITER_REPLACEMENT_CHARACTER, "\"")
                 all_data.append(data)
     return all_data
 
