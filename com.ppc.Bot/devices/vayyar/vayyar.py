@@ -1260,7 +1260,7 @@ class VayyarDevice(Device):
                     botengine.get_logger().warning("vayyar: Couldn't load tracker subregion from JSON: {}".format(self.measurements["vyrc.trackerSubRegions"][0][0]))
                     pass
 
-        return None
+        return []
 
     def did_subregion_occupancy_change(self, botengine):
         """

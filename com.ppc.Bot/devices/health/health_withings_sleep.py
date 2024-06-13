@@ -11,8 +11,30 @@ from devices.health.health import HealthDevice
 
 class WithingsSleepHealthDevice(HealthDevice):
     """
-    Apple Health Device
+    Withings Sleep Pad Device
     """
+
+    MEASUREMENT_NAME_BED_STATUS     = "bedStatus"
+    MEASUREMENT_NAME_HEART_RATE     = "hr"
+    MEASUREMENT_NAME_BREATHING_RATE = "br"
+    MEASUREMENT_NAME_HR_VARIABILITY = 'hrVariability'
+    MEASUREMENT_NAME_SLEEP_AWAKE    = "sleepAwake"
+    MEASUREMENT_NAME_SLEEP_DEEP     = "sleepDeep"
+    MEASUREMENT_NAME_SLEEP_LIGHT    = "sleepLight"
+    MEASUREMENT_NAME_SLEEP_REM      = "sleepRem"
+    MEASUREMENT_NAME_SLEEP_TOTAL    = "sleepTotal"
+
+    MEASUREMENT_PARAMETERS_LIST = [
+        MEASUREMENT_NAME_BED_STATUS,
+        MEASUREMENT_NAME_HEART_RATE,
+        MEASUREMENT_NAME_BREATHING_RATE,
+        MEASUREMENT_NAME_HR_VARIABILITY,
+        MEASUREMENT_NAME_SLEEP_AWAKE,
+        MEASUREMENT_NAME_SLEEP_DEEP,
+        MEASUREMENT_NAME_SLEEP_LIGHT,
+        MEASUREMENT_NAME_SLEEP_REM,
+        MEASUREMENT_NAME_SLEEP_TOTAL,
+    ]
 
     DEVICE_TYPES = [4302]
 
@@ -35,8 +57,8 @@ class WithingsSleepHealthDevice(HealthDevice):
         """
         :return: True if pressure is applied
         """
-        if HealthDevice.MEASUREMENT_NAME_BED_STATUS in self.measurements:
-            return self.measurements[HealthDevice.MEASUREMENT_NAME_BED_STATUS][0][0]
+        if WithingsSleepHealthDevice.MEASUREMENT_NAME_BED_STATUS in self.measurements:
+            return self.measurements[WithingsSleepHealthDevice.MEASUREMENT_NAME_BED_STATUS][0][0]
         
         return False
 
@@ -44,7 +66,7 @@ class WithingsSleepHealthDevice(HealthDevice):
         """
         :return: True if this entry sensor's state was updated just now
         """
-        return HealthDevice.MEASUREMENT_NAME_BED_STATUS in self.last_updated_params
+        return WithingsSleepHealthDevice.MEASUREMENT_NAME_BED_STATUS in self.last_updated_params
 
     def did_apply_pressure(self, botengine=None):
         """

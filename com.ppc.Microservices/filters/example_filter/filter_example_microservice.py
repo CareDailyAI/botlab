@@ -89,6 +89,8 @@ class FilterExampleMicroservice(Filter):
         # EXAMPLE of changing a parameter's value. Here we apply a low-pass filter to the data.
         # This retrieves the measurement dictionary for this parameter name, using our super class's "get_parameter()" method.
         measured_rssi = self.get_parameter(measurements, "rssi")
+        if measured_rssi is None:
+            return
 
         # Here's the actual value. We'll print this out later and compare the original vs. new.
         rssi_value = measured_rssi['value']
