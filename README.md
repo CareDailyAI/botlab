@@ -6,13 +6,9 @@ These bots run 24/7 in the background of your life, making products do things th
 
 **You do not need to host your own server to run bot microservices.** We host and run them for you on our servers. Of course, you can also run them live on your local computer and watch them execute against real-time data from the real world.
 
-### Start with an interactive demo
+### Start with getting your virtual environment
 
-The best way to start understanding the Bot Lab is to see it in action. Sign up at https://app.caredaily.ai/signup for a dynamic introduction to the Bot Lab, and a jump start in getting you a live demo environment built right into Care Daily's existing services.
-
-In this demo you can expect to visit many of the concepts presented in the included lessons, including SMS, notifications, live updates and more.
-
-After working through the interactive demo you will be prepared to start your journey into building Bots.  Have fun!
+Before you begin, you'll need a user, location, and an organization.  Sign up at https://app.caredaily.ai/signup to jump start your development and get ready to dive into building your own services.
 
 ### You need Python 3.x
 
