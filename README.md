@@ -8,7 +8,7 @@ These bots run 24/7 in the background of your life, making products do things th
 
 ### Start with getting your virtual environment
 
-Before you begin, you'll need a user, location, and an organization.  Sign up at https://app.caredaily.ai/signup to jump start your development and get ready to dive into building your own services.
+Reach out to Care Daily at hello@caredaily.ai to get set up with your own organization and user account.
 
 ### You need Python 3.x
 
