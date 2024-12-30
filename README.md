@@ -1,100 +1,144 @@
-# Bot Lab: Add Thoughts to Things.
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
 
-The Bot Lab contains the BotEngine Microservices Python framework, enabling developers to explore the creation of new features, agents, and services on top of every internet-connected data source or device. 
+  http://www.apache.org/licenses/LICENSE-2.0
 
-These bots run 24/7 in the background of your life, making products do things the manufacturer never imagined. In the same way that mobile app developers can create apps for smartphones, now we can move beyond screens and add features and services to every internet-connected device. 
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
 
-**You do not need to host your own server to run bot microservices.** We host and run them for you on our servers. Of course, you can also run them live on your local computer and watch them execute against real-time data from the real world.
+# BotLab
 
-### Start with getting your virtual environment
-
-Before you begin, you'll need a user, location, and an organization.  Sign up at https://app.caredaily.ai/signup to jump start your development and get ready to dive into building your own services.
-
-### You need Python 3.x
-
-We're using Python 3.x+. We strongly recommend using a virtual environment. 
-
-```
-# Create your virtual environment
-virtualenv -p PATH/TO/PYTHON3 bots
-# if it fails for you, Try:
-# python3 -m virtualenv bots
-
-# Activate your virtual environment. I add this to my ~/.bash_profile (on mac).
-source bots/bin/active
-
-# Install dependencies. Note it may be 'pip3' in your environment.
-pip install -r requirements.txt
-```
-
-## Get Started with the BotEngine
-
-Clone this repository to your computer. The 'botengine' file is a Python application which serves a dual purpose: it is the command line interface which provides access for the developer to create and manage bots, and it is also the software execution environment for which provides access for a running bot to securely interact with the outside world.
-
-Most developers simply type `./botengine` to execute commands on the command line interface. For example, `./botengine --help`
-
-If you're running Windows, we recommend using Windows Terminal to run the 'botengine' application. You can also try `python botengine`. Please keep in mind that although Python is meant to be operating system independent, some differences do exist between OS's and bot commercial code runs in a Linux environment on the cloud or on the edge.
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/license/apache-2-0)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/CareDailyAI/botlab?sort=semver)](https://github.com/CareDailyAI/botlab/tree/latest)
+[![Documentation](https://img.shields.io/badge/docs-iotapps.docs.apiary.io-blue.svg)](https://iotapps.docs.apiary.io)
 
 
-## BotEngine Shortcuts
+<picture width="500">
+  <source
+    width="600"
+    media="(prefers-color-scheme: dark)"
+    src="https://github.com/caredailyai/botlab/img/botlab-logo-horiz-dark.svg"
+    alt="BotLab logo (dark)"
+  />
+  <img
+    width="600"
+    src="https://github.com/caredailyai/botlab/img/botlab-logo-horiz.svg"
+    alt="BotLab logo (light)"
+  />
+</picture>
 
-The botengine requires your username and password for every interaction with the server. We go faster this by saving our login details inside environment variables on our local machine by adding some exports to one of the terminal startup scripts, like ~/.profile or ~/.bashrc:
+A modern, enterprise-ready business services development platform.
 
-`export LOGIN="-u email@example.com -p password"`
+[**BotLab**](#botlab) |
+[**Just Watch It Work**](#just-watch-it-work) |
+[**Getting Started**](#getting-started) |
+[**Lessons and Documentation**](#lessons) |
+[**Explore the docs**](https://iotapps.docs.apiary.io) |
+[**Sign Up**](https://app.caredaily.ai/signup)
 
-Then you can run your botengine like this:
+## BotLab
 
-`botengine --my_purchased_bots $LOGIN`
+BotLab contains the BotEngine Microservices Python framework, a tool enabling businesses with a platform to create new features, AI agents, and services for individuals, communities and organizations on top of internet-connected data sources. 
 
+These bots run 24/7 in the background of your life, making products do things the manufacturer never imagined. In the same way that mobile app developers can create apps for smartphones, now we can move beyond screens and add features and services that analyze realtime and historical data from internet-connected devices. 
 
-### Developer bots stop executing after 24 hours.
+BotLab provides:
+- A **CLI Tool** for distributing bot services.
+- A **data analytics** platform to process realtime and time-series data.
+- Allows **Development teams** to distribute work across large or small organizations.
+- A collection of **lessons and guides** to reduce the amount of time needed to go to market.
+- Realtime **local executions** to monitor your products.
+- Enterprise **cloud servers** to host and distribute your products.
+- Various **accessibility** features to effectively communicate with your audience.
 
-If you're not interacting with your bot as a developer, the cloud will automatically stop executing it. This is to protect our resources from bots that haven't been reviewed for performance.
+**You do not need to host your own server to run bot microservices.** 
 
-Next steps include:
-* Make your bot do what you want by editing code locally, and `--run` it again with each modification.
-* Keep making commits to the cloud. You do not need to increment the version number each time inside `runtime.json`.
-* Publish the bot with the `--publish` command. This technically puts it through a review process like the Apple App Store. In reality, since we're not the Apple App Store yet, you can just let us know when you are ready to publish a bot by emailing dmoss@caredaily.ai or destry@caredaily.ai. Once published, other users can purchase the bot with the `--purchase` command.
+We host and run them for you on our servers. Of course, you can also run them live on your local computer and watch them execute against real-time data from the real world.
 
-## Notes on architecture
+## Just watch it work
 
-There are a few design philosophies and best practices we've grown over the years as we've developed bots. 
+Want to jump right in and watch a bot in action run? Playback some recorded data using the BotEngine in a new CodeSpace:
 
-* No lower layer in the stack should depend upon any higher layer in the stack. Data flows from `lambda.py` to `botengine` to `bot.py` on up the stack to the location object -> filter objects -> device objects -> microservice objects. It should be obvious, but while microservices can be dependent upon a device object, the device object should never be dependent upon a microservice.
-* To get around these dependencies, we use `signals`. A signal is really just a function definition that turns a set of arguments into a data stream message. We try to avoid creating data stream messages directly inside microservices now, because they're difficult to maintain, find, and document. Check out `com.ppc.Bot/signals` and `com.ppc.BotProprietary/signals`. 
-* Check out how we use the `datastream_updated()` event in our microservices to transform a data stream message (signal) directly into a function call, where the name of the function is the name of the signal. Super easy.
-* Often times, these signals can become externally accessible "Synthetic APIs". A Synthetic API is asynchronous, and realized through a combination of 2 platform APIs: Data Stream Messages and State Variables. If you choose to expose a Synthetic API, documentation is important, and we keep these docs on http://github.com/caredailyai/docs.
-* We've found pretty much all devices produce untrustworthy data, and cleaning that data or deriving entirely new information is an important activity. This is why we introduced the concept of `filters` in the Summer of 2021. Filters are treated just like microservices in that they're modular and can be added and removed without strict dependencies, but they also have a slightly different interface than microservices. Data now flows up the stack from the location object -> filters -> device objects and then finally to microservices. The `filter_measurements()` event allows filters the opportunity to correct or delete data before it lands in our representative model of the world. And it can even invent new parameterized data for microservices to work with. There's still more to explore in this architecture, including the ability to potentially save the corrected and parameterized time-series data back to the device on the AI+IoT Platform itself.
+`./botengine --playback tests/data/12-days-of-data.json -r com.ppc.Tests`
 
-As a new bot developer, I strongly recommend you generate a bot and follow the data path all the way through from botengine -> bot.py -> controller -> location.py -> filters -> device objects -> microservices. I also strongly recommend understanding what microservice packages exist today, how they operate, and what signals they use to communicate with each other. A large part of being a good bot developer is simply knowing where things are located.
+For help on creating a new CodeSpace please refer to [GitHub](https://github.com/features/codespaces) documentation.
 
-Always remember your place on the DIKW ladder: 
-1. DATA is what a device produces, in its own protocol / language, below the AI+IoT Platform.
-2. INFORMATION is produced when we transform all that data into a common language, separating the messy "network layer" from the "application layer". Information is what you pull out of the AI+IoT Platform, and you can visualize it on a graph. Filters help improve the trustworthiness of information, and help synthesize new information.
-3. KNOWLEDGE is derived from information. This can often be expressed as a sentence, like "You got great sleep quality last night." Most of the time, this is what people want. People don't want to think hard about a graph of energy consumption, they want to read a sentence that conveys the knowledge that energy consumption is currently trending out-of-bounds. People don't want to look at a graph of bedtime, they want to know the bedtime has remained consistent day after day.
-4. WISDOM is an action back to the physical world, derived from knowledge. This is what happens when we turn off a light because we know you've gone to bed, or we send a notification that you forgot to arm your security system when you left the house.
+## Partners and Services
 
-Bots operate primarily in the Knowledge and Wisdom layers of the stack.
-
-
-## Corporate Networks with Proxies
-
-If you are operating in a corporate network that has a proxy, you can provide the proxy information as an argument to the command line interface with the `--https-proxy <proxy>` argument:
-
-`botengine --my_purchased_bots --https_proxy http://10.10.1.10:1080`
-
-The BotEngine uses the Python `requests` library to make HTTPS calls to the server. The `requests` library allows you to alternatively set the proxy through an environment variable:
-
-`export HTTPS_PROXY="http://10.10.1.10:1080"`
-
-The BotEngine exclusively uses HTTPS and never uses HTTP communications. 
-
-For rapid transitions in and out of corporate network environments, check out the Envswitch tool developed by https://github.com/smarie
-
-https://smarie.github.io/develop-behind-proxy/switching/#envswitcher
+BotLab can coordinate events and messages from various partner services, manufacturers and platforms.  Here are some major solutions partnering today:
 
 
-## Documentation
+<!-- <p align="center"> -->
+  <!-- TODO: Add all major brands -->
+  <!-- <img src="https://media.peoplepowerco.com/develco-logo.png" alt="develco" border="0" width="200"/> -->
+<!-- </p> -->
+
+Want to add support for your devices or services? Read more [here](https://iotdevices.docs.apiary.io) about the technical requirements.
+
+## Getting Started
+
+For a step by step guide refer to [**Lesson 0 - BotEngine**](https://github.com/CareDailyAI/botlab/com.ppc.Lesson0-BotEngine).
+
+## Lessons and Documentation
 
 Each Lesson contains documentation. Open each lesson to review the documentation, and then drill down into the individual microservices inside the intelligence directories.
 
+Lessons:
+- [Lesson 0 - BotEngine](https://github.com/CareDailyAI/botlab/com.ppc.Lesson0-BotEngine)
+- [Lesson 1 - Microservices](https://github.com/CareDailyAI/botlab/com.ppc.Lesson1-Microservices)
+- [Lesson 2 - LiveUpdates](https://github.com/CareDailyAI/botlab/com.ppc.Lesson2-LiveUpdates)
+- [Lesson 3 - Commands](https://github.com/CareDailyAI/botlab/com.ppc.Lesson3-Commands)
+- [Lesson 4 - Notifications](https://github.com/CareDailyAI/botlab/com.ppc.Lesson4-Notifications)
+- [Lesson 5 - SpaceTime](https://github.com/CareDailyAI/botlab/com.ppc.Lesson5-SpaceTime)
+- [Lesson 6 - DataStreams](https://github.com/CareDailyAI/botlab/com.ppc.Lesson6-DataStreams)
+- [Lesson 7 - SunriseSunset](https://github.com/CareDailyAI/botlab/com.ppc.Lesson7-SunriseSunset)
+- [Lesson 8 - Video](https://github.com/CareDailyAI/botlab/com.ppc.Lesson8-Video)
+- [Lesson 9 - Sms](https://github.com/CareDailyAI/botlab/com.ppc.Lesson9-Sms)
+- [Lesson 10 - MachineLearning](https://github.com/CareDailyAI/botlab/com.ppc.Lesson10-MachineLearning)
+- [Lesson 11 - Questions](https://github.com/CareDailyAI/botlab/com.ppc.Lesson11-Questions)
+- [Lesson 12 - Tags](https://github.com/CareDailyAI/botlab/com.ppc.Lesson12-Tags)
+- [Lesson 13 - LanguageLocalization](https://github.com/CareDailyAI/botlab/com.ppc.Lesson13-LanguageLocalization)
+- [Lesson 14 - Weather](https://github.com/CareDailyAI/botlab/com.ppc.Lesson14-Weather)
+- [Lesson 15 - Analytics](https://github.com/CareDailyAI/botlab/com.ppc.Lesson15-Analytics)
+- [Lesson 16 - Narratives](https://github.com/CareDailyAI/botlab/com.ppc.Lesson16-Narratives)
+- [Lesson 17 - UserInterfaces](https://github.com/CareDailyAI/botlab/com.ppc.Lesson17-UserInterfaces)
+- [Lesson 18 - UserManagement](https://github.com/CareDailyAI/botlab/com.ppc.Lesson18-UserManagement)
+- [Lesson 19 - Behaviors](https://github.com/CareDailyAI/botlab/com.ppc.Lesson19-Behaviors)
+- [Lesson 20 - Rules](https://github.com/CareDailyAI/botlab/com.ppc.Lesson20-Rules)
+- [Lesson 21 - EdgeComputing](https://github.com/CareDailyAI/botlab/com.ppc.Lesson21-EdgeComputing)
+
+## Get Involved
+
+- Ask and answer questions on [StackOverflow](https://stackoverflow.com/questions/tagged/caredaily-botlab) using the **caredaily-botlab** tag
+
+- Help find and fix issues by [**reporting bugs**](https://github.com/CareDailyAI/botlab/issues/new?labels=bug&template=bug-report---.md).
+- Have a new idea?  Have a suggestion? [**Request a feature**](https://github.com/CareDailyAI/botlab/issues/new?labels=enhancement&template=feature-request---.md) to get our attention.
+
+## Contributor Guide
+
+Interested in contributing? Check out our
+[CONTRIBUTING.md](https://github.com/CareDailyAI/botlab/blob/master/CONTRIBUTING.md)
+to find resources around contributing along with a detailed guide on
+how to set up a development environment.
+
+## Repo Activity
+
+<a href="https://next.ossinsight.io/widgets/official/compose-org-active-contributors?owner_id=11855343&period=past_28_days&activity=active" target="_blank" style="display: block" align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-org-active-contributors/thumbnail.png?owner_id=11855343&period=past_28_days&activity=active&image_size=2x3&color_scheme=dark" width="273" height="auto">
+    <img alt="Active participants of pingcap - past 28 days" src="https://next.ossinsight.io/widgets/official/compose-org-active-contributors/thumbnail.png?owner_id=11855343&period=past_28_days&activity=active&image_size=2x3&color_scheme=light" width="273" height="auto">
+  </picture>
+</a>
+
+<!-- Made with [OSS Insight](https://ossinsight.io/) -->
