@@ -21,7 +21,7 @@ If you are reporting a bug, please include:
 When you post python stack traces please quote them using
 [markdown blocks](https://help.github.com/articles/creating-and-highlighting-code-blocks/).
 
-### Fix Bugs -->
+### Fix Bugs
 
 Look through the GitHub issues for bugs. Anything tagged with "bug" is
 open to whoever wants to implement it.
