@@ -59,6 +59,8 @@ class Device:
     """
     This is a base class for each of our devices
     """
+    # Parameter names
+    MEASUREMENT_NAME_FIRMWARE = "firmware"
 
     # Low battery threshold - Override in sub-classes
     LOW_BATTERY_THRESHOLD = 10
@@ -181,6 +183,12 @@ class Device:
         # Every device gets a dictionary of intelligence modules, and can populate these intelligence modules in each device model
         self.intelligence_modules = {}
 
+        # User ID associated with this device.  Used for communications and device association. Left empty for anonymous users.
+        self.user_id = None
+
+        # If the user ID has changed keep reference to the old user ID
+        self.last_user_id = None
+
         if precache_measurements:
             # Download and start this object out with a history of measurements
             self.cache_measurements(botengine, botengine.get_timestamp() - TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS, botengine.get_timestamp())
@@ -203,8 +211,20 @@ class Device:
         if not hasattr(self, "is_goal_changed"):
             self.is_goal_changed = False
 
+        # Added March 20, 2024
+        if not hasattr(self, "user_id"):
+            self.user_id = None
+
+        # Added March 27, 2024
+        if not hasattr(self, "last_user_id"):
+            self.last_user_id = None
+            
+        # Fixed March 27, 2024: User ID may have been set to the device ID in the past
+        if self.user_id == self.device_id:
+            self.user_id = None
+
         # Synchronize device microservices
-        if str(self.device_type) in index.MICROSERVICES['DEVICE_MICROSERVICES']:
+        if str(self.device_type) in index.MICROSERVICES.get('DEVICE_MICROSERVICES', {}):
             # Synchronize microservices
             changed = False
 
@@ -255,12 +275,12 @@ class Device:
             self.intelligence_modules = {}
 
         # Tell all device microservices we're running a new version
-        for microservice in list(self.intelligence_modules.values()):
+        for microservice_object in self.sorted_intelligence_modules().values():
             try:
                 import time
                 t = time.time()
-                microservice.new_version(botengine)
-                microservice.track_statistics(botengine, (time.time() - t) * 1000)
+                microservice_object.new_version(botengine)
+                microservice_object.track_statistics(botengine, (time.time() - t) * 1000)
             except Exception as e:
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("location.py - Error delivering new_version to device microservice (continuing execution): " + str(e))
                 import traceback
@@ -272,15 +292,15 @@ class Device:
         :param botengine: BotEngine environment
         """
         # Initialize all device microservices
-        for device_microservice in self.intelligence_modules.values():
+        for microservice_object in self.sorted_intelligence_modules().values():
             
             # Reset device microservice statistics
-            device_microservice.reset_statistics(botengine)
+            microservice_object.reset_statistics(botengine)
 
             import time
             t = time.time()
-            device_microservice.initialize(botengine)
-            device_microservice.track_statistics(botengine, (time.time() - t) * 1000)
+            microservice_object.initialize(botengine)
+            microservice_object.track_statistics(botengine, (time.time() - t) * 1000)
 
     def destroy(self, botengine):
         """
@@ -322,6 +342,27 @@ class Device:
         if self.goal_id is not None:
             return self.goal_id % 1000 == int(target_goal_id)
         return False
+    
+    def did_update_firmware(self, botengine):
+        """
+        Did the device firmware get updated?
+        :param botengine:
+        :return:
+        """
+        if Device.MEASUREMENT_NAME_FIRMWARE in self.measurements:
+            if Device.MEASUREMENT_NAME_FIRMWARE in self.last_updated_params:
+                return True
+        return False
+    
+    def get_firmware_version(self, botengine):
+        """
+        Get the firmware version
+        :param botengine:
+        :return:
+        """
+        if Device.MEASUREMENT_NAME_FIRMWARE in self.measurements:
+            return self.measurements[Device.MEASUREMENT_NAME_FIRMWARE][0][0]
+        return None
 
     #===========================================================================
     # Microservice notification distribution methods
@@ -332,11 +373,11 @@ class Device:
         :param botengine:
         :return:
         """
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.sorted_intelligence_modules().values():
             import time
             t = time.time()
-            self.intelligence_modules[intelligence_id].device_measurements_updated(botengine, self)
-            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
+            microservice_object.device_measurements_updated(botengine, self)
+            microservice_object.track_statistics(botengine, (time.time() - t) * 1000)
 
     def device_metadata_updated(self, botengine):
         """
@@ -344,11 +385,11 @@ class Device:
         :param botengine:
         :return:
         """
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.sorted_intelligence_modules().values():
             import time
             t = time.time()
-            self.intelligence_modules[intelligence_id].device_metadata_updated(botengine, self)
-            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
+            microservice_object.device_metadata_updated(botengine, self)
+            microservice_object.track_statistics(botengine, (time.time() - t) * 1000)
 
     def device_alert(self, botengine, alert_type, alert_params):
         """
@@ -367,11 +408,11 @@ class Device:
             alert_type : alert_params
         }
 
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.sorted_intelligence_modules().values():
             import time
             t = time.time()
-            self.intelligence_modules[intelligence_id].device_alert(botengine, self, alert_type, alert_params)
-            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
+            microservice_object.device_alert(botengine, self, alert_type, alert_params)
+            microservice_object.track_statistics(botengine, (time.time() - t) * 1000)
 
     #===========================================================================
     # Measurement synchronization and updates
@@ -500,7 +541,7 @@ class Device:
                 updated_devices += d
                 updated_metadata += m
 
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("Updated '{}' with params: {}".format(self.description, self.last_updated_params))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("Updated '{}' with params: {}".format(self.description, [(param, self.measurements.get(param,[])[:1]) for param in self.last_updated_params]))
         return (updated_devices, updated_metadata)
 
     def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
@@ -513,11 +554,11 @@ class Device:
         :param content_type: The content type, for example 'video/mp4'
         :param file_extension: The file extension, for example 'mp4'
         """
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.sorted_intelligence_modules().values():
             import time
             t = time.time()
-            self.intelligence_modules[intelligence_id].file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
-            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
+            microservice_object.file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
+            microservice_object.track_statistics(botengine, (time.time() - t) * 1000)
 
     def last_measurement_timestamp_ms(self, botengine):
         """
@@ -683,11 +724,11 @@ class Device:
         self.longitude = float(longitude)
 
         # Notify my microservices
-        for intelligence_id in self.intelligence_modules:
+        for microservice_object in self.sorted_intelligence_modules().values():
             import time
             t = time.time()
-            self.intelligence_modules[intelligence_id].coordinates_updated(botengine, latitude, longitude)
-            self.intelligence_modules[intelligence_id].track_statistics(botengine, (time.time() - t) * 1000)
+            microservice_object.coordinates_updated(botengine, latitude, longitude)
+            microservice_object.track_statistics(botengine, (time.time() - t) * 1000)
 
         # Notify all children microservices
         for device_id in self.location_object.devices:
@@ -894,6 +935,18 @@ class Device:
             output += "\n"
 
         return output
+    
+    def sorted_intelligence_modules(self):
+        """
+        Order intelligence modules alphabetically then by execution priority
+        :return: List of intelligence modules sorted by execution priority
+        """
+        modules = dict(sorted(self.intelligence_modules.items(), key=lambda module: module[0]))
+        execution_priorities = {}
+        for intelligence_info in index.MICROSERVICES.get('DEVICE_MICROSERVICES', {}).get(str(self.device_type), []):
+            execution_priorities[intelligence_info['module']] = intelligence_info.get('execution_priority', 0)
+        
+        return dict(sorted(modules.items(), key=lambda module: execution_priorities.get(module[0], 0), reverse=True))
 
 
 #===============================================================================

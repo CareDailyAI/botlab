@@ -231,7 +231,9 @@ class LocationMultistreamMicroservice(Intelligence):
         :param content:
         :return:
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">multistream() content: {}".format(content))
         if content is None:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<multistream() No Content!")
             return
 
         id = None
@@ -257,6 +259,7 @@ class LocationMultistreamMicroservice(Intelligence):
                 # Save the state variable
                 self.parent.set_location_property_separately(botengine, MULTISTREAM_STATE_VARIABLE, multistream_queue, overwrite=True)
                 self._set_alarm(botengine)
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<multistream()")
                 return
 
         # Deliver immediately
@@ -272,6 +275,7 @@ class LocationMultistreamMicroservice(Intelligence):
             if address != "timestamp" and address != "id":
                 botengine.get_logger().info("location_multistream_microservice: Delivering data stream message '{}'".format(address))
                 self.parent.distribute_datastream_message(botengine, address, content[address], internal=True, external=False)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<multistream()")
 
     def _set_alarm(self, botengine):
         """
@@ -279,6 +283,7 @@ class LocationMultistreamMicroservice(Intelligence):
         :param botengine:
         :return:
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(">_set_alarm()")
         multistream_queue = botengine.get_state(MULTISTREAM_STATE_VARIABLE)
 
         # Pick the next closest timestamp
@@ -297,4 +302,6 @@ class LocationMultistreamMicroservice(Intelligence):
 
         if next_timestamp_ms is not None:
             self.set_alarm(botengine, next_timestamp_ms)
+        
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<_set_alarm()")
 

@@ -133,6 +133,14 @@ class Intelligence:
         """
         return
     
+    def messages_updated(self, botengine, messages):
+        """
+        List of Messages were updated
+        :param botengine: BotEngine environment
+        :param messages: Message objects
+        """
+        return
+    
     def datastream_updated(self, botengine, address, content):
         """
         Data Stream Message Received

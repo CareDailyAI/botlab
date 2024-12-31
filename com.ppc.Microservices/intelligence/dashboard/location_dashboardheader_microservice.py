@@ -242,7 +242,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
         :param content:
         :return:
         """
-        botengine.get_logger().info("location_dashboardheader_microservice: clearing all dashboard headers")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(">clear_dashboard_headers() clearing all dashboard headers")
         self.saved_headers = {}
 
         # Keep in mind that on __init__(), our microservices are not stitched together or fully initialized.
@@ -259,6 +259,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
             "comment": _("Listening for activity")
         }
         self.update_dashboard_header(botengine, default_header)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<clear_dashboard_headers()")
 
     def resolve_dashboard_header(self, botengine, content):
         """
@@ -400,6 +401,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
         :param dashboard_header: Dashboard header dictionary object
         :return:
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(">update_dashboard_header() content={}".format(dashboard_header))
         if 'priority' in dashboard_header:
             if dashboard_header['priority'] is None:
                 del(dashboard_header['priority'])
@@ -412,7 +414,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
 
                 # Make sure the developer was paying attention.
                 if dashboard_header['future_timestamp_ms'] < botengine.get_timestamp() - utilities.ONE_WEEK_MS:
-                    botengine.get_logger().warn("location_dashboardheader_microservice: Really old future_timestamp_ms at {} for {} - are you sure you're using absolute time instead of relative time? Trying to fix it by transforming relative->absolute time in ms".format(dashboard_header['future_timestamp_ms'], name))
+                    botengine.get_logger().warn("|update_dashboard_header() Really old future_timestamp_ms at {} for {} - are you sure you're using absolute time instead of relative time? Trying to fix it by transforming relative->absolute time in ms".format(dashboard_header['future_timestamp_ms'], name))
                     dashboard_header['future_timestamp_ms'] = dashboard_header['future_timestamp_ms'] + botengine.get_timestamp()
 
                 if dashboard_header['future_timestamp_ms'] > botengine.get_timestamp():
@@ -469,30 +471,36 @@ class LocationDashboardHeaderMicroservice(Intelligence):
 
             else:
                 # Delete everything about this dashboard header
-                botengine.get_logger().info("location_dashboardheader_microservice: Delete dashboard header {}".format(name))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() Delete dashboard header {}".format(name))
                 self._delete_all(botengine, name)
 
         # Refresh the overall health of the home
         highest_priority = dashboard.DASHBOARD_PRIORITY_EMPTY
         highest_priority_header = None
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() Prioritizing...")
         for name in list(self.saved_headers.keys()):
-            botengine.get_logger().debug("location_dashboard_header possibility: {}".format(self.saved_headers[name]))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() \tname={} priority={} percent={} conversation_object={}".format(self.saved_headers[name]['name'], self.saved_headers[name]['priority'], self.saved_headers[name]['percent'], 'conversation_object' in self.saved_headers[name]))
             # Delete dashboard headers related to active conversations
             if highest_priority_header is None:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() \tSetting the first header as the highest priority header")
                 highest_priority_header = self.saved_headers[name]
                 highest_priority = self.saved_headers[name]['priority']
 
             if self.saved_headers[name]['priority'] > highest_priority:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() \tSetting the new header as the highest priority header")
                 highest_priority = self.saved_headers[name]['priority']
                 highest_priority_header = self.saved_headers[name]
 
             elif self.saved_headers[name]['priority'] == highest_priority:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() \tPriority is the same, so we need to compare the 'good-ness' percentage")
                 if 'conversation_object' not in highest_priority_header and 'conversation_object' in self.saved_headers[name]:
                     # Pick the one that is managing an active conversation (inactive conversations got deleted above, and there can only be 1 conversation at a time)
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() \tPick the one that is managing an active conversation")
                     highest_priority_header = self.saved_headers[name]
 
                 elif self.saved_headers[name]['percent'] < highest_priority_header['percent']:
                     # This header has a lower "good-ness" percentage than the leading contender, so pick it instead.
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() \tThis header has a lower 'good-ness' percentage than the leading contender, so pick it instead.")
                     highest_priority_header = self.saved_headers[name]
 
         # Remove no-no items from the publishable header.
@@ -501,7 +509,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
 
             # We update the dashboard header with the current state of its converastion here at the end to keep it all in sync.
             if 'conversation_object' in publish_header:
-                botengine.get_logger().info("location_dashboardheader_microservice: 'conversation_object' exists in the header we're about to publish.")
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() 'conversation_object' exists in the header we're about to publish.")
                 conversation_object = publish_header['conversation_object']
                 if conversation_object is not None:
                     publish_header['call'] = conversation_object.contact_homeowners or conversation_object.contact_supporters
@@ -515,7 +523,7 @@ class LocationDashboardHeaderMicroservice(Intelligence):
                     if conversation_object.ask_for_feedback:
                         publish_header['feedback'] = conversation_object.feedback_object
             else:
-                botengine.get_logger().info("location_dashboardheader_microservice: No conversation object in the header we're about to publish.")
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() No conversation object in the header we're about to publish.")
 
             if 'conversation_object' in publish_header:
                 del(publish_header['conversation_object'])
@@ -561,7 +569,8 @@ class LocationDashboardHeaderMicroservice(Intelligence):
                                     event_type="dashboard.update_header")
 
             else:
-                botengine.get_logger().info("location_dashboardheader_microservice: Duplicate header content, skip publishing...")
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_header() Duplicate header content, skip publishing...")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<update_dashboard_header()")
 
 
 

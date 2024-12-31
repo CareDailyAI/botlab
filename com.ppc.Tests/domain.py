@@ -89,20 +89,56 @@ AMPLITUDE_TOKENS = {
 
 ############### APP DOWNLOAD ###############
 # iOS download URL
-APP_IOS_URL = "https://apple.co/3PEaSnK"
+APP_IOS_URL = None
 
 # Android download URL
-APP_ANDROID_URL = "https://play.google.com/store/apps/details?id=com.peoplepowerco.family"
+APP_ANDROID_URL = None
 
 ############### CUSTOMER SUPPORT ###############
 # Customer support calendar scheduling and assisted connect URL
-CS_SCHEDULE_URL = "https://calendly.com/d/gsc-qhr-nhd/assisted-connection-session"
+CS_SCHEDULE_URL = None
+
+# Customer support help desk URL
+CS_HELPDESK_URL = None
 
 # Customer support email
-CS_EMAIL_ADDRESS = "support@peoplepowerco.com"
+CS_EMAIL_ADDRESS = "support@caredaily.ai"
 
 # Customer support phone number
 CS_PHONE_NUMBER = None
 
 # After creating a new location and firing up the bot for the first time, how long do we wait before suggesting a virtual install session?
 CS_VIRTUAL_CONNECT_SMS_DELAY_MS = utilities.ONE_HOUR_MS * 4
+
+############### OPEN AI ###############
+
+# OpenAI Organization ID
+OPEN_AI_ORGANIZATIONS = {
+    "app.peoplepowerco.com": "asdf",
+    "sboxall.peoplepowerco.com": "asdf"
+}
+
+############### ChatGPT Daily Report ###############
+
+# Daily Report GPT Services Supported
+DAILYREPORT_GPT_SUPPORTED = True
+
+# Daily Report GPT Services Enabled
+DAILYREPORT_GPT_ENABLED = True
+
+# GPT Primary Caregiver Report Enabled
+GPT_PRIMARY_CAREGIVER_REPORT_ENABLED = True
+
+# OpenAI prompt time deferral in milliseconds
+GPT_PROMPT_DEFERRAL = utilities.ONE_MINUTE_MS * 10
+
+############### Summary Daily Report ###############
+
+# Daily Report Summary Services Enabled
+DAILYREPORT_SUMMARY_ENABLED = True
+
+# Weekly Reports Enabled
+WEEKLY_REPORTS_ENABLED = True
+
+# Monthly Reports Enabled
+MONTHLY_REPORTS_ENABLED = True

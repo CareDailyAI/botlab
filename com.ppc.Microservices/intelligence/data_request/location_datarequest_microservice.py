@@ -15,7 +15,7 @@ import properties
 
 from devices.entry.entry import EntryDevice
 from devices.motion.motion import MotionDevice
-from devices.vayyar.vayyar import VayyarDevice
+from devices.radar.radar import RadarDevice
 from devices.pressure.pressure import PressurePadDevice
 from devices.health.health_withings_sleep import WithingsSleepHealthDevice
 from devices.health.health import HealthDevice
@@ -88,6 +88,11 @@ class LocationDataRequestMicroservice(Intelligence):
         """
         if schedule_id == "ML":
             import random
+            if botengine.playback:
+                # Reduce the strain on the playback system by calculating on a weekly basis
+                if self.parent.get_local_datetime(botengine).weekday() > 0:
+                    return
+                
             self.start_timer_ms(botengine, random.randint(0, utilities.ONE_HOUR_MS * 12), reference=TIMER_REFERENCE)
 
     def timer_fired(self, botengine, argument):
@@ -96,6 +101,7 @@ class LocationDataRequestMicroservice(Intelligence):
         :param botengine: Current botengine environment
         :param argument: Argument applied when setting the timer
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">timer_fired() Requesting data...")
         machinelearning.request_data(botengine, location_object=self.parent)
 
     def download_data(self, botengine, content):
@@ -107,7 +113,7 @@ class LocationDataRequestMicroservice(Intelligence):
         :param content:
         :return:
         """
-        botengine.get_logger().debug("location_datarequest_microservice.download_data() content={}".format(content))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">download_data() content={}".format(content))
         self.version = VERSION
 
         force = False
@@ -120,13 +126,16 @@ class LocationDataRequestMicroservice(Intelligence):
         reference = machinelearning.DATAREQUEST_REFERENCE_ALL
 
         oldest_timestamp_ms = botengine.get_timestamp() - utilities.ONE_MONTH_MS * 6
+        if botengine.playback:
+            # Reduce the strain on the playback system
+            oldest_timestamp_ms = botengine.get_timestamp() - utilities.ONE_WEEK_MS
         if 'oldest_timestamp_ms' in content:
             if content['oldest_timestamp_ms'] is not None:
                 oldest_timestamp_ms = int(content['oldest_timestamp_ms'])
 
                 if 'reference' in content:
                     if content['reference'] == machinelearning.DATAREQUEST_REFERENCE_ALL:
-                        botengine.get_logger().error("location_datarequest_microservice: oldest_timestamp_ms={} but the reference={}; we won't process this data request because it's dangerous.".format(oldest_timestamp_ms, content['reference']))
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error("<download_data() oldest_timestamp_ms={} but the reference={}; we won't process this data request because it's dangerous.".format(oldest_timestamp_ms, content['reference']))
                         return
 
         if 'reference' in content:
@@ -136,7 +145,7 @@ class LocationDataRequestMicroservice(Intelligence):
             if reference == machinelearning.DATAREQUEST_REFERENCE_ALL:
                 self.last_download = botengine.get_timestamp()
 
-            botengine.get_logger().info("location_datarequest_microservice.download_data() - Requesting data for reference {}".format(reference))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|download_data() - Requesting data for reference {}".format(reference))
 
             # Request all data from devices that capture interesting information
             for device_id in self.parent.devices:
@@ -144,7 +153,7 @@ class LocationDataRequestMicroservice(Intelligence):
 
                 if DOWNLOAD_FOCUSED_DEVICES_ONLY:
                     # Download focused devices only based on the list below.
-                    if isinstance(focused_object, MotionDevice) or isinstance(focused_object, EntryDevice) or isinstance(focused_object, PressurePadDevice) or isinstance(focused_object, VayyarDevice) or isinstance(focused_object, HealthDevice) or isinstance(focused_object, WithingsSleepHealthDevice):
+                    if isinstance(focused_object, MotionDevice) or isinstance(focused_object, EntryDevice) or isinstance(focused_object, PressurePadDevice) or isinstance(focused_object, RadarDevice) or isinstance(focused_object, HealthDevice) or isinstance(focused_object, WithingsSleepHealthDevice):
                         focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, oldest_timestamp_ms=oldest_timestamp_ms, reference=reference)
 
                 else:
@@ -153,7 +162,8 @@ class LocationDataRequestMicroservice(Intelligence):
                         focused_object.request_data(botengine, param_name_list=focused_object.MEASUREMENT_PARAMETERS_LIST, oldest_timestamp_ms=oldest_timestamp_ms, reference=reference)
 
         else:
-            botengine.get_logger().info("location_datarequest_microservice: Attempted to download_data(), but we just did so recently so skipping this request.")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|download_data() Attempted to download_data(), but we just did so recently so skipping this request.")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<download_data()")
 
     def data_request_ready(self, botengine, reference, csv_dict):
         """
@@ -188,9 +198,9 @@ class LocationDataRequestMicroservice(Intelligence):
         :param reference: Optional reference passed into botengine.request_data(..)
         :param csv_dict: { device_object: 'csv data string' }
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">data_request_ready() reference={}".format(reference))
+        
         if reference == machinelearning.DATAREQUEST_REFERENCE_ALL:
-            botengine.save_variable("data_request_timestamp", botengine.get_timestamp())
-
             self.parent.narrate(botengine,
                                 title=_("Learning"),
                                 description=_("{} is reviewing everything it observed recently and is learning from it.").format(properties.get_property(botengine, "SERVICE_NAME")),
@@ -199,19 +209,19 @@ class LocationDataRequestMicroservice(Intelligence):
                                 icon="brain",
                                 event_type="data_request.ready")
 
-            analytics.track(botengine, self.parent, "data_request_ready", properties={"reference": reference})
+        botengine.save_variable("data_request_timestamp", botengine.get_timestamp())
+        analytics.track(botengine, self.parent, "data_request_ready", properties={"reference": reference})
 
-            botengine.get_logger().info("location_datarequest_microservice: Data request received. reference={}".format(reference))
+        for d in csv_dict:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|data_request_ready() {} = {} bytes".format(d, len(csv_dict[d])))
 
-            for d in csv_dict:
-                botengine.get_logger().info("{} = {} bytes".format(d, len(csv_dict[d])))
-
+            if EXPORT_CSV_TO_LOCAL_FILES:
                 filename = "{}_{}.csv".format(d.device_id, d.device_type)
-                if EXPORT_CSV_TO_LOCAL_FILES:
-                    with open(filename, "w") as text_file:
-                        botengine.get_logger().info("Saving CSV data to {} ...".format(filename))
-                        text_file.write(csv_dict[d])
+                with open(filename, "w") as text_file:
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|data_request_ready() Saving CSV data to {} ...".format(filename))
+                    text_file.write(csv_dict[d])
 
 
         # It is up to the developer to capture the data_request_ready(..) event in their own microservice
         # and verify the reference is 'all', then do something with all this data.
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<data_request_ready()")

@@ -2,10 +2,10 @@
 
 #############################################################
 # 2023.8.30 - Destry Teeter
-# This tool requires defining the environment variable 'BOTLAB_CORE' to point to the `botlab` repository.
-#   1. Clone the 'https://github.com/CareDailyAI/botlab' repository.
+# This tool requires defining the environment variable 'BOTLAB_CORE' to point to the botlab-core repository.
+#   1. Clone the 'https://github.com/peoplepower/botlab-core' repository.
 #   2. Export the environment variable 'BOTLAB_CORE' to point to the `botlab` directory.
-#   3. Run ./maestro_cli/maestro from the root of the `botlab` directory.
+#   3. Run ./maestro_cli/maestro from the root of the `botlab-core` directory.
 #############################################################
 
 if [[ -z "$BOTLAB_CORE" ]]; then

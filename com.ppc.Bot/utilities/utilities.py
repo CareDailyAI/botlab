@@ -48,23 +48,27 @@ OCCUPANCY_STATUS_A2H = "A2H"
 OCCUPANCY_STATUS_VACATION = "VACATION"
 
 # Alarm codes
-ALARM_CODE_GENERAL_BURGLARY = "E130"
-ALARM_CODE_PERIMETER_WINDOW_BURGLARY = "E131"
-ALARM_CODE_PERIMETER_DOOR_BURGLARY = "E134"
-ALARM_CODE_BURGLARY_NO_DISPATCH = "E136"
-ALARM_CODE_LEAK = "E154"
-ALARM_CODE_RECENT_CLOSING = "E459"
-ALARM_CODE_DURESS = "E122"
-ALARM_CODE_HIGH_TEMPERATURE = "E158"
-ALARM_CODE_LOW_TEMPERATURE = "E159"
-ALARM_CODE_CARBON_MONOXIDE = "E162"
-ALARM_CODE_MEDICATION_DISPENCER = "E330"
-ALARM_CODE_SMOKE_DETECTOR = "E111"
-ALARM_CODE_MEDICAL_ALARM = "E100"
-ALARM_CODE_GENERAL_MEDICAL_ALARM = "E102"
-ALARM_CODE_WELLNESS_NO_DISPATCH = "E103"
-ALARM_CODE_WELLNESS_DISPATCH = "E106"
-ALARM_CODE_COMMS_FAILURE = "E354"
+
+# DID NOT GET THE DISPATCH SERVICE UDPATES "AG_EVENTS"
+
+ALARM_CODE_GENERAL_BURGLARY             = "E130" # Confirmed Dispatch
+ALARM_CODE_PERIMETER_WINDOW_BURGLARY    = "E131" # Confirmed Dispatch
+ALARM_CODE_PERIMETER_DOOR_BURGLARY      = "E134" # Confirmed Dispatch
+ALARM_CODE_BURGLARY_NO_DISPATCH         = "E136" # Non-Dispatch
+ALARM_CODE_LEAK                         = "E154" # Non-Dispatch
+ALARM_CODE_RECENT_CLOSING               = "E459" # Logging Event Only
+ALARM_CODE_DURESS                       = "E122" # Confirmed Dispatch (NO CALLS)
+ALARM_CODE_HIGH_TEMPERATURE             = "E158" # Non-Dispatch
+ALARM_CODE_LOW_TEMPERATURE              = "E159" # Non-Dispatch
+ALARM_CODE_CARBON_MONOXIDE              = "E162" # Confirmed Dispatch
+ALARM_CODE_MEDICATION_DISPENCER         = "E330" # Non-Dispatch
+ALARM_CODE_SMOKE_DETECTOR               = "E111" # Confirmed Dispatch
+ALARM_CODE_MEDICAL_ALARM                = "E100" # Confirmed Dispatch
+ALARM_CODE_GENERAL_MEDICAL_ALARM        = "E102" # Confirmed Dispatch
+ALARM_CODE_WELLNESS_NO_DISPATCH         = "E103" # Non-Dispatch
+ALARM_CODE_WELLNESS_DISPATCH            = "E106" # Confirmed Dispatch
+ALARM_CODE_COMMS_FAILURE                = "E354" # Non-Dispatch
+ALARM_CODE_PRIORITY_MEDICAL_ALARM       = "E200" # Confirmed Dispatch
 
 # Professional Monitoring
 PROFESSIONAL_MONITORING_NEVER_PURCHASED = 0
@@ -105,9 +109,12 @@ PUSH_SOUND_WHISTLE = "whistle.wav"
 PUSH_SOUND_WHOOPS = "whoops.wav"
 
 # Organization User Notification Categories
-ORGANIZATION_USER_NOTIFICATION_CATEGORY_MANAGER = 1
-ORGANIZATION_USER_NOTIFICATION_CATEGORY_TECHNICIAN = 2
-ORGANIZATION_USER_NOTIFICATION_CATEGORY_BILLING = 3
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_MANAGER     = 1
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_TECHNICIAN  = 2
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_BILLING     = 3
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_RESEARCHER  = 4
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_PROVIDER    = 5
+ORGANIZATION_USER_NOTIFICATION_CATEGORY_RESPONDER   = 6
 
 # Default name for AI Chat Assistant (common for all locales)
 DEFAULT_CHAT_ASSISTANT_NAME = "Arti"
@@ -463,18 +470,19 @@ def get_admin_url_for_location(botengine):
                 url = properties.get_property(botengine, "COMMAND_CENTER_URLS")[u]
 
     if url is None:
-        botengine.get_logger(f"{__name__}").warn("utilities.get_admin_url_for_location(): No COMMAND_CENTER_URLS defined in domain.py for address {}".format(bundle.CLOUD_ADDRESS))
+        botengine.get_logger(f"{__name__}").warning("utilities.get_admin_url_for_location(): No COMMAND_CENTER_URLS defined in domain.py for address {}".format(bundle.CLOUD_ADDRESS))
         return ""
 
     # Check if the url contains caredaily
-    if "caredaily" in url:
-        # Return the url for CareDailyInsights
-        return "{}/org/{}/locations/{}/dashboard".format(url, botengine.get_organization_id(), botengine.get_location_id())
+    if any([domain in url for domain in ["console", "maestro"]]):
+        # Return the url for Maestro
+        return "{}/#!/main/locations/edit/{}".format(url, botengine.get_location_id())
     
-    # Return the url for Maestro
-    return "{}/#!/main/locations/edit/{}".format(url, botengine.get_location_id())
+    # Return the url for CareDailyInsights
+    return "{}/org/{}/locations/{}/dashboard".format(url, botengine.get_organization_id(), botengine.get_location_id())
+    
 
-def get_organization_user_notification_categories(botengine, location, excluded_categories=[]):
+def get_organization_user_notification_categories(botengine, location, excluded_categories=[], notify_responders=False):
     """
     Return a list of Organization User Notification categories for this location
     :param botengine: BotEngine environment
@@ -485,17 +493,17 @@ def get_organization_user_notification_categories(botengine, location, excluded_
     import properties
     import utilities
     # [1.0] Disable notifications for all categories
-    if properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_MONITORING") is not None:
-        if not properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_MONITORING"):
+    if properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_MONITORING", complain_if_missing=False) is not None:
+        if not properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_MONITORING", complain_if_missing=False):
             botengine.get_logger(f"{__name__}").info("utilities: Do not contact admins")
             return []
     
     # [1.1] Limit the time of day for Technicians
-    before_hour = properties.get_property(botengine, "DO_NOT_CONTACT_ADMINS_BEFORE_RELATIVE_HOUR")
-    after_hour = properties.get_property(botengine, "DO_NOT_CONTACT_ADMINS_AFTER_RELATIVE_HOUR")
+    before_hour = properties.get_property(botengine, "DO_NOT_CONTACT_ADMINS_BEFORE_RELATIVE_HOUR", complain_if_missing=False)
+    after_hour = properties.get_property(botengine, "DO_NOT_CONTACT_ADMINS_AFTER_RELATIVE_HOUR", complain_if_missing=False)
     timezone = location.get_local_timezone_string(botengine)
-    if properties.get_property(botengine, "ADMIN_DEFAULT_TIMEZONE") is not None:
-        timezone = properties.get_property(botengine, "ADMIN_DEFAULT_TIMEZONE")
+    if properties.get_property(botengine, "ADMIN_DEFAULT_TIMEZONE", complain_if_missing=False) is not None:
+        timezone = properties.get_property(botengine, "ADMIN_DEFAULT_TIMEZONE", complain_if_missing=False)
 
     categories = [ORGANIZATION_USER_NOTIFICATION_CATEGORY_MANAGER]
     if before_hour is not None and after_hour is not None:
@@ -505,9 +513,69 @@ def get_organization_user_notification_categories(botengine, location, excluded_
         else:
             botengine.get_logger(f"{__name__}").info("utilities: Do not contact technicians because it's after hours")
 
+    # [1.2] Notify Responders
+    if notify_responders:
+        if properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_RESPONDERS_MONITORING", complain_if_missing=False) is not None:
+            if properties.get_property(botengine, "ALLOW_ADMINISTRATIVE_RESPONDERS_MONITORING", complain_if_missing=False):
+                botengine.get_logger(f"{__name__}").info("utilities: Contacting responders")
+                categories.append(ORGANIZATION_USER_NOTIFICATION_CATEGORY_RESPONDER)
+
     # Excluded categories
     categories = [c for c in categories if c not in excluded_categories]
     return categories
+
+def is_core_bot(botengine, is_core_dependent=False):
+    """
+    Return True if this bot is a core or core-dependent bot as described by the marketing.json file.
+    :param botengine: BotEngine environment
+    :param is_core_dependent: True if check for core-dependent
+    :return: True if core or core-dependent
+    """
+    import json
+    import os
+    from pathlib import Path
+    core_bot = 0
+    try:
+        with open(os.path.join(Path(os.path.abspath(os.path.dirname(__file__))).parent, "marketing.json")) as f:
+            j = json.load(f)
+            core_bot = j.get("app", {}).get("core", core_bot)
+    except:
+        botengine.get_logger().warn("utilities.is_core_bot(): Unable to read marketing.json file")
+
+    if is_core_dependent:
+        return core_bot == -1
+    return core_bot == 1
+
+def get_dashboard_status_expiration_time(botengine, location_object):
+    """
+        Return the dashboard status expiration local time (17 pm default)
+        :param botengine:
+        :param location_object
+        :return:
+
+        To make this work, you'll need a file in the base of the bot called 'domain.py' containing configuration settings,
+        or set the properties in your organization.
+
+        It should have a property like this:
+
+            # Command Center URLs
+            DASHBOARD_STATUS_EXPIRATION_HH_MM_SS_MS = "12:00:00:00"
+    """
+    botengine.get_logger(f"{__name__}").debug(">get_dashboard_status_expiration_time()")
+    import properties
+    time_string = properties.get_property(botengine, "DASHBOARD_STATUS_EXPIRATION_HH_MM_SS_MS", complain_if_missing=False)
+    if time_string is None:
+        expiration_time = location_object.get_local_datetime(botengine).replace(hour=19,minute=0,second=0,microsecond=0)
+    else:
+        hours, minutes, seconds, microseconds = map(int, time_string.split(':'))
+        expiration_time = location_object.get_local_datetime(botengine).replace(hour=hours, minute=minutes, second=seconds,microsecond=microseconds)
+    
+    if expiration_time < location_object.get_local_datetime(botengine):
+        from datetime import timedelta
+        expiration_time += timedelta(days=1)
+
+    botengine.get_logger(f"{__name__}").debug("<get_dashboard_status_expiration_time() expiration_time={}".format(expiration_time))
+    return expiration_time
 
 
 def getsize(obj_0):

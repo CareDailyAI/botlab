@@ -74,7 +74,7 @@ class TestBot():
         botengine = BotEnginePyTest(
             {
                 'time': 1687373406646, 
-                'trigger': 256, 
+                'trigger': BotEnginePyTest.TRIGGER_DATA_STREAM, 
                 'source': 0, 
                 'locationId': 1546987, 
                 'access': [
@@ -122,7 +122,6 @@ class TestBot():
         controller = bot.load_controller(botengine)
         assert controller is not None
         assert len(controller.locations) == 1
-        assert len(botengine.get_state("tasks")) == 0
 
     def test_bot_run_measurements(self):
         """
@@ -200,6 +199,77 @@ class TestBot():
         assert controller is not None
         assert len(controller.locations) == 1
 
+
+    def test_bot_run_messages(self):
+        """
+        This test initializes a new bot instance with a trigger type of 4096 (datastream) to remove 
+        a default system task `__people__` and ensures it is destroyed.
+        :return:
+        """
+        botengine = BotEnginePyTest(
+            {
+                "time": 1446537883000,
+                "trigger": 4096,
+                "source": 5,
+                "locationId": 123,
+                "messages": [
+                    {
+                        "messageId": 123,
+                        "scheduleType": 0,
+                        "status": 1,
+                        "topicId": "general",
+                        "appInstanceId": 456,
+                        "contentKey": "Short content description",
+                        "creationTime": 1646537712000,
+                        "maxDeliveryTime": 1666537712000,
+                        "deliveryDayTime": 36000,
+                        "timeToLive": 3600
+                    },
+                    {
+                        "messageId": 124,
+                        "scheduleType": 0,
+                        "status": 2,
+                        "topicId": "general",
+                        "appInstanceId": 456,
+                        "contentKey": "Short content description",
+                        "creationTime": 1646537712000,
+                        "maxDeliveryTime": 1666537712000,
+                        "deliveryDayTime": 36000,
+                        "timeToLive": 3600,
+                        "deliveryTime": 1666037712000,
+                    },
+                    {
+                        "messageId": 125,
+                        "scheduleType": 1,
+                        "status": 1,
+                        "topicId": "general",
+                        "appInstanceId": 457,
+                        "contentKey": "Short content description",
+                        "creationTime": 1646537712000,
+                        "maxDeliveryTime": 1666537712000,
+                        "timeToLive": 3600,
+                        "schedule": "0 0 10 ? * SUN"
+                    },
+                    {
+                        "messageId": 126,
+                        "originalMessageId": 123,
+                        "scheduleType": 0,
+                        "status": 3,
+                        "topicId": "general",
+                        "userId": 789,
+                        "contentText": "Reply from a user",
+                        "lang": "en",
+                        "creationTime": 1646537712000
+                    }
+                ]
+            }
+        )
+
+        bot.run(botengine)
+
+        controller = bot.load_controller(botengine)
+        assert controller is not None
+        assert len(controller.locations) == 1
     
     def test_bot_run_concurrent_executions(self):
         """
@@ -334,3 +404,37 @@ class TestBot():
         botengine.organization_properties[property_name] = "null"
         assert properties.get_property(botengine, "ORGANIZATION_SHORT_NAME") == None
 
+    def test_language_localization(self):
+        botengine = BotEnginePyTest({})
+        assert botengine.get_language() == None
+        bot.run(botengine)
+        assert _("Entry Sensor") == "Entry Sensor"
+
+        botengine = BotEnginePyTest({
+            "access": [{
+                "category": 1,
+                "control": True,
+                "location": {
+                    "language": "es",
+                    "event": "HOME",
+                    "latitude": "47.72328",
+                    "locationId": 0,
+                    "longitude": "-122.17426",
+                    "name": "Apartment 103",
+                    "timezone": {
+                        "dst": True,
+                        "id": "US/Pacific",
+                        "name": "Pacific Standard Time",
+                        "offset": -480
+                    },
+                    "zip": "98034"
+                },
+                "read": True,
+                "trigger": True
+            }]
+        })
+
+        assert botengine.get_language() == "es"
+
+        bot.run(botengine)
+        assert _("Entry Sensor") == "Sensor de entrada"

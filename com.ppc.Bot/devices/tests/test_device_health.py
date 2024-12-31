@@ -3,6 +3,7 @@ from botengine_pytest import BotEnginePyTest
 from devices.health.health import HealthDevice
 from devices.health.health_apple import AppleHealthDevice
 from devices.health.health_google import GoogleHealthDevice
+from devices.health.health_withings_sleep import WithingsSleepHealthDevice
 
 from locations.location import Location
 import utilities.utilities as utilities
@@ -52,6 +53,14 @@ class TestHealthDevice():
         assert mut.measurement_odometer == 0
         assert mut.last_communications_timestamp == None
         assert mut.intelligence_modules == {}
+
+
+        mut = AppleHealthDevice(botengine, location_object, device_id, device_type, device_desc)
+
+        assert mut.distance_moved == 0
+        assert mut.detect_movements == False
+        assert mut.information_moving == False
+        assert mut.knowledge_moving == False
 
     def test_device_health_intelligence_modules(self):
         botengine = BotEnginePyTest({})

@@ -21,6 +21,7 @@ def get_property(botengine, name, complain_if_missing=True):
     if botengine is not None:
         if name in botengine.organization_properties:
             property = str(botengine.organization_properties[name]).replace("null", "None").replace("false", "False").replace("true", "True")
+            botengine.get_logger(f"{__name__}").debug("properties.py: Using organization property '{}' {}.".format(name, property))
             try:
                 return eval(property)
             except Exception as e:
@@ -29,7 +30,11 @@ def get_property(botengine, name, complain_if_missing=True):
     # Attempt to extract the local property
     import domain
     try:
-        return getattr(domain, name)
+        property = getattr(domain, name)
+
+        if botengine is not None:
+            botengine.get_logger(f"{__name__}").debug("properties.py: Using domain property '{}' {}.".format(name, property))
+        return property
     except:
         # Couldn't find it locally, return None
         if complain_if_missing:

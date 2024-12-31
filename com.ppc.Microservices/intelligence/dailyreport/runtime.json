@@ -26,6 +26,9 @@
         "address": "daily_report_status_updated"
       },
       {
+        "address": "update_daily_report_gpt_report_types"
+      },
+      {
         "address": "sunrise_fired"
       }
     ]

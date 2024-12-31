@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-08 16:54-0800\n"
-"PO-Revision-Date: 2023-04-21 20:42+0000\n"
-"Last-Translator: Destry Teeter <destry@peoplepowerco.com>\n"
+"POT-Creation-Date: 2024-12-31 09:30-0800\n"
+"PO-Revision-Date: 2024-12-31 17:28+0000\n"
+"Last-Translator: Weblate <noreply-mt-weblate@weblate.org>\n"
 "Language: es\n"
 "Language-Team: Spanish <http://weblate-"
 "eu.peoplepowerco.com/projects/botlab/com-ppc-bot/es/>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.15.0\n"
 
 #: devices/thermostat/thermostat.py:245 devices/thermostat/thermostat.py:325
 msgid "'{}' now set to {}"
@@ -58,25 +58,25 @@ msgstr "'{}': Preferencias nocturnas aprendidas."
 msgid "'{}': Sleep mode"
 msgstr "'{}': Modo de sueño"
 
-#: utilities/utilities.py:283
+#: utilities/utilities.py:290
 msgid "0 seconds"
 msgstr "0 segundos"
 
-#: utilities/utilities.py:267
+#: utilities/utilities.py:274
 msgid "1 hour"
 msgstr "1 hora"
 
-#: utilities/utilities.py:272
+#: utilities/utilities.py:279
 msgid "1 minute"
 msgstr "1 minuto"
 
-#: utilities/utilities.py:278
+#: utilities/utilities.py:285
 msgid "1 second"
 msgstr "1 segundo"
 
 #: signals/dashboard.py:13
 msgid "ALERTS"
-msgstr ""
+msgstr "ALERTAS"
 
 #: confidence/occupancy_confidence_machine.py:86
 #: confidence/occupancy_confidence_machine.py:136
@@ -87,13 +87,13 @@ msgstr "Añade 1 Dispositivo de entrada para mejorar la confianza."
 #: confidence/occupancy_confidence_machine.py:89
 #: confidence/occupancy_confidence_machine.py:132
 #: confidence/occupancy_confidence_machine.py:144
-msgid "Add 1 Motion or Vayyar device to improve the confidence."
-msgstr "Añade 1 dispositivo Motion o Vayyar más para mejorar la confianza."
+msgid "Add 1 Motion or Radar device to improve the confidence."
+msgstr "Agregue 1 dispositivo de movimiento o radar para mejorar la confianza."
 
 #: confidence/occupancy_confidence_machine.py:77
 #: confidence/sleep_confidence_machine.py:105
-msgid "Add 1 more Motion or Vayyar device to improve the confidence."
-msgstr "Añade 1 dispositivo Motion o Vayyar más para mejorar la confianza."
+msgid "Add 1 more Motion or Radar device to improve the confidence."
+msgstr "Agregue 1 dispositivo de movimiento o radar más para mejorar la confianza."
 
 #: confidence/occupancy_confidence_machine.py:81
 msgid "Add 1 more entry device to improve the confidence."
@@ -101,19 +101,19 @@ msgstr "Añade 1 dispositivo de entrada más para mejorar la confianza."
 
 #: confidence/sleep_confidence_machine.py:113
 msgid ""
-"Add more Motion or Vayyar devices installed inside bedroom to improve the"
-" confidence."
+"Add more Motion or Radar devices installed inside bedroom to improve the "
+"confidence."
 msgstr ""
-"Añade más dispositivos Motion o Vayyar instalados dentro del dormitorio "
-"para mejorar la confianza."
+"Agregue más dispositivos de movimiento o radar instalados dentro del "
+"dormitorio para mejorar la confianza."
 
 #: confidence/sleep_confidence_machine.py:110
 msgid ""
-"Add more Motion or Vayyar devices installed outside bedroom to improve "
-"the confidence."
+"Add more Motion or Radar devices installed outside bedroom to improve the"
+" confidence."
 msgstr ""
-"Añade más dispositivos Motion o Vayyar instalados fuera del dormitorio "
-"para mejorar la confianza."
+"Agregue más dispositivos de movimiento o radar instalados fuera del "
+"dormitorio para mejorar la confianza."
 
 #. Abstract device type name, doesn't show up in end user documentation
 #: devices/alarm/alarm.py:27 devices/alarm/alarm_eu_develco.py:35
@@ -131,7 +131,7 @@ msgid "Android Picture Frame"
 msgstr "Marco de fotos de Android"
 
 #. Device type name
-#: devices/health/health_apple.py:30
+#: devices/health/health_apple.py:90
 msgid "Apple Health"
 msgstr "Salud de la Manzana"
 
@@ -145,11 +145,27 @@ msgstr "Proxy de Apple"
 msgid "Assist Button"
 msgstr "Botón de asistencia"
 
+#: signals/radar.py:115
+msgid "Bathtub / Shower"
+msgstr "Bañera / Ducha"
+
+#: signals/radar.py:79
+msgid "Bed"
+msgstr "Cama"
+
 #. Abstract device type name, doesn't show up in end user documentation
 #: devices/button/button.py:67 devices/button/button_develco.py:51
 #: devices/button/button_linkhigh.py:60
 msgid "Button"
 msgstr "Botón"
+
+#: signals/radar.py:106
+msgid "CPAP Machine"
+msgstr "CPAP Machine"
+
+#: signals/radar.py:85
+msgid "California King Bed"
+msgstr "Cama California King"
 
 #. Abstract device type name, doeesn't show up in end user documentation
 #: devices/camera/camera.py:24
@@ -166,16 +182,28 @@ msgstr "Sensor de monóxido de carbono"
 msgid "Centralite Pearl Thermostat"
 msgstr "Termostato Centralite Pearl"
 
+#: signals/radar.py:124
+msgid "Chair"
+msgstr "Silla"
+
 #: devices/thermostat/thermostat.py:273 devices/thermostat/thermostat.py:340
 msgid "Cooling set point adjusted"
 msgstr "Punto de ajuste de refrigeración ajustado"
 
-#: signals/dashboard.py:400
+#: signals/radar.py:127
+msgid "Couch"
+msgstr "Sofá"
+
+#: signals/radar.py:100
+msgid "Crib"
+msgstr "Cuna"
+
+#: signals/dashboard.py:405
 msgid "DISABLED"
-msgstr ""
+msgstr "DISCAPACITADO"
 
 #. Super abstract device type name
-#: devices/device.py:297
+#: devices/device.py:317
 msgid "Device"
 msgstr "Dispositivo"
 
@@ -189,10 +217,22 @@ msgstr "Ecobee"
 msgid "Emerson Thermostat"
 msgstr "Termostato Emerson"
 
+#: signals/radar.py:103
+msgid "End Table"
+msgstr "Mesa auxiliar"
+
 #. Device type name
-#: devices/entry/entry.py:62
+#: devices/entry/entry.py:62 tests/test_bot.py:412 tests/test_bot.py:441
 msgid "Entry Sensor"
 msgstr "Sensor de entrada"
+
+#: signals/radar.py:130
+msgid "Exit Door"
+msgstr "Puerta de salida"
+
+#: signals/radar.py:91
+msgid "Full Bed"
+msgstr "Cama completa"
 
 #. Device type name
 #: devices/light/lightswitch_ge.py:42
@@ -200,13 +240,12 @@ msgid "GE In-Wall Switch"
 msgstr "Interruptor de pared GE"
 
 #. Device type name
-#: devices/health/health_google.py:24
-#, fuzzy
+#: devices/health/health_google.py:43
 msgid "Google Health"
-msgstr "Salud de la Manzana"
+msgstr "Google Salud"
 
 #. Device type name
-#: devices/health/health.py:128
+#: devices/health/health.py:84
 msgid "Health"
 msgstr "Salud"
 
@@ -224,6 +263,10 @@ msgstr "Termostato Lyric Honeywell"
 msgid "IO Module"
 msgstr "Módulo IO"
 
+#: signals/radar.py:76
+msgid "Ignore Region"
+msgstr "Ignorar la región"
+
 #. Device type name
 #: devices/light/light_inwall_dimmer.py:24
 msgid "In-Wall Dimmer"
@@ -238,6 +281,10 @@ msgstr "Toma de corriente en la pared"
 #: devices/keypad/keypad.py:50 devices/keypad/keypad_develco.py:89
 msgid "Keypad"
 msgstr "Teclado"
+
+#: signals/radar.py:82
+msgid "King Bed"
+msgstr "Cama King"
 
 #. Device type name - Smartenit Large Load Controller
 #: devices/smartplug/smartplug_smartenit_largeload.py:31
@@ -276,11 +323,11 @@ msgstr "Sensor de movimiento"
 
 #: signals/dashboard.py:12
 msgid "NOW"
-msgstr ""
+msgstr "AHORA"
 
-#: signals/dashboard.py:435
+#: signals/dashboard.py:440
 msgid "Okay, resolving the notification..."
-msgstr ""
+msgstr "De acuerdo, resolviendo la notificación ..."
 
 #. Device type name
 #: devices/pictureframe/pictureframe_peoplepower.py:107
@@ -302,19 +349,26 @@ msgstr "Almohadilla de presión"
 msgid "Proxy"
 msgstr "Proxy"
 
-#: signals/dashboard.py:398
-msgid "RUNNING"
-msgstr ""
+#: signals/radar.py:88
+msgid "Queen Bed"
+msgstr "Cama Queen"
 
-#: signals/dashboard.py:435
-#, fuzzy
+#: signals/dashboard.py:403
+msgid "RUNNING"
+msgstr "CORRIENDO"
+
+#. Abstract device type name, doesn't show up in end user documentation
+#: devices/radar/radar.py:130
+msgid "Radar"
+msgstr "Radar"
+
+#: signals/dashboard.py:440
 msgid "Resolve"
-msgstr "estufa"
+msgstr "Resolver"
 
 #: signals/dashboard.py:16
-#, fuzzy
 msgid "SERVICES"
-msgstr "Dispositivo"
+msgstr "SERVICIOS"
 
 #. Device type name
 #: devices/thermostat/thermostat_sensibo_sky.py:53
@@ -334,6 +388,14 @@ msgstr "Configurando su termostato ecobee en modo de inicio."
 #: devices/thermostat/thermostat_ecobee.py:222
 msgid "Setting your ecobee thermostat into Sleep mode."
 msgstr "Configurar su termostato ecobee en modo de suspensión."
+
+#: signals/radar.py:118
+msgid "Shower"
+msgstr "Ducha"
+
+#: signals/radar.py:121
+msgid "Sink"
+msgstr "Fregadero"
 
 #. Device type name
 #: devices/siren/siren.py:36
@@ -359,7 +421,7 @@ msgstr "Dimmer inteligente"
 #. Device type name
 #. Device type name.
 #: devices/gateway/gateway.py:26
-#: devices/gateway/gateway_develco_squidlink.py:47
+#: devices/gateway/gateway_develco_squidlink.py:48
 #: devices/gateway/gateway_dsr_sgw.py:24
 #: devices/gateway/gateway_peoplepower_edge.py:26
 #: devices/gateway/gateway_peoplepower_iotgateway.py:26
@@ -377,6 +439,10 @@ msgstr "Smart Home Center"
 msgid "Smart Plug"
 msgstr "Enchufe inteligente"
 
+#: signals/radar.py:132
+msgid "Subregion"
+msgstr "Subregión"
+
 #. Device type name
 #: devices/environment/temperature.py:37
 msgid "Temperature Sensor"
@@ -386,6 +452,14 @@ msgstr "Sensor de temperatura"
 #: devices/environment/temperaturehumidity.py:58
 msgid "Temperature and Humidity Sensor"
 msgstr "Sensor de temperatura y humedad"
+
+#: signals/radar.py:109
+msgid "Toilet"
+msgstr "Baño"
+
+#: signals/radar.py:112
+msgid "Toilet Tank"
+msgstr "Cisterna del inodoro"
 
 #. Device type name
 #: devices/movement/touch.py:47
@@ -397,19 +471,24 @@ msgstr "Sensor tactil"
 msgid "Touchpad"
 msgstr "Panel táctil"
 
-#: signals/dashboard.py:435
+#: signals/radar.py:97
+msgid "Twin Bed"
+msgstr "Cama doble"
+
+#: signals/radar.py:94
+msgid "Twin XL Bed"
+msgstr "Cama Twin XL"
+
+#: signals/dashboard.py:440
 msgid "UPDATE STATUS >"
-msgstr ""
+msgstr "ACTUALIZAR ESTADO >"
 
-#: signals/dashboard.py:435
+#: signals/dashboard.py:440
 msgid "Update Status"
-msgstr ""
+msgstr "Estado de actualización"
 
-#. Deprecated 9/29/22.  Falls are directly aligned with the "calling"
-#. fall_status measurement.  Logic is repurposed to measure stability events.
-#. See `stability_event_count`
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/vayyar/vayyar.py:185
+#: devices/radar/vayyar/radar.py:143
 msgid "Vayyar Care"
 msgstr "Vayyar Care"
 
@@ -420,19 +499,19 @@ msgstr "Sensor de vibración"
 
 #: confidence/occupancy_confidence_machine.py:124
 msgid ""
-"We don't have Motion or Vayyar or Entry device for occupancy home service"
-" to work."
+"We don't have Motion or Radar or Entry device for occupancy home service "
+"to work."
 msgstr ""
-"No tenemos Motion o Vayyar o dispositivo de entrada para que funcione el "
-"servicio a domicilio de ocupación."
+"No contamos con detector de movimiento, radar ni dispositivo de entrada "
+"para que funcione el servicio de ocupación domiciliaria."
 
 #: confidence/occupancy_confidence_machine.py:69
 msgid ""
-"We don't have enough Motion or Vayyar devices for occupancy away service "
+"We don't have enough Motion or Radar devices for occupancy away service "
 "to work."
 msgstr ""
-"No tenemos suficientes dispositivos Motion o Vayyar para que funcione el "
-"servicio de ocupación a distancia."
+"No contamos con suficientes dispositivos de movimiento o radar para que "
+"funcione el servicio de ocupación fuera del lugar."
 
 #: confidence/sleep_confidence_machine.py:88
 msgid "We don't have enough devices for sleep service to work."
@@ -469,9 +548,9 @@ msgstr ""
 "mediciones recientes."
 
 #. Device type name
-#: devices/health/health_withings_sleep.py:27
+#: devices/health/health_withings_sleep.py:58
 msgid "Withings Sleep"
-msgstr ""
+msgstr "Sueño de Withings"
 
 #: devices/thermostat/thermostat.py:274
 msgid "Your '{}' cooling set point is set to {}."
@@ -543,23 +622,27 @@ msgstr ""
 msgid "air"
 msgstr "aire"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
-#: devices/vayyar/vayyar.py:227
+#: signals/radar.py:221
+msgid "at"
+msgstr "en"
+
+#: devices/motion/motion.py:76 devices/radar/radar.py:172
+#: devices/smartplug/smartbreaker.py:177
 msgid "bath"
 msgstr "baño"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
-#: devices/vayyar/vayyar.py:211
+#: devices/motion/motion.py:63 devices/radar/radar.py:156
+#: devices/smartplug/smartbreaker.py:165
 msgid "bdrm"
 msgstr "bdrm"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
-#: devices/vayyar/vayyar.py:211
+#: devices/motion/motion.py:63 devices/radar/radar.py:156
+#: devices/smartplug/smartbreaker.py:165
 msgid "bed"
 msgstr "cama"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
-#: devices/vayyar/vayyar.py:211
+#: devices/motion/motion.py:63 devices/radar/radar.py:156
+#: devices/smartplug/smartbreaker.py:165
 msgid "bett"
 msgstr "bett"
 
@@ -579,13 +662,13 @@ msgstr "cocinero"
 msgid "cooler"
 msgstr "refrigerador"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
-#: devices/vayyar/vayyar.py:211
+#: devices/motion/motion.py:63 devices/radar/radar.py:156
+#: devices/smartplug/smartbreaker.py:165
 msgid "dad's room"
 msgstr "la habitación de papá"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
-#: devices/vayyar/vayyar.py:211
+#: devices/motion/motion.py:63 devices/radar/radar.py:156
+#: devices/smartplug/smartbreaker.py:165
 msgid "dads room"
 msgstr "la habitación de papá"
 
@@ -602,7 +685,7 @@ msgid "dryer"
 msgstr "secador"
 
 #. "The Moss family <typed a Duress code into the Touchpad>."
-#: utilities/utilities.py:165
+#: utilities/utilities.py:172
 msgid "entered a duress code, indicating a potential threat."
 msgstr "ingresó un código de coacción, lo que indica una amenaza potencial."
 
@@ -623,22 +706,22 @@ msgid "garage"
 msgstr "garaje"
 
 #. "The Moss family <burglary alarm tripped>."
-#: utilities/utilities.py:145
+#: utilities/utilities.py:152
 msgid "has a burglar alarm"
 msgstr "tiene una alarma antirrobo"
 
 #. "The Moss family <burglary alarm tripped because a door opened>."
-#: utilities/utilities.py:153
+#: utilities/utilities.py:160
 msgid "has a burglar alarm because a door opened"
 msgstr "tiene alarma antirrobo porque se abrió una puerta"
 
 #. "The Moss family <burglary alarm tripped because a window opened>."
-#: utilities/utilities.py:149
+#: utilities/utilities.py:156
 msgid "has a burglar alarm because a window opened"
 msgstr "tiene alarma antirrobo porque se abrió una ventana"
 
 #. "The Moss family <burglary alarm tripped shortly after arming>."
-#: utilities/utilities.py:161
+#: utilities/utilities.py:168
 msgid "has a burglar alarm, shortly after arming"
 msgstr "tiene una alarma antirrobo, poco después de armarse"
 
@@ -660,8 +743,12 @@ msgstr "Cámara iOS"
 msgid "iOS Picture Frame"
 msgstr "Marco de imagen de iOS"
 
+#: signals/radar.py:224
+msgid "in"
+msgstr "en"
+
 #. "The Moss family <is experiencing a water leak>."
-#: utilities/utilities.py:157
+#: utilities/utilities.py:164
 msgid "is experiencing a water leak"
 msgstr "está experimentando una fuga de agua"
 
@@ -682,17 +769,17 @@ msgid "light"
 msgstr "luz"
 
 #. "The Moss family <may need some assistance>." - generic message
-#: utilities/utilities.py:169
+#: utilities/utilities.py:176
 msgid "may need some assistance"
 msgstr "puede necesitar algo de ayuda"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
-#: devices/vayyar/vayyar.py:211
+#: devices/motion/motion.py:63 devices/radar/radar.py:156
+#: devices/smartplug/smartbreaker.py:165
 msgid "mom's room"
 msgstr "la habitación de mamá"
 
-#: devices/motion/motion.py:63 devices/smartplug/smartbreaker.py:165
-#: devices/vayyar/vayyar.py:211
+#: devices/motion/motion.py:63 devices/radar/radar.py:156
+#: devices/smartplug/smartbreaker.py:165
 msgid "moms room"
 msgstr "la habitación de mamá"
 
@@ -708,18 +795,18 @@ msgstr "horno"
 msgid "pool"
 msgstr "piscina"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
-#: devices/vayyar/vayyar.py:227
+#: devices/motion/motion.py:76 devices/radar/radar.py:172
+#: devices/smartplug/smartbreaker.py:177
 msgid "powder"
 msgstr "polvo"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
-#: devices/vayyar/vayyar.py:227
+#: devices/motion/motion.py:76 devices/radar/radar.py:172
+#: devices/smartplug/smartbreaker.py:177
 msgid "schlaf"
 msgstr "schlaf"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
-#: devices/vayyar/vayyar.py:227
+#: devices/motion/motion.py:76 devices/radar/radar.py:172
+#: devices/smartplug/smartbreaker.py:177
 msgid "shower"
 msgstr "ducha"
 
@@ -727,8 +814,8 @@ msgstr "ducha"
 msgid "stove"
 msgstr "estufa"
 
-#: devices/motion/motion.py:76 devices/smartplug/smartbreaker.py:177
-#: devices/vayyar/vayyar.py:227
+#: devices/motion/motion.py:76 devices/radar/radar.py:172
+#: devices/smartplug/smartbreaker.py:177
 msgid "toilet"
 msgstr "aseo"
 
@@ -740,15 +827,15 @@ msgstr "bañera"
 msgid "water heater"
 msgstr "calentador de agua"
 
-#: utilities/utilities.py:269
+#: utilities/utilities.py:276
 msgid "{} hours"
 msgstr "{} horas"
 
-#: utilities/utilities.py:274
+#: utilities/utilities.py:281
 msgid "{} minutes"
 msgstr "{} minutos"
 
-#: utilities/utilities.py:280
+#: utilities/utilities.py:287
 msgid "{} seconds"
 msgstr "{} segundos"
 

@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 import logging
+import json
 
 from botengine_pytest import BotEnginePyTest
 from locations.location import Location
@@ -93,3 +94,25 @@ class TestUtilities(unittest.TestCase):
     def test_utilities_getsize(self):
         assert utilities.getsize({}) is not None
         assert utilities.getsize({}) == 64
+
+    @patch("json.loads")
+    def test_utilities_core_bot(self, json_loads_mock):
+        botengine = BotEnginePyTest({})
+
+        json_loads_mock.return_value = {"app": {}}
+        assert utilities.is_core_bot(botengine) == False
+        
+        json_loads_mock.return_value = {"app": {"core": 1}}
+        assert utilities.is_core_bot(botengine) == True
+
+        json_loads_mock.return_value = {"app": {"core": -1}}
+        assert utilities.is_core_bot(botengine) == False
+
+        json_loads_mock.return_value = {"app": {}}
+        assert utilities.is_core_bot(botengine, True) == False
+        
+        json_loads_mock.return_value = {"app": {"core": 1}}
+        assert utilities.is_core_bot(botengine, True) == False
+
+        json_loads_mock.return_value = {"app": {"core": -1}}
+        assert utilities.is_core_bot(botengine, True) == True

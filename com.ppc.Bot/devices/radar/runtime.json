@@ -1,0 +1,19 @@
+{
+  "version": {
+    "triggerParameters": [
+      "fallSilent",
+      "fallStatus",
+      "occupancy",
+      "occupancyTarget",
+      "occupancyMap",
+      "aliveTime",
+      "rssi",
+      "status",
+      "firmware",
+      "doorEvent",
+      "fallLocX",
+      "fallLocY",
+      "fallLocZ"
+    ]
+  }
+}

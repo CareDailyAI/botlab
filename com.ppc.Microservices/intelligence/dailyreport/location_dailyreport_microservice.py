@@ -6,9 +6,9 @@ file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
 '''
-
+# TODO: Create a datastream address to "configure" the daily report by changing the level of detail for a given location: Low, Medium, High
 from intelligence.intelligence import Intelligence
-
+import random
 import properties
 import json
 import utilities.utilities as utilities
@@ -17,7 +17,7 @@ import signals.dailyreport as dailyreport
 import signals.dashboard as dashboard
 
 # Current version
-VERSION = 1.1
+VERSION = 1.2
 
 # Section Properties
 DEFAULT_SECTION_PROPERTIES = {
@@ -28,21 +28,21 @@ DEFAULT_SECTION_PROPERTIES = {
         dailyreport.SECTION_KEY_ICON: "heart",
         dailyreport.SECTION_KEY_COLOR: "F47174",
         dailyreport.SECTION_KEY_TREND_IDS: [
-            "trend.sleep_score", 
-            "trend.bedtime_score", 
-            "trend.wakeup_score", 
-            "trend.restlessness_score", 
-            "trend.wellness_score", 
-            "trend.mobility_score",
-            "trend.stability_score",
-            "trend.hygiene_score", 
-            "trend.bathroom_score",
-            "trend.social_score", 
-            "trend.care_score",
-            "trend.illbeing_score",
-            "trend.positivity_score",
-            "trend.sleep_diary",
-            "trend.percieved_stress_scale",
+            # "trend.sleep_score", 
+            # "trend.bedtime_score", 
+            # "trend.wakeup_score", 
+            # "trend.restlessness_score", 
+            #"trend.wellness_score", 
+            # "trend.mobility_score",
+            # "trend.stability_score",
+            # "trend.hygiene_score", 
+            # "trend.bathroom_score",
+            # "trend.social_score", 
+            # "trend.care_score",
+            # "trend.illbeing_score",
+            # "trend.positivity_score",
+            # "trend.sleep_diary",
+            # "trend.percieved_stress_scale",
         ],
         dailyreport.SECTION_KEY_INSIGHT_IDS: [],
     },
@@ -57,21 +57,21 @@ DEFAULT_SECTION_PROPERTIES = {
             "trend.fall_duration",
         ],
         dailyreport.SECTION_KEY_INSIGHT_IDS: [
-            "care.inactivity.bedtime_awake_too_late", 
-            "sleep.low_sleep_quality.warning", 
-            "sleep.too_many_bathrooms.warning", 
-            "care.inactivity.time_to_stretch", 
-            "care.inactivity.warning", 
-            "care.inactivity.good_morning_sleeping_in", 
-            "care.inactivity.good_morning_problem_critical", 
-            "care.inactivity.good_morning_problem", 
-            "care.inactivity.not_back_home.warning", 
-            "request_assistance", 
-            "care.sms_sos", 
-            "health_high_heart_rate_warning", 
-            "health_movement_confirmed_alert", 
-            "vayyar.fall_confirmed_alert", 
-            "vayyar.stability_event_confirmed_alert",
+            # "care.inactivity.bedtime_awake_too_late", 
+            # "sleep.low_sleep_quality.warning", 
+            # "sleep.too_many_bathrooms.warning", 
+            # "care.inactivity.time_to_stretch", 
+            # "care.inactivity.warning", 
+            # "care.inactivity.good_morning_sleeping_in", 
+            # "care.inactivity.good_morning_problem_critical", 
+            # "care.inactivity.good_morning_problem", 
+            # "care.inactivity.not_back_home.warning", 
+            # "request_assistance", 
+            # "care.sms_sos", 
+            # "health_high_heart_rate_warning", 
+            # "health_movement_confirmed_alert", 
+            # "vayyar.fall_confirmed_alert", 
+            # "vayyar.stability_event_confirmed_alert",
         ],
     },
     dailyreport.SECTION_ID_NOTES: {
@@ -107,17 +107,17 @@ DEFAULT_SECTION_PROPERTIES = {
             "trend.nap_duration",
         ],
         dailyreport.SECTION_KEY_INSIGHT_IDS: [
-            "sleep.duration_ms", 
-            "sleep.bedtime_ms", 
-            "sleep.wakeup_ms", 
-            "sleep.sleep_score", 
-            "sleep.underslept", 
-            "sleep.overslept", 
-            "sleep.bedtime_score", 
-            "sleep.wakeup_ms", 
-            "sleep.restlessness_score", 
-            "sleep.sleep_prediction_ms", 
-            "sleep.wake_prediction_ms",
+            # "sleep.duration_ms", 
+            # "sleep.bedtime_ms", 
+            # "sleep.wakeup_ms", 
+            # "sleep.sleep_score", 
+            # "sleep.underslept", 
+            # "sleep.overslept", 
+            # "sleep.bedtime_score", 
+            # "sleep.wakeup_ms", 
+            # "sleep.restlessness_score", 
+            # "sleep.sleep_prediction_ms", 
+            # "sleep.wake_prediction_ms",
         ],
     },
     dailyreport.SECTION_ID_ACTIVITIES: {
@@ -128,7 +128,7 @@ DEFAULT_SECTION_PROPERTIES = {
         dailyreport.SECTION_KEY_COLOR: "27195F",
         dailyreport.SECTION_KEY_TREND_IDS: [
             "trend.mobility_duration", 
-            "trend.mobility_rooms", 
+            # "trend.mobility_rooms", 
             "sitting"
         ],
         dailyreport.SECTION_KEY_INSIGHT_IDS: [],
@@ -159,8 +159,8 @@ DEFAULT_SECTION_PROPERTIES = {
         dailyreport.SECTION_KEY_COLOR: "17A5F6",
         dailyreport.SECTION_KEY_TREND_IDS: [
             "trend.bathroom_visits", 
-            "trend.bathroom_duration", 
-            "trend.shower_visits", 
+            # "trend.bathroom_duration", 
+            # "trend.shower_visits", 
         ],
         dailyreport.SECTION_KEY_INSIGHT_IDS: [],
     },
@@ -174,8 +174,7 @@ DEFAULT_SECTION_PROPERTIES = {
             "trend.absent", 
             "trend.checkedin", 
             "trend.visitor", 
-            "trend.together", 
-            "occupancy.return_ms"
+            "trend.together"
         ],
         dailyreport.SECTION_KEY_INSIGHT_IDS: [],
     },
@@ -195,10 +194,7 @@ DEFAULT_SECTION_PROPERTIES = {
         dailyreport.SECTION_KEY_ICON: "brain",
         dailyreport.SECTION_KEY_COLOR: "787F84",
         dailyreport.SECTION_KEY_TREND_IDS: [],
-        dailyreport.SECTION_KEY_INSIGHT_IDS: [
-            "security_mode", 
-            "occupancy.status"
-        ],
+        dailyreport.SECTION_KEY_INSIGHT_IDS: [],
     }
 }
 
@@ -556,11 +552,13 @@ class LocationDailyReportMicroservice(Intelligence):
 
         week_key = self._report_key(botengine, report_address=WEEKLY_REPORT_ADDRESS, date=self.parent.get_local_datetime(botengine))
         month_key = self._report_key(botengine, report_address=MONTHLY_REPORT_ADDRESS, date=self.parent.get_local_datetime(botengine))
-
-        if week_key not in self.weekly_reports:
-            self.weekly_reports[week_key] = {}
-        if month_key not in self.monthly_reports:
-            self.monthly_reports[month_key] = {}
+        
+        if self._weekly_reports_enabled(botengine):
+            if week_key not in self.weekly_reports:
+                self.weekly_reports[week_key] = {}
+        if self._monthly_reports_enabled(botengine):
+            if month_key not in self.monthly_reports:
+                self.monthly_reports[month_key] = {}
 
         value = insight_json.get('value', None)
         if value is None:
@@ -586,17 +584,19 @@ class LocationDailyReportMicroservice(Intelligence):
         if description is not None:
             self._add_entry(botengine, section_id, comment=description, identifier=f"insight-{insight_id}")
         
-        if f"insight-{insight_id}" not in self.weekly_reports[week_key]:
-            self.weekly_reports[week_key][f"insight-{insight_id}"] = {
-                "title": insight_json.get('title', "Insight"),
-                "values": {},
-            }
+        if self._weekly_reports_enabled(botengine):
+            if f"insight-{insight_id}" not in self.weekly_reports[week_key]:
+                self.weekly_reports[week_key][f"insight-{insight_id}"] = {
+                    "title": insight_json.get('title', "Insight"),
+                    "values": {},
+                }
 
-        if f"insight-{insight_id}" not in self.monthly_reports[month_key]:
-            self.monthly_reports[month_key][f"insight-{insight_id}"] = {
-                "title": insight_json.get('title', "Insight"),
-                "values": {},
-            }
+        if self._monthly_reports_enabled(botengine):
+            if f"insight-{insight_id}" not in self.monthly_reports[month_key]:
+                self.monthly_reports[month_key][f"insight-{insight_id}"] = {
+                    "title": insight_json.get('title', "Insight"),
+                    "values": {},
+                }
 
         # Extrapolate some trend data into a format that is more useful for the report
         # Assign the data to the appropriate day of the week
@@ -615,12 +615,14 @@ class LocationDailyReportMicroservice(Intelligence):
 
             value = relative_time
 
-        if day_of_week not in self.weekly_reports[week_key][f"insight-{insight_id}"]["values"]:
-            self.weekly_reports[week_key][f"insight-{insight_id}"]["values"][day_of_week] = []
-        self.weekly_reports[week_key][f"insight-{insight_id}"]["values"][day_of_week].append(value)
-        if day not in self.monthly_reports[month_key][f"insight-{insight_id}"]["values"]:
-            self.monthly_reports[month_key][f"insight-{insight_id}"]["values"][day] = []
-        self.monthly_reports[month_key][f"insight-{insight_id}"]["values"][day].append(value)
+        if self._weekly_reports_enabled(botengine):
+            if day_of_week not in self.weekly_reports[week_key][f"insight-{insight_id}"]["values"]:
+                self.weekly_reports[week_key][f"insight-{insight_id}"]["values"][day_of_week] = []
+            self.weekly_reports[week_key][f"insight-{insight_id}"]["values"][day_of_week].append(value)
+        if self._monthly_reports_enabled(botengine):
+            if day not in self.monthly_reports[month_key][f"insight-{insight_id}"]["values"]:
+                self.monthly_reports[month_key][f"insight-{insight_id}"]["values"][day] = []
+            self.monthly_reports[month_key][f"insight-{insight_id}"]["values"][day].append(value)
 
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<capture_insight()")
         return
@@ -651,6 +653,7 @@ class LocationDailyReportMicroservice(Intelligence):
             botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<trend_processed() Service is not enabled")
             return
         # Trends are dependent upon the device being present or by the parent location.
+        # TODO: Deprecated deviceless_trends
         if len(self.parent.devices) == 0 and not self.parent.deviceless_trends:
             botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<trend_processed() No devices or deviceless trends")
             return
@@ -705,10 +708,24 @@ class LocationDailyReportMicroservice(Intelligence):
                 self._add_entry(botengine, section_id, comment=None, identifier=f"trend-{trend_id}")
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<trend_processed() Missing comment for trend: {}".format(trend_id))
                 return
-            comment = display
-            if metadata.get("title", None) is not None:
-                comment = "{}: {}".format(metadata.get("title", None), comment)
-            self._add_entry(botengine, section_id, comment=comment, identifier=f"trend-{trend_id}")
+
+            # Create a comment based on the trend data
+            comment = None
+            if not self.parent.is_on_vacation(botengine):
+                comment = self.get_daily_comment(botengine, trend_info)
+            
+
+            # Ignore any trends where comments are excluded
+            if comment is not None:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|trend_processed() comment={}".format(comment))
+                # If not given a prescribed comment, and has a title, use the title and display value as the comment
+                if len(comment) == 0 and metadata.get("title", None) is not None:
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|trend_processed() metadata title={}".format(metadata.get("title", None)))
+                    comment = "{}: {}".format(metadata.get("title", None), display)
+            
+                self._add_entry(botengine, section_id, comment=comment, identifier=f"trend-{trend_id}")
+            else:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|trend_processed() No comment for trend: {}".format(trend_id))
         
         # Track this trend for weekly and monthly reports
         timestamp = trend_info.get('updated_ms', botengine.get_timestamp())
@@ -716,25 +733,903 @@ class LocationDailyReportMicroservice(Intelligence):
         weekly_key = self._report_key(botengine, report_address=WEEKLY_REPORT_ADDRESS, date=self.parent.get_local_datetime_from_timestamp(botengine, timestamp))
         monthly_key = self._report_key(botengine, report_address=MONTHLY_REPORT_ADDRESS, date=self.parent.get_local_datetime_from_timestamp(botengine, timestamp))
 
-        if weekly_key not in self.weekly_reports:
-            self.weekly_reports[weekly_key] = {}
-        if f"trend-{trend_id}" not in self.weekly_reports[weekly_key]:
-            self.weekly_reports[weekly_key][f"trend-{trend_id}"] = {}
+        if self._weekly_reports_enabled(botengine):
+            if weekly_key not in self.weekly_reports:
+                self.weekly_reports[weekly_key] = {}
+            if f"trend-{trend_id}" not in self.weekly_reports[weekly_key]:
+                self.weekly_reports[weekly_key][f"trend-{trend_id}"] = {}
 
-        if monthly_key not in self.monthly_reports:
-            self.monthly_reports[monthly_key] = {}
-        if f"trend-{trend_id}" not in self.monthly_reports[monthly_key]:
-            self.monthly_reports[monthly_key][f"trend-{trend_id}"] = {}
+        if self._monthly_reports_enabled(botengine):
+            if monthly_key not in self.monthly_reports:
+                self.monthly_reports[monthly_key] = {}
+            if f"trend-{trend_id}" not in self.monthly_reports[monthly_key]:
+                self.monthly_reports[monthly_key][f"trend-{trend_id}"] = {}
+                
         updated_ms = trend_info.get('updated_ms', None)
         if updated_ms is None:
             updated_ms = botengine.get_timestamp()
         
         # Store daily trends for weekly report metrics
-        self.weekly_reports[weekly_key][f"trend-{trend_id}"][daily_key] = trend_info
+        if self._weekly_reports_enabled(botengine):
+            self.weekly_reports[weekly_key][f"trend-{trend_id}"][daily_key] = trend_info
 
         # Store weekly trends for monthly report metrics
-        self.monthly_reports[monthly_key][f"trend-{trend_id}"][weekly_key] = trend_info
+        if self._monthly_reports_enabled(botengine):
+            self.monthly_reports[monthly_key][f"trend-{trend_id}"][weekly_key] = trend_info
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<trend_processed()")
+
+    def get_daily_comment(self, botengine, trend_info):
+        """
+        Get comment for daily report
+        :param botengine: BotEngine environment
+        :param trend_info: Trend information
+        :return: comment
+        """
+        trend_id = trend_info.get('trend_id', None)
+
+        value = trend_info.get('value', None)
+        std = trend_info.get('std', None)
+        avg = trend_info.get('avg', None)
+        zscore = trend_info.get('zscore', None)
+        comment = None
+ 
+        #All possible comments
+        possible_comments = {
+            "trend.total_falls": {
+                "value > 0": [
+                    _("A fall might have occurred today."),
+                    _("Possibly, a tumble was taken today."),
+                    _("It’s likely that a fall happened today.")
+                ]
+            },
+            "trend.bedtime": {
+                "std < 600000 and zscore > 2": [
+                    _("Went to bed later than usual."),
+                    _("Stayed up later last night."),
+                    _("Stayed up past normal bedtime."),
+                ],
+                "std < 600000 and zscore < -2": [
+                    _("Went to bed earlier than usual."),
+                    _("Bedtime was earlier than normal."),
+                    _("Went to bed a little before the usual time.")
+                ],
+                "zscore > 2": [
+                    _("Went to bed much later than usual."),
+                    _("Stayed up significantly later last night."),
+                    _("Stayed up well past normal bedtime."),
+                    _("Went to bed much later than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Went to bed a bit later than usual last night."),
+                    _("Bedtime was slightly delayed last night."),
+                    _("Stayed up a tad past the usual bedtime."),
+                    _("Went to bed shortly after normal time.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Went to bed at the usual time."),
+                    _("Turned in for the night at the regular time."),
+                    _("Bedtime was the same as usual last night.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Went to bed a bit earlier last night."),
+                    _("Turned in slightly earlier than normal."),
+                    _("Went to bed a little earlier last night."),
+                    _("Bedtime was just before the usual time.")
+                ],
+                "-2 >= zscore": [
+                    _("Went to bed much earlier last night."),
+                    _("Bedtime was significantly earlier last night."),
+                    _("Turned in much earlier than usual."),
+                    _("Went to bed well before the regular time.")
+                ]
+            },
+            "trend.sleep_bathroom_visits": {
+                "value == 0 and avg >= 1": [
+                    _("Did not use the bathroom last night."),
+                    _("No bathroom visits occurred last night."),
+                    _("No bathroom break was needed last night.")
+                ],
+                "value > 0": [
+                    _("Got up to use the bathroom last night."),
+                    _("Made a trip to the bathroom last night."),
+                    _("Took a bathroom break last night.")
+                ]
+            },
+            "trend.sleep_duration": {
+                "zscore > 2": [
+                    _("Slept much longer than usual last night."),
+                    _("Had significantly more sleep last night."),
+                    _("Slept for a much longer duration than usual."),
+                    _("Sleep was considerably longer last night."),
+                    _("Had an extended sleep last night."),
+                    _("Slept well beyond the usual time."),
+                    _("Sleep duration was much longer than normal."),
+                    _("Had a significantly longer sleep last night."),
+                    _("Slept for a far longer period than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Slept longer than usual."),
+                    _("Had a slightly longer sleep than normal."),
+                    _("Sleep duration was longer than usual."),
+                    _("Enjoyed a longer rest than normal."),
+                    _("Slept a bit longer than the usual time."),
+                    _("Experienced an extended sleep period."),
+                    _("Rest lasted longer than normal."),
+                    _("Slept for a longer time than usual."),
+                    _("Sleep was somewhat longer than usual."),
+                    _("Had a longer sleep than normal.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Slept the usual amount."),
+                    _("Had the regular amount of sleep."),
+                    _("Sleep duration was normal."),
+                    _("Enjoyed the typical amount of rest."),
+                    _("Slept the same amount as usual."),
+                    _("Experienced the usual sleep period."),
+                    _("Rest time was as expected."),
+                    _("Slept for the usual duration."),
+                    _("Sleep was just as normal."),
+                    _("Had the standard amount of sleep.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Slept less than usual."),
+                    _("Had a shorter sleep than normal."),
+                    _("Sleep duration was shorter than usual."),
+                    _("Got less rest than usual."),
+                    _("Slept for a shorter time than normal."),
+                    _("Experienced a reduced sleep period."),
+                    _("Rest time was less than normal."),
+                    _("Slept for less time than usual."),
+                    _("Sleep was shorter than usual."),
+                    _("Had less sleep than the usual amount.")
+                ]
+            },
+            "trend.wakeup": {
+                "std < 600000 and zscore > 2": [
+                    _("Woke up later than usual."),
+                    _("Got up later than typical."),
+                    _("Wake-up time was later than usual."),
+                    _("Woke up a bit later than normal."),
+                    _("Arose later than usual."),
+                    _("Woke up past the usual hour."),
+                    _("Got up later than typical."),
+                    _("Morning started later than usual."),
+                    _("Wake-up was delayed compared to usual."),
+                    _("Got out of bed later than usual.")
+                ],
+                "std < 600000 and zscore < -2": [
+                    _("Woke up earlier than usual."),
+                    _("Got up earlier than typical."),
+                    _("Wake-up time was earlier than usual."),
+                    _("Woke up a bit earlier than normal."),
+                    _("Arose earlier than usual."),
+                    _("Woke up before the usual hour."),
+                    _("Got up earlier than typical."),
+                    _("Morning started earlier than usual."),
+                    _("Wake-up was ahead of schedule compared to usual."),
+                    _("Got out of bed earlier than usual.")
+                ],
+                "zscore > 2": [
+                    _("Woke up much later than usual."),
+                    _("Got up significantly later than typical."),
+                    _("Wake-up time was much later than usual."),
+                    _("Woke up far later than normal."),
+                    _("Arose much later than usual."),
+                    _("Woke up well past the usual hour."),
+                    _("Got up much later than typical."),
+                    _("Morning started much later than usual."),
+                    _("Wake-up was considerably delayed compared to usual."),
+                    _("Got out of bed much later than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Woke up later than usual."),
+                    _("Got up later than typical."),
+                    _("Wake-up time was later than usual."),
+                    _("Woke up a bit later than normal."),
+                    _("Arose later than usual."),
+                    _("Woke up past the usual hour."),
+                    _("Got up later than typical."),
+                    _("Morning started later than usual."),
+                    _("Wake-up was delayed compared to usual."),
+                    _("Got out of bed later than usual.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Woke up around the usual amount."),
+                    _("Got up at the typical time."),
+                    _("Wake-up time was about the usual."),
+                    _("Woke up approximately at the normal hour."),
+                    _("Arose around the usual time."),
+                    _("Wake-up was typical."),
+                    _("Got up at the usual hour."),
+                    _("Morning started around the usual time."),
+                    _("Wake-up was standard."),
+                    _("Got out of bed at the usual time.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Woke up earlier than usual."),
+                    _("Got up earlier than typical."),
+                    _("Wake-up time was earlier than usual."),
+                    _("Woke up a bit earlier than normal."),
+                    _("Arose earlier than usual."),
+                    _("Woke up before the usual hour."),
+                    _("Got up earlier than typical."),
+                    _("Morning started earlier than usual."),
+                    _("Wake-up was ahead of schedule compared to usual."),
+                    _("Got out of bed earlier than usual.")
+                ],
+                "-2 >= zscore": [
+                    _("Woke up much earlier than usual."),
+                    _("Got up significantly earlier than typical."),
+                    _("Wake-up time was much earlier than usual."),
+                    _("Woke up far earlier than normal."),
+                    _("Arose much earlier than usual."),
+                    _("Woke up well before the usual hour."),
+                    _("Got up much earlier than typical."),
+                    _("Morning started much earlier than usual."),
+                    _("Wake-up was considerably earlier compared to usual."),
+                    _("Got out of bed much earlier than usual.")
+                ]
+            },
+            "trend.sleep_movement": {
+                "zscore > 2": [
+                    _("Experienced much more movement in sleep than usual."),
+                    _("There was significantly more movement in sleep than usual."),
+                    _("Had much more movement during sleep than usual."),
+                    _("The amount of movement in sleep was significantly higher."),
+                    _("Experienced a much greater degree of movement in sleep than usual."),
+                    _("There was much more movement in sleep."),
+                    _("Sleep featured much more movement than usual."),
+                    _("Sleep included significantly more movement than usual."),
+                    _("Experienced increased movement in sleep."),
+                    _("Had much more movement in sleep than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Experienced more movement in sleep than usual."),
+                    _("There was more movement in sleep."),
+                    _("Had more movement during sleep than usual."),
+                    _("The amount of movement in sleep was higher than usual."),
+                    _("Experienced a greater degree of movement in sleep than usual."),
+                    _("There was more movement during sleep last night."),
+                    _("Sleep featured more movement than usual."),
+                    _("Sleep included more movement than usual."),
+                    _("Experienced increased movement in sleep than usual."),
+                    _("Had more movement in sleep.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Experienced the normal amount of movement in sleep."),
+                    _("There was the usual amount of movement in sleep."),
+                    _("Had the typical amount of movement during sleep."),
+                    _("The amount of movement in sleep was normal."),
+                    _("Experienced the regular level of movement during sleep."),
+                    _("Sleep featured the standard amount of movement."),
+                    _("Sleep included the expected amount of movement."),
+                    _("Had the usual degree of movement in sleep."),
+                    _("Experienced the customary amount of movement in sleep."),
+                    _("Had the normal amount of movement in sleep.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Experienced less movement during sleep than usual."),
+                    _("There was reduced movement during sleep compared to usual."),
+                    _("Had less movement during sleep than normal."),
+                    _("The amount of movement during sleep was lower than usual."),
+                    _("Experienced a decrease in movement during sleep."),
+                    _("There was less movement during sleep than typical."),
+                    _("Sleep featured decreased movement compared to usual."),
+                    _("Sleep included less movement than normal."),
+                    _("Experienced reduced movement during sleep."),
+                    _("Had less movement during sleep than usual.")
+
+                ],
+                "-2 >= zscore": [
+                    _("Experienced much less movement during sleep than usual."),
+                    _("There was significantly less movement during sleep than normal."),
+                    _("Had much less movement during sleep than typical."),
+                    _("The amount of movement during sleep was significantly lower than usual."),
+                    _("Experienced a much lower degree of movement during sleep."),
+                    _("There was much less movement during sleep than usual."),
+                    _("Sleep featured much reduced movement compared to usual."),
+                    _("Sleep included significantly less movement than normal."),
+                    _("Experienced much decreased movement during sleep."),
+                    _("Had much less movement during sleep than usual.")
+                ]
+            },
+            "trend.nap_duration": {
+                "zscore > 2": [
+                    _("Spent much more time napping than usual."),
+                    _("Significantly more time was spent napping compared to usual."),
+                    _("Napped for a much longer duration than usual."),
+                    _("The amount of time spent napping was much greater than usual."),
+                    _("Indulged in much more nap time than usual."),
+                    _("Nap duration was much longer than usual."),
+                    _("Took significantly more naps than usual."),
+                    _("Had much more frequent naps than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Spent more time napping than usual."),
+                    _("There was increased time spent napping compared to usual."),
+                    _("Napped for a longer duration than usual."),
+                    _("The amount of time spent napping was greater than usual."),
+                    _("Indulged in more nap time than usual."),
+                    _("There was an increase in nap time compared to usual."),
+                    _("Nap duration was longer than usual."),
+                    _("Took more naps than usual."),
+                    _("Spent extra time napping compared to usual."),
+                    _("Had more frequent naps than usual.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Napping time was around the usual amount."),
+                    _("Nap duration was typical."),
+                    _("The amount of time spent napping was about the usual."),
+                    _("Napping followed the usual pattern."),
+                    _("Nap time was regular."),
+                    _("Had the usual nap duration."),
+                    _("Napping routine was standard."),
+                    _("Nap frequency was normal."),
+                    _("The time spent napping was typical."),
+                    _("Nap schedule was as expected.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Spent less time napping than usual."),
+                    _("There was reduced time spent napping compared to usual."),
+                    _("Napped for a shorter duration than usual."),
+                    _("The amount of time spent napping was less than usual."),
+                    _("Indulged in less nap time than usual."),
+                    _("There was a decrease in nap time compared to usual."),
+                    _("Nap duration was shorter than usual."),
+                    _("Took fewer naps than usual."),
+                    _("Spent less time napping compared to usual."),
+                    _("Had less frequent naps than usual.")
+                ],
+                "-2 >= zscore": [
+                    _("Spent much less time napping than usual."),
+                    _("Significantly less time was spent napping compared to usual."),
+                    _("Napped for a much shorter duration than usual."),
+                    _("The amount of time spent napping was much less than usual."),
+                    _("Indulged in much less nap time than usual."),
+                    _("There was a considerable decrease in nap time compared to usual."),
+                    _("Nap duration was much shorter than usual."),
+                    _("Took significantly fewer naps than usual."),
+                    _("Spent much less time napping compared to usual."),
+                    _("Had much less frequent naps than usual.")
+                ]
+            },
+            "trend.mobility_duration": {
+                "zscore > 2": [
+                    _("Moved much more than usual."),
+                    _("Exhibited significantly more movement than usual."),
+                    _("Had a much higher amount of movement than usual."),
+                    _("Experienced much more activity than usual."),
+                    _("Showed much increased movement compared to usual."),
+                    _("Movement was much more pronounced than usual."),
+                    _("Engaged in much more activity than usual."),
+                    _("Had much increased movement compared to usual."),
+                    _("Experienced much more activity than usual."),
+                    _("Had much more movement than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Moved more than usual."),
+                    _("Exhibited more movement than usual."),
+                    _("Had a higher amount of movement than usual."),
+                    _("Experienced more activity than usual."),
+                    _("Showed increased movement compared to usual."),
+                    _("Movement was more pronounced than usual."),
+                    _("Engaged in more activity than usual."),
+                    _("Had increased movement compared to usual."),
+                    _("Experienced increased movement compared to usual."),
+                    _("Had more movement than usual.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Moved the usual amount."),
+                    _("Exhibited typical movement."),
+                    _("Had the usual amount of movement."),
+                    _("Showed regular activity."),
+                    _("Experienced the expected amount of movement."),
+                    _("Movement was typical."),
+                    _("Showed the usual amount of activity."),
+                    _("Engaged in the customary amount of movement."),
+                    _("Experienced the expected amount of activity."),
+                    _("Had the expected amount of movement.")
+                ],
+                "-0.5 >= zscore > -2":[
+                    _("There was reduced movement compared to usual."),
+                    _("Had a lower amount of movement than usual."),
+                    _("The amount of movement was less than usual."),
+                    _("Experienced less activity than usual."),
+                    _("There was a decrease in movement compared to usual."),
+                    _("Movement was less pronounced than usual."),
+                    _("Exhibited less movement than usual."),
+                    _("Engaged in less activity than usual."),
+                    _("Experienced decreased movement compared to usual.")
+                ],
+                "-2 >= zscore": [
+                    _("Moved much less than usual."),
+                    _("Exhibited much less movement than usual."),
+                    _("Had a much lower amount of movement than usual."),
+                    _("Experienced much less activity than usual."),
+                    _("Showed decreased movement compared to usual."),
+                    _("Movement was much less pronounced than usual."),
+                    _("Engaged in much less activity than usual."),
+                    _("Had decreased movement compared to usual."),
+                    _("Experienced decreased movement compared to usual."),
+                    _("Had much less movement than usual.")
+                ]
+            },
+            "trend.mobility_rooms": {
+                "zscore > 2": [
+                    _("Moved between rooms much more than usual."),
+                    _("Exhibited significantly more movement between rooms than usual."),
+                    _("Had a much higher amount of room-to-room movement than usual."),
+                    _("Experienced much more room-to-room activity than usual."),
+                    _("Showed much increased movement between rooms compared to usual."),
+                    _("Movement between rooms was much more pronounced than usual."),
+                    _("Engaged in much more room-to-room activity than usual."),
+                    _("Had much increased movement between rooms compared to usual."),
+                    _("Experienced much increased movement between rooms compared to usual."),
+                    _("Had much more room-to-room movement than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Moved between rooms more than usual."),
+                    _("Exhibited more movement between rooms than usual."),
+                    _("Had a higher amount of room-to-room movement than usual."),
+                    _("Experienced more room-to-room activity than usual."),
+                    _("Showed increased movement between rooms compared to usual."),
+                    _("Movement between rooms was more pronounced than usual."),
+                    _("Engaged in more room-to-room activity than usual."),
+                    _("Had increased movement between rooms compared to usual."),
+                    _("Experienced increased movement between rooms compared to usual."),
+                    _("Had more room-to-room movement than usual.")
+                ],
+                "0.5 >= zscore > -0.5":[
+                    _("Moved between rooms the usual amount."),
+                    _("There was typical movement between rooms."),
+                    _("A usual amount of room-to-room movement occurred."),
+                    _("The amount of movement between rooms was normal."),
+                    _("The regular level of room-to-room activity took place."),
+                    _("There was no change in the movement between rooms."),
+                    _("The room-to-room movement was typical."),
+                    _("The usual amount of room-to-room activity happened."),
+                    _("The expected amount of movement between rooms was experienced.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Moved between rooms less than usual."),
+                    _("Exhibited less movement between rooms than usual."),
+                    _("Had a lower amount of room-to-room movement than usual."),
+                    _("Experienced less room-to-room activity than usual."),
+                    _("Showed decreased movement between rooms compared to usual."),
+                    _("Movement between rooms was less pronounced than usual."),
+                    _("Engaged in less room-to-room activity than usual."),
+                    _("Had decreased movement between rooms compared to usual."),
+                    _("Experienced decreased movement between rooms compared to usual."),
+                    _("Had less room-to-room movement than usual.")
+                ],
+                "-2 >= zscore": [
+                    _("Moved between rooms much less frequently than usual."),
+                    _("Exhibited much less movement between rooms than usual."),
+                    _("Had much less frequent room-to-room movements than usual."),
+                    _("Experienced much less frequent room-to-room activity than usual."),
+                    _("Showed much less frequent movement between rooms than usual."),
+                    _("Movement between rooms was much less frequent than usual."),
+                    _("Engaged in much less frequent room-to-room activity than usual."),
+                    _("Had much less frequent movement between rooms than usual."),
+                    _("Experienced much less frequent room-to-room activity than usual."),
+                    _("Had much less frequent room-to-room movements than usual.")
+                ]
+            },
+            "sitting": {
+                "zscore > 2": [
+                    _("Spent much more time sitting down today."),
+                    _("There was significantly more time spent sitting down today."),
+                    _("Sat down for a much longer duration today."),
+                    _("Spent a much longer duration sitting down today."),
+                    _("Spent much extra time sitting down today."),
+                    _("Considerably increased sitting time today."),
+                    _("Sitting duration today was much longer."),
+                    _("Sat down significantly more today."),
+                    _("Spent much extra time sitting today."),
+                    _("Had much more sitting time today.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Spent more time sitting down today."),
+                    _("Increased time spent sitting down today."),
+                    _("Sat down for a longer duration today."),
+                    _("Spent a longer duration sitting down today."),
+                    _("Spent extra time sitting down today."),
+                    _("Increased sitting time today."),
+                    _("Sitting duration today was longer."),
+                    _("Sat down more today."),
+                    _("Spent extra time sitting today."),
+                    _("Had more sitting time today.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Spent the usual amount of time sitting down today."),
+                    _("Typical time spent sitting down today."),
+                    _("Sat down for the usual duration today."),
+                    _("Spent the usual amount of time sitting today."),
+                    _("Sitting duration today was typical."),
+                    _("No change in sitting time today."),
+                    _("Sitting duration today was typical."),
+                    _("Showed the usual amount of sitting time today."),
+                    _("Engaged in the customary amount of sitting today."),
+                    _("Expected amount of sitting time today.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Spent less time sitting down today."),
+                    _("Reduced time spent sitting down today."),
+                    _("Sat down for a shorter duration today."),
+                    _("Spent a shorter duration sitting down today."),
+                    _("Spent less time sitting today."),
+                    _("Decreased sitting time today."),
+                    _("Sitting duration today was shorter."),
+                    _("Sat down less today."),
+                    _("Spent less time sitting today."),
+                    _("Decrease in sitting time today.")
+                ],
+                "-2 >= zscore": [
+                    _("Spent much less time sitting down today."),
+                    _("Significantly less time spent sitting down today."),
+                    _("Sat down for a much shorter duration today."),
+                    _("Spent a much shorter duration sitting down today."),
+                    _("Spent much less time sitting today."),
+                    _("Considerable decrease in sitting time today."),
+                    _("Sitting duration today was much shorter."),
+                    _("Sat down much less today."),
+                    _("Spent much less time sitting today."),
+                    _("Significant decrease in sitting time today.")
+                ]
+            },
+            "trend.bathroom_visits": {
+                "value < 1": [
+                    _("Did not appear to visit the bathroom today."),
+                    _("No indication of visiting the bathroom today."),
+                    _("Seemed not to have visited the bathroom today."),
+                    _("No sign of using the bathroom today."),
+                    _("Did not seem to have gone to the bathroom today."),
+                    _("Did not appear to have gone to the bathroom today."),
+                    _("No appearance of using the bathroom today."),
+                    _("Did not appear to have used the bathroom today."),
+                    _("No indication of using the bathroom today.")
+                ],
+                "value > 1": [
+                    _("Bathroom was visited around {} times today.".format(value)),
+                    _("Approximately {} visits to the bathroom today.".format(value)),
+                    _("Bathroom saw about {} visits today.".format(value)),
+                    _("Around {} visits to the bathroom were recorded today.".format(value)),
+                    _("Approximately {} trips to the bathroom occurred today.".format(value)),
+                    _("There were {} bathroom visits today.".format(value)),
+                    _("Bathroom was used about {} times today.".format(value)),
+                    _("There were about {} bathroom visits today.".format(value)),
+                    _("Approximately {} bathroom trips today.".format(value)),
+                    _("About {} bathroom visits occurred today.".format(value))
+                ],
+                "value == 1": [
+                    _("Only one trip was made to the bathroom."),
+                    _("The bathroom had a single visit."),
+                    _("There was one visit to the bathroom.")
+                ]
+            },
+            "trend.bathroom_duration": {
+                "zscore > 2": [
+                    _("Spent much more time than usual in the bathroom today."),
+                    _("Stayed in the bathroom for significantly longer than usual today."),
+                    _("Had a much longer bathroom duration today."),
+                    _("Bathroom duration was much longer than usual today."),
+                    _("Spent a considerable extra amount of time in the bathroom today."),
+                    _("Considerably increased bathroom duration today."),
+                    _("Bathroom stay today was much longer than usual."),
+                    _("Spent significantly more time in the bathroom today."),
+                    _("Had extra bathroom time today."),
+                    _("Bathroom stay today was much longer than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Spent more time than usual in the bathroom today."),
+                    _("Stayed in the bathroom for longer than usual today."),
+                    _("Had a longer bathroom duration today."),
+                    _("Bathroom duration was longer than usual today."),
+                    _("Spent extra time in the bathroom today."),
+                    _("Increased bathroom duration today."),
+                    _("Bathroom stay today was longer than usual."),
+                    _("Spent more time in the bathroom today."),
+                    _("Had extra bathroom time today."),
+                    _("Bathroom stay today was longer than usual.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Spent the usual amount of time in the bathroom today."),
+                    _("Stayed in the bathroom for the usual duration today."),
+                    _("Had the usual bathroom duration today."),
+                    _("Bathroom duration was typical today."),
+                    _("No change in bathroom time today."),
+                    _("Bathroom stay today was typical."),
+                    _("Showed the usual bathroom time today."),
+                    _("Engaged in the customary bathroom duration today."),
+                    _("Expected amount of bathroom time today."),
+                    _("Experienced the expected bathroom duration today.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Spent less time than usual in the bathroom today."),
+                    _("Stayed in the bathroom for a shorter duration today."),
+                    _("Had a shorter bathroom duration today."),
+                    _("Bathroom duration was shorter than usual today."),
+                    _("Spent less time in the bathroom today."),
+                    _("Decreased bathroom duration today."),
+                    _("Bathroom stay today was shorter than usual."),
+                    _("Spent less time in the bathroom today."),
+                    _("Had less bathroom time today.")
+                ],
+                "-2 >= zscore": [
+                    _("Spent much less time than usual in the bathroom today."),
+                    _("Stayed in the bathroom for significantly less time than usual today."),
+                    _("Had a much shorter bathroom duration today."),
+                    _("Bathroom duration was much shorter than usual today."),
+                    _("Spent considerably less time in the bathroom today."),
+                    _("Considerably decreased bathroom duration today."),
+                    _("Bathroom stay today was much shorter than usual."),
+                    _("Spent significantly less time in the bathroom today."),
+                    _("Had much less bathroom time today."),
+                    _("Bathroom stay today was much shorter than usual.")
+                ]
+            },
+            "trend.shower_visits": {
+                "value < 1": [
+                    _("Did not appear to take a shower today."),
+                    _("No indication of showering today."),
+                    _("Seemed not to have taken a shower today."),
+                    _("No sign of showering today."),
+                    _("Did not seem to have showered today."),
+                    _("Did not appear to have showered today."),
+                    _("No appearance of showering today."),
+                    _("Did not appear to have taken a shower today."),
+                    _("No indication of taking a shower today.")
+                ],
+                "value > 1": [
+                    _("Took approximately {} showers today.".format(int(value))),
+                    _("Approximately {} showers were taken today.".format(int(value))),
+                    _("Showered about {} times today.".format(int(value))),
+                    _("Took {} showers today.".format(int(value))),
+                    _("Had about {} shower visits today.".format(int(value))),
+                    _("There were {} shower visits today.".format(int(value))),
+                    _("Approximately {} showering instances today.".format(int(value))),
+                    _("Took about {} showers today.".format(int(value))),
+                    _("Approximately {} shower sessions today.".format(int(value))),
+                    _("About {} shower visits occurred today.".format(int(value)))
+                ],
+                "value == 1": [
+                    _("Enjoyed one shower today."),
+                    _("Took a shower once today."),
+                    _("Had a single shower today."),
+                    _("Showered one time today.")
+                ]
+            },
+            "trend.absent": {
+                "value < 1000": [
+                    _("No one appeared to leave the house."),
+                    _("There was no indication that anyone left the house."),
+                    _("It seemed like no one left the house."),
+                    _("There was no sign of anyone leaving the house."),
+                    _("No one seemed to have gone out of the house."),
+                    _("It did not appear that anyone left the house."),
+                    _("There was no appearance of anyone leaving the house."),
+                    _("No one appeared to have gone out of the house."),
+                    _("It seemed that no one left the house."),
+                    _("There was no indication of anyone leaving the house.")
+                ],
+                "zscore > 2": [
+                    _("Spent much more time away than usual."),
+                    _("There was significantly more time spent away than usual."),
+                    _("Spent a much longer duration away than usual."),
+                    _("The amount of time spent away was much greater than usual."),
+                    _("Spent much extra time away compared to usual."),
+                    _("There was a considerable increase in time spent away compared to usual."),
+                    _("Time away was much longer than usual."),
+                    _("Spent significantly more time away than usual."),
+                    _("Had much more time away than usual."),
+                    _("Spent a significantly longer time away than usual.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Spent more time away than usual."),
+                    _("There was increased time spent away compared to usual."),
+                    _("Spent a longer duration away than usual."),
+                    _("The amount of time spent away was greater than usual."),
+                    _("Spent extra time away compared to usual."),
+                    _("There was an increase in time spent away compared to usual."),
+                    _("Time away was longer than usual."),
+                    _("Spent more time away from home than usual."),
+                    _("Had more time away than usual."),
+                    _("Spent a longer time away than usual.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Spent the usual amount of time away from home."),
+                    _("The amount of time spent away from home was normal."),
+                    _("Time away from home was the regular duration."),
+                    _("There was no change in time away from home."),
+                    _("Showed the usual amount of time away from home."),
+                    _("Engaged in the customary time away from home."),
+                    _("Experienced the expected amount of time away from home.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Spent less time away from home than usual."),
+                    _("There was reduced time spent away from home compared to usual."),
+                    _("Spent a shorter duration away from home than usual."),
+                    _("The amount of time spent away from home was less than usual."),
+                    _("Spent less time away from home than typical."),
+                    _("There was a decrease in time away from home compared to usual."),
+                    _("Time away from home was shorter than usual."),
+                    _("Had less time away from home than usual."),
+                    _("Spent a lesser amount of time away from home than usual."),
+                    _("Time away from home was reduced compared to usual.")
+                ],
+                "-2 >= zscore": [
+                    _("Spent much less time away from home than usual."),
+                    _("There was significantly less time spent away from home than usual."),
+                    _("Spent a much shorter duration away from home than usual."),
+                    _("The amount of time spent away from home was much less than usual."),
+                    _("Spent much less time away from home compared to the usual routine."),
+                    _("There was a considerable decrease in time away from home compared to usual."),
+                    _("Time away from home was much shorter than usual."),
+                    _("Had much less time away from home than usual."),
+                    _("Spent a significantly lesser amount of time away from home than usual."),
+                    _("Time away from home was significantly reduced compared to usual.")
+                ]
+            },
+            "trend.checkedin": {
+                "value < 1": [
+                    _("No one has checked in today."),
+                    _("There is no record of anyone being checked on today."),
+                    _("No one checked in today."),
+                    _("It appears that no one was checked on today."),
+                    _("There was no check-in for anyone today."),
+                    _("No one has checked in today."),
+                    _("There was no indication of anyone checking in today."),
+                    _("No one appeared to check in today."),
+                    _("No check-in was recorded for anyone today."),
+                    _("No one was checked on today.")
+                ],
+                "value == 1": [
+                    _("There has been one check in."),
+                    _("Just one check-in has been noted."),
+                    _("Only one check-in happened."),
+                    _("Only one check-in has occurred.")
+                ],
+                "value > 1": [
+                    _("There has been {} check ins.".format(int(value))),
+                    _("Today, there has been {} check ins.".format(int(value))),
+                    _("It appears that there were {} check ins times today.".format(int(value))),
+                    _("There were {} instances where someone checking in today.".format(int(value))),
+                    _("There were {} occasions of check ins today.".format(int(value)))
+                ]
+            },
+            "trend.visitor": {
+                "zscore > 2": [
+                    _("There were many more visitors than usual today."),
+                    _("There were significantly more visitors today than usual."),
+                    _("There were many more visitors today than usual."),
+                    _("There were much more visitors today compared to usual."),
+                    _("There was a considerable increase in visitors today."),
+                    _("There were significantly more visitors than usual today."),
+                    _("There was much more company today than usual."),
+                    _("There were many more visitors than usual today."),
+                    _("There was a substantial increase in visitors today."),
+                    _("There was much more visitation than usual today.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("There were more visitors than usual."),
+                    _("There were increased visitors compared to usual."),
+                    _("There was a higher number of visitors than usual."),
+                    _("There were more visitors than usual."),
+                    _("There was an increase in visitors compared to usual."),
+                    _("There were additional visitors today."),
+                    _("There were more visitors today than usual."),
+                    _("There were more guests than usual."),
+                    _("There was more visitation than usual."),
+                    _("There were a greater number of visitors than usual.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("There were the usual amount of visitors."),
+                    _("There were typical visitors."),
+                    _("There were the usual visitors."),
+                    _("The number of visitors was normal."),
+                    _("There were the regular visitors."),
+                    _("There was no change in visitors."),
+                    _("Visitors were typical."),
+                    _("There were the usual visitors."),
+                    _("There were the customary visitors."),
+                    _("There was the expected amount of visitors.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("There was less interaction with people today."),
+                    _("There was reduced interaction with people today."),
+                    _("There were fewer social interactions today."),
+                    _("There was a lower level of interaction with people today."),
+                    _("There was less interaction with others today."),
+                    _("Today's interaction with people was lower."),
+                    _("Interaction with others today was less than usual."),
+                    _("There was less interaction with people today."),
+                    _("There was a decrease in interaction with others today."),
+                    _("There was a reduced amount of interaction with others today.")
+                ],
+                "-2 >= zscore": [
+                    _("There was much less interaction with people today."),
+                    _("There was significantly less interaction with people today."),
+                    _("There were much fewer social interactions today."),
+                    _("There was a considerable decrease in interaction with people today."),
+                    _("There was much less interaction with others today."),
+                    _("Today's interaction with people was much lower."),
+                    _("Interaction with others today was much less than usual."),
+                    _("There was a significant decrease in interaction with people today."),
+                    _("There was a substantial reduction in interaction with others today."),
+                    _("There was a markedly reduced amount of interaction with others today.")
+                ]
+            },
+            "trend.together": {
+                "zscore > 2": [
+                    _("Interacted with people more than normal."),
+                    _("There was increased interaction with people compared to normal."),
+                    _("Had more social interaction than normal."),
+                    _("There was a higher level of interaction with people than usual."),
+                    _("Had more interaction with others than usual."),
+                    _("There was an increase in social interactions compared to normal."),
+                    _("Interaction with people was higher than normal."),
+                    _("Engaged more with people than usual."),
+                    _("Experienced more interaction with others than usual."),
+                    _("There was greater interaction with people than normal.")
+                ],
+                "2 >= zscore > 0.5": [
+                    _("Had an average amount of human interaction today."),
+                    _("There was a moderate level of human interaction today."),
+                    _("Had a typical amount of interaction with others today."),
+                    _("The amount of human interaction today was average."),
+                    _("Had a standard level of interaction with people today."),
+                    _("Today's human interaction was average."),
+                    _("Interaction with others today was typical."),
+                    _("Experienced an average amount of human interaction today."),
+                    _("There was a normal level of interaction with others today."),
+                    _("Had a customary amount of interaction with others today.")
+                ],
+                "0.5 >= zscore > -0.5": [
+                    _("Had an average amount of human interaction today."),
+                    _("There was a moderate level of human interaction today."),
+                    _("Had a typical amount of interaction with others today."),
+                    _("The amount of human interaction today was average."),
+                    _("Had a standard level of interaction with people today."),
+                    _("Today's human interaction was average."),
+                    _("Interaction with others today was typical."),
+                    _("Experienced an average amount of human interaction today."),
+                    _("There was a normal level of interaction with others today."),
+                    _("Had a customary amount of interaction with others today.")
+                ],
+                "-0.5 >= zscore > -2": [
+                    _("Interacted with people less today."),
+                    _("There was reduced interaction with people today."),
+                    _("Had fewer social interactions today."),
+                    _("There was a lower level of interaction with people today."),
+                    _("Had less interaction with others today."),
+                    _("Today's interaction with people was lower."),
+                    _("Interaction with others today was less than usual."),
+                    _("Experienced less interaction with people today."),
+                    _("There was a decrease in interaction with others today."),
+                    _("Had a reduced amount of interaction with others today.")
+                ],
+                "-2 >= zscore": [
+                    _("Interacted with people much less today."),
+                    _("There was significantly less interaction with people today."),
+                    _("Had much fewer social interactions today."),
+                    _("There was a considerable decrease in interaction with people today."),
+                    _("Had much less interaction with others today."),
+                    _("Today's interaction with people was much lower."),
+                    _("Interaction with others today was much less than usual."),
+                    _("Experienced a significant decrease in interaction with people today."),
+                    _("There was a substantial reduction in interaction with others today."),
+                    _("Had a markedly reduced amount of interaction with others today.")
+                ]
+            }
+        }
+
+        if trend_id in possible_comments:
+            for key in possible_comments[trend_id]:
+                if eval(key):
+                    comment = random.choice(possible_comments[trend_id][key])
+                    break
+        return comment
+
 
     def midnight_fired(self, botengine, content=None):
         """
@@ -886,12 +1781,6 @@ class LocationDailyReportMicroservice(Intelligence):
                         
                             self.weekly_reports[key][id]["statistics"] = statistics
                             botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|process_report() This insight does not report numeric values. id={} values={} statistics={}".format(id, json.dumps(values), statistics))
-
-                            # TODO: Add a comment for these insights
-                            """
-                            "security_mode", 
-                            "occupancy.status"
-                            """
                             continue
 
                         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|process_report() Analyzing values: {}".format(json.dumps(values)))
@@ -1005,7 +1894,7 @@ class LocationDailyReportMicroservice(Intelligence):
                                 compare_comment = "You woke up later on average this week."
                                 
                         elif insight_id == "sleep.sleep_score":
-                            comment = "You selpt the best on {}".format(WEEK_DAYS[max_index])
+                            comment = "You slept the best on {}".format(WEEK_DAYS[max_index])
                             if last_average_value and average_value > last_average_value:
                                 compare_comment = "You slept better this week."
 
@@ -1385,7 +2274,7 @@ class LocationDailyReportMicroservice(Intelligence):
                                 compare_comment = "You woke up later on average this month."
                                 
                         elif insight_id == "sleep.sleep_score":
-                            comment = "You selpt the best on {}".format(utilities.strftime(max_dt, "%A, %B %-d"))
+                            comment = "You slept the best on {}".format(utilities.strftime(max_dt, "%A, %B %-d"))
                             if last_average_value and average_value > last_average_value:
                                 compare_comment = "You slept better this month."
 
@@ -1855,7 +2744,7 @@ class LocationDailyReportMicroservice(Intelligence):
                 elif len(focused_section['items']) > 1:
                     focused_section['subtitle'] = _("Visited the bathroom {} times today.").format(len(focused_section['items']))
         
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_add_daily_entry() Setting daily report to {}".format(json.dumps(report, indent=2, sort_keys=True)))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|_add_daily_entry() Setting daily report to {}".format(json.dumps(report, indent=2, sort_keys=True)))
         self.parent.set_location_property_separately(botengine, DAILY_REPORT_ADDRESS, report, overwrite=True, timestamp_ms=self.current_report_ms)
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_add_daily_entry()")
         
@@ -2472,6 +3361,30 @@ class LocationDailyReportMicroservice(Intelligence):
             # On by default
             is_enabled = True
         return is_enabled
+    
+    def _weekly_reports_enabled(self, botengine):
+        """
+        Are weekly reports enabled?
+        :param botengine: BotEngine environment
+        :return: True if weekly reports are enabled
+        """
+        weekly_reports_enabled = properties.get_property(botengine, "WEEKLY_REPORTS_ENABLED", complain_if_missing=False)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|_weekly_reports_enabled() weekly_reports_enabled={}".format(weekly_reports_enabled))
+        if weekly_reports_enabled is None:
+            return True
+        return weekly_reports_enabled
+    
+    def _monthly_reports_enabled(self, botengine):
+        """
+        Are monthly reports enabled?
+        :param botengine: BotEngine environment
+        :return: True if monthly reports are enabled
+        """
+        monthly_reports_enabled = properties.get_property(botengine, "MONTHLY_REPORTS_ENABLED", complain_if_missing=False)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|_monthly_reports_enabled() monthly_reports_enabled={}".format(monthly_reports_enabled))
+        if monthly_reports_enabled is None:
+            return True
+        return monthly_reports_enabled
 
     def _set_service(self, botengine, comment, status, percent, active, status_text, context):
         """

@@ -12,6 +12,8 @@ import botengine as BotEngine
 import importlib
 import time
 
+LOG_LEVEL_DEFAULT   = "warn" # Default log level
+LOG_LEVEL_EVENTS    = "info" # Event log level
 
 def lambda_handler(data, context):
     """
@@ -21,10 +23,11 @@ def lambda_handler(data, context):
     :return: JSON structure with errors and debug information
     """
     if data is None:
+        # No data to process
         return 0
     
     # TODO: Allow multiple loggers to differentiate logs from different microservices
-    logger = LambdaLogger()
+    logger = LambdaLogger(log_level=LOG_LEVEL_EVENTS if data.get('logEvents', False) else LOG_LEVEL_DEFAULT)
     
     try:
         bot = importlib.import_module('bot')
@@ -40,7 +43,7 @@ def lambda_handler(data, context):
     # Check for asynchronous data request triggers which handle errors differently than synchronous executions of the bot.
     if 'inputs' in data:
         for i in data['inputs']:
-            if i['trigger'] == 2048:
+            if i['trigger'] == botengine.TRIGGER_DATA_REQUEST:
                 import sys
 
                 if len(logger.logs) > 0:
@@ -59,14 +62,6 @@ def lambda_handler(data, context):
     if 'sqsQueue' in data:
         import json
         send_sqs_message(data.get('sqsQueue'), json.dumps(logger.get_lambda_return(botengine, bot)), data.get('clientContext'))
-
-    # Commit logs to CloudWatch log group and stream
-    if len(logger.log_events) > 0:
-
-        # Default to the log group and stream name provided by Lambda
-        log_group_name = context.log_group_name
-        log_stream_name = context.log_stream_name
-        logger.put_log_events(log_group_name, log_stream_name)
 
     return logger.get_lambda_return(botengine, bot)
 
@@ -92,7 +87,7 @@ def send_sqs_message(queue_name, msg_body, client_context):
 
 class LambdaLogger():
     
-    def __init__(self, log_level="info"):
+    def __init__(self, log_level=LOG_LEVEL_DEFAULT):
         # Tracebacks for crashes
         # DEPRECATED: Captured from AWS Lambda
         self.tracebacks = []
@@ -208,9 +203,26 @@ class LambdaLogger():
 
         # Include additional bot server statistics for individual microservices
         if botengine.is_server_version_newer_than(1, 38):
+            if botengine.get_bot_type() == botengine.BOT_TYPE_ORGANIZATION_RAG:
+                response['ragOutput'] = {}
+
+                if bot is not None:
+                    if hasattr(bot, 'get_document_property_updates'):
+                        response['ragOutput']['document'] = bot.get_document_property_updates(botengine)
+                    if hasattr(bot, 'get_documents_questions'):
+                        response['ragOutput']['questions'] = bot.get_documents_questions(botengine)
+                    import json
+
+                    try:
+                        self.debug("RAG documents executed: inputs ={}".format(json.dumps(botengine.get_inputs())))
+                        self.debug("RAG documents updated : response={}".format(json.dumps(response)))
+                    except Exception as e:
+                        pass
+
+
             response['startCode'] = self.start_code
             response["logEvents"] = self.log_events
-            if bot is not None:
+            if bot is not None and hasattr(bot, 'get_intelligence_statistics'):
                 response['microservices'] = bot.get_intelligence_statistics(botengine)
             response['startTime'] = self.start_time_ms
             response['endTime'] = int(time.time() * 1000)
@@ -220,7 +232,6 @@ class LambdaLogger():
             
             if len(self.tracebacks):
                 response['tracebacks'] = self.tracebacks
-            
             return response
         
         if len(self.tracebacks):

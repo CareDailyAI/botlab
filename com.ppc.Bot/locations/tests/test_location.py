@@ -12,6 +12,7 @@ class TestLocation(unittest.TestCase):
     def test_location_constructor(self):
         # Initial setup
         botengine = BotEnginePyTest({})
+        botengine.users = []
         mut = Location(botengine, 0)
 
         assert mut is not None
@@ -59,3 +60,46 @@ class TestLocation(unittest.TestCase):
 
         # The reported time should be relatively close to the total time
         assert abs(dt - x) < 1000 # Allow for some error in the timing
+
+    def test_location_local_timestamp_ms_from_relative_hours(self):
+        # Initial setup
+        botengine = BotEnginePyTest({})
+        mut = Location(botengine, 0)
+
+        # Mon Jun 05 2023 12:00:00 GMT-0700 (Pacific Daylight Time)
+        botengine.set_timestamp(1685991600000)
+        for i in range(0, 7):
+            weekday = mut.get_local_datetime(botengine).weekday() + i
+            # hours = mut.get_relative_time_of_day(botengine)
+            # assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=False) == botengine.get_timestamp()
+            # assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=True) == botengine.get_timestamp() + utilities.ONE_WEEK_MS
+            for j in range(-12, 12):
+                hours = mut.get_relative_time_of_day(botengine) + j
+                print("Weekday: {} hour: {} future: {}".format(weekday, hours, hours > 0))
+                assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=False) == botengine.get_timestamp() + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS
+                if j > 0 or i > 0:
+                    assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=True) == botengine.get_timestamp() + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS
+                else:
+                    assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=True) == botengine.get_timestamp() + utilities.ONE_WEEK_MS + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS
+        
+        # Sun Jun 11 2023 12:00:00 GMT-0700 (Pacific Daylight Time)
+        botengine.set_timestamp(1686510000000)
+        for i in range(0, 7):
+            weekday = mut.get_local_datetime(botengine).weekday() + i
+            if weekday > 6:
+                weekday -= 7
+            for j in range(-12, 12):
+                hours = mut.get_relative_time_of_day(botengine) + j
+                print("Weekday: {} hour: {} future: {}".format(weekday, hours, hours > 0))
+                if i == 0:
+                    assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=False) == botengine.get_timestamp() + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS
+                    if j > 0:
+                        assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=True) == botengine.get_timestamp() + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS
+                    else:
+                        assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=True) == botengine.get_timestamp() + utilities.ONE_WEEK_MS + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS
+                else:
+                    assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=False) == botengine.get_timestamp() - utilities.ONE_WEEK_MS + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS
+                    if j > 0:
+                        assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=True) == botengine.get_timestamp() + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS
+                    else:
+                        assert mut.local_timestamp_ms_from_relative_hours(botengine, weekday, hours, future=True) == botengine.get_timestamp() + i * utilities.ONE_DAY_MS + j * utilities.ONE_HOUR_MS

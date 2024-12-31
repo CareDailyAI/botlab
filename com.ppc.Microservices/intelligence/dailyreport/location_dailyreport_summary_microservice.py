@@ -36,7 +36,8 @@ SERVICE_SECTION_ID_SUMMARY         = 0
 SERVICE_KEY_SUMMARY_ACTIVE         = "summary.is_enabled"
 SERVICE_WEIGHT_SUMMARY_ACTIVE      = 200
 
-#===============================================================================
+# AI Daily Report Summary
+AI_DAILY_REPORT_SUMMARY_ENABLED = False
 
 class LocationDailyReportSummaryMicroservice(Intelligence):
     """
@@ -297,9 +298,8 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
 
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">daily_report_status_updated()")
-        active = self._is_active(botengine)
-        if not active:
-            # SUMMARY is not active
+        if not self._is_active(botengine):
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<daily_report_status_updated() Daily Report service is not enabled")
             return
         report = content.get("report", None)
         status = content.get("status", None)
@@ -352,16 +352,23 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
             if user.get("role") == User.ROLE_TYPE_PROFESSIONAL_CAREGIVER:
                 user_ids.append(user.get("id"))
         
-        if len(user_ids) > 0:
+
+        active = self._is_summary_active(botengine)
+        if not active:
+            # SUMMARY is not active
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() Daily SMS Summary is not active")
+        
+        elif len(user_ids) > 0:
             # Notify professional caregivers
             botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() Notify professional caregivers over SMS")
 
-            sorted_sections = [(max(weighted_sections) + 10) - weight for weight in weighted_sections] # [15, 10, 5]
-            import random
-            random_sections = random.choices(section_ids, weights=set(sorted_sections), k=len(section_ids))
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() sorted_sections={}".format(sorted_sections))
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() random_sections={}".format(random_sections))
+            # Randomly select up to 3 events without duplication from the content within each section
+            random_sections = self._get_randomly_weighted_sections(botengine, weighted_sections, section_ids)
             
+            # Pull in only items since sunrise yesterday
+
+            import signals.daylight as daylight
+            previous_sunrise_timestamp_ms = daylight.get_next_sunrise_timestamp_ms(botengine, self.parent) - utilities.ONE_DAY_MS
             random_items = []
             for section_id in random_sections:
                 section = None
@@ -372,11 +379,18 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
                 if section is None:
                     continue
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() section={}".format(section))
-                items = section.get("items", [])
+                # Reference the next sunrise time, and exclude any entries before sunrise yesterday
+                
+                items = [item for item in section.get("items", []) if item.get("timestamp_ms", 0) > previous_sunrise_timestamp_ms]
                 if len(items) == 0:
                     continue
+                import random
                 random_item = random.choice(items)
-                if random_item.get('id', '') not in [item.get('id', '') for item in random_items]:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() random_item={}".format(random_item))
+                if random_item.get('id') is None:
+                    if random_item.get('comment') not in [item['comment'] for item in random_items]:
+                        random_items.append(random_item)
+                elif random_item['id'] not in [item['id'] for item in random_items if item.get('id') is not None]:
                     random_items.append(random_item)
 
             if len(random_items) > 0:
@@ -427,11 +441,10 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
             if len(content_array) > 0:
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() notify family and professional caregivers over email")
                 botengine.notify(
-                    email_subject="{} Summary Report".format(self.parent.get_location_name(botengine)),
                     email_html=True,
                     email_template_filename="bots/daily_report.vm",
                     email_template_model={
-                        "title": _("Daily Summary Report"),
+                        "title": _("{} Daily Summary Report").format(self.parent.get_location_name(botengine)),
                         "subtitle": utilities.strftime(self.parent.get_local_datetime(botengine), "%A, %B %-d, %Y at %-I:%M %p %Z"),
                         "icon": "file-alt",
                         "contentHeader": content_header,
@@ -467,14 +480,23 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
         :param botengine: BotEngine environment
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">sunrise_fired()")
+        
+        active = self._is_summary_active(botengine)
+        if not active:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<sunrise_fired() Daily SMS Summary is not active")
+            return
+        
         if self.items_to_notify is None:
             botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_sunrise_fired() No items to notify")
             return
 
+        # Add or update any new entries that happened since yesterday's report completed
+        self._updated_report_at_sunrise(botengine)
+
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_sunrise_fired() items_to_notify={}".format(json.dumps(self.items_to_notify)))
         content = "Daily Report Summary for '{}'\n".format(self.parent.get_location_name(botengine))
         content += " | ".join([item.get("comment") for item in self.items_to_notify])
-        self.items_to_notify = None
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_sunrise_fired() SMS content={}".format(content))
 
         location_users = botengine.get_location_users()
         user_ids = []
@@ -484,12 +506,106 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
                 user_ids.append(user.get("id"))
         
         if len(user_ids) > 0:
-            analytics.track(botengine, self.parent, "dailyreport_summary_notify_professional_caregivers_delivered", {"delivered": True, "items_to_notify": self.items_to_notify, "user_ids": user_ids})
-            botengine.notify(sms_content=content, user_id_list=user_ids)
+            if not AI_DAILY_REPORT_SUMMARY_ENABLED:
+                analytics.track(botengine, self.parent, "dailyreport_summary_notify_professional_caregivers_delivered", {"delivered": True, "items_to_notify": self.items_to_notify, "user_ids": user_ids})
+                botengine.notify(sms_content=content, user_id_list=user_ids)
+            else:
+                # TODO: Finish validating Llama implementation
+                import signals.ai as ai
+
+                chat = [
+                    {
+                        "role": "system",
+                        "content": "You mimic animal sounds.\nThe conversation stops after your response."
+                    },
+                    {
+                        "role": "user",
+                        "content": "Bark like a dog."
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "Bark bark!"
+                    },
+                    {
+                        "role": "user",
+                        "content": "Meow like a cat."
+                    }
+                ]
+
+                ai_params = genai.care_daily_ai_model(botengine, chat=chat, max_tokens=15)
+
+                ai.submit_chat_completion_request(
+                    botengine, 
+                    self.parent, 
+                    key="daily_report_summary",
+                    ai_params=ai_params,
+                    provider=ai.CHAT_GPT_PROVIDER_CAREDAILY)
+                
         else:
             analytics.track(botengine, self.parent, "dailyreport_summary_notify_professional_caregivers_delivered", {"delivered": False, "items_to_notify": self.items_to_notify})
+
+        # Clear the items to notify
+        self.items_to_notify = None
+
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_sunrise_fired()")
 
+    def _updated_report_at_sunrise(self, botengine):
+        """
+        Update any new entries that happened since yesterday's report completed
+        :param botengine: BotEngine environment
+        """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">_updated_report_at_sunrise()")
+
+        # Retrieve today's daily report
+        dailyreport_microservice = self.parent.intelligence_modules.get('intelligence.dailyreport.location_dailyreport_microservice')
+        if dailyreport_microservice is None:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").error("<_updated_report_at_sunrise() Daily Report microservice is distributed with this bot bundle.")
+            return
+        report = botengine.get_state(DAILY_REPORT_ADDRESS, dailyreport_microservice.current_report_ms)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_updated_report_at_sunrise() report={}".format(json.dumps(report)))
+
+        # Retrieve the report period
+        period = report.get("period", DAILY_REPORT_ADDRESS)
+
+        # Track Analytics
+        analytics.track(botengine, self.parent, "dailyreport_summary_updated", {"period": period})
+
+        # Update any existing identified items with new information if available
+        items_to_notify = []
+        for item_to_notify in self.items_to_notify:
+            if item_to_notify.get("id") is None:
+                items_to_notify.append(item_to_notify)
+                continue
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_updated_report_at_sunrise() item={}".format(item_to_notify))
+            item_id = item_to_notify["id"]
+            for section in report.get("sections", []):
+                replaced = False
+                for item in section.get("items", []):
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_updated_report_at_sunrise() \titem={}".format(item))
+                    if item.get("id") == item_id:
+                        replaced = True
+                        break
+                if replaced:
+                    break
+            items_to_notify.append(item if replaced else item_to_notify)
+
+        self.items_to_notify = items_to_notify
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_updated_report_at_sunrise()")
+
+    def _get_randomly_weighted_sections(self, botengine, weighted_sections, section_ids):
+        """
+        Get randomly weighted sections
+        :param botengine: BotEngine environment
+        :param weighted_sections: Weighted sections
+        :return: Randomly weighted sections
+        """
+        import random
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">_get_randomly_weighted_sections()")
+        sorted_sections = [(max(weighted_sections) + 10) - weight for weight in weighted_sections]
+        random_sections = random.choices(section_ids, weights=set(sorted_sections), k=len(section_ids))
+        botengine.get_logger(f"{__name__}.{__class__.__class__.__name__}").info("|_complete_report() random_sections={}".format(random_sections))
+        return random_sections
+    
     def _ask_questions(self, botengine):
         """
         Refresh questions
@@ -560,16 +676,28 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
         if is_enabled_question_object is not None and not utilities.get_answer(is_enabled_question_object):
             botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|_is_active() Daily Report service is not enabled")
             return False
+        return True
+    
+    def _is_summary_active(self, botengine):
+        """
+        Checks if Summary service is active
+        :param botengine:
+        :return: True if this microservice is actively monitoring trends
+        """
+        if botengine.playback:
+            return True
+        if not self._is_active(botengine):
+            return False
         active = DEFAULT_SUMMARY_ENABLED
         question = botengine.retrieve_question(SERVICE_KEY_SUMMARY_ACTIVE)
         if question is not None:
             if question.answer is not None:
                 active = utilities.normalize_measurement(question.answer)
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_is_active() question.answer is not None: {}; Result={}".format(question.answer, active))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_is_summary_active() question.answer is not None: {}; Result={}".format(question.answer, active))
 
             else:
                 active = utilities.normalize_measurement(question.default_answer)
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_is_active() question.answer is None: default_answer={}; Result={}".format(question.default_answer, active))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_is_summary_active() question.answer is None: default_answer={}; Result={}".format(question.default_answer, active))
     
         return active
     
@@ -659,3 +787,44 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
             if report_type["id"] == report_type_id:
                 return report_type.get("supported_insight_ids", [])
         return []
+    
+    def ai(self, botengine, content):
+        """
+        Bots can interact asynchronously with Care Daily AI ChatGPT using this API. The response from ChatGPT is delivered to the bot in a data stream message to the 'ai' address.
+
+        Data stream message content example:
+        ```
+        {
+            "key": "request key",
+            "text" : "This is a test!"
+        }
+        ```
+
+        :param botengine: BotEngine environment
+        :param content: Content of the message
+        """
+
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">ai() content={}".format(content))
+        key = content.get("key")
+        if key is None:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<ai() Missing key")
+            return
+        
+        if key == "daily_report_summary":
+            # Daily Report Summary
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|ai() Daily Report Summary")
+        
+            text = content.get("text")
+            if text is None:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<ai() Missing text for key '{}'".format(key))
+                return
+
+            location_users = botengine.get_location_users()
+            user_ids = []
+            for user in location_users:
+                if user.get("role") == User.ROLE_TYPE_PROFESSIONAL_CAREGIVER:
+                    user_ids.append(user.get("id"))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|ai() Notifying user_ids={} text={}".format(user_ids, content.get("text")))
+            analytics.track(botengine, self.parent, "dailyreport_summary_notify_professional_caregivers_delivered", {"delivered": True, "items_to_notify": self.items_to_notify, "user_ids": user_ids})
+            botengine.notify(sms_content=content, user_id_list=user_ids)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<ai()")

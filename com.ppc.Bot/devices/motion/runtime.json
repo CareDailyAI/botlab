@@ -2,10 +2,12 @@
   "version": {
     "triggerParameters": [
       "motionStatus",
+      "alarmStatus",
       "batteryLevel",
       "degC",
       "tamper",
-      "occupancy"
+      "occupancy",
+      "rssi"
     ]
   }
 }

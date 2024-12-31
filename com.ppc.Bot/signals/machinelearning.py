@@ -106,3 +106,40 @@ def ism_updated(botengine, location_object, reference, integrated_sensor_matrix,
     }
 
     location_object.distribute_datastream_message(botengine, 'ism_updated', ism_object, internal=True, external=False)
+
+def radar_filter_input_updated(botengine, location_object, device_id, reference, radar_target_array, csv_dictionary=None):
+    """
+    Radar filter targets input updated. Distribute to microservices.
+
+    :param botengine: BotEngine environment
+    :param location_object: Location object
+    :param device_id: Device Id
+    :param reference: Data Request reference. 'all' means this is all the data and can be used to recalculate machine learning models.
+    :param radar_target_array: Data array
+    :param csv_dictionary: Raw CSV dictionary
+    """
+    radar_object = {
+        # Radar targets data array
+        'radar_target_array': radar_target_array,
+
+        # Device Id
+        'device_id': device_id,
+
+        # Reference passed into the data request
+        'reference': reference,
+
+        # If 'recalculate' is true then this can be used to recalculate full machine learning models
+        'recalculate': reference == DATAREQUEST_REFERENCE_ALL,
+
+        # Raw CSV dictionary
+        'csv_dict': csv_dictionary
+    }
+
+    location_object.distribute_datastream_message(botengine, 'radar_filter_input_updated', radar_object, internal=True, external=False)
+    # Backwards compatibility
+    location_object.distribute_datastream_message(botengine, 'vayyar_filter_input_updated', radar_object, internal=True, external=False)
+
+def vayyar_filter_input_updated(botengine, location_object, device_id, reference, vayyar_target_array, csv_dictionary=None):
+    """Deprecated. Use radar_filter_input_updated instead."""
+    radar_filter_input_updated(botengine, location_object, device_id, reference, vayyar_target_array, csv_dictionary)
+    

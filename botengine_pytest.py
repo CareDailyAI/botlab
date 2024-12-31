@@ -17,6 +17,7 @@ DATA_SLEEP_DURATION_MS = -2
 
 # Logging
 LOG_LEVEL=logging.INFO
+NON_SERVICE_LOG_LEVEL=logging.WARNING
 SERVICE_LOG_LEVEL=logging.DEBUG
 
 # Name of our core variable
@@ -25,27 +26,31 @@ CORE_VARIABLE_NAME = "-core-"
 class BotEnginePyTest:
     # You can override this with your own class to validate access or return responses.
 
+
     # Trigger Types
-    TRIGGER_UNPAUSED = 0
-    TRIGGER_SCHEDULE = 1
-    TRIGGER_MODE = 1 << 1
-    TRIGGER_DEVICE_ALERT = 1 << 2
-    TRIGGER_DEVICE_MEASUREMENT = 1 << 3
-    TRIGGER_QUESTION_ANSWER = 1 << 4
-    TRIGGER_DEVICE_FILES = 1 << 5
-    TRIGGER_TIMER = 1 << 6
-    TRIGGER_METADATA = 1 << 7
-    TRIGGER_DATA_STREAM = 1 << 8
-    TRIGGER_COMMAND_RESPONSE = 1 << 9
-    TRIGGER_LOCATION_CONFIGURATION = 1 << 10
-    TRIGGER_DATA_REQUEST = 1 << 11
+    TRIGGER_UNPAUSED                = 0       # 0
+    TRIGGER_SCHEDULE                = 1 << 0  # 1
+    TRIGGER_MODE                    = 1 << 1  # 2
+    TRIGGER_DEVICE_ALERT            = 1 << 2  # 4
+    TRIGGER_DEVICE_MEASUREMENT      = 1 << 3  # 8
+    TRIGGER_QUESTION_ANSWER         = 1 << 4  # 16
+    TRIGGER_DEVICE_FILES            = 1 << 5  # 32
+    TRIGGER_TIMER                   = 1 << 6  # 64
+    TRIGGER_METADATA                = 1 << 7  # 128
+    TRIGGER_DATA_STREAM             = 1 << 8  # 256
+    TRIGGER_COMMAND_RESPONSE        = 1 << 9  # 512
+    TRIGGER_LOCATION_CONFIGURATION  = 1 << 10 # 1024
+    TRIGGER_DATA_REQUEST            = 1 << 11 # 2048
+    TRIGGER_MESSAGES                = 1 << 12 # 4096
+    TRIGGER_DOCUMENTS               = 1 << 13 # 8192
 
     # Access category types
-    ACCESS_CATEGORY_MODE = 1
-    ACCESS_CATEGORY_FILE = 2
+    ACCESS_CATEGORY_MODE            = 1
+    ACCESS_CATEGORY_FILE            = 2
     ACCESS_CATEGORY_PROFESSIONAL_MONITORING = 3
-    ACCESS_CATEGORY_DEVICE = 4
-    ACCESS_CATEGORY_CHALLENGE = 5
+    ACCESS_CATEGORY_DEVICE          = 4
+    ACCESS_CATEGORY_CHALLENGE       = 5
+    ACCESS_CATEGORY_RULES           = 6
 
     # Question Responses
     QUESTION_RESPONSE_TYPE_BOOLEAN = 1
@@ -179,6 +184,10 @@ class BotEnginePyTest:
     DATA_REQUEST_TYPE_NARRATIVES = 5
     DATA_REQUEST_TYPE_DEVICES = 6
 
+    BOT_TYPE_LOCATION           = 0
+    BOT_TYPE_ORGANIZATION       = 1
+    BOT_TYPE_ORGANIZATION_RAG   = 2
+
     def __init__(self, inputs={}):
         """Constructor"""
         self.inputs = inputs
@@ -237,7 +246,45 @@ class BotEnginePyTest:
         self.states = {}
 
         # Users
-        self.users = []
+        self.users = [
+            {
+                "id": 123,
+                "userName": "john.smith@gmail.com",
+                "altUsername": "1234567890",
+                "firstName": "John",
+                "lastName": "Smith",
+                "nickname": "Johnny",
+                "email": {
+                    "email": "john.smith@gmail.com",
+                    "verified": True,
+                    "status": 0
+                },
+                "phone": "1234567890",
+                "phoneType": 1,
+                "smsStatus": 1,
+                "locationAccess": 10,
+                "temporary": True,
+                "accessEndDate": "2019-01-29T02:45:30Z",
+                "accessEndDateMs": 1548747995000,
+                "category": 1,
+                "role": 1,
+                "smsPhone": "1234567890",
+                "language": "en",
+                "avatarFileId": 123,
+                "phoneChannels": {
+                    "sms": True,
+                    "mms": True,
+                    "voice": True
+                },
+                "schedules": [
+                    {
+                        "daysOfWeek": 127,
+                        "startTime": 10800,
+                        "endTime": 20800
+                    }
+                ]
+            }
+        ]
 
         # Device properties
         self.device_properties = {}
@@ -292,15 +339,6 @@ class BotEnginePyTest:
 
         self.location_block = self.get_location_block()
 
-        self.status = {
-            "callCenter": {
-                "alertDateMs": 0,
-                "alertStatus": 0,
-                "alertStatusDateMs": 0,
-                "status": 3
-            }
-        }
-
         self.organization_properties = {}
         self.all_trigger_types = []
 
@@ -340,11 +378,11 @@ class BotEnginePyTest:
         """Create a logger"""
         logging.Formatter.formatTime = self._playback_logger_timestamp
         logger = logging.getLogger(name)
-
         if len(self.logging_service_names) > 0 and not any([service_name in name for service_name in self.logging_service_names]):
-            return logger
-        
-        log_level = LOG_LEVEL if len(self.logging_service_names) == 0 else SERVICE_LOG_LEVEL
+            # All other loggers should describe warning or error messages only
+            log_level = NON_SERVICE_LOG_LEVEL
+        else:
+            log_level = LOG_LEVEL if len(self.logging_service_names) == 0 else SERVICE_LOG_LEVEL
         
         if not logger.handlers:
             # Create a console handler
@@ -518,6 +556,45 @@ class BotEnginePyTest:
             return self.inputs['dataStream']
         
         return None
+
+    def get_documents_request_id(self):
+        """
+        :return: the documents request ID
+        """
+        return self.inputs.get('requestId', None)
+
+    def get_document_block(self):
+        """
+        :return: the 'document' block for location configuration triggers
+        """
+        return self.inputs.get('document', None)
+
+    def get_users_block(self):
+        """
+        :return: The 'users' block for location configuration triggers
+        """
+        if 'users' in self.inputs:
+            return self.inputs['users']
+
+        return None
+
+    def get_callcenter_block(self):
+        """
+        :return: The 'callCenter' block for location configuration triggers
+        """
+        if 'callCenter' in self.inputs:
+            return self.inputs['callCenter']
+
+        return None
+
+    def get_data_block(self):
+        """
+        :return: The 'data' block for asynchronous data request inputs
+        """
+        if 'data' in self.inputs:
+            return self.inputs['data']
+
+        return None
     
     def get_input_key(self):
         """
@@ -537,11 +614,33 @@ class BotEnginePyTest:
                     return block
 
         return {
-            'location': {
-                'latitude': 0.0,
-                'longitude': 0.0
+              "category": 1,
+              "control": True,
+              "location": {
+                "event": "HOME",
+                "latitude": "47.72328",
+                "locationId": 0,
+                "longitude": "-122.17426",
+                "name": "Apartment 103",
+                "timezone": {
+                  "dst": True,
+                  "id": "US/Pacific",
+                  "name": "Pacific Standard Time",
+                  "offset": -480
+                },
+                "zip": "98034"
+              },
+              "read": True,
+              "trigger": True
             }
-        }
+    
+    def get_messages_block(self):
+        """
+        :return: the messages block from our inputs, if any
+        """
+        if 'messages' in self.inputs:
+            return self.inputs['messages']
+        return None
 
     def get_bundle_id(self):
         """
@@ -560,6 +659,15 @@ class BotEnginePyTest:
         """
         import bundle
         return bundle.CLOUD_ADDRESS
+
+    def get_bot_type(self):
+        """
+        When you generate a bot, botengine will automatically generate and add a 'bundle.py' file which contains the bot type.
+        This method simply returns the BOT_TYPE from the contents of the bundle.py file.
+        :return: The bot type for this bot
+        """
+        import bundle
+        return int(bundle.BOT_TYPE if hasattr(bundle, 'BOT_TYPE') else 0)
 
     def get_bot_instance_id(self):
         """
@@ -585,7 +693,7 @@ class BotEnginePyTest:
         """
         users = self.get_location_users()
         for user in users:
-            if int(user['id']) == int(user_id):
+            if int(user['id']) == int(user_id or -1):
                 name = {
                     "firstName": "",
                     "lastName": ""
@@ -1169,9 +1277,9 @@ class BotEnginePyTest:
                     if p["name"] == name:
                         if index is not None:
                             if p["index"] == index:
-                                return self.device_properties[device_id][i]
+                                return [self.device_properties[device_id][i]]
                         else:
-                            return self.device_properties[device_id][i]
+                            return [self.device_properties[device_id][i]]
 
         return []
 
@@ -1672,25 +1780,34 @@ class BotEnginePyTest:
         :param fields_updated: To optimize integrations with 3rd party clouds, this is a list of the fields that were added/updated. Always used in conjunction with overwrite=True.
         :param fields_deleted: List of fields that were removed. Always used in conjunction with overwrite=True
         """
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">set_state() address={} json_content={} overwrite={} timestamp_ms={}".format(address, json_content, overwrite, timestamp_ms))
         if timestamp_ms is not None:
             if timestamp_ms not in self.states:
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Initialize timeseries state")
                 self.states[timestamp_ms] = {}
 
             if not overwrite:
                 if address in self.states[timestamp_ms]:
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Update timeseries state")
                     self.states[timestamp_ms][address].update(json_content)
                 else:
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Add timeseries state")
                     self.states[timestamp_ms][address] = json_content    
             else:
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Overwrite timeseries state")
                 self.states[timestamp_ms][address] = json_content
         else:
             if not overwrite:
                 if address in self.states:
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Update state")
                     self.states[address].update(json_content)
                 else:
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Add state")
                     self.states[address] = json_content
             else:
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Overwrite state")
                 self.states[address] = json_content
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<set_state()")
 
     def get_state(self, address, timestamp_ms=None):
         """
@@ -1701,19 +1818,27 @@ class BotEnginePyTest:
         :param timestamp_ms: Optional timestamp for time-based state variables
         :return: The JSON value for this address, or None if it doesn't exist
         """
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">get_state() address={} timestamp_ms={}".format(address, timestamp_ms))
+        state = None
         if timestamp_ms in self.states:
             if address in self.states[timestamp_ms]:
-                return self.states[timestamp_ms][address]
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_state() Found timeseries state")
+                state = self.states[timestamp_ms][address]
         
         else:
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_state() Initialize timeseries state")
             self.states[timestamp_ms] = {}
 
-        if timestamp_ms is not None:
-            if address in self.states[timestamp_ms]:
-                return self.states[timestamp_ms][address]
-        elif address in self.states:
-            return self.states[address]
-        return None
+        if state is None:
+            if timestamp_ms is not None:
+                if address in self.states[timestamp_ms]:
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_state() Found timeseries state")
+                    state = self.states[timestamp_ms][address]
+            elif address in self.states:
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_state() Found state")
+                state = self.states[address]
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_state()")
+        return state
 
     def delete_state(self, address, timeseries_property=False, overwrite=True, publish_to_partner=True):
         """
@@ -1919,17 +2044,48 @@ class BotEnginePyTest:
     # Open AI
     #===========================================================================
 
-    def send_request_for_chat_completion(self, key, params):
+    def send_request_for_chat_completion(self, key, data, openai_organization_id=None):
         """
         Send asynchronous request to Open AI API to obtain a model response for the given chat conversation.
         :param key: Key to identify this request
-        :param params: Parameters to send to the Open AI API
+        :param data: Parameters to send to the Open AI API
+        :param openai_organization_id: Organization ID to use for the Open AI API. Default is None.
         :return: JSON response from Care Daily API
         """
         if key is None:
             raise ValueError("send_request_for_chat_completion() key cannot be None")
-        if 0 == len(params.get("messages", [])):
+        if 0 == len(data.get("messages", [])):
             raise ValueError("send_request_for_chat_completion() messages cannot be empty")
+        return {}
+    
+    #===========================================================================
+    # AI
+    #===========================================================================
+
+    def send_a_request_to_a_model(self, model_name, key, data):
+        """
+        Send asynchronous request to an AI model to obtain a model response for the given data.
+        There are 2 types of AI applications:
+
+            - The first type uses the LLama model and provides simple text completion or chat completion.
+            - The second type uses the SetFit model and calculates phrase scoring (probabilities of scores 0,1,2).
+
+        The type of AI application is determined automatically by its unique name.
+        The response from AI application is delivered to the bot in a data stream message to the address "ai".
+        
+        :param model_name: Model ID to use for the AI model
+        :param key: Key to identify this request
+        :param data: Parameters to send to the AI model
+        :return: JSON response from Care Daily API
+        """
+        import json
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("|send_a_request_to_a_model() model_name={} key={} data={}".format(model_name, key, json.dumps(data, sort_keys=True)))
+        if model_name is None:
+            raise ValueError("send_a_request_to_a_model() model_name cannot be None")
+        if key is None:
+            raise ValueError("send_a_request_to_a_model() key cannot be None")
+        if data is None:
+            raise ValueError("send_a_request_to_a_model() data cannot be None")
         return {}
 
     def request_customer_support(self, ticket_type, ticket_priority, subject, comment, brand="default"):
@@ -1949,6 +2105,74 @@ class BotEnginePyTest:
         self.get_logger(f"{__name__}.{__class__.__name__}").info("request_customer_support() params={}".format(json.dumps(self.customer_support_body, sort_keys=True)))
         return
 
+
+    # ===========================================================================
+    # Cloud API for EngageKit
+    # ===========================================================================
+    def get_cloud_message_topics(self):
+        """
+        Get a list of message topics
+        :return: A list of message topics
+        """
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">get_cloud_message_topics()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("<get_cloud_message_topics()")
+        return {}
+
+    def update_cloud_message_topics(self, topics):
+        """
+        Create message topics if they don't exist and update the list of topics for the specified bot.
+        :param topics: List of topics
+        :return:
+        """
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">update_cloud_message_topics()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("<update_cloud_message_topics()")
+        return {}
+
+    def create_cloud_messages(self, messages_json=None, by_user: bool = False):
+        """
+        Create new cloud messages at a location.
+        :param location_id: The location ID if created by user
+        :param messages_json: The messages json content
+        :return:
+        """
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">create_cloud_messages()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("<create_cloud_messages()")
+        return {}
+
+    def update_cloud_messages(self, messages_json):
+        """
+        AI bots can update message statuses and schedule delivery time.
+        :param messages_json: The messages json content
+        :return:
+        """
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">update_cloud_messages()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("<update_cloud_messages()")
+        return {}
+
+    def get_cloud_messages(self, start_date_ms, end_date_ms, topic_id, read_status):
+        """
+        Get messages from a location
+        :param start_date_ms: The start date in milliseconds
+        :param end_date_ms: The end date in milliseconds
+        :param topic_id: The topic ID
+        :param read_status: The read status
+        :return: Messages JSON
+        """
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">get_cloud_messages()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("<get_cloud_messages()")
+        return {}
+
+    def update_cloud_message_read_status(self, message_id, read_status):
+        """
+        Update message read status
+        :param message_id: The message ID
+        :param read_status: The read status
+        :return:
+        """
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(">update_cloud_message_read_status()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info("<update_cloud_message_read_status()")
+        return {}
+    
     #============================================================================
     # Professional monitoring
     #============================================================================

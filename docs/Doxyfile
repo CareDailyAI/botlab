@@ -909,36 +909,15 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = ../README.md \
-                         ../com.ppc.Lesson0-Botengine \
-                         ../com.ppc.Lesson1-Microservices \
-                         ../com.ppc.Lesson2-LiveUpdates \
-                         ../com.ppc.Lesson3-Commands \
-                         ../com.ppc.Lesson4-Notifications \
-                         ../com.ppc.Lesson5-SpaceTime \
-                         ../com.ppc.Lesson6-DataStreams \
-                         ../com.ppc.Lesson7-SunriseSunset \
-                         ../com.ppc.Lesson8-Video \
-                         ../com.ppc.Lesson9-Sms \
-                         ../com.ppc.Lesson10-MachineLearning \
-                         ../com.ppc.Lesson11-Questions \
-                         ../com.ppc.Lesson12-Tags \
-                         ../com.ppc.Lesson13-LanguageLocalization \
-                         ../com.ppc.Lesson14-Weather \
-                         ../com.ppc.Lesson15-Analytics \
-                         ../com.ppc.Lesson16-Narratives \
-                         ../com.ppc.Lesson17-UserInterfaces \
-                         ../com.ppc.Lesson18-UserManagement \
-                         ../com.ppc.Lesson19-Behaviors \
-                         ../com.ppc.Lesson20-Rules \
-                         ../com.ppc.Lesson21-EdgeComputing \
-                         ../com.ppc.VideoRecognitionAmazon \
-                         ../com.ppc.VideoRecognitionGoogle \
-                         ../com.ppc.VideoRecognitionMicrosoft \
-                         ../virtual_devices \
                          ../botengine \
                          ../com.ppc.Bot \
+                         ../com.ppc.BotProprietary \
                          ../com.ppc.Microservices \
-                         ../com.ppc.Tests
+                         ../com.ppc.Tests \
+                         ../maestro_cli \
+                         ../org.ppc.Bot \
+                         ../org.ppc.Microservices
+
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1058,6 +1037,9 @@ EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = */tests/test*
 EXCLUDE_PATTERNS       += com.ppc.Tests/*
 EXCLUDE_PATTERNS       += com.ppc.Microservices/*
+EXCLUDE_PATTERNS       += maestro_cli/*
+EXCLUDE_PATTERNS       += org.ppc.Bot/*
+EXCLUDE_PATTERNS       += org.ppc.Microservices/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the

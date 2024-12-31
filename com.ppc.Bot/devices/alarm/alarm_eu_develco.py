@@ -59,3 +59,10 @@ class DevelcoEuDevice(AlarmDevice):
         :return: the font icon name of this device type
         """
         return "alarm-ip"
+
+    def is_smoke_detected(self, botengine):
+        """
+        :param botengine:
+        :return: True if smoke is detected
+        """
+        return self.is_alarm_activated(botengine)

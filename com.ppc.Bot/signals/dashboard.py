@@ -250,7 +250,7 @@ def delete_dashboard_header(botengine, location_object, name, future_timestamp_m
     location_object.distribute_datastream_message(botengine, 'update_dashboard_header', content, internal=True, external=False)
 
 
-def set_status(botengine, location_object, unique_identifier, comment, status=STATUS_GOOD, comment_weight=50, device_id=None, icon=None, icon_font=None, url=None, section_title=CARD_TITLE_NOW, section_weight=CARD_TYPE_NOW_WEIGHT, set_status_good_timestamp_ms=None, set_status_warning_timestamp_ms=None, set_status_critical_timestamp_ms=None, delete_timestamp_ms=None):
+def set_status(botengine, location_object, unique_identifier, comment, status=STATUS_GOOD, comment_weight=50, device_id=None, icon=None, icon_font=None, url=None, section_title=CARD_TITLE_NOW, section_weight=CARD_TYPE_NOW_WEIGHT, set_status_good_timestamp_ms=None, set_status_warning_timestamp_ms=None, set_status_critical_timestamp_ms=None, delete_timestamp_ms=None, status_comments=None):
     """
     Set content for a status-style card.
     These are the multiple rows of information at the the top of the dashboard that say what is happening right now.
@@ -269,6 +269,7 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
     :return: Dashboard JSON content to be saved and used in updating later
     """
     alarms = {}
+    comments ={}
 
     element = {
         "status": status,
@@ -276,7 +277,9 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
         "weight": comment_weight,
         "id": unique_identifier,
         "icon": icon,
-        "alarms": alarms
+        "alarms": alarms,
+        "comments":comments
+
     }
 
     if icon_font is not None:
@@ -300,9 +303,11 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
 
     if set_status_warning_timestamp_ms is not None:
         alarms[set_status_warning_timestamp_ms] = COMMAND_SET_STATUS_WARNING
+        comments[set_status_warning_timestamp_ms] = status_comments.get(STATUS_WARNING) if status_comments else None
 
     if set_status_critical_timestamp_ms is not None:
         alarms[set_status_critical_timestamp_ms] = COMMAND_SET_STATUS_CRITICAL
+        comments[set_status_critical_timestamp_ms] = status_comments.get(STATUS_CRITICAL) if status_comments else None
 
     if delete_timestamp_ms is not None:
         alarms[delete_timestamp_ms] = COMMAND_DELETE

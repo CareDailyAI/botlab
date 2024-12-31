@@ -6,6 +6,9 @@ file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
 '''
+# TODO: Add "messaging" signal class to com.ppc.Bot/signals/messaging/messaging.py
+# TODO: Add documentation to github docs.
+
 
 from intelligence.intelligence import Intelligence
 

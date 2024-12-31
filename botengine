@@ -39,8 +39,8 @@ from argparse import RawDescriptionHelpFormatter
 DEFAULT_BASE_SERVER_URL = "app.peoplepowerco.com"
 
 __all__ = []
-__version__ = '9.3.0'
-__date__ = '2024-02-22'
+__version__ = '9.6.0'
+__date__ = '2024-12-30'
 
 DEBUG = 0
 TESTRUN = 0
@@ -90,8 +90,10 @@ _bot_logger_config = None
 _https_proxy = None
 
 # Runtime classifiers for AWS Lambda
-RUNTIME_PYTHON_3_8 = 2
-RUNTIME_PYTHON_3_9 = 3
+RUNTIME_PYTHON_3_8  = 2
+RUNTIME_PYTHON_3_9  = 3
+RUNTIME_PYTHON_3_10 = 4
+RUNTIME_PYTHON_3_11 = 5
 
 # True to not delete the .tar file generated on upload; False to delete the .tar file (default)
 KEEP_BOT_TAR_FILE = False
@@ -172,6 +174,8 @@ MARKETING_FILENAME = "marketing.json"
 # Information file generated during the creation of a bot, including the bundle ID
 INFO_FILENAME = "info.py"
 
+# The topic.json file describes the message topics that this bot can send to users
+TOPICS_FILENAME = "topics.json"
 
 #===============================================================================
 # Main Function
@@ -264,9 +268,6 @@ USAGE
         developer_group.add_argument("--errors", dest="errors_bundle_id", nargs='+', help="Get the errors from your given bot bundle executing on the cloud across all users")
         developer_group.add_argument("--logs", dest="logs_bundle_id", nargs='+', help="Get the logs from your given bot bundle executing on the cloud across all users")
         developer_group.add_argument("--reject_bot_under_review", dest="reject_bundle_id", help="Reject the given bot from being reviewed or published publicly. Used after you --publish and need to make changes.")
-        developer_group.add_argument("--add_organization", dest="bundle_for_organization", help="Allow the given Bundle ID to be purchased by the given --organization")
-        developer_group.add_argument("--remove_organization", dest="remove_organization", help="Bundle ID to prevent from being purchased by the --organization")
-        developer_group.add_argument("--organization_development_mode", dest="organization_development_mode", action="store_true", help="Allow the organization to use the bot in developer mode instead of only purchasing publicly available bots. This is always used in conjunction with --add_organization")
         developer_group.add_argument("--add_team_member", dest="add_team_member", action="store_true", help="Add a new member to the team.")
         developer_group.add_argument("--delete_team_member", dest="delete_team_member", action="store_true", help="Delete a member of the team.")
         developer_group.add_argument("--get_team_members", dest="get_team_members", action="store_true", help="View members of the team.")
@@ -287,8 +288,6 @@ USAGE
         run_group.add_argument("--https_proxy", dest="https_proxy", help="If your corporate network requires a proxy, type in the full HTTPS proxy address here (i.e. http://10.10.1.10:1080)")
 
         appstore_group = parser.add_argument_group(Color.BOLD + "BOT SHOP - Browse the Bot Shop and manage purchased bots." + Color.END)
-        appstore_group.add_argument("--search", dest="search", action="store_true", help="Search the bot store for all available bots")
-        appstore_group.add_argument("--searchfor", dest="search_criteria", help="Search the bot store for bots matching the given search criteria")
         appstore_group.add_argument("--lookat", dest="view_bundle_id", help="View the details of an bot on the bot store")
         appstore_group.add_argument("--purchase", dest="purchase_bundle_id", help="Obtain or purchase access to an bot on the bot store")
         appstore_group.add_argument("--configure", dest="configure_bot_instance_id", help="Grant permission for an bot instance to access devices and communications")
@@ -300,11 +299,13 @@ USAGE
         appstore_group.add_argument("--questions", dest="questions_bot_instance_id", help="Answer questions asked by the given bot instance ID or bundle ID")
 
         optional_group = parser.add_argument_group(Color.BOLD + "Optional Arguments" + Color.END)
-        optional_group.add_argument("-o", "--organization_id", dest="organization_id", help="Add in the organization ID we're talking about, used in conjunction with --purchase, --add_organization, --remove_organization")
+        optional_group.add_argument("-o", "--organization_id", dest="organization_id", help="Add in the organization ID we're talking about, used in conjunction with --purchase, --add_organization, --approve_organization, --remove_organization, and --get_organizations")
         optional_group.add_argument("-h", "--help", dest="help", action="store_true", help="Show this help message and exit")
         optional_group.add_argument("-u", "--username", dest="username", help="Username")
-        optional_group.add_argument("-st", "--save-states", dest="save_states", help="Location ID for set states after playback locally")
-        optional_group.add_argument("-fst", "--force-save-states", dest="force_save_states", help="Location ID for set states after playback locally")
+        optional_group.add_argument("-st", "--save-states", dest="save_states", action="store_true", help="Set states after playback locally")
+        optional_group.add_argument("-fst", "--force-save-states", dest="force_save_states", action="store_true", help="Set states after playback locally")
+        optional_group.add_argument("-sp", "--save-priorities", dest="save_priorities", action="store_true", help="Set location priority after playback locally")
+        optional_group.add_argument("-sn", "--save-narratives", dest="save_narratives", action="store_true", help="Set location narratives after playback locally")
         optional_group.add_argument("-p", "--password", dest="password", help="Password")
         optional_group.add_argument("--admin_username", dest="admin_username", help="Administrative username")
         optional_group.add_argument("--admin_password", dest="admin_password", help="Administrative password")
@@ -340,6 +341,34 @@ USAGE
 
         # Subparsers
         subparsers = parser.add_subparsers(dest="actions")
+
+        # 'bot_organizations' parser
+        bot_organizations_parser = subparsers.add_parser("bot_organizations")
+
+        add_organization_group = bot_organizations_parser.add_argument_group(Color.BOLD + "Add Organization" + Color.END)
+        add_organization_group.add_argument('--add_organization', dest="add_bot_organization", help="Allow the given Bundle ID to be purchased by the given --organization")
+
+        approve_organization_group = bot_organizations_parser.add_argument_group(Color.BOLD + "Approve Organization" + Color.END)
+        approve_organization_group.add_argument('--approve_organization', dest="approve_bot_organization", help="Approve the given Bundle ID for the given --organization")
+        approve_organization_group.add_argument('-s', '--status', dest="bot_organization_status", help="Status of the bot.  1 to approve, 2 to reject.")
+        approve_organization_group.add_argument("-d', '--development", dest="bot_organization_development", action="store_true", help="This bot is for testing and development purposes. Default is 'false'.")
+
+        remove_organization_group = bot_organizations_parser.add_argument_group(Color.BOLD + "Remove Organization" + Color.END)
+        remove_organization_group.add_argument('--remove_organization', dest="remove_bot_organization", help="Bundle ID to prevent from being purchased by the --organization")
+
+        get_organizations_group = bot_organizations_parser.add_argument_group(Color.BOLD + "Get Organizations" + Color.END)
+        get_organizations_group.add_argument('--get_organizations', dest="get_bot_organizations", help="Get a list of the organizations you have access to")
+
+        # 'bot_shop_search' parser
+        bot_shop_search_parser = subparsers.add_parser("bot_shop_search")
+        bot_shop_search_parser.add_argument("--search_by", dest="bot_shop_search_search_by", help="Search in name, author, keywords, bundle. Use * for a wildcard.")
+        bot_shop_search_parser.add_argument("--categories", dest="bot_shop_search_categories", nargs="+", help="Category search. i.e. 'S', 'E', etc. Multiple values are allowed and OR-ed.")
+        bot_shop_search_parser.add_argument("--compatible", dest="bot_shop_search_compatible", help="Filter by bots that are compatible with our user account or not, leave blank to return all bots")
+        bot_shop_search_parser.add_argument("--lang", dest="bot_shop_search_lang", help="Language filter, leave blank to return bots in all languages")
+        bot_shop_search_parser.add_argument("--core", dest="bot_shop_search_core", help="Filter by core class")
+        bot_shop_search_parser.add_argument("--object_names", dest="bot_shop_search_object_names", nargs="+", help="Show objects with such name(s). Multiple values are allowed.")
+        bot_shop_search_parser.add_argument("--limit", dest="bot_shop_search_limit", help="Limit the response size")
+
 
         # 'distribution' parser
         distribution_parser = subparsers.add_parser("distribution")
@@ -385,6 +414,49 @@ USAGE
         get_cloudwatch_log_info_group = logging_parser.add_argument_group(Color.BOLD + "Cloudwatch Log Info" + Color.END)
 
         get_cloudwatch_log_info_group.add_argument('--get_cloudwatch_log_info', dest="get_cloudwatch_log_info", action="store_true", help="Get a description of the bot instance log stream in AWS CloudWatch.")
+
+        # 'bot_instance_log_export' subparser
+        logging_export_parser = subparsers.add_parser("bot_instance_log_export")
+
+        set_cloudwatch_logging_group = logging_export_parser.add_argument_group(Color.BOLD + "Create an export task" + Color.END)
+        set_cloudwatch_logging_group.add_argument('--create_an_export_task', dest="create_an_export_task", action="store_true", help="Create the export task to export the log stream.")
+
+        set_cloudwatch_logging_group.add_argument("-i", "--instance_id", dest="app_instance_id", help="Bot Instance ID")
+        set_cloudwatch_logging_group.add_argument("-f", "--execution_flow", dest="execution_flow", help="Execution Flow")
+        set_cloudwatch_logging_group.add_argument("-s", "--start_date_ms", dest="start_date_ms", help="Start date of log events to export.")
+        set_cloudwatch_logging_group.add_argument("-e", "--end_date_ms", dest="end_date_ms", help="End date of log events to export.")
+
+        get_export_status_group = logging_export_parser.add_argument_group(Color.BOLD + "Get Export Status" + Color.END)
+        
+        get_export_status_group.add_argument('--get_export_status', dest="get_export_status", action="store_true", help="Inspect the status of an export task and obtain the pre-signed URL(s) to the exported files.")
+
+        get_export_status_group.add_argument("-t", "--task_id", dest="task_id", help="An export task ID")
+
+        # 'engage_kit' parser
+        engage_kit_parser = subparsers.add_parser("engage_kit")
+
+        engage_kit_parser.add_argument("-l", "--lang", dest="language", help="Preferred content language")
+
+        message_topics_group = engage_kit_parser.add_argument_group(Color.BOLD + "Message Topics" + Color.END)
+
+        message_topics_group.add_argument("-b", "--bundle", dest="bundle_id", help="Bot bundle ID. The parameter is required if the bot instance ID is not specified.")
+
+        message_topics_group.add_argument("--update_message_topics_for_bundle", dest="update_message_topics", action="store_true", help="Update message topics for a given bot bundle.")
+        message_topics_group.add_argument("--get_message_topics", dest="get_message_topics", action="store_true", help="Get a list of existing message topics. If a bundle ID is provided, only the topics for that bundle are returned.")
+
+        messages_group = engage_kit_parser.add_argument_group(Color.BOLD + "Messages" + Color.END)
+
+        messages_group.add_argument("-j", "--json", dest="messages_json", help="Messages json content")
+        messages_group.add_argument("-t", "--topic_id", dest="topic_id", help="Topic ID")
+        messages_group.add_argument("-s", "--start_date", dest="messages_start_date", help="Start date to filter by delivery date.")
+        messages_group.add_argument("-e", "--end_date", dest="messages_end_date", help="End date to filter by delivery date")
+        messages_group.add_argument("-r", "--read_status", dest="messages_read_status", help="Message read status")
+        messages_group.add_argument("-m", "--message_id", dest="message_id", help="Message ID")
+
+        messages_group.add_argument("--create_messages", dest="create_messages", action="store_true", help="Create new messages at a location.")
+        messages_group.add_argument("--update_messages", dest="update_messages", action="store_true", help="Update message statuses and delivery times.")
+        messages_group.add_argument("--get_messages", dest="get_messages", action="store_true", help="Get messages at a location.")
+        messages_group.add_argument("--update_message_read_status", dest="update_message_read_status", action="store_true", help="Mark a message as read or unread.")
 
         # Process arguments
         args = parser.parse_args()
@@ -443,8 +515,6 @@ USAGE
         forever = args.json is None
         download_device_id = args.download_device_id
         download_device_type = args.download_device_type
-        search_criteria = args.search_criteria
-        search = args.search or (search_criteria is not None)
         appstore_view_bundle_id = args.view_bundle_id
         my_purchased_bots = args.my_purchased_bots
         delete_bot_instance_id = args.delete_bot_instance_id
@@ -453,9 +523,6 @@ USAGE
         pause_bot_instance_id = args.pause_bot_instance_id
         play_bot_instance_id = args.play_bot_instance_id
         organization_id = args.organization_id
-        organization_development_mode = args.organization_development_mode
-        add_organization = args.bundle_for_organization
-        remove_organization = args.remove_organization
         permissions_bot_instance_id = args.permissions_bot_instance_id
         devicetypes = args.device_types
         parameter = args.parameter
@@ -473,6 +540,8 @@ USAGE
         admin_password = args.admin_password
         save_states = args.save_states
         force_save_states = args.force_save_states
+        save_priorities = args.save_priorities
+        save_narratives = args.save_narratives
         location_id = args.location_id
         list_locations = args.list_locations
         sync_edge = args.sync_edge
@@ -962,31 +1031,6 @@ USAGE
 
             return 0
 
-        if search:
-            # Search the bot store
-            if user_key is None:
-                user_key = _login(server, username, password)
-
-            search_results = _botstore_search(server, user_key, searchBy=search_criteria)
-
-            for bot in search_results:
-                if bot["compatible"]:
-                    compatibility = Color.GREEN + "(Compatible)" + Color.END
-                else:
-                    compatibility = Color.RED + "(Incompatible)" + Color.END
-
-                print(Color.BOLD + "+ " + bot["name"] + " - by " + bot["author"] + " " + compatibility + Color.END)
-
-                print("\t" + Color.UNDERLINE + bot["bundle"] + Color.END)
-
-                try:
-                    print("\t" + bot["description"].replace("\n","\n\t\t"))
-                except:
-                    pass
-
-                print("\n")
-            return 0
-
         if appstore_view_bundle_id:
             # View a particular bot on the bot store
             if user_key is None:
@@ -1267,7 +1311,7 @@ USAGE
             if user_key is None:
                 user_key = _login(server, username, password)
 
-            marketing_file = os.path.join(base_path, 'marketing.json')
+            marketing_file = os.path.join(base_path, MARKETING_FILENAME)
             version_file = os.path.join(base_path, RUNTIME_FILENAME)
 
             if not os.path.exists(marketing_file):
@@ -1349,7 +1393,7 @@ USAGE
                 if "organizational" in marketing_data["app"]:
                     organizational_bot = marketing_data["app"]["type"] == 1
 
-                runtime = RUNTIME_PYTHON_3_9
+                runtime = RUNTIME_PYTHON_3_11
                 memory = DEFAULT_MEMORY
                 timeout = DEFAULT_RUNTIME_TIMEOUT_S
 
@@ -1365,7 +1409,7 @@ USAGE
 
                     # Default to AWS Lambda
                     if "runtime" not in version_data["version"]:
-                        version_data["version"]["runtime"] = RUNTIME_PYTHON_3_9
+                        version_data["version"]["runtime"] = RUNTIME_PYTHON_3_11
 
                     print("Uploading the runtime configuration...")
 
@@ -2191,7 +2235,7 @@ USAGE
             ### Update this local 'botengine' python application ###
             import subprocess
             print("If asked, please provide your computer's password to install an update")
-            subprocess.call("curl -s https://raw.githubusercontent.com/caredailyai/botlab/master/installer.sh | sudo /bin/bash", shell=True);
+            subprocess.call("curl -s https://raw.githubusercontent.com/peoplepower/botlab/master/installer.sh | sudo /bin/bash", shell=True);
             return 0
 
         if publish:
@@ -2254,44 +2298,6 @@ USAGE
                 return 2
 
             print(the_bot() + "Developer rejected!")
-            return 0
-
-        if add_organization:
-            if user_key is None:
-                user_key = _login(server, username, password)
-
-            if organization_id is None:
-                sys.stderr.write("Supply the ID of the organization with --organization\n\n")
-                return 2
-
-            try:
-                _allow_organization_to_purchase_bot(server, user_key, add_organization, organization_id, organization_development_mode)
-
-            except BotError as e:
-                sys.stderr.write("BotEngine Error: " + e.msg)
-                sys.stderr.write("\n\n")
-                return 2
-
-            print(the_bot() + "Done!")
-            return 0
-
-        if remove_organization:
-            if user_key is None:
-                user_key = _login(server, username, password)
-
-            if organization_id is None:
-                sys.stderr.write("Supply the ID of the organization with --organization\n\n")
-                return 2
-
-            try:
-                _prevent_organization_from_purchasing_bot(server, user_key, add_organization, organization_id)
-
-            except BotError as e:
-                sys.stderr.write("BotEngine Error: " + e.msg)
-                sys.stderr.write("\n\n")
-                return 2
-
-            print(the_bot() + "Done!")
             return 0
 
         if download_device_id or download_device_type:
@@ -2445,9 +2451,9 @@ USAGE
                     recorded_devices = {}
 
                     for device in devices:
-                        if 'type' in device:
-                            if device['type'] == 22 or device['type'] == 23 or device['type'] == 24 or device['type'] == 10031 or device['type'] == 31 or device['type'] == 37 or device['type'] == 36 or device['type'] == 35 or device['type'] == 40:
-                                continue
+                        if device.get('type', 0) in [22, 23, 24, 10031, 31, 37, 36, 35, 40]:
+                            # Ignore gateway/proxy device types
+                            continue
 
                         print("Capturing " + str(device['id']) + " - '" + str(device['desc']) + "' ...")
                         behavior = None
@@ -2597,6 +2603,8 @@ USAGE
             playback_notifications_log = "playback_{}_notifications.txt".format(playback_session_id)
             playback_narratives_log = "playback_{}_narratives.txt".format(playback_session_id)
             playback_states_log = "playback_{}_states.txt".format(playback_session_id)
+            playback_timeseries_states_log = "playback_{}_timeseries_states.txt".format(playback_session_id)
+            playback_location_priorities_log = "playback_{}_location_priorities.txt".format(playback_session_id)
 
             try:
                 os.remove(playback_notifications_log)
@@ -2610,6 +2618,16 @@ USAGE
 
             try:
                 os.remove(playback_states_log)
+            except:
+                pass
+
+            try:
+                os.remove(playback_timeseries_states_log)
+            except:
+                pass
+            
+            try:
+                os.remove(playback_location_priorities_log)
             except:
                 pass
 
@@ -2702,15 +2720,24 @@ USAGE
                     playback_device_properties = value
                     break
 
-            commit_state_location_id = None
+            commit_location_id = None
+            commit_bot_instance_id = None
             user_key = None
-            if force_save_states is not None or save_states is not None:
-                user_key = _login(server, username, password)
-                if force_save_states is not None:
-                    commit_state_location_id = force_save_states
+            admin_key = None
+            analytic_key = None
+            if force_save_states or save_states:
+                if location_id is None:
+                    raise ValueError("You must specify a location ID to save states.")
+                if admin_username is not None:
+                    admin_key = _login(server, admin_username, admin_password, admin=True)
+                if username is not None and password is not None:
+                    user_key = _login(server, username, password)
+
+                if force_save_states:
+                    commit_location_id = location_id
                 else:
-                    commit_state_location_id = save_states
-                    devices = _get_devices_from_location(server, user_key, save_states)
+                    commit_location_id = location_id
+                    devices = _get_devices_from_location(server, admin_key, commit_location_id)
                     if devices:
                         if unzipped_file_name is not None:
                             import shutil
@@ -2721,10 +2748,36 @@ USAGE
                         return -1
 
                 try:
-                    _delete_states(server, user_key, commit_state_location_id)
+                    _delete_states(server, admin_key, commit_location_id)
                 except:
                     # Not yet implemented server-side[
                     pass
+            if save_priorities:
+                if location_id is None:
+                    raise ValueError("You must specify a location ID to save priorities.")
+                if instance is None:
+                    raise ValueError("You must specify a bot instance ID to save priorities.")
+                if username is not None and password is not None:
+                    user_key = _login(server, username, password)
+                
+                commit_location_id = location_id
+                commit_bot_instance_id = instance
+                
+                analytic_key = _get_botengine_key(server, user_key, BOT_KEY_TYPE_NORMAL, commit_bot_instance_id)
+            
+            if save_narratives:
+                if location_id is None:
+                    raise ValueError("You must specify a location ID to save narratives.")
+                if instance is None:
+                    raise ValueError("You must specify a bot instance ID to save narratives.")
+                if username is not None and password is not None:
+                    user_key = _login(server, username, password)
+                
+                commit_location_id = location_id
+                commit_bot_instance_id = instance
+                
+                analytic_key = _get_botengine_key(server, user_key, BOT_KEY_TYPE_NORMAL, commit_bot_instance_id)
+
 
             location_id = playback_location_info['id']
             location_timezone = playback_location_info['timezone']
@@ -2803,6 +2856,7 @@ USAGE
             botengine.resynchronize_questions = playback_resynchronize_questions
             botengine.narrate = playback_narrate
             botengine._flush_states = playback_flush_states
+            botengine.set_location_priority = playback_set_location_priority
             botengine.get_state = playback_get_states
             botengine.get_timeseries_state = playback_get_timeseries_state
             botengine.set_mode = playback_set_mode
@@ -2823,11 +2877,14 @@ USAGE
             playback_data_requests_triggered = False
             with open(playback_json_file, 'r') as f:
                 ijson_requests_properties = ijson.items(f, 'data_requests')
-
                 for value in ijson_requests_properties:
-                    playback_data_requests = value
-                    break
+                    if playback_data_requests is None:
+                        playback_data_requests = value
+                    else:
+                        _bot_loggers["botengine"].debug("Unused playback data requests: {}".format(value))
+                
 
+            botengine.get_logger(f"{'botengine'}").debug("playback_data_requests={}".format(playback_data_requests))
             with open(playback_json_file, 'r') as f:
                 if "run" in dir(bot):
                     did_start_playback = False
@@ -2841,12 +2898,36 @@ USAGE
                         print(Color.BOLD + "Playing back the data to the current timestamp: {}".format(ts_now) + Color.END)
                         time.sleep(1)
 
+                    last_trigger_data = {}
+                    triggered_device_ids = []
                     for d in datas:
                         inputs = {}
                         inputs['access'] = []
                         trigger = int(d['trigger'])
                         timestamp = int(d['timestamp_ms'])
                         timezone_str = None
+
+
+                        # Inject a data stream message before we begin, 'did_start_playback()'
+                        if not did_start_playback:
+                            # Form inputs to represent a data stream message
+                            did_start_playback = True
+                            datastream_inputs = {
+                                "dataStream": {
+                                    "address": "did_start_playback",
+                                    "feed": None
+                                },
+                                'trigger': 256,
+                                'locationId': location_id,
+                                'time': timestamp,
+                                'access': [],
+                            }
+                            for access_id in raw_access_content:
+                                content = dict(raw_access_content[access_id])
+                                content['trigger'] = False
+                                datastream_inputs['access'].append(content)
+                            _run(bot, {"inputs": [datastream_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
+
 
                         previous_timestamp_ms = latest_timestamp_ms
                         latest_timestamp_ms = timestamp
@@ -2958,7 +3039,7 @@ USAGE
                                                 # Execute any pending actions
                                                 if len(playback_chat_completions) > 0:
                                                     _bot_loggers["botengine"].info("Injecting chat completions: playback_chat_completions={}".format(playback_chat_completions))
-                                                    for key, params in playback_chat_completions:
+                                                    for key, data, openai_organization_id in playback_chat_completions:
                                                         # key = chat_completion["key"]
                                                         # params = chat_completion["params"]
                                                         datastream_inputs = {
@@ -3054,7 +3135,7 @@ USAGE
                                 # Execute any pending actions
                                 if len(playback_chat_completions) > 0:
                                     _bot_loggers["botengine"].info("Injecting chat completions: playback_chat_completions={}".format(playback_chat_completions))
-                                    for key, params in playback_chat_completions:
+                                    for key, data, openai_organization_id in playback_chat_completions:
                                         # key = chat_completion["key"]
                                         # params = chat_completion["params"]
                                         datastream_inputs = {
@@ -3097,6 +3178,9 @@ USAGE
 
                         playback_timestamp_ms = timestamp
 
+                        if not trigger in last_trigger_data:
+                            last_trigger_data[trigger] = {}
+
                         # Schedules
                         if trigger == 1:
                             schedule_inputs = {
@@ -3118,7 +3202,8 @@ USAGE
                             playback_variables = botengine.variables
                             
                         # Modes
-                        elif trigger == 2:
+                        elif trigger == 2: 
+                            continue # Ignore modes for now
                             if 'location' in raw_access_content:
                                 raw_access_content['location']['location']['prevEvent'] = raw_access_content['location']['location']['event']
                                 raw_access_content['location']['location']['event'] = d['event']
@@ -3140,6 +3225,7 @@ USAGE
                                     "deviceId": d['device_id'],
                                     "deviceType": int(d['device_type']),
                                     'goalId': int(d['behavior']),
+                                    'spaces': [{"id": 0, "spaceType": int(space_type), "name": "SPACE"} for space_type in d.get('spaces', '').split(',') if len(space_type) > 0],
                                     "locationId": int(location_id),
                                     "measureDate": timestamp,
                                     "startDate": 0,
@@ -3181,7 +3267,7 @@ USAGE
                                     }
                                     params = []
                                     for parameter in d:
-                                        if parameter in ['trigger', 'location_id', 'device_type', 'device_id', 'description', 'timestamp_ms', 'timestamp_iso', 'timestamp_excel', 'behavior', 'alertType']:
+                                        if parameter in ['trigger', 'location_id', 'device_type', 'device_id', 'description', 'timestamp_ms', 'timestamp_iso', 'timestamp_excel', 'behavior', 'spaces', 'alertType']:
                                             continue
                                         params.append({
                                             'name': parameter,
@@ -3208,6 +3294,7 @@ USAGE
                                     "locationId": int(location_id),
                                     "measureDate": timestamp,
                                     'goalId': int(d['behavior']),
+                                    'spaces': [{"id": 0, "spaceType": int(space_type), "name": "SPACE"} for space_type in d.get('spaces', '').split(',') if len(space_type) > 0],
                                     #"proxyId": "LCGW-86c503a8005f1500",
                                     #"remoteAddrHash": "befa55256736f5c0e87b6ec1876b8e05b773bbd70346f9f2da419fc3d9374aeb",
                                     "startDate": 0,
@@ -3222,7 +3309,7 @@ USAGE
 
                                 inputs['measures'] = []
                                 for parameter in d:
-                                    if parameter in ['trigger', 'location_id', 'device_type', 'device_id', 'description', 'timestamp_ms', 'timestamp_iso', 'timestamp_excel', 'behavior', 'alertType']:
+                                    if parameter in ['trigger', 'location_id', 'device_type', 'device_id', 'description', 'timestamp_ms', 'timestamp_iso', 'timestamp_excel', 'behavior', 'spaces', 'alertType']:
                                         continue
                                     measure = {
                                         "deviceId": d['device_id'],
@@ -3234,6 +3321,22 @@ USAGE
                                         measure['prevValue'] = device_id_params[d['device_id']][parameter]['value']
                                         measure['updated'] = d[parameter] != measure['prevValue']
 
+                                        # Handle measurements that are provided with identical values but different timestamps by checking if all the parameters in this trigger are identical to the last parameters trigger
+                                        if not measure['updated']:
+                                            if int(d['device_type']) == 2000 and parameter in ['bedStatus']:
+                                                if last_trigger_data[trigger][d['device_id']] is not None:
+                                                    last_d = last_trigger_data[trigger][d['device_id']]
+                                                    is_identical = True
+                                                    for param in last_d:
+                                                        if param in ['trigger', 'location_id', 'device_type', 'device_id', 'description', 'timestamp_ms', 'timestamp_iso', 'timestamp_excel', 'behavior', 'alertType']:
+                                                            continue
+                                                        if last_d[param] != d[param]:
+                                                            is_identical = False
+                                                            break
+                                                    if is_identical:
+                                                        measure['updated'] = True
+                                                        
+                                        
                                     else:
                                         measure['updated'] = True
 
@@ -3243,16 +3346,84 @@ USAGE
                                     device_id_params[d['device_id']][parameter] = measure
                                     inputs['measures'].append(measure)
 
+                                last_trigger_data[trigger][d['device_id']] = d
+
                             else:
                                 # This device type is not a runtime.json trigger
                                 continue
 
                         # Data Streams
                         elif trigger == 256:
+                            continue # Ignore data streams for now
+
+                            if d.get('feed') is None:
+                                botengine.get_logger(f"{'botengine'}").error("Datastream missing feed! datastream={}".format(d))
+                                continue
                             inputs["dataStream"] = {
                                 "address": d['address'],
                                 'feed': json.loads(d['feed'])
                             }
+
+                        
+                        # Messages
+                        elif trigger & BotEngine.TRIGGER_MESSAGES != 0:
+                            {
+                                "time": 1446537883000,
+                                "trigger": 4096,
+                                "source": 5,
+                                "locationId": 123,
+                                "messages": [
+                                    {
+                                        "messageId": 123,
+                                        "scheduleType": 0,
+                                        "status": 1,
+                                        "topicId": "general",
+                                        "appInstanceId": 456,
+                                        "contentKey": "Short content description",
+                                        "creationTime": 1646537712000,
+                                        "maxDeliveryTime": 1666537712000,
+                                        "deliveryDayTime": 36000,
+                                        "timeToLive": 3600
+                                    },
+                                    {
+                                        "messageId": 124,
+                                        "scheduleType": 0,
+                                        "status": 2,
+                                        "topicId": "general",
+                                        "appInstanceId": 456,
+                                        "contentKey": "Short content description",
+                                        "creationTime": 1646537712000,
+                                        "maxDeliveryTime": 1666537712000,
+                                        "deliveryDayTime": 36000,
+                                        "timeToLive": 3600,
+                                        "deliveryTime": 1666037712000,
+                                    },
+                                    {
+                                        "messageId": 125,
+                                        "scheduleType": 1,
+                                        "status": 1,
+                                        "topicId": "general",
+                                        "appInstanceId": 457,
+                                        "contentKey": "Short content description",
+                                        "creationTime": 1646537712000,
+                                        "maxDeliveryTime": 1666537712000,
+                                        "timeToLive": 3600,
+                                        "schedule": "0 0 10 ? * SUN"
+                                    },
+                                    {
+                                        "messageId": 126,
+                                        "originalMessageId": 123,
+                                        "scheduleType": 0,
+                                        "status": 3,
+                                        "topicId": "general",
+                                        "userId": 789,
+                                        "contentText": "Reply from a user",
+                                        "lang": "en",
+                                        "creationTime": 1646537712000
+                                    }
+                                ]
+                            }
+                            # TODO: Implement messages playback
 
                         for access_id in raw_access_content:
                             inputs['access'].append(raw_access_content[access_id])
@@ -3282,9 +3453,10 @@ USAGE
                         playback_timestamp_ms = timestamp
 
                         # After playback for 48 hours simulate a data_request if available and not yet triggered
-                        if not playback_data_requests_triggered:
+                        if not playback_data_requests_triggered and playback_data_requests is not None:
                             hours_later = 1 # 48
                             if (timestamp - original_timestamp_ms) > 1000 * 60 * 60 * hours_later:
+                                botengine.get_logger(f"{'botengine'}").debug("playback_data_requests={}".format(playback_data_requests))
                                 for device_id, filepath in playback_data_requests.items():
                                     in_file = open("{}/{}".format(playback_file_directory, filepath), "rb")
                                     data = in_file.read()
@@ -3295,8 +3467,11 @@ USAGE
 
                                     # Retrieve all unique parameter names
                                     param_names = []
-                                    param_names = [line[param_idx] for line in lines if line[param_idx] not in param_names]
-
+                                    for line in lines:
+                                        if line[param_idx] in param_names:
+                                            continue
+                                        param_names.append(line[param_idx])
+                                    
                                     request = {
                                         "type": botengine.DATA_REQUEST_TYPE_PARAMETERS,
                                         "deviceId": device_id,
@@ -3307,20 +3482,42 @@ USAGE
                                         # "index": 
                                         # "ordered": 
                                     }
+                                    botengine.get_logger(f"{'botengine'}").debug("Injecting initial data_request={}".format(request))
                                     botengine.data_requests.append(request)
 
                         # Run on any pending data_requests
                         if len(botengine.data_requests) > 0:
+                            botengine.get_logger(f"{'botengine'}").debug("playback data_requests={}".format(botengine.data_requests))
                             
                             if playback_data_requests is not None:
-                                request_data = {}
+                                all_request_data = []
                                 
-                                for device_id, filepath in playback_data_requests.items():
-                                    # Skip this device if it's not in the data request
-                                    if device_id not in [data_request["deviceId"] for data_request in botengine.data_requests]:
+                                for data_request in botengine.data_requests:
+                                    if data_request.get("key") is None:
+                                        # Missing reference key, skip this request
                                         continue
-                                    in_file = open("{}/{}".format(playback_file_directory, filepath), "rb")
-                                    data = in_file.read()
+                                    request_data = {
+                                            "type": botengine.DATA_REQUEST_TYPE_PARAMETERS,
+                                            "key": data_request["key"],
+                                            "deviceId": data_request["deviceId"],
+                                            "startTime": data_request["startTime"],
+                                            "endTime": data_request["endTime"],
+                                            "paramNames": data_request.get("paramNames"),
+                                            "index": data_request.get("index"),
+                                        }
+                                    data = None
+                                    for device_id, filepath in playback_data_requests.items():
+                                        if device_id != data_request["deviceId"]:
+                                            continue
+
+                                        request_data["url"] = "{}/{}".format(playback_file_directory, filepath)
+                                        in_file = open("{}/{}".format(playback_file_directory, filepath), "rb")
+                                        data = in_file.read()
+
+                                    if data is None:
+                                        continue
+
+                                    botengine.get_logger(f"{'botengine'}").debug("playback data_request={}".format(request_data))
 
                                     # Include data constrained to the data request start and end time
                                     constrained_data = []
@@ -3330,12 +3527,20 @@ USAGE
                                     constrained_data.append(csv_headers)
 
                                     param_idx = csv_headers.index("measureTime")
-                                    [constrained_data.append(line) for line in lines if int(line[param_idx]) >= botengine.data_requests[0]["startTime"] and int(line[param_idx]) <= botengine.data_requests[0]["endTime"]]
+                                    
+                                    botengine.get_logger(f"{'botengine'}").debug("playback data_request first line={}".format(lines[0]))
+                                    botengine.get_logger(f"{'botengine'}").debug("playback data_request last line={}".format(lines[-1]))
+                                    [constrained_data.append(line) for line in lines if int(line[param_idx]) >= data_request["startTime"] and int(line[param_idx]) <= data_request["endTime"]]
                                     if len(constrained_data) > 1:
-                                        request_data[device_id] = "\n".join([",".join(line) for line in constrained_data]).encode("utf-8")
+                                        botengine.get_logger(f"{'botengine'}").debug("playback data_request first data={}".format(constrained_data[1]))
+                                        botengine.get_logger(f"{'botengine'}").debug("playback data_request last data={}".format(constrained_data[-1]))
+                                        request_data["data"] = "\n".join([",".join(line) for line in constrained_data]).encode("utf-8")
+                                        request_data["dataLength"] = len(request_data["data"])
+                                        all_request_data.append(request_data)
 
                                 if len(request_data) > 0:
-                                    request_inputs = {'time': timestamp, 'data': request_data, 'trigger': botengine.TRIGGER_DATA_REQUEST, 'locationId': location_id, 'access': []}
+                                    
+                                    request_inputs = {'time': timestamp, 'data': all_request_data, 'trigger': botengine.TRIGGER_DATA_REQUEST, 'locationId': location_id, 'access': []}
                                     botengine.get_logger(f"{'botengine'}").debug("playback injecting data request response: request_inputs={}".format(request_inputs))
                                     for access_id in raw_access_content:
                                         request_inputs['access'].append(raw_access_content[access_id])
@@ -3345,26 +3550,15 @@ USAGE
                             botengine.data_requests = []
                             playback_data_requests_triggered = True
 
-                        # Inject a data stream message before we begin, 'did_start_playback()'
-                        if not did_start_playback:
-                            # Form inputs to represent a data stream message
-                            did_start_playback = True
-                            datastream_inputs = {
-                                "dataStream": {
-                                    "address": "did_start_playback",
-                                    "feed": None
-                                },
-                                'trigger': 256,
-                                'locationId': location_id,
-                                'time': timestamp,
-                                'access': [],
-                            }
-                            for access_id in raw_access_content:
-                                content = dict(raw_access_content[access_id])
-                                content['trigger'] = False
-                                datastream_inputs['access'].append(content)
-                            _run(bot, {"inputs": [datastream_inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
 
+                        # If this is the first trigger for this device then insert a Device Configuration trigger to start (trigger 128)
+
+                        if 'device_id' in d and d['device_id'] not in triggered_device_ids:
+                            triggered_device_ids.append(d['device_id'])
+                            inputs_copy = dict(inputs)
+                            inputs_copy['trigger'] = 128
+                            _run(bot, {"inputs": [inputs_copy]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
+                            
                         # Run against our real trigger
                         _run(bot, {"inputs": [inputs]}, _bot_loggers["botengine"], botengine_override=botengine, local=True, playback=True)
                         playback_variables = botengine.variables
@@ -3413,38 +3607,215 @@ USAGE
             runtime_duration_minutes = round(runtime_duration_ms / 1000 / 60, 1)
             virtual_duration_hours = round(virtual_duration_ms / 1000 / 60 / 60, 1)
 
-            if force_save_states is not None or save_states is not None:
-                for timestamp, value in playback_states.items():
-                    for address, json_content in value.items():
-                        if timestamp is not None:
-                            _bot_loggers["botengine"].info("Uploading '{}' at timestamp {} to location ID {}...".format(address, timestamp, commit_state_location_id))
-                        else:
-                            _bot_loggers["botengine"].info("Uploading '{}' to location ID {}...".format(address, commit_state_location_id))
-                            _bot_loggers["botengine"].info(json.dumps(value, indent=2, sort_keys=True))
-
-                        _set_state(server, user_key, commit_state_location_id, address, json_content, overwrite=True, timestamp_ms=timestamp, publish_to_partner=False)
-                        time.sleep(1)
-
             # Write playback states out to the file
             import copy
             output_states = copy.deepcopy(playback_states)
             with open(playback_states_log, "w") as myfile:
                 if None in output_states:
-                    myfile.write(json.dumps(output_states[None], indent=2) + "\n\n-----\n\n")
-
+                    myfile.write(json.dumps(output_states[None], indent=2))
                     del output_states[None]
+
+            with open(playback_timeseries_states_log, "w") as myfile:
                 if len(output_states) > 0:
-                    myfile.write(json.dumps(output_states, indent=2) + "\n\n")
+                    myfile.write(json.dumps(output_states, indent=2))
 
-            _bot_loggers["botengine"].info("Cleaning up... {}".format(unzipped_file_name))
-            if unzipped_file_name is not None:
-                import shutil
-                shutil.rmtree(unzipped_file_name)
+            # Move all artifacts to a new directory for this session
+            import shutil
+            playback_dir = f"playback_{botname}_{session_id}"
+            os.makedirs(playback_dir)
+            try:
+                shutil.move(playback_states_log, f"{playback_dir}/playback_states_{session_id}.txt")
+            except:
+                pass
+            try:
+                shutil.move(playback_timeseries_states_log, f"{playback_dir}/playback_timeseries_states_{session_id}.txt")
+            except:
+                pass
+            try:
+                shutil.move(playback_narratives_log, f"{playback_dir}/playback_narratives_{session_id}.txt")
+            except:
+                pass
+            try:
+                shutil.move(playback_notifications_log, f"{playback_dir}/playback_notifications_{session_id}.txt")
+            except:
+                pass
+            try:
+                shutil.move(playback_location_priorities_log, f"{playback_dir}/playback_location_priorities_{session_id}.txt")
+            except:
+                pass
 
-            _bot_loggers["botengine"].info("Fast-forwarded {} hours of playback into only {} minutes - {}% time savings!".format(virtual_duration_hours, runtime_duration_minutes,                                                                                      round((1 - (runtime_duration_ms / virtual_duration_ms)) * 100, 2)))
-            _bot_loggers["botengine"].info("Exported runtime history to {}, {}, {}".format(playback_states_log, playback_narratives_log, playback_notifications_log))
-            _bot_loggers["botengine"].info("Exported raw logging to playback_{}_log.txt".format(session_id))
+            # Copy the playback zip or json file to the new directory
+            if zipfile.is_zipfile(playback):
+                shutil.copy(playback, f"{playback_dir}/playback.zip")
+            else:
+                shutil.copy(playback, f"{playback_dir}/playback.json")
+            
+            # Move the compiled bot to the new directory
+            shutil.move(base_path, f"{playback_dir}/botname")
+
+            # Split log files into smaller files
+            lines_per_file = 250000
+            smallfile = None
+            with open(f"playback_{session_id}_log.txt") as logfile:
+                for lineno, line in enumerate(logfile):
+                    if lineno % lines_per_file == 0:
+                        if smallfile:
+                            smallfile.close()
+                        small_filename = f"{playback_dir}/playback_{session_id}_log_{lineno + lines_per_file}.txt"
+                        smallfile = open(small_filename, "w")
+                    smallfile.write(line)
+                if smallfile:
+                    smallfile.close()
+
+            # Remove the original log file
+            os.remove(f"playback_{session_id}_log.txt")
+
+            # Set playback timestamp to now
+            from tzlocal import get_localzone
+            playback_timestamp_ms = datetime.now().timestamp() * 1000
+            playback_timezone = str(get_localzone())
+
+            _bot_loggers["botengine"].info("Fast-forwarded {} hours of playback into only {} minutes - {}% time savings!".format(virtual_duration_hours, runtime_duration_minutes, round((1 - (runtime_duration_ms / virtual_duration_ms)) * 100, 2)))
+            _bot_loggers["botengine"].info("Exported runtime history to {}".format(playback_dir))
             _bot_loggers["botengine"].info(the_bot() + " Done!")
+
+            if force_save_states or save_states:
+                # Refresh the API key again in case the bot playback takes too long
+                if admin_username is not None:
+                    admin_key = _login(server, admin_username, admin_password, admin=True)
+                if username is not None and password is not None:
+                    user_key = _login(server, username, password)
+
+                for timestamp, value in playback_states.items():
+                    # Time series status should not be added prior to 2020-01-01
+                    min_timestamp = 1577854800000
+                    if timestamp is not None and timestamp <= min_timestamp:
+                        _bot_loggers["botengine"].info("Cannot upload timeseries state, date too early.")
+                        continue
+
+                    for address, json_content in value.items():
+                        if timestamp is not None:
+                            dt = playback_get_datetime_from_timestamp(timestamp, playback_timezone)
+                            _bot_loggers["botengine"].info("Uploading '{}' at timestamp {} to location ID {}...".format(address, timestamp, commit_location_id))
+                        else:
+                            _bot_loggers["botengine"].info("Uploading '{}' to location ID {}...".format(address, commit_location_id))
+                            _bot_loggers["botengine"].debug(json.dumps(value, indent=2, sort_keys=True))
+
+                        _set_state(server, admin_key, commit_location_id, address, json_content, overwrite=True, timestamp_ms=timestamp, publish_to_partner=False)
+                        time.sleep(0.5)
+
+            if save_priorities:
+                # Refresh the API key again in case the bot playback takes too long
+                if username is not None and password is not None:
+                    user_key = _login(server, username, password)
+                analytic_key = _get_botengine_key(server, user_key, BOT_KEY_TYPE_NORMAL, commit_bot_instance_id)
+
+                if playback_location_priority is not None:
+                    _bot_loggers["botengine"].info("Setting location priority to {}...".format(playback_location_priority))
+                    _set_location_priority(server, analytic_key, commit_location_id, playback_location_priority)
+                    time.sleep(0.5)
+            
+            if save_narratives:
+                # !! Use with caution.  Often times bots produce LOTS of narratives.  This will save them all.
+                # As a safe guard, analytic narratives are not published.
+                
+                # Refresh the API key again in case the bot playback takes too long
+                if username is not None and password is not None:
+                    user_key = _login(server, username, password)
+                analytic_key = _get_botengine_key(server, user_key, BOT_KEY_TYPE_NORMAL, commit_bot_instance_id)
+
+                if len(playback_narratives):
+                    _bot_loggers["botengine"].info("Creating or updating narratives...")
+                    first_narrative, first_params = playback_narratives[0]
+                    last_narrative, last_params = playback_narratives[-1]
+                    _bot_loggers["botengine"].info("Retrieving existing narratives between {} and {}...".format(first_narrative['narrativeTime'], last_narrative['narrativeTime']))
+                    narratives_response = _get_narratives(server, user_key, commit_location_id, row_count=100, start_date_ms=first_narrative['narrativeTime'], end_date_ms=last_narrative['narrativeTime'] + 1000)
+                    current_narratives = narratives_response.get('narratives', [])
+                    while narratives_response.get('nextMarker', None) != None:
+                        _bot_loggers["botengine"].info("Retrieving more narratives...")
+                        narratives_response = _get_narratives(server, user_key, commit_location_id, start_date_ms=first_narrative['narrativeTime'], end_date_ms=last_narrative['narrativeTime'] + 1000, page_marker=narratives_response['nextMarker'])
+                        current_narratives.extend(narratives_response['narratives'])
+                    _bot_loggers["botengine"].info("Current narratives: {}".format(len(current_narratives)))
+                    for narrative, params in playback_narratives:
+                        event_type = narrative.get('eventType')
+                        narrative_time = narrative['narrativeTime']
+                        _bot_loggers["botengine"].info("Checking narrative '{}' at timestamp {} to location ID {}...".format(event_type, narrative_time, commit_location_id))
+
+                        update_narrative_id = params.get('narrativeId')
+                        update_narrative_time = params.get('narrativeTime')
+
+                        if update_narrative_id is None and update_narrative_time is None:
+                            should_skip = False
+                            # Multiple narratives of the same time and date may be published
+                            # Find each, then check if any of them match the pending narrative, if so, ignore it
+                            matched = [] # [(id, should_update, idx)]
+                            for idx, current_narrative in enumerate(current_narratives):
+                                if current_narrative['narrativeDateMs'] == narrative_time \
+                                    and current_narrative.get('eventType') == (event_type[:50] if event_type is not None else None):
+                                    _bot_loggers["botengine"].info("Found existing narrative ID {}".format(current_narrative['id']))
+
+                                    # Check that this narrative is different
+                                    # Remove any None values from the `target` before comparing
+                                    should_update = 0 # Represents the number of fields that are different
+                                    if current_narrative.get('title') != narrative.get('title'):
+                                        _bot_loggers["botengine"].info("Title differs")
+                                        should_update += 1
+                                    if current_narrative.get('priority') != narrative.get('priority'):
+                                        _bot_loggers["botengine"].info("Priority differs")
+                                        should_update += 1
+                                    if current_narrative.get('description') != narrative.get('description'):
+                                        _bot_loggers["botengine"].info("Description differs")
+                                        should_update += 1
+                                    if current_narrative.get('icon') != narrative.get('icon'):
+                                        _bot_loggers["botengine"].info("Icon differs")
+                                        should_update += 1
+                                    if current_narrative.get('iconFont') != narrative.get('iconFont'):
+                                        _bot_loggers["botengine"].info("Icon font differs")
+                                        should_update += 1
+                                    if {k: v for k, v in current_narrative.get('target', {}).items() if v is not None} != {k: v for k, v in narrative.get('target', {}).items() if v is not None}:
+                                        _bot_loggers["botengine"].info("Target differs")
+                                        should_update += 1
+                                    
+                                    if should_update > 0:
+                                        _bot_loggers["botengine"].info("Narrative differs for {} fields".format(should_update))
+                                        _bot_loggers["botengine"].info("Current narrative: {}".format(current_narrative))
+                                        _bot_loggers["botengine"].info("New narrative: {}".format(narrative))
+                                    
+                                    matched.append((current_narrative['id'], should_update, idx))
+
+                            if len(matched) > 0:
+                                sorted_matches = sorted(matched, key=lambda x: x[1])
+                                _bot_loggers["botengine"].info("Sorted matches: {}".format(sorted_matches))
+                                if sorted_matches[0][1] == 0:
+                                    _bot_loggers["botengine"].info("Skipping identical narrative")
+                                    should_skip = True
+                                else:                            
+                                    # Update the narrative with the most matches
+                                    update_narrative_id = sorted_matches[0][0]
+                                    update_narrative_time = narrative_time
+                                current_narratives.pop(sorted_matches[0][2])
+                            else:
+                                _bot_loggers["botengine"].info("Did not find existing narrative: {}".format(narrative))
+
+                        if should_skip:
+                            continue
+                        scope = params.get('scope', 1)
+                        publish = params.get('publish')
+                        _bot_loggers["botengine"].info("Creating or updating narrative (id: {}, time: {}): {}".format(update_narrative_id, update_narrative_time, narrative))
+                        _create_or_update_narrative(server, analytic_key, commit_location_id, scope, publish, update_narrative_id, update_narrative_time, narrative)
+                        time.sleep(0.5)
+                        # break
+                    
+                    _bot_loggers["botengine"].info("Finished creating or updating narratives")
+                    
+                    _bot_loggers["botengine"].info("Removing unmatched narratives: {}".format(len(current_narratives)))
+                    for current_narrative in current_narratives:
+                        _bot_loggers["botengine"].info("Deleting unmatched narrative ID {}".format(current_narrative['id']))
+                        _delete_narrative(server, analytic_key, commit_location_id, 1, current_narrative['id'], current_narrative['narrativeDateMs'])
+                        time.sleep(0.5)
+                        # break
+
+                    _bot_loggers["botengine"].info("Finished deleting unmatched narratives")
 
             sys.exit(0)
             return 0
@@ -3502,6 +3873,297 @@ USAGE
             print("\n" + the_bot() + "Done!")
             return 0
 
+        
+        if args.actions == "engage_kit":
+            if not _is_server_version_newer_than(server, 41, 0):
+                _bot_loggers["botengine"].warning("This feature is not available on this cloud!")
+                return 0
+
+            if user_key is None:
+                user_key = _login(server, username, password)
+
+            # Message Topics
+
+            if args.update_message_topics:
+
+                if args.bundle_id is None:
+                    sys.stderr.write(Color.RED + "Missing the bundle ID." + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                # Update the topics of a given bot bundle
+                if user_key is None:
+                    user_key = _login(server, username, password)
+
+                ### Commit your bot to the cloud ###
+                import shutil
+
+                bundle_id = args.bundle_id.replace("/", "")
+                if len(bundle_id.split(".")) != 3:
+                    sys.stderr.write(
+                        Color.RED + "Your new bot name must conform to reverse domain-name notation, as in 'com.yourname.BotName'" + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                base_path = os.path.join(os.getcwd(), bundle_id)
+
+                if user_key is None:
+                    user_key = _login(server, username, password)
+
+                topics_file = os.path.join(base_path, TOPICS_FILENAME)
+
+                topics_text = ""
+                with open(topics_file) as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line.startswith("#"):
+                            topics_text += line
+                topics = json.loads(topics_text)
+
+                try:
+                    _update_message_topics(server, user_key, bundle_id, topics)
+                except BotError as e:
+                    sys.stderr.write("BotEngine Error: " + e.msg)
+                    sys.stderr.write("\n\n")
+                    return 2
+
+                print("\n" + Color.BOLD + "Updated!" + Color.END + "")
+                return 0
+
+            if args.get_message_topics:
+                if args.bundle_id:
+                    analytic_key = _get_botengine_key(server, user_key, BOT_KEY_TYPE_NORMAL, instance)
+                    app_info = _botstore_botinfo(server, user_key, args.bundle_id.replace("/", ""))
+                    app_id = app_info.get('appId')
+                    if app_id is None:
+                        sys.stderr.write(Color.RED + "The bundle ID is not valid." + Color.END)
+                        sys.stderr.write("\n\n")
+                        return 1
+                    topics = _get_message_topics(server, analytic_key=analytic_key, app_id=app_id,
+                                                 lang=args.language or 'en')
+                else:
+                    topics = _get_message_topics(server, key=user_key, lang=args.language or 'en')
+
+                if 'topics' not in topics:
+                    print(Color.RED + "There are no topics on this server.\n\n" + Color.END)
+
+                else:
+                    print(Color.BOLD + "Topics" + Color.END)
+                    print("-" * 50)
+                    for topic in topics['topics']:
+                        print("\t{}{}{}: {}".format(Color.BOLD, str(topic['topicId']), Color.END, topic['name']))
+
+                print()
+                return 0
+
+            # Messages
+
+            if args.create_messages:
+                if args.messages_json is None:
+                    sys.stderr.write(Color.RED + "Missing the messages json content.\n" + Color.END)
+                    sys.stderr.write(Color.RED + "To create messages: --create_messages -j <messages_json>" + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                try:
+                    messages = json.loads(args.messages_json)
+                except Exception as e:
+                    sys.stderr.write(Color.RED + "Invalid messages json content." + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                if instance is not None:
+                    analytic_key = _get_botengine_key(server, user_key, BOT_KEY_TYPE_NORMAL, instance)
+                    messages = _create_messages(server, key=user_key, analytic_key=analytic_key, messages_json=messages)
+                else:
+                    if location_id is None:
+                        sys.stderr.write(Color.RED + "Missing the location ID." + Color.END)
+                        sys.stderr.write("\n\n")
+                        return 1
+
+                    messages = _create_messages(server, key=user_key, location_id=location_id, messages_json=messages)
+
+                print(messages)
+                return 0
+
+            if args.update_messages:
+                if args.messages_json is None:
+                    sys.stderr.write(Color.RED + "Missing the messages json content.\n" + Color.END)
+                    sys.stderr.write(Color.RED + "To update messages: --update_messages -j <messages_json>" + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                try:
+                    messages = json.loads(args.messages_json)
+                except Exception as e:
+                    sys.stderr.write(Color.RED + "Invalid messages json content." + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                if instance is None:
+                    sys.stderr.write(Color.RED + "Missing the bot instance ID." + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+                analytic_key = _get_botengine_key(server, user_key, BOT_KEY_TYPE_NORMAL, instance)
+                _update_messages(server, key=analytic_key, messages_json=messages)
+                print()
+                return 0
+
+            if args.get_messages:
+
+                if location_id is None:
+                    sys.stderr.write(Color.RED + "Missing the location ID." + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                if args.messages_start_date is None:
+                    sys.stderr.write(Color.RED + "Missing the start date." + Color.END)
+                    sys.stderr.write(Color.RED + "To get messages: --get_messages -s <start_date_ms>" + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                topic_id = args.topic_id
+                end_date = args.messages_end_date
+                read_status = args.messages_read_status
+
+                messages = _get_messages(server, user_key, location_id, args.messages_start_date, end_date, instance,
+                                         topic_id, read_status)
+
+                if 'messages' not in messages:
+                    print(Color.RED + "No delivered messages found.\n\n" + Color.END)
+
+                else:
+                    print(Color.BOLD + "Messages" + Color.END)
+                    print("-" * 50)
+                    for message in messages['messages']:
+                        print("\t{}{}{}: {} - {} - {}".format(Color.BOLD, str(message['messageId']), Color.END,
+                                                              message["deliveryDate"],
+                                                              "  Read" if message["readStatus"] else "Unread",
+                                                              message['contentKey']))
+
+                print()
+                return 0
+
+            if args.update_message_read_status:
+                if location_id is None:
+                    sys.stderr.write(Color.RED + "Missing the location ID." + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                if args.message_id is None:
+                    sys.stderr.write(Color.RED + "Missing the message ID." + Color.END)
+                    sys.stderr.write(
+                        Color.RED + "To update message read status: --update_message_read_status -m <message_id> -r <read_status>" + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                if args.messages_read_status is None:
+                    sys.stderr.write(Color.RED + "Missing the new read status." + Color.END)
+                    sys.stderr.write(
+                        Color.RED + "To update message read status: --update_message_read_status -m <message_id> -r <read_status>" + Color.END)
+                    sys.stderr.write("\n\n")
+                    return 1
+
+                message_id = args.message_id
+                messages_read_status = args.messages_read_status
+
+                _update_message_read_status(server, user_key, location_id, args.message_id, args.messages_read_status)
+                print()
+                return 0
+
+        if args.actions == "bot_organizations":
+            if args.add_bot_organization:
+                try:
+                    if args.organization_id is None:
+                        raise BotError("Missing the organization ID.", -1)
+                except Exception as e:
+                    _bot_loggers["botengine"].error(e)
+                    return 0
+
+                if user_key is None:
+                    user_key = _login(server, username, password)
+
+                _add_bot_to_organization(server, user_key, args.add_bot_organization, args.organization_id)
+                _bot_loggers["botengine"].info("Bot {} added to organization {}.".format(args.add_bot_organization, args.organization_id))
+            
+            if args.approve_bot_organization:
+                try:
+                    if args.organization_id is None:
+                        raise BotError("Missing the organization ID.", -1)
+                    if args.bot_organization_status is None:
+                        raise BotError("Missing the status.", -1)
+                    if args.bot_organization_status not in ["1", "2"]:
+                        raise BotError("Invalid status.", -1)
+                except Exception as e:
+                    _bot_loggers["botengine"].error(e)
+                    return 0
+                
+            
+                if user_key is None:
+                    user_key = _login(server, admin_username, admin_password, admin=True)
+
+                _approve_bot_for_organization(server, user_key, args.approve_bot_organization, args.organization_id, args.bot_organization_status, args.bot_organization_development)
+                _bot_loggers["botengine"].info("Bot {} status set to {} in organization {}.".format(args.approve_bot_organization, args.bot_organization_status, args.organization_id))
+
+            if args.remove_bot_organization:
+                try:
+                    if args.organization_id is None:
+                        raise BotError("Missing the organization ID.", -1)
+                except Exception as e:
+                    _bot_loggers["botengine"].error(e)
+                    return 0
+                
+                if user_key is None:
+                    user_key = _login(server, username, password)
+                _remove_an_organization(server, user_key, args.remove_bot_organization, args.organization_id)
+                _bot_loggers["botengine"].info("Bot {} removed from organization {}.".format(args.remove_bot_organization, args.organization_id))
+            
+            if args.get_bot_organizations:
+                if user_key is None:
+                    user_key = _login(server, username, password)
+                bot_organizations = _get_organizations(server, user_key, args.get_bot_organizations)
+                organizations = bot_organizations.get("organizations", [])
+                if len(organizations) == 0:
+                    print("No organizations found.")
+                for organization in organizations:
+                    if organization.get("development", True):
+                        development = Color.YELLOW + "Development" + Color.END
+                    else:
+                        development = Color.GREEN + "Public" + Color.END
+
+                    print(f"{Color.BOLD}{organization['name']}{Color.END} - {organization['id']} ({development})")
+                    
+                    print("\n")
+            return 0
+
+        if args.actions == "bot_shop_search":
+            if user_key is None:
+                if organization_id is not None:
+                    user_key = _login(server, admin_username, admin_password, admin=True)
+                else:
+                    user_key = _login(server, username, password)
+            
+            search = _botstore_search(server, user_key, args.bot_shop_search_search_by, args.bot_shop_search_categories, args.bot_shop_search_compatible, args.bot_shop_search_lang, args.bot_shop_search_core, location_id, organization_id, args.bot_shop_search_object_names, args.bot_shop_search_limit)
+            apps = search.get("apps", [])
+            if len(apps) == 0:
+                print("No bots found.")
+
+            for bot in apps:
+                if bot.get("compatible", True):
+                    compatibility = Color.GREEN + "(Compatible)" + Color.END
+                else:
+                    compatibility = Color.RED + "(Incompatible)" + Color.END
+                print(Color.BOLD + "+ " + bot["name"] + " - by " + bot["author"] + " " + compatibility + Color.END)
+
+                print("\t" + Color.UNDERLINE + bot["bundle"] + Color.END)
+
+                try:
+                    print("\t" + bot["description"].replace("\n","\n\t\t"))
+                except:
+                    pass
+
+                print("\n")
+            return 0
         if args.actions == "execution":
 
 
@@ -3529,8 +4191,7 @@ USAGE
                 print(json.dumps(execution_history, indent=2, sort_keys=True))
                 return
 
-        if args.actions == "logging":
-            
+        if args.actions == "bot_instance_logging":
             try:
                 if args.app_instance_id is None:
                     raise BotError("Missing the app instance ID.", -1)
@@ -3566,6 +4227,213 @@ USAGE
                     else:
                         _bot_loggers["botengine"].error(e)
 
+            return
+        
+        if args.actions == "bot_instance_log_export":
+            if args.create_an_export_task:
+
+                try:
+                    if args.app_instance_id is None:
+                        raise BotError("Missing the app instance ID.", -1)
+                    if args.execution_flow is None:
+                        raise BotError("Missing the execution flow.", -1)
+                    if args.start_date_ms is None:
+                        raise BotError("Missing the start date.", -1)
+                except Exception as e:
+                    _bot_loggers["botengine"].error(e)
+                    return
+
+                if user_key is None:
+                    user_key = _login(server, username, password)
+
+                try:
+                    log_export = create_an_export_task(server, user_key, args.app_instance_id, args.execution_flow, args.start_date_ms, args.end_date_ms)
+                    _bot_loggers["botengine"].info("Export task created. Check the status and download your logs using: `bot_instance_log_export --get_export_status --task_id {}'".format(log_export['taskId']))
+                except BotError as e:
+                    _bot_loggers["botengine"].error(e)
+                return
+                
+            if args.get_export_status:
+                try:
+                    if args.task_id is None:
+                        raise BotError("Missing the task ID.", -1)
+                except Exception as e:
+                    _bot_loggers["botengine"].error(e)
+
+                if user_key is None:
+                    user_key = _login(server, username, password)
+                try:
+                    log_export = get_export_status(server, user_key, args.task_id)
+                    _bot_loggers["botengine"].debug("log_export: {}".format(json.dumps(log_export, indent=2, sort_keys=True)))
+                    
+                    _bot_loggers["botengine"].info("Export task for bot instance '{}' is {}.".format(log_export["appInstanceId"], log_export['statusCode']))
+                    
+                    if log_export['statusCode'] == 'CANCELLED':
+                        return
+                    if log_export['statusCode'] == 'COMPLETED':
+                        _bot_loggers["botengine"].info("The task is completed.")
+                        if "files" not in log_export:
+                            _bot_loggers["botengine"].info("No files were exported. Please try changing your export parameters.")
+                            return
+                        should_continue = input("Download the exported files? (Y/N):")
+                        if should_continue not in ["Y", "y"]:
+                            _bot_loggers["botengine"].info("You can download these logs here: {}".format(log_export['files']))
+                            return
+
+                        pass
+                    if log_export['statusCode'] == 'FAILED':
+                        _bot_loggers["botengine"].info("The task failed. Please try again or contact support.")
+                        return
+                    if log_export['statusCode'] == 'PENDING':
+                        _bot_loggers["botengine"].info("The task is pending. Please check back later.")
+                        return
+                    if log_export['statusCode'] == 'PENDING_CANCEL':
+                        _bot_loggers["botengine"].info("The task is pending cancellation.")
+                        return
+                    if log_export['statusCode'] == 'RUNNING':
+                        _bot_loggers["botengine"].info("The task is running. The exported files will be available soon.")
+                        return
+
+                    _bot_loggers["botengine"].info("Download the exported files")
+                        
+                    log_export_path = os.path.join(os.getcwd(), 'log_exports', str(log_export["appInstanceId"]))
+                    
+                    if not os.path.exists('log_exports'):
+                        os.makedirs('log_exports')
+                    if not os.path.exists(log_export_path):
+                        os.makedirs(log_export_path)
+                    
+                    # Download and extract the log files
+                    log_files = []
+                    for idx in range(len(log_export['files'])):
+                        file = log_export['files'][idx]
+                        _bot_loggers["botengine"].info("Downloading: {}".format(file))
+                        import requests
+                        import shutil
+                        import gzip
+                        with requests.get(file, stream=True) as r:
+                            with open(os.path.join(log_export_path, f"{idx}.gz"), 'wb') as f:
+                                shutil.copyfileobj(r.raw, f)
+                        _bot_loggers["botengine"].info("Downloaded: {}".format(os.path.join(log_export_path, f"{idx}.gz")))
+                        with gzip.open(os.path.join(log_export_path, f"{idx}.gz"), 'rb') as f:
+                            file_content = f.read()
+                            extracted_path = os.path.join(log_export_path, f"{idx}.log")
+                            _bot_loggers["botengine"].debug("Extracted: {}".format(extracted_path))
+
+                            with open(extracted_path, 'wb') as in_file:
+                                in_file.write(file_content)
+                                
+                            log_files.append(extracted_path)
+                            os.remove(os.path.join(log_export_path, f"{idx}.gz"))
+
+                    # Sort the log files by timestamp
+                    _bot_loggers["botengine"].info("Sorting logs...")
+
+                    chunks = {} # {RequestId: [log_lines]}
+                    current_chunk = None
+                    all_request_ids = [] # Track for reference later
+                    # Loop through all log files and compile of list of each chunk by RequestId
+                    # RequestIds may be split where either 2 BEGIN statements are found or 2 END statements are found in a row
+                    # We assume that chunks are not split across log files
+                    for log_filename in log_files:
+                        _bot_loggers["botengine"].debug(f"Reading {log_filename}")
+                        for line in open(os.path.join(log_export_path, log_filename), 'r'):
+                            if 'LOG RequestId:' in line:
+                                if 'BEGIN' in line:
+                                    request_id = line.split(' ')[-1]
+                                    _bot_loggers["botengine"].debug(f"Begin of chunk: {request_id}")
+                                    all_request_ids.append(request_id)
+                                    if current_chunk is None:
+                                        if request_id in chunks:
+                                            _bot_loggers["botengine"].debug(f"\tOrphaned chunk resumed: {request_id}")
+                                            current_chunk = chunks[request_id]
+                                            current_chunk.append(line)
+                                        else:
+                                            _bot_loggers["botengine"].debug(f"\tFound new chunk: {request_id}")
+                                            current_chunk = [line]
+                                    else:
+                                        current_chunk_request_id = current_chunk[0].split(' ')[-1]
+                                        _bot_loggers["botengine"].debug(f"\tOrphaned chunk paused: {current_chunk_request_id}")
+                                        _bot_loggers["botengine"].debug(f"\t\tChunk: {current_chunk}")
+                                        chunks[current_chunk_request_id] = current_chunk
+                                        current_chunk = [line]
+                                if 'END' in line:
+                                    request_id = line.split(' ')[-1]
+                                    _bot_loggers["botengine"].debug(f"End of chunk: {request_id}")
+                                    if current_chunk is not None:
+                                        current_chunk.append(line)
+                                        if 'BEGIN' in current_chunk[0]:
+                                            _bot_loggers["botengine"].debug(f"\tComplete chunk: {request_id}")
+                                            chunks[request_id] = current_chunk
+                                        elif request_id in chunks:
+                                            _bot_loggers["botengine"].debug(f"\tOrphaned chunk resumed: {request_id}")
+                                            _bot_loggers["botengine"].debug(f"\t\tChunk: {current_chunk}")
+                                            chunks[request_id].extend(current_chunk)
+                                        else:
+                                            _bot_loggers["botengine"].debug(f"\tOrphaned chunk paused: {request_id}")
+                                            chunks[request_id] = current_chunk
+                                        _bot_loggers["botengine"].debug(f"\tFinished chunk: {current_chunk}")
+                                    current_chunk = None
+                            else:
+                                if current_chunk is not None:
+                                    _bot_loggers["botengine"].debug(f"Append line: {line}")
+                                    current_chunk.append(line)
+                                else:
+                                    _bot_loggers["botengine"].debug(f"Orphaned chunk start: {line}")
+                                    current_chunk = [line]
+
+                        # Reorder orphaned chunks
+                        for idx, request_id in enumerate(chunks):
+                            chunk = chunks[request_id]
+                            if 'BEGIN' not in chunk[0]:
+                                _bot_loggers["botengine"].debug(f"Reordering orphaned chunk: {idx}")
+                                # Get the index of 'BEGIN'
+                                ordered_chunk = []
+                                for i, line in enumerate(chunk):
+                                    if 'BEGIN' in line:
+                                        # Add the chunk in order
+                                        ordered_chunk = chunk[i:]
+                                        ordered_chunk.extend(chunk[:i])
+                                        break
+                                chunks[request_id] = ordered_chunk
+
+                        _bot_loggers["botengine"].debug(f"Finished reading {log_filename}")
+                        
+                    _bot_loggers["botengine"].debug(f"{len(all_request_ids)} request IDs found")
+                    _bot_loggers["botengine"].debug(f"{len(chunks)} chunks found")
+
+                    # Analysis for mismatched count of request IDs and chunks
+                    if len(chunks) != len(all_request_ids):
+                        _bot_loggers["botengine"].debug(f"Analyzing mismatched chunks")
+                        for request_id in all_request_ids:
+                            if request_id not in chunks:
+                                _bot_loggers["botengine"].debug(f"\tRequest id not found: {request_id}")
+                        for chunk_request_id in chunks:
+                            if chunk_request_id not in all_request_ids:
+                                _bot_loggers["botengine"].debug(f"\tChunk not found: {chunk_request_id}")
+
+                    sorted_keys = sorted(chunks.keys())
+
+                    _bot_loggers["botengine"].debug(f"" \
+                        f"From: {chunks[sorted_keys[0]][0]}" \
+                        f"To: {chunks[sorted_keys[-1]][0]}")
+
+                    # Split logs into chunked files
+                    lines_per_file = 250000
+                    total_lines = 0
+                    _bot_loggers["botengine"].debug(f"Total lines: {sum([len(chunks[key]) for key in sorted_keys])}")
+                    for key in sorted_keys:
+                        out_filename = os.path.join(log_export_path, f'exported_{total_lines // lines_per_file}.log')
+                        _bot_loggers["botengine"].debug(f"Writing {len(chunks[key])} lines to {out_filename}")
+                        with open(out_filename, 'a') as f:
+                            f.write(''.join(chunks[key]))
+                        total_lines += len(chunks[key])
+                        _bot_loggers["botengine"].debug(f"Total lines written: {total_lines}")
+
+                    _bot_loggers["botengine"].info("Exported {} log files to {}".format(len(log_files), log_export_path))
+
+                except BotError as e:
+                    _bot_loggers["botengine"].error(f"Could not get the export status: {e}")
             return
         
         if not botname and not instance:
@@ -3692,7 +4560,6 @@ def _merge_redirects(bot_directory, merge_directory, bundle_id, server=DEFAULT_B
     :return: final directory
     """
     import shutil
-    from distutils.dir_util import copy_tree
 
     # Remove the last commit
     if os.path.isdir(merge_directory):
@@ -3726,11 +4593,12 @@ def _merge_redirects(bot_directory, merge_directory, bundle_id, server=DEFAULT_B
 
     # Merge all foundational layers of the bot in reverse order so the first one gets precedence
     for source in reversed(merge_list):
-        copy_tree(source, merge_directory)
+        shutil.copytree(source, merge_directory, dirs_exist_ok=True)
 
     # DISTRIBUTED STRUCTURE.JSON FILES
     pip_install = []
-    pip_install_remotely = ['dill', 'requests<2.30.0', 'urllib3<2', 'python-dateutil', 'tzlocal', 'pytz', 'colorama']
+    # Common Python dependencies that are required for all bots
+    pip_install_remotely = ['dill', 'requests<2.30.0', 'urllib3<2', 'python-dateutil', 'tzlocal', 'pytz', 'colorama', 'pydantic']
     microservices = []
     safe_delete_microservices = []
 
@@ -3758,16 +4626,96 @@ def _merge_redirects(bot_directory, merge_directory, bundle_id, server=DEFAULT_B
             if not os.path.exists(destination):
                 os.makedirs(destination)
 
+            def copy_bot_services(local_source, destination):
+                """
+                Copy files from the local source to the destination
+                :param local_source: Local source file
+                :param destination: Destination file"""
+                if os.path.isdir(local_source):
+                    # Ignore __pycache__ directories
+                    if "__pycache__" in local_source:
+                        return
+                    shutil.copytree(local_source, destination, dirs_exist_ok=True, copy_function=copy_bot_services)
+                else:
+                    # Ignore .pyc files
+                    if local_source.endswith(".pyc"):
+                        return
+                    if not os.path.exists(destination):
+                        shutil.copy2(local_source, destination)
+                    else:
+                        if local_source.split('/')[-1] == MICROSERVICES_INDEX_FILENAME:
+                            # Merge the microservices index files
+                            # Dump and load to ensure the JSON is formatted correctly
+                            index_json = json.loads(json.dumps(_extract_microservices_from_index(local_source)))
+                            destination_index_json = json.loads(json.dumps(_extract_microservices_from_index(destination)))
+                            # Combine the microservices index files
+                            if DEVICE_MICROSERVICES_KEY in index_json:
+                                if DEVICE_MICROSERVICES_KEY not in destination_index_json:
+                                    destination_index_json[DEVICE_MICROSERVICES_KEY] = {}
+                                for device_type in index_json[DEVICE_MICROSERVICES_KEY]:
+                                    if device_type not in destination_index_json[DEVICE_MICROSERVICES_KEY]:
+                                        destination_index_json[DEVICE_MICROSERVICES_KEY][device_type] = []
+                                    for service in index_json[DEVICE_MICROSERVICES_KEY][device_type]:
+                                        if service not in destination_index_json[DEVICE_MICROSERVICES_KEY][device_type]:
+                                            destination_index_json[DEVICE_MICROSERVICES_KEY][device_type].append(service)
+                            index_keys = [LOCATION_MICROSERVICES_KEY, DATA_FILTERS_KEY, ORGANIZATION_MICROSERVICES_KEY]
+                            for key in index_keys:
+                                if key in index_json:
+                                    if key not in destination_index_json:
+                                        destination_index_json[key] = []
+                                    for service in index_json[key]:
+                                        if service not in destination_index_json[key]:
+                                            destination_index_json[key].append(service)
+                            with open(destination, 'w') as outfile:
+                                json.dump(destination_index_json, outfile, indent=2)
+                        elif local_source.split('/')[-1] == RUNTIME_FILENAME:
+                            # Merge the runtime files
+                            # Dump and load to ensure the JSON is formatted correctly
+                            runtime_json = json.loads(json.dumps(_extract_json_from_file(local_source)))
+                            destination_runtime_json = json.loads(json.dumps(_extract_json_from_file(destination)))
+                            # Combine the runtime files
+                            destination_runtime_json = _merge_runtime_json(destination_runtime_json, runtime_json)
+                            with open(destination, 'w') as outfile:
+                                json.dump(destination_runtime_json, outfile, indent=2)
+                        elif local_source.split('/')[-1] == STRUCTURE_FILENAME:
+                            # Merge the structure files
+                            # Dump and load to ensure the JSON is formatted correctly
+                            structure_json = json.loads(json.dumps(_extract_json_from_file(local_source)))
+                            destination_structure_json = json.loads(json.dumps(_extract_json_from_file(destination)))
+                            # Combine the structure files
+                            if "pip_install_remotely" in structure_json:
+                                if "pip_install_remotely" not in destination_structure_json:
+                                    destination_structure_json["pip_install_remotely"] = []
+                                for package in structure_json["pip_install_remotely"]:
+                                    if package not in destination_structure_json["pip_install_remotely"]:
+                                        destination_structure_json["pip_install_remotely"].append(package)
+                            if "microservices" in structure_json:
+                                if "microservices" not in destination_structure_json:
+                                    destination_structure_json["microservices"] = []
+                                for microservice in structure_json["microservices"]:
+                                    if microservice not in destination_structure_json["microservices"]:
+                                        destination_structure_json["microservices"].append(microservice)
+                            if "safe_delete_microservices" in structure_json:
+                                if "safe_delete_microservices" not in destination_structure_json:
+                                    destination_structure_json["safe_delete_microservices"] = []
+                                for microservice in structure_json["safe_delete_microservices"]:
+                                    if microservice not in destination_structure_json["safe_delete_microservices"]:
+                                        destination_structure_json["safe_delete_microservices"].append(microservice)
+                            with open(destination, 'w') as outfile:
+                                json.dump(destination_structure_json, outfile, indent=2)
+                        else:
+                            shutil.copy2(local_source, destination)
+                        
             if core_directory is not None:
                 core_source = os.path.join(core_directory, source)
                 if os.path.exists(core_source):
                     found = True
-                    copy_tree(core_source, destination)
+                    shutil.copytree(core_source, destination, dirs_exist_ok=True, copy_function=copy_bot_services)
 
             local_source = os.path.join(os.getcwd(), source)
             if os.path.exists(local_source):
                 found = True
-                copy_tree(local_source, destination)
+                shutil.copytree(local_source, destination, dirs_exist_ok=True, copy_function=copy_bot_services)
 
             if not found:
                 print(Color.RED + "Error: Cannot find microservice package '{}'.\n".format(source) + Color.END)
@@ -3800,19 +4748,37 @@ def _merge_redirects(bot_directory, merge_directory, bundle_id, server=DEFAULT_B
         outfile.write("BUNDLE_ID = \"{}\"\n".format(bundle_id))
         outfile.write("CLOUD_ADDRESS = \"{}\"\n".format(server))
 
+        # Include the Bot Type. See BotEngine.BOT_TYPE_...
+        with open(os.path.join(merge_directory, MARKETING_FILENAME), 'r') as marketing_file:
+            marketing_text = ""
+            for line in marketing_file:
+                line = line.strip()
+                if not line.startswith("#"):
+                    marketing_text += line
+
+            try:
+                marketing_data = json.loads(marketing_text)
+                # print("Marketing Data: " + json.dumps(marketing_data))
+                if "type" not in marketing_data.get('app', {}):
+                    raise Exception("No type in marketing.json file")
+                outfile.write("BOT_TYPE = \"{}\"\n".format(marketing_data["app"]["type"]))
+            except Exception as e:
+                # print("Error parsing marketing.json file, using default BOT_TYPE [e: {}]".format(e))
+                pass
+
     # DISTRIBUTED MICROSERVICES INDEX.PY FILES
     index_filename = os.path.join(merge_directory, MICROSERVICES_INDEX_FILENAME)
 
-    # Data filters: { "module_name_key" : "class_name_value", ... }
+    # Data filters: { "module_name_key" : ("class_name_value", execution_priority), ... }
     data_filters = {}
 
-    # Devices: { device_type: { "module_name_key": "class_name_value" }, ... }
+    # Devices: { device_type: { "module_name_key": ("class_name_value", execution_priority) }, ... }
     device_microservices = {}
 
-    # Locations: { "module_name_key" : "class_name_value", ... }
+    # Locations: { "module_name_key" : ("class_name_value", execution_priority), ... }
     location_microservices = {}
 
-    # Organizations: { "module_name_key" : "class_name_value", ... }
+    # Organizations: { "module_name_key" : ("class_name_value", execution_priority), ... }
     organization_microservices = {}
     
     for current_dir, dirs, files in os.walk(merge_directory):
@@ -3825,19 +4791,19 @@ def _merge_redirects(bot_directory, merge_directory, bundle_id, server=DEFAULT_B
                         device_microservices[device_type] = {}
 
                     for service in index_json[DEVICE_MICROSERVICES_KEY][device_type]:
-                        device_microservices[device_type][service["module"]] = service["class"]
+                        device_microservices[device_type][service["module"]] = (service["class"], service.get("execution_priority", 0))
 
             if LOCATION_MICROSERVICES_KEY in index_json:
                 for service in index_json[LOCATION_MICROSERVICES_KEY]:
-                    location_microservices[service["module"]] = service["class"]
+                    location_microservices[service["module"]] = (service["class"], service.get("execution_priority", 0))
 
             if DATA_FILTERS_KEY in index_json:
                 for service in index_json[DATA_FILTERS_KEY]:
-                    data_filters[service["module"]] = service["class"]
+                    data_filters[service["module"]] = (service["class"], service.get("execution_priority", 0))
                     
             if ORGANIZATION_MICROSERVICES_KEY in index_json:
                 for service in index_json[ORGANIZATION_MICROSERVICES_KEY]:
-                    organization_microservices[service["module"]] = service["class"]
+                    organization_microservices[service["module"]] = (service["class"], service.get("execution_priority", 0))
 
     merged_index = {
         DEVICE_MICROSERVICES_KEY: {},
@@ -3849,16 +4815,32 @@ def _merge_redirects(bot_directory, merge_directory, bundle_id, server=DEFAULT_B
     for device_type in device_microservices:
         merged_index[DEVICE_MICROSERVICES_KEY][device_type] = []
         for module_name in device_microservices[device_type]:
-            merged_index[DEVICE_MICROSERVICES_KEY][device_type].append({"module": module_name, "class": device_microservices[device_type][module_name]})
+            merged_index[DEVICE_MICROSERVICES_KEY][device_type].append({
+                "module": module_name, 
+                "class": device_microservices[device_type][module_name][0], 
+                "execution_priority": device_microservices[device_type][module_name][1]
+            })
 
     for module_name in location_microservices:
-        merged_index[LOCATION_MICROSERVICES_KEY].append({"module": module_name, "class": location_microservices[module_name]})
+        merged_index[LOCATION_MICROSERVICES_KEY].append({
+            "module": module_name, 
+            "class": location_microservices[module_name][0], 
+            "execution_priority": location_microservices[module_name][1]
+        })
 
     for module_name in data_filters:
-        merged_index[DATA_FILTERS_KEY].append({"module": module_name, "class": data_filters[module_name]})
+        merged_index[DATA_FILTERS_KEY].append({
+            "module": module_name, 
+            "class": data_filters[module_name][0], 
+            "execution_priority": data_filters[module_name][1]
+        })
 
     for module_name in organization_microservices:
-        merged_index[ORGANIZATION_MICROSERVICES_KEY].append({"module": module_name, "class": organization_microservices[module_name]})
+        merged_index[ORGANIZATION_MICROSERVICES_KEY].append({
+            "module": module_name, 
+            "class": organization_microservices[module_name][0], 
+            "execution_priority": organization_microservices[module_name][1]
+        })
 
     with open(index_filename, 'w') as outfile:
         outfile.write("MICROSERVICES = " + json.dumps(merged_index, indent=2, sort_keys=True))
@@ -4031,8 +5013,7 @@ def _merge_runtime_json(primary, secondary):
         for schedule_id in primary["schedules"]:
             schedules[schedule_id] = primary["schedules"][schedule_id]
 
-    if len(schedules) > 0:
-        return_json["schedules"] = schedules
+    return_json["schedules"] = schedules
 
     # Combine all data stream messages without duplicates
     datastreams = set([])
@@ -4473,7 +5454,7 @@ def _get_local_files(local_dir, walk=False):
     result_list = []
 
     ignore_dirs = ['CVS', '.svn', '.git', '__pycache__']
-    ignore_files = ['.project', '.pydevproject', 'marketing.json', RUNTIME_FILENAME, 'icon.png']
+    ignore_files = ['.project', '.pydevproject', MARKETING_FILENAME, RUNTIME_FILENAME, 'icon.png']
     ignore_file_ext = ['.pyc']
 
     base_dir = os.path.abspath(local_dir)
@@ -4610,11 +5591,19 @@ def _login(server, username, password, admin=False):
 
         filename = "{}.{}.{}".format(username, fixed_server, type)
 
+        # Load the stored key, refreshing it if it is about to expire. e.g.:username.app.user={ "key": key, "key_expires_ms": key_expire_ms }
         if os.path.isfile(filename):
             try:
                 with open(filename, 'rb') as f:
                     key = pickle.load(f)
 
+                if isinstance(key, dict):
+                    key_expire_ms = key['key_expires_ms']
+                    if key_expire_ms > time.time() * 1000 * 10:
+                        # The key is still valid
+                        return key['key']
+                    key = key['key']
+                    
                 params = {
                     "keyType": 0
                 }
@@ -4627,17 +5616,16 @@ def _login(server, username, password, admin=False):
                 r = requests.get(server + "/cloud/json/loginByKey", params=params, headers=http_headers, proxies=_https_proxy)
                 j = json.loads(r.text)
 
-                if j['resultCode'] == 0:
-                    key = j['key']
+                _check_for_errors(j)
 
-                    with open(filename, 'wb') as f:
-                        pickle.dump(key, f)
+                key_json = {"key": key, "key_expires_ms": j['keyExpireMs']}
+                with open(filename, 'wb') as f:
+                    pickle.dump(key_json, f)
 
-                    return key
+                return key
 
-            except ValueError:
-                # Can't unpickle the local file.
-                # This happens as we switch back to Python 2.7 from Python 3.7.
+            except Exception as e:
+                print("Could not log in with existing key: {}".format(e))
                 pass
 
         params = {
@@ -4646,6 +5634,10 @@ def _login(server, username, password, admin=False):
 
         if admin:
             params['keyType'] = 11
+
+            pref_delivery_type = input('To use SMS to get your passcode type "y"?: ')
+            pref_delivery_type = 3 if len(pref_delivery_type) == 0 or pref_delivery_type[0].lower() == 'y' else 2
+            params['prefDeliveryType'] = pref_delivery_type
 
         http_headers = {"PASSWORD": password, "Content-Type": "application/json"}
         r = requests.get(server + "/cloud/json/login", params=params, headers=http_headers, proxies=_https_proxy)
@@ -4662,15 +5654,16 @@ def _login(server, username, password, admin=False):
             r = requests.get(server + "/cloud/json/login", params=params, headers=http_headers, proxies=_https_proxy)
             j = json.loads(r.text)
 
-            if j['resultCode'] == 0:
-                key = j['key']
-
-                with open(filename, 'wb') as f:
-                    pickle.dump(key, f)
-
         _check_for_errors(j)
 
-        return j['key']
+        key = j['key']
+
+        key_json = {"key": key, "key_expires_ms": j['keyExpireMs']}
+        with open(filename, 'wb') as f:
+            pickle.dump(key_json, f)
+
+        return key
+
 
     except BotError as e:
         sys.stderr.write("BotEngine Error: " + e.msg)
@@ -4892,7 +5885,14 @@ def _get_team_members(server, key, team_name, bundle):
 
 
 def _get_apps(server, key, bundle=None):
-    """Get created bots"""
+    """
+    Get created bots
+    :param server: Server address
+    :param key: API key
+    :param bundle: Bundle ID
+    :return: List of bots
+    """
+    _bot_loggers["botengine"].debug(">_get_apps() bundle={}".format(bundle))
     import requests
     global _https_proxy
 
@@ -4903,6 +5903,7 @@ def _get_apps(server, key, bundle=None):
     r = requests.get(server + "/cloud/developer/apps", params=params, headers=http_headers, proxies=_https_proxy)
     j = json.loads(r.text)
     _check_for_errors(j)
+    _bot_loggers["botengine"].info("<_get_apps() response={}".format(j))
     return j
 
 def _upload_icon(server, key, bundle, filePath):
@@ -4994,7 +5995,7 @@ def _update_version_status(server, key, bundle, status, ignore_errors=False):
 
     return j
 
-def _upload_bot(server, key, bundle, bot_filename, tar=True, runtime=RUNTIME_PYTHON_3_9, memory=DEFAULT_MEMORY, timeout=DEFAULT_RUNTIME_TIMEOUT_S):
+def _upload_bot(server, key, bundle, bot_filename, tar=True, runtime=RUNTIME_PYTHON_3_11, memory=DEFAULT_MEMORY, timeout=DEFAULT_RUNTIME_TIMEOUT_S):
     """
     Upload the bot
     :param server: Server address
@@ -5172,6 +6173,178 @@ def _beta_purchase_bot(server, user_key, bundle_id, user_id=None):
     _check_for_errors(j)
     return j
 
+def _get_message_topics(server, key=None, analytic_key=None, app_id=None, lang=None):
+    """
+    Get a list of message topics
+    :param server: The server URL
+    :param key: The user's API key
+    :return: A list of message topics
+    """
+    _bot_loggers["botengine"].info(">_get_message_topics()")
+    import requests
+    global _https_proxy
+
+    params = {}
+    params['appId'] = app_id
+    params['lang'] = lang
+    _bot_loggers["botengine"].info("|_get_message_topics() params={}".format(params))
+
+    http_headers = {"Content-Type": "application/json"}
+    http_headers["API_KEY"] = key
+    http_headers["ANALYTIC_API_KEY"] = analytic_key
+    r = requests.get(server + "/cloud/json/messageTopics", params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+
+    _bot_loggers["botengine"].info("<_get_message_topics() response={}".format(j))
+    return j
+
+
+def _update_message_topics(server, key, bundle, topics):
+    """
+    Create message topics if they don't exist and update the list of topics for the specified bot.
+    :param server: Server address
+    :param key: API key
+    :param bundle: Bundle ID
+    :param topics: List of topics
+    :return:
+    """
+    _bot_loggers["botengine"].info(">_update_message_topics()")
+    import requests
+    global _https_proxy
+
+    params = {
+        "bundle": bundle
+    }
+
+    http_headers = {"API_KEY": key, "Content-Type": "application/json"}
+    _bot_loggers["botengine"].info("|_update_message_topics() params={} data={}".format(params, topics))
+    j = json.dumps(topics)
+    r = requests.put(server + "/cloud/developer/messageTopics", params=params, headers=http_headers, data=j, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    _bot_loggers["botengine"].info("<_update_message_topics() response={}".format(j))
+    return j
+
+
+def _create_messages(server, key=None, analytic_key=None, location_id=None, messages_json={}):
+    """
+    Create new messages at a location.
+    :param server: The server URL
+    :param key: The user key
+    :param analytic_key: The analytic key
+    :param location_id: The location ID
+    :param messages_json: The messages json content
+    :return:
+    """
+    _bot_loggers["botengine"].info(">_create_messages()")
+    import requests
+    global _https_proxy
+
+    params = {}
+    params['locationId'] = location_id
+
+    http_headers = {"Content-Type": "application/json"}
+    http_headers["API_KEY"] = key
+    http_headers["ANALYTIC_API_KEY"] = analytic_key
+    j = json.dumps(messages_json)
+    _bot_loggers["botengine"].info("|_create_messages() params={} data={}".format(params, messages_json))
+    r = requests.post(server + "/cloud/json/messages", params=params, headers=http_headers, data=j, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    _bot_loggers["botengine"].info("<_create_messages() response={}".format(j))
+    return j
+
+
+def _update_messages(server, key, messages_json):
+    """
+    AI bots can update message statuses and schedule delivery time.
+    :param server: The server URL
+    :param key: The user key
+    :param messages_json: The messages json content
+    :return:
+    """
+    _bot_loggers["botengine"].info(">_update_messages()")
+    import requests
+    global _https_proxy
+
+    http_headers = {"ANALYTIC_API_KEY": key, "Content-Type": "application/json"}
+    j = json.dumps(messages_json)
+    _bot_loggers["botengine"].info("|_update_messages() data={}".format(messages_json))
+    r = requests.put(server + "/cloud/json/messages", headers=http_headers, data=j, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    _bot_loggers["botengine"].info("<_update_messages() response={}".format(j))
+    return j
+
+
+def _get_messages(server, key, location_id, start_date_ms, end_date_ms, instance, topic_id, read_status):
+    """
+    Get messages from a location
+    :param server: The server URL
+    :param key: The user key
+    :param location_id: The location ID
+    :param start_date_ms: The start date in milliseconds
+    :param end_date_ms: The end date in milliseconds
+    :param instance: The bot instance ID
+    :param topic_id: The topic ID
+    :param read_status: The read status
+    :return: Messages JSON
+    """
+    _bot_loggers["botengine"].info(">_get_messages()")
+    import requests
+    global _https_proxy
+
+    params = {
+        "locationId": location_id,
+        "startDate": start_date_ms,
+    }
+    params["end_date_ms"] = end_date_ms
+    params["instance"] = instance
+    params["topic_id"] = topic_id
+    params["read_status"] = read_status
+
+    http_headers = {"API_KEY": key, "Content-Type": "application/json"}
+    _bot_loggers["botengine"].info("|_get_messages() params={}".format(params))
+    r = requests.get(server + "/cloud/json/messages", params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    _bot_loggers["botengine"].info("<_get_messages() response={}".format(j))
+    return j
+
+
+def _update_message_read_status(server, key, location_id, message_id, read_status):
+    """
+    Update message read status
+    :param server: The server URL
+    :param key: The user key
+    :param location_id: The location ID
+    :param message_id: The message ID
+    :param read_status: The read status
+    :return:
+    """
+    _bot_loggers["botengine"].info(">_update_message_read_status()")
+    import requests
+    global _https_proxy
+
+    params = {
+        "locationId": location_id,
+        "messageId": message_id,
+        "readStatus": read_status
+    }
+    http_headers = {"API_KEY": key, "Content-Type": "application/json"}
+    _bot_loggers["botengine"].info("|_update_message_read_status() params={}".format(params))
+    r = requests.put(server + "/cloud/json/messageRead", params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    _bot_loggers["botengine"].info("<_update_message_read_status() response={}".format(j))
+    return j
 
 def _delete_states(server, user_key, location_id):
     """
@@ -5226,13 +6399,184 @@ def _set_state(server, user_key, location_id, address, json_content, overwrite=T
     global _https_proxy
 
     if timestamp_ms is None:
-        requests.put(server + "/cloud/json/locations/{}/state".format(location_id), params=params, data=json.dumps(body), headers=http_headers, proxies=_https_proxy)
+        r = requests.put(server + "/cloud/json/locations/{}/state".format(location_id), params=params, data=json.dumps(body), headers=http_headers, proxies=_https_proxy)
     else:
         params['date'] = timestamp_ms
-        requests.put(server + "/cloud/json/locations/{}/timeStates".format(location_id), params=params, data=json.dumps(body), headers=http_headers, proxies=_https_proxy)
+        r = requests.put(server + "/cloud/json/locations/{}/timeStates".format(location_id), params=params, data=json.dumps(body), headers=http_headers, proxies=_https_proxy)
 
+    j = json.loads(r.text)
+    _check_for_errors(j)
 
-def _listen(device_server, user_key, bot_instance_id, timeout=180, clean=True, cleanTime=None):
+def _set_location_priority(server, bot_key, location_id, priority):
+    """
+    Set location priority
+    :param server:
+    :param bot_key:
+    :param location_id:
+    :param priority:
+    :return:
+    """
+    import requests
+    global _https_proxy
+    
+    body = {
+        "location": priority
+    }
+
+    http_headers = {
+        "ANALYTIC_API_KEY": bot_key,
+        "Content-Type": "application/json"
+    }
+
+    r = requests.put(server + "/analytic/location/{}".format(location_id), data=json.dumps(body), headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+    _check_for_errors(j)
+
+def _get_narratives(server, key, location_id, row_count=100, narrative_id=None, narrative_time=None, narrative_type=None, scope=None, priority=None, toPriority=None, status=None, event_type=None, search_by=None, start_date_ms=None, end_date_ms=None, page_marker=None):
+    """
+    Get narratives from a location
+    :param server: The server URL
+    :param key: The user key
+    :param location_id: The location ID
+    :param row_count: The number of rows to return
+    :param narrative_id: The narrative ID
+    :param narrative_time: The narrative time
+    :param narrative_type: The narrative type
+    :param scope: The scope. 1 = location, default; 2 = organization, for bots only
+    :param priority: Filter by priority higher or equal than that
+    :param toPriority: Filter by priority lower or equal than that
+    :param status: The status. deleted are not returned by default
+    :param event_type: The event type
+    :param search_by: Filter by title or description. Use * for a wildcard.
+    :param start_date_ms: The start date in milliseconds
+    :param end_date_ms: The end date in milliseconds
+    :param page_marker: The page marker
+    :return: Narratives JSON
+    """
+    _bot_loggers["botengine"].debug(">_get_narratives()")
+    import requests
+    global _https_proxy
+
+    params = {
+        "rowCount": row_count
+    }
+
+    if narrative_id is not None:
+        params["narrativeId"] = narrative_id
+    if narrative_time is not None:
+        params["narrativeTime"] = narrative_time
+    if narrative_type is not None:
+        params["narrativeType"] = narrative_type
+    if scope is not None:
+        params["scope"] = scope
+    if priority is not None:
+        params["priority"] = priority
+    if toPriority is not None:
+        params["toPriority"] = toPriority
+    if status is not None:
+        params["status"] = status
+    if event_type is not None:
+        params["eventType"] = event_type
+    if search_by is not None:
+        params["searchBy"] = search_by
+    if start_date_ms is not None:
+        params["startDate"] = start_date_ms
+    if end_date_ms is not None:
+        params["endDate"] = end_date_ms
+    if page_marker is not None:
+        params["pageMarker"] = page_marker
+
+    http_headers = {"API_KEY": key, "Content-Type": "application/json"}
+    _bot_loggers["botengine"].debug("|_get_narratives() params={}".format(params))
+    r = requests.get(server + "/cloud/json/locations/{}/narratives".format(location_id), params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    _bot_loggers["botengine"].debug("<_get_narratives() response={}".format(j))
+    return j
+
+def _create_or_update_narrative(server, analytic_key, location_id, scope, publish=None, narrative_id=None, narrative_time=None, narrative={}):
+    """
+    Create or Update a Narrative
+    Narrative time is always truncated to seconds by the API.
+
+    When a new narrative is created, the API returns the new record ID and narrativeTime in milliseconds.
+
+    To update an existing narrative record both narrativeId and narrativeTime query parameters must be provided. The new value of narrativeTime in milliseconds will be returned, if it has been changed.
+    :param server: The server URL
+    :param key: The bot analytic api key
+    :param location_id: The location ID
+    :param scope: 1 = location; 2 = organization
+    :param publish: Publish narrative to subscribers, default is true
+    :param narrative_id: ID of narrative - required for update
+    :param narrative_time: narrative time as returned from the API - required for update
+    :param narrative: The narrative content
+    :return: Narratives JSON
+    """
+    _bot_loggers["botengine"].debug(">_create_or_update_narrative()")
+    import requests
+    global _https_proxy
+
+    params = {
+        "scope": scope
+    }
+    if publish is not None:
+        params["publish"] = publish
+    if narrative_id is not None:
+        params["narrativeId"] = narrative_id
+    if narrative_time is not None:
+        params["narrativeTime"] = narrative_time
+
+    body = {
+        "narrative" : narrative
+    }
+
+    http_headers = {"ANALYTIC_API_KEY": analytic_key, "Content-Type": "application/json"}
+    _bot_loggers["botengine"].debug("|_create_or_update_narrative() params={} data={}".format(params, body))
+    r = requests.put(server + "/cloud/json/locations/{}/narratives".format(location_id), params=params, headers=http_headers, proxies=_https_proxy, data=json.dumps(body))
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    _bot_loggers["botengine"].info("<_create_or_update_narrative() response={}".format(j))
+    return j
+
+def _delete_narrative(server, analytic_key, location_id, scope, narrative_id, narrative_time, publish=None, event_type=None):
+    """
+    Delete a narrative
+    :param server: The server URL
+    :param key: The bot analytic api key
+    :param location_id: The location ID
+    :param scope: 1 = location; 2 = organization
+    :param narrative_id: ID of narrative
+    :param narrative_time: narrative time as returned from the API
+    :param publish: Publish narrative to subscribers, default is true
+    :param event_type: The event type
+    :return: Narratives JSON
+    """
+    _bot_loggers["botengine"].debug(">_delete_narrative()")
+    import requests
+    global _https_proxy
+
+    params = {
+        "scope": scope,
+        "narrativeId": narrative_id,
+        "narrativeTime": narrative_time
+    }
+    if publish is not None:
+        params["publish"] = publish
+    if event_type is not None:
+        params["eventType"] = event_type
+
+    http_headers = {"ANALYTIC_API_KEY": analytic_key, "Content-Type": "application/json"}
+    _bot_loggers["botengine"].debug("|_delete_narrative() params={}".format(params))
+    r = requests.delete(server + "/cloud/json/locations/{}/narratives".format(location_id), params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    _bot_loggers["botengine"].info("<_delete_narrative() response={}".format(j))
+    return j
+
+def _listen(device_server, user_key, bot_instance_id, timeout=10, clean=True, cleanTime=None):
     """
     Apps running on the developer's local computer will listen to Ensemble for incoming device data.
     :param device_server: Device Server URL
@@ -5639,36 +6983,44 @@ def _device_category_to_string(category_id):
     elif category_id < 28000:
         return "Water"
 
-def _botstore_search(server, user_key, searchBy=None, category=('E','S','C','L','H','W'), compatible=False, lang=None):
+def _botstore_search(server, user_key, search_by=None, categories=None, compatible=None, lang=None, core=None, location_id=None, organization_id=None, object_names=None, limit=None):
     """
     Search the bot store for bots
     :param server: Server to use
     :param user_key: User's /cloud API key
-    :param searchBy: Optional string. Search for a name, author, or keywords
-    :param category: Optional tuple. Search by category, multiple are allowed, i.e. ('E','S','C','L','H','W')
-        E = Energy
-        S = Security
-        C = Care
-        L = Lifestyle
-        H = Health
-        W = Wellness
-    :param compatible: Optional boolean. True to only return bots that are compatible with this user's account
-    :param lang: Optional string. Search for bots in a particular language, i.e. "en", "zh", etc.
+    :param searchBy: Search in name, author, keywords, bundle. Use * for a wildcard.
+    :param categories: Category search. i.e. 'S', 'E', etc. Multiple values are allowed and OR-ed.
+    :param compatible: Filter by bots that are compatible with our user account or not, leave blank to return all bots
+    :param lang: Language filter, leave blank to return bots in all languages
+    :param core: Filter by core class
+    :param locationId: Return bots available for this location
+    :param organizationId: Return bots available for this organization
+    :param objectName: Show objects with such name(s). Multiple values are allowed.
+    :param limit: Limit the response size
+
     :returns: List of bots matching the search criteria in JSON format
     """
+    _bot_loggers["botengine"].debug(">_botstore_search() searchBy={}, categories={}, compatible={}, lang={}, core={}, locationId={}, organizationId={}, objectName={}, limit={}".format(search_by, categories, compatible, lang, core, location_id, organization_id, object_names, limit))
     params = {}
-
-    if searchBy:
-        params["searchBy"] = searchBy
-
-    if category:
-        params["category"] = category
-
+    
+    if search_by:
+        params["searchBy"] = search_by
+    if categories:
+        params["category"] = categories
     if compatible:
         params["compatible"] = compatible
-
     if lang:
         params["lang"] = lang
+    if core:
+        params["core"] = core
+    if location_id:
+        params["locationId"] = location_id
+    if organization_id:
+        params["organizationId"] = organization_id
+    if object_names:
+        params["objectName"] = object_names
+    if limit:
+        params["limit"] = limit
 
     http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
     import requests
@@ -5677,7 +7029,8 @@ def _botstore_search(server, user_key, searchBy=None, category=('E','S','C','L',
     r = requests.get(server + "/cloud/appstore/search", params=params, headers=http_headers, proxies=_https_proxy)
     j = json.loads(r.text)
     _check_for_errors(j)
-    return j["apps"]
+    _bot_loggers["botengine"].debug("<_botstore_search() response={}".format(j))
+    return j
 
 def _botstore_botinfo(server, user_key, bundle, location_id=None, lang=None):
     """
@@ -5769,39 +7122,13 @@ def _botstore_execution_history(server, user_key, bundle, developer=None, app_in
         print("Error: {}".format(e))
         raise BotError(f"Unknown Error {e}", -1)
 
-
-
-def _allow_organization_to_purchase_bot(server, user_key, bundle, organization_id, development_mode=False):
+def _add_bot_to_organization(server, user_key, bundle, organization_id):
     """
-    Allow an organization to purchase a bot
+    A bot developer proposes to use a bot in specific organization.
     :param server: Server to use
     :param user_key: User's /cloud API key
     :param bundle: Bot bundle ID to obtain or purchase
     :param organization_id: Organization ID to allow to purchase the bot
-    :param development_mode: True to allow this organization to have the latest and greatest developer version of this bot, False to let the organization purchase only the publicly available version
-    :return: Purchased bot instance ID
-    """
-    params = {
-              "bundle" : bundle,
-              "developmentMode": development_mode
-              }
-
-    http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
-    import requests
-    global _https_proxy
-
-    r = requests.put(server + "/cloud/developer/organizations/" + str(organization_id), params=params, headers=http_headers, proxies=_https_proxy)
-    j = json.loads(r.text)
-    _check_for_errors(j)
-
-def _prevent_organization_from_purchasing_bot(server, user_key, bundle, organization_id):
-    """
-    Prevent an organization from purchasing a bot
-    :param server: Server to use
-    :param user_key: User's /cloud API key
-    :param bundle: Bot bundle ID to obtain or purchase
-    :param organization_id: Organization ID to allow to purchase the bot
-    :return: Purchased bot instance ID
     """
     params = {
               "bundle" : bundle
@@ -5811,9 +7138,81 @@ def _prevent_organization_from_purchasing_bot(server, user_key, bundle, organiza
     import requests
     global _https_proxy
 
-    r = requests.delete(server + "/cloud/developer/organizations/" + str(organization_id), params=params, headers=http_headers, proxies=_https_proxy)
+    r = requests.post(server + "/cloud/appstore/organizations/" + str(organization_id), params=params, headers=http_headers, proxies=_https_proxy)
     j = json.loads(r.text)
     _check_for_errors(j)
+
+def _approve_bot_for_organization(server, user_key, bundle, organization_id, status, development=False):
+    """
+    Approve Bot for Organization
+    :param server: Server to use
+    :param user_key: User's /cloud API key
+    :param bundle: Bot bundle ID to obtain or purchase
+    :param organization_id: Organization ID to allow to purchase the bot
+    :param status: 1=approve; 2=reject
+    :param development: Is for testing purposes
+    :return:
+    """
+    params = {
+        "bundle" : bundle,
+        "status" : status,
+        "development" : development,
+    }
+
+    http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
+    import requests
+    global _https_proxy
+
+    r = requests.put(server + "/cloud/appstore/organizations/" + str(organization_id), params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+    _check_for_errors(j)
+
+def _remove_an_organization(server, user_key, bundle, organization_id):
+    """
+    Remove a bot from an organization
+
+    :param server: Server to use
+    :param user_key: User's /cloud API key
+    :param bundle: Bot bundle ID to obtain or purchase
+    :param organization_id: Organization ID to allow to purchase the bot
+    :return:
+    """
+    params = {
+        "bundle" : bundle
+    }
+
+    http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
+    import requests
+    global _https_proxy
+
+    r = requests.delete(server + "/cloud/appstore/organizations/" + str(organization_id), params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+    _check_for_errors(j)
+
+def _get_organizations(server, user_key, bundle):
+    """
+    This API returns all organizations associated with the bot.
+
+    :param server: Server to use
+    :param user_key: User's /cloud API key
+    :param bundle: Bot bundle ID to obtain or purchase
+    :return: List of organizations
+    """
+    _bot_loggers["botengine"].debug(">_get_organizations() bundle={}".format(bundle))
+    params = {
+        "bundle" : bundle
+    }
+
+    http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
+    import requests
+    global _https_proxy
+
+    r = requests.get(server + "/cloud/appstore/organizations", params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+    _check_for_errors(j)
+    _bot_loggers["botengine"].debug("<_get_organizations() response={}".format(j))
+    return j
+
 
 def _botstore_purchasebot(server, user_key, bundle, location_id=None, organization_id=None):
     """Delete an bot instance you previously purchased
@@ -6491,7 +7890,7 @@ def set_cloudwatch_logging(server, user_key: str, app_instance_id: int, executio
         "status": logging_status
     }
     if logging_end_date_ms is not None:
-        params["endDate"] = BotEngine._strftimestamp(int(logging_end_date_ms) // 1000)
+        params["endDate"] = BotEngine._strftimestamp(int(logging_end_date_ms) / 1000)
 
     http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
     r = requests.put(server + "/cloud/developer/cloudwatchlog", params=params, headers=http_headers, proxies=_https_proxy)
@@ -6534,6 +7933,97 @@ def get_cloudwatch_log_info(server, user_key: str, app_instance_id: int, executi
 
     _check_for_errors(j)
     return j['cloudWatchLog']
+
+def create_an_export_task(server, user_key: str, app_instance_id: int, execution_flow: int, start_date_ms: int, end_date_ms: int=None):
+    """
+    Create an export task
+    Create the export task to export the log stream.
+    https://iotbots.docs.apiary.io/#/reference/developer-bot-lab-ap-is/bot-instance-log-export/create-an-export-task
+
+    {
+        "resultCode": 0,
+        "logExport": {
+            "appInstanceId": 12345,
+            "bundle": "com.ppc.SomeBot",
+            "startDate": "2023-12-17T12:34:00",
+            "endDate": "2023-12-18T12:34:00",
+            "statusCode": "SUBMITTED",
+            "taskId": "19efa208-4f61-49ba-8899-6edd8b4b3006"
+        }
+    }
+
+    :param app_instance_id: Bot instance ID
+    :param flow: Execution flow
+    :param start_date_ms: Start date of log events to export
+    :param end_date_ms: End date of log events to export
+    :return: 
+    """
+    import requests
+    global _https_proxy
+    
+    params = {
+        "appInstanceId": app_instance_id,
+        "flow": execution_flow,
+        "startDate": start_date_ms
+    }
+    if end_date_ms is not None:
+        params["endDate"] = end_date_ms
+
+    http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
+    r = requests.post(server + "/cloud/developer/cloudwatchlog/export", params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    return j["logExport"]
+
+def get_export_status(server, user_key: str, task_id: int):
+    """
+    Get Export Status
+    Inspect the status of an export task and obtain the pre-signed URL(s) to the exported files.
+    https://iotbots.docs.apiary.io/#/reference/developer-bot-lab-ap-is/bot-instance-log-export/get-export-status
+
+    A large log stream can be exported to multiple files.
+    The export files are gziped.
+    
+    Possible status codes are:
+    - CANCELLED
+    - COMPLETED
+    - FAILED
+    - PENDING
+    - PENDING_CANCEL
+    - RUNNING
+
+    {
+        "resultCode": 0,
+        "logExport": {
+            "appInstanceId": 12345,
+            "bundle": "com.ppc.SomeBot",
+            "startDate": "2023-12-17T12:34:00",
+            "endDate": "2023-12-18T12:34:00",
+            "statusCode": "COMPLETED",
+            "taskId": "19efa208-4f61-49ba-8899-6edd8b4b3006",
+            "files": [
+                ...
+            ]
+        }
+    }
+
+    :param task_id: An export task ID
+    :return: 200 OK
+    """
+    import requests
+    global _https_proxy
+
+    params = {
+        "taskId": task_id
+    }
+
+    http_headers = {"API_KEY": user_key, "Content-Type": "application/json"}
+    r = requests.get(server + "/cloud/developer/cloudwatchlog/export", params=params, headers=http_headers, proxies=_https_proxy)
+    j = json.loads(r.text)
+
+    _check_for_errors(j)
+    return j["logExport"]
 
 def _download_device_property(server, user_key, location_id, device_id, name=None, index=None):
     """
@@ -6969,7 +8459,7 @@ def _run_locally_forever(bot_server, device_server, user_key, bot, bot_instance_
                         _botengine = _run(bot, inputs, _bot_loggers["botengine"], server_override=bot_server, local=True, local_execution_count=local_execution_count)
                         local_execution_count += 1
                         import json
-                        _bot_loggers["botengine"].debug("BotEngine Statistics: " + json.dumps(bot.get_intelligence_statistics(_botengine), indent=2, sort_keys=True))
+                        # _bot_loggers["botengine"].debug("BotEngine Statistics: " + json.dumps(bot.get_intelligence_statistics(_botengine), sort_keys=True) if hasattr(bot, "get_intelligence_statistics") else {})
 
                     except Exception as e:
                         print("Bot Exception: \n", e)
@@ -7002,7 +8492,7 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
         _bot_loggers = {}
     _bot_loggers["botengine"] = logger
 
-    _bot_loggers["botengine"].debug("\n\n" + Color.RED + "BotEngine Raw Inputs: {}".format(inputs) + Color.END + "\n\n")
+    _bot_loggers["botengine"].debug(">_run() " + Color.RED + "BotEngine Raw Inputs: {}".format(inputs) + Color.END)
 
     next_timer_at_server = None
     if botengine_override is None:
@@ -7063,15 +8553,15 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
 
         botengine.triggers_index += 1
         try:
-            botengine.get_logger(f"{'botengine'}").info("Current time: " + str(execution_json['time']) + "; Trigger: " + str(execution_json['trigger']))
-            botengine.get_logger(f"{'botengine'}").debug("Run Inputs: " + json.dumps(execution_json, sort_keys=True))
+            botengine.get_logger(f"{'botengine'}").info("|_run() Current time: " + str(execution_json['time']) + "; Trigger: " + str(execution_json['trigger']))
+            botengine.get_logger(f"{'botengine'}").debug("|_run() Run Inputs: " + json.dumps(execution_json, sort_keys=True))
         except Exception as e:
             # Ingore error. This might happen during bot playback due to data_request csv content being represented in bytes
-            botengine.get_logger(f"{'botengine'}").warning("BotEngine Failed checking execution json... {}".format(e))
+            botengine.get_logger(f"{'botengine'}").warning("|_run() Failed checking execution json... {}".format(e))
         trigger = execution_json['trigger']
 
         if trigger == 2048 and len(inputs['inputs']) > 1:
-            botengine.get_logger(f"{'botengine'}").error("botengine: Asynchronous Data Request Trigger contained {} bot inputs, should have only contained a single trigger.".format(len(inputs['inputs'])))
+            botengine.get_logger(f"{'botengine'}").error("|_run() Asynchronous Data Request Trigger contained {} bot inputs, should have only contained a single trigger.".format(len(inputs['inputs'])))
 
         botengine.set_inputs(execution_json)
 
@@ -7082,9 +8572,9 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
             delete_timers = []
 
             if saved_timers is not None:
-                # botengine.get_logger(f"{'botengine'}").info(Color.PURPLE + "TIMER STACK: " + Color.END)
-                # for t in saved_timers:
-                #     botengine.get_logger(f"{'botengine'}").info(Color.PURPLE + "\t{}".format(t) + Color.END)
+                botengine.get_logger(f"{'botengine'}").debug("|_run() " + Color.PURPLE + "TIMER STACK: " + Color.END)
+                for t in saved_timers:
+                    botengine.get_logger(f"{'botengine'}").debug("|_run() " + Color.PURPLE + "\t{}".format(t) + Color.END)
                     
                 timers_existed |= len(saved_timers) > 1
 
@@ -7093,13 +8583,13 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
                     t = focused_timer[0]
                     if t != MAXINT:
                         if t <= execution_json['time']:
-                            # botengine.get_logger(f"{'botengine'}").info(Color.PURPLE + "Executing timer {}; now={}".format(t, execution_json['time']) + Color.END)
+                            botengine.get_logger(f"{'botengine'}").debug("|_run() " + Color.PURPLE + "Executing timer {}; now={}".format(t, execution_json['time']) + Color.END)
                             delete_timers.append(focused_timer)
                             botengine.all_trigger_types.append(64)
                             if callable(focused_timer[1]):
                                 focused_timer[1](botengine, focused_timer[2])
                             else:
-                                botengine.get_logger(f"{'botengine'}").error("BotEngine: Timer fired and popped, but cannot call the focused timer: " + str(focused_timer))
+                                botengine.get_logger(f"{'botengine'}").error("|_run() Timer fired and popped, but cannot call the focused timer: " + str(focused_timer))
 
                         elif t > 1921875905000:
                             # Great than year 2030 - mistake
@@ -7110,13 +8600,13 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
 
                 if len(delete_timers) > 0:
                     save_timers = botengine.load_variable(TIMERS_VARIABLE_NAME)
-                    # botengine.get_logger(f"{'botengine'}").info(Color.CYAN + "Re-Loaded Timers: {}".format(saved_timers) + Color.END)
+                    botengine.get_logger(f"{'botengine'}").debug("|_run() " + Color.CYAN + "Re-Loaded Timers: {}".format(saved_timers) + Color.END)
                     for d in delete_timers:
                         if d in save_timers:
-                            # botengine.get_logger(f"{'botengine'}").info(Color.BLUE + "Delete this timer: {}".format(d) + Color.END)
+                            botengine.get_logger(f"{'botengine'}").debug("|_run() " + Color.BLUE + "Delete this timer: {}".format(d) + Color.END)
                             save_timers.remove(d)
 
-                    # botengine.get_logger(f"{'botengine'}").info(Color.GREEN + "Timers to Save: {}".format(save_timers) + Color.END)
+                    botengine.get_logger(f"{'botengine'}").debug("|_run() " + Color.GREEN + "Timers to Save: {}".format(save_timers) + Color.END)
                     botengine.save_variable(TIMERS_VARIABLE_NAME, save_timers)
 
         if trigger != 64:
@@ -7132,8 +8622,8 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
             # But the timer is still queued up to execute from the server. So a microsecond later, the bot executes again
             # from the server saying the timer needs to fire, but we already handled the timer on the previous execution.
             # Since there's no way to tell on this execution that it was already handled, there's no way to accurately say this is an error.
-            botengine.get_logger(f"{'botengine'}").error("BotEngine: Timer fired but no recollection as to why.")
-            botengine.get_logger(f"{'botengine'}").error("Current timer variable is: " + str(saved_timers))
+            botengine.get_logger(f"{'botengine'}").error("|_run() Timer fired but no recollection as to why.")
+            botengine.get_logger(f"{'botengine'}").error("|_run() timer variable is: " + str(saved_timers))
             pass
 
         if not botengine.edge:
@@ -7155,22 +8645,22 @@ def _run(bot, inputs, logger, context=None, server_override=None, botengine_over
                     if saved_timers[0][0] != MAXINT:
                         if saved_timers[0][0] != next_timer_at_server:
                             botengine._execute_again_at_timestamp(saved_timers[0][0])
-                            botengine.get_logger(f"{'botengine'}").info("< Set alarm: {}".format(saved_timers[0]))
+                            botengine.get_logger(f"{'botengine'}").info("|_run() < Set alarm: {}".format(saved_timers[0]))
 
                         else:
-                            botengine.get_logger(f"{'botengine'}").info("| Alarm already set: {}".format(saved_timers[0]))
+                            botengine.get_logger(f"{'botengine'}").info("|_run() | Alarm already set: {}".format(saved_timers[0]))
 
                     break
 
                 except Exception as e:
-                    botengine.get_logger(f"{'botengine'}").error("Could not _execute_again_at_timestamp to set timer: {}".format(str(e)))
+                    botengine.get_logger(f"{'botengine'}").error("|_run() Could not _execute_again_at_timestamp to set timer: {}".format(str(e)))
                     continue
 
     # Non-time-critical outputs to wrap up
     botengine.flush_rules()
     botengine.flush_tags()
     botengine.flush_asynchronous_requests()
-    botengine.get_logger(f"{'botengine'}").debug("BotEngine Execution Complete: {}".format(bot.get_intelligence_statistics(botengine)))
+    botengine.get_logger(f"{'botengine'}").debug("<_run() Execution Complete: {}".format(bot.get_intelligence_statistics(botengine) if hasattr(bot, "get_intelligence_statistics") else {}))
     return botengine
 
 
@@ -7181,26 +8671,29 @@ class BotEngine:
     """This BotEngine class runs your bot and connects to the Bot Server"""
 
     # Trigger Types
-    TRIGGER_UNPAUSED = 0
-    TRIGGER_SCHEDULE = 1
-    TRIGGER_MODE = 1 << 1
-    TRIGGER_DEVICE_ALERT = 1 << 2
-    TRIGGER_DEVICE_MEASUREMENT = 1 << 3
-    TRIGGER_QUESTION_ANSWER = 1 << 4
-    TRIGGER_DEVICE_FILES = 1 << 5
-    TRIGGER_TIMER = 1 << 6
-    TRIGGER_METADATA = 1 << 7
-    TRIGGER_DATA_STREAM = 1 << 8
-    TRIGGER_COMMAND_RESPONSE = 1 << 9
-    TRIGGER_LOCATION_CONFIGURATION = 1 << 10
-    TRIGGER_DATA_REQUEST = 1 << 11
+    TRIGGER_UNPAUSED                = 0       # 0
+    TRIGGER_SCHEDULE                = 1 << 0  # 1
+    TRIGGER_MODE                    = 1 << 1  # 2
+    TRIGGER_DEVICE_ALERT            = 1 << 2  # 4
+    TRIGGER_DEVICE_MEASUREMENT      = 1 << 3  # 8
+    TRIGGER_QUESTION_ANSWER         = 1 << 4  # 16
+    TRIGGER_DEVICE_FILES            = 1 << 5  # 32
+    TRIGGER_TIMER                   = 1 << 6  # 64
+    TRIGGER_METADATA                = 1 << 7  # 128
+    TRIGGER_DATA_STREAM             = 1 << 8  # 256
+    TRIGGER_COMMAND_RESPONSE        = 1 << 9  # 512
+    TRIGGER_LOCATION_CONFIGURATION  = 1 << 10 # 1024
+    TRIGGER_DATA_REQUEST            = 1 << 11 # 2048
+    TRIGGER_MESSAGES                = 1 << 12 # 4096
+    TRIGGER_DOCUMENTS               = 1 << 13 # 8192
 
     # Access category types
-    ACCESS_CATEGORY_MODE = 1
-    ACCESS_CATEGORY_FILE = 2
+    ACCESS_CATEGORY_MODE            = 1
+    ACCESS_CATEGORY_FILE            = 2
     ACCESS_CATEGORY_PROFESSIONAL_MONITORING = 3
-    ACCESS_CATEGORY_DEVICE = 4
-    ACCESS_CATEGORY_CHALLENGE = 5
+    ACCESS_CATEGORY_DEVICE          = 4
+    ACCESS_CATEGORY_CHALLENGE       = 5
+    ACCESS_CATEGORY_RULES           = 6
 
     # Question Responses
     QUESTION_RESPONSE_TYPE_BOOLEAN = 1
@@ -7336,6 +8829,10 @@ class BotEngine:
     DATA_REQUEST_TYPE_NARRATIVES = 5
     DATA_REQUEST_TYPE_DEVICES = 6
 
+    BOT_TYPE_LOCATION           = 0
+    BOT_TYPE_ORGANIZATION       = 1
+    BOT_TYPE_ORGANIZATION_RAG   = 2
+
     def __init__(self, raw_inputs, server_override=None, services=None, count=None, cloud=None, edge=False, local=False, playback=False, context=None, bot_instance_id=None, local_execution_count=None):
         """
         Constructor
@@ -7348,21 +8845,33 @@ class BotEngine:
         :param bot_instance_id: Instance ID of this bot
         """
 
+        bot_type = self.get_bot_type()
+
         # User's API key
-        self.__key = raw_inputs['apiKey']
+        if bot_type != BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            if not 'apiKey' in raw_inputs:
+                raise BotError("No API key provided in the inputs")
+            self.__key = raw_inputs['apiKey']
+                
+            # Remove the evidence of the API key and host so they can't be seen by probing externally
+            del(raw_inputs['apiKey'])
 
-        # Remove the evidence of the API key and host so they can't be seen by probing externally
-        del(raw_inputs['apiKey'])
+            # Server to connect with
+            if server_override is not None:
+                self._servers = [server_override]
 
-        # Server to connect with
-        if server_override is not None:
-            self._servers = [server_override]
+            elif 'apiHosts' in raw_inputs:
+                self._servers = raw_inputs['apiHosts']
 
-        elif 'apiHosts' in raw_inputs:
-            self._servers = raw_inputs['apiHosts']
-
+            elif 'apiHost' in raw_inputs:
+                self._servers = [raw_inputs['apiHost']]
+        
         else:
-            self._servers = [raw_inputs['apiHost']]
+            # No API Key
+            self.__key = None
+
+            # No servers
+            self._servers = []
 
         # Raw inputs for debugging reference
         self._raw_inputs = raw_inputs
@@ -7485,22 +8994,34 @@ class BotEngine:
         # HTTP Session
         self.session = self._requests.Session()
 
-        if 'startKey' in raw_inputs:
-            if raw_inputs['startKey'] != 0:
-                
+        all_triggers = []
+        if 'inputs' in raw_inputs:
+            for i in raw_inputs['inputs']:
+                all_triggers.append(i['trigger'])
 
-                all_triggers = []
-                if 'inputs' in raw_inputs:
-                    for i in raw_inputs['inputs']:
-                        all_triggers.append(i['trigger'])
+        debug_instance_id = 0
+        if bot_instance_id is not None:
+            debug_instance_id = bot_instance_id
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("|__init__() Instance ID: {}; Triggers: {}".format(debug_instance_id, all_triggers))
 
-                debug_instance_id = 0
-                if bot_instance_id is not None:
-                    debug_instance_id = bot_instance_id
-                self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("Instance ID: {}; Triggers: {}".format(debug_instance_id, all_triggers))
+        if self.local:
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|__init__() Running locally")
+            return
+        if self.playback:
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|__init__() Running in playback mode")
+            return
+        if bot_type == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|__init__() Running as an organization RAG bot")
+            return
 
-                if not self._start(raw_inputs['startKey'], context=context):
-                    exit(0)
+        if 'startKey' not in raw_inputs:
+            raise Exception("No start key in inputs")
+        
+        if raw_inputs['startKey'] == 0:
+            raise Exception("Start key is 0")
+        
+        if not self._start(raw_inputs['startKey'], context=context):
+            raise Exception("Failed to start bot with start key: " + str(raw_inputs['startKey']))
 
     def _start_core_variables_thread(self):
         if not hasattr(self, "thread_event"):
@@ -7529,6 +9050,10 @@ class BotEngine:
         """
         if self.playback:
             return
+        
+        if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            # Organization RAG bots cannot call APIs
+            return {}
 
         global _https_proxy
         h = self._build_common_headers()
@@ -7586,6 +9111,10 @@ class BotEngine:
         if self.playback:
             return
 
+        if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            # Organization RAG bots cannot call APIs
+            return {}
+        
         global _https_proxy
         h = self._build_common_headers()
         h.update(headers)
@@ -7640,6 +9169,10 @@ class BotEngine:
         """
         if self.playback:
             return
+
+        if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            # Organization RAG bots cannot call APIs
+            return {}
 
         global _https_proxy
         h = self._build_common_headers()
@@ -7696,6 +9229,10 @@ class BotEngine:
         """
         if self.playback:
             return
+
+        if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            # Organization RAG bots cannot call APIs
+            return {}
 
         global _https_proxy
         h = self._build_common_headers()
@@ -7827,32 +9364,28 @@ class BotEngine:
         r = self._http_post("/analytic/start", params=params, timeout=DEFAULT_RUNTIME_TIMEOUT_S/DEFAULT_RUNTIME_TIMEOUT_RETRY_LIMIT)
 
         logger = self.get_logger(f"{'botengine'}.{__class__.__name__}")
-        logger.debug("Notify cloud that the bot is starting: /analytic/start params={}".format(params))
+        logger.debug("|_start() Notify cloud that the bot is starting: /analytic/start params={}".format(params))
 
         try:
             j = json.loads(r.text)
-            logger.debug("Cloud response to /analytic/start: {}".format(j))
+            logger.debug("|_start() Cloud response to /analytic/start: {}".format(j))
             _check_for_errors(j)
             if 'resultCode' in j:
                 if j['resultCode'] != 0:
                     # This execution is not allowed
                     logger.start_code = j['resultCode']
-                    raise BotError("Wrong Start API result code {}", j['resultCode'])
-            logger.debug("Success, the bot has started {}".format(j))
+                    raise BotError("Wrong Start API result code. Response={}".format(json.dumps(j)), j['resultCode'])
+            logger.debug("|_start() Success, the bot has started {}".format(j))
             return True
 
         except json.decoder.JSONDecodeError as e:
             # Probably because the server is restarting
-            logger.warning("Failure, the bot has not started. {}".format(e))
+            logger.warning("|_start() Failure, the bot has not started. {}".format(e))
             return False
 
         except BotError as e:
-            # Probably because the server is restarting
-            logger.error("Failure, the bot has not started.. {}".format(e))
+            logger.error("|_start() Failure, the bot has not started.. {}".format(e))
             return False
-
-        logger.debug("Failure, the bot has not started...")
-        return False
 
 
     #===========================================================================
@@ -7994,6 +9527,15 @@ class BotEngine:
         import bundle
         return bundle.CLOUD_ADDRESS
 
+    def get_bot_type(self):
+        """
+        When you generate a bot, botengine will automatically generate and add a 'bundle.py' file which contains the bot type.
+        This method simply returns the BOT_TYPE from the contents of the bundle.py file.
+        :return: The bot type for this bot
+        """
+        import bundle
+        return int(bundle.BOT_TYPE if hasattr(bundle, 'BOT_TYPE') else 0)
+
     def get_bot_instance_id(self):
         """
         :return: The bot instance ID
@@ -8079,8 +9621,8 @@ class BotEngine:
         :param location_id: Location ID to extract
         :return: location information from the access block
         """
-        for access in self.inputs['access']:
-            if access['category'] == self.ACCESS_CATEGORY_MODE:
+        for access in self.inputs.get('access', {}):
+            if access.get('category', '') == self.ACCESS_CATEGORY_MODE:
                 return access
 
         return None
@@ -8188,13 +9730,19 @@ class BotEngine:
         return self.inputs['time']
 
     def get_data_stream_message(self):
-        """
-        :return: the data stream message
-        """
-        if 'dataStream' in self.inputs:
-            return self.inputs['dataStream']
+        self.get_datastream_block()
 
-        return None
+    def get_documents_request_id(self):
+        """
+        :return: the documents request ID
+        """
+        return self.inputs.get('requestId', None)
+
+    def get_document_block(self):
+        """
+        :return: the 'document' block for location configuration triggers
+        """
+        return self.inputs.get('document', None)
 
     def get_users_block(self):
         """
@@ -8221,6 +9769,14 @@ class BotEngine:
         if 'data' in self.inputs:
             return self.inputs['data']
 
+        return None
+
+    def get_messages_block(self):
+        """
+        :return: the messages block from our inputs, if any
+        """
+        if 'messages' in self.inputs:
+            return self.inputs['messages']
         return None
 
     def get_property(self, obj_arr, property_name, property_value, return_property_name):
@@ -8497,7 +10053,7 @@ class BotEngine:
         """
         users = self.get_location_users()
         for user in users:
-            if int(user['id']) == int(user_id):
+            if int(user['id']) == int(user_id or -1):
                 name = {
                     "firstName": "",
                     "lastName": ""
@@ -8681,6 +10237,13 @@ class BotEngine:
             * instances of such classes whose __dict__ or the result of calling __getstate__() is
               picklable (see section Pickling Class Instances for details).
         """
+
+
+        if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            # We don't want to download variables for organization RAG bots
+            self.variables_to_flush.clear()
+            return
+        
         import dill
 
         if len(self.variables_to_flush) == 0:
@@ -8794,6 +10357,10 @@ class BotEngine:
         if self.playback:
             return None
 
+        if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            # Organization RAG bots cannot call APIs
+            return None
+        
         import dill
         while True:
             params = {
@@ -8899,6 +10466,11 @@ class BotEngine:
         """
         Download a single binary variable
         """
+
+        if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            # We don't want to download variables for organization RAG bots
+            return
+        
         import dill
         while True:
             params = {
@@ -10745,6 +12317,11 @@ class BotEngine:
         Synchronize all deleted and new questions with the server.
         This is called automatically when the bot is finished executing. It should never have to be called manually.
         """
+
+        if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
+            # Organization RAG bots cannot call APIs
+            return
+        
         saved_questions = self.load_variable(QUESTIONS_VARIABLE_NAME)
         if saved_questions is None:
             saved_questions = {}
@@ -11456,15 +13033,25 @@ class BotEngine:
             params['upd'] = fields_updated
             params['del'] = fields_deleted
 
-            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: Saving {} bytes to state content '{}'\n{}".format(len(data), address, json.dumps(body, sort_keys=True)))
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("|_flush_states() Saving {} bytes to state content '{}'\n{}".format(len(data), address, json.dumps(body, sort_keys=True)))
             r = self._http_put("/cloud/json/locations/{}/state".format(self.get_location_id()), params=params, data=data)
+            try:
+                j = json.loads(r.text)
+                _check_for_errors(j)
+            except Exception as e:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error("|_flush_states() Error saving state content '{}': {}".format(address, e))
 
         else:
             # Time-series State Variable
             params['date'] = timestamp_ms
 
-            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("botengine: Saving {} bytes to state content '{}' at timestamp {}\n{}".format(len(data), address, timestamp_ms, json.dumps(body, sort_keys=True)))
-            self._http_put("/cloud/json/locations/{}/timeStates".format(self.get_location_id()), params=params, data=data)
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("|_flush_states() Saving {} bytes to state content '{}' at timestamp {}\n{}".format(len(data), address, timestamp_ms, json.dumps(body, sort_keys=True)))
+            r = self._http_put("/cloud/json/locations/{}/timeStates".format(self.get_location_id()), params=params, data=data)
+            try:
+                j = json.loads(r.text)
+                _check_for_errors(j)
+            except Exception as e:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error("|_flush_states() Error saving time-series state content '{}': {}".format(address, e))
 
     def set_admin_content(self, organization_id, address, json_content, private=True):
         """
@@ -11646,19 +13233,86 @@ class BotEngine:
         return None
 
     #===========================================================================
-    # Open AI
+    # Fall Event Feedback
     #===========================================================================
 
-    def send_request_for_chat_completion(self, key, params):
+    def send_fall_event_feedback(self, device_id, classification, event_timestamp, comment):
         """
-        Send asynchronous request to Open AI API to obtain a model response for the given chat conversation.
-        :param key: Key to identify this request
-        :param params: Parameters to send to the Open AI API
+        Send Fall Event Feedback
+        
+        :param device_id: Device ID
+        :param classification: Classification of the fall event. One of TRUE_POSITIVE, FALSE_POSITIVE, FALSE_NEGATIVE, TEST_FALL
+        :param event_timestamp: Timestamp of the fall event
+        :param comment: Comment
         :return: JSON response from Care Daily API
         """
         if self.playback:
             return None
-        r = self._http_post("/analytic/openai?key={}".format(key), data=json.dumps(params))
+        
+        body = {
+            "deviceId": device_id,
+            "classification": classification,
+            "eventTimestamp": event_timestamp,
+            "comment": comment
+        }
+
+        r = self._http_post("/analytic/fallFeedback", data=json.dumps(body))
+        j = json.loads(r.text)
+        _check_for_errors(j)
+        return j
+
+    #===========================================================================
+    # Open AI
+    #===========================================================================
+
+    def send_request_for_chat_completion(self, key, data, openai_organization_id=None):
+        """
+        Send asynchronous request to Open AI API to obtain a model response for the given chat conversation.
+        :param key: Key to identify this request
+        :param data: Parameters to send to the Open AI API
+        :param openai_organization_id: Organization ID to use for the Open AI API. Default is None.
+        :return: JSON response from Care Daily API
+        """
+        if self.playback:
+            return None
+        params = {
+            "key": key
+        }
+        if openai_organization_id is not None:
+            params['organizationId'] = openai_organization_id
+        r = self._http_post("/analytic/openai", params=params, data=json.dumps(data))
+        j = json.loads(r.text)
+        _check_for_errors(j)
+        return j
+
+
+    #===========================================================================
+    # AI
+    #===========================================================================
+
+    def send_a_request_to_a_model(self, model_name, key, data):
+        """
+        Send asynchronous request to an AI model to obtain a model response for the given data.
+        There are 2 types of AI applications:
+
+            - The first type uses the LLama model and provides simple text completion or chat completion.
+            - The second type uses the SetFit model and calculates phrase scoring (probabilities of scores 0,1,2).
+
+        The type of AI application is determined automatically by its unique name.
+        The response from AI application is delivered to the bot in a data stream message to the address "ai".
+        
+        :param model_name: Model ID to use for the AI model
+        :param key: Key to identify this request
+        :param data: Parameters to send to the AI model
+        :return: JSON response from Care Daily API
+        """
+        if self.playback:
+            return None
+        params = {
+            "name": model_name,
+            "key": key,
+        }
+        r = self._http_post("/analytic/ai", params=params, data=json.dumps(data))
         j = json.loads(r.text)
         _check_for_errors(j)
         return j
@@ -12098,6 +13752,141 @@ class BotEngine:
         self.get_logger(f"{'botengine'}.{__class__.__name__}").info("No customer support ticket created!")
         return None
 
+    # ===========================================================================
+    # Cloud API for EngageKit
+    # ===========================================================================
+    def get_cloud_message_topics(self):
+        """
+        Get a list of message topics
+        :return: A list of message topics
+        """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(">get_cloud_message_topics()")
+        params = {}
+        params['appId'] = self.get_bot_instance_id()
+
+        params['lang'] = self.get_language()
+
+        headers = {"Content-Type": "application/json"}
+
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|get_cloud_message_topics() params={}".format(params))
+        r = self._http_get("/cloud/json/messageTopics", params=params, headers=headers)
+        j = json.loads(r.text)
+        _check_for_errors(j)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<get_cloud_message_topics() response={}".format(j))
+        return j
+
+    def update_cloud_message_topics(self, topics):
+        """
+        Create message topics if they don't exist and update the list of topics for the specified bot.
+        :param topics: List of topics
+        :return:
+        """
+
+        params = {}
+        params['bundle'] = self.get_bundle_id()
+
+        headers = {"Content-Type": "application/json"}
+
+        j = json.dumps(topics)
+
+        r = self._http_put("/cloud/json/messageTopics", params=params, data=j, headers=headers)
+
+        j = json.loads(r.text)
+
+        _check_for_errors(j)
+        return j
+
+    def create_cloud_messages(self, messages_json=None, by_user: bool = False):
+        """
+        Create new cloud messages at a location.
+        :param location_id: The location ID if created by user
+        :param messages_json: The messages json content
+        :return:
+        """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(">create_cloud_messages()")
+        if messages_json is None:
+            messages_json = {}
+        params = {}
+        if by_user is True:
+            params['locationId'] = self.get_location_id()
+
+        headers = {"Content-Type": "application/json"}
+        j = json.dumps(messages_json)
+
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|create_cloud_messages() params={} data={}".format(params, j))
+
+        r = self._http_post("/cloud/json/messages", params=params, data=j, headers=headers)
+        j = json.loads(r.text)
+        _check_for_errors(j)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<create_cloud_messages() response={}".format(j))
+        return j
+
+    def update_cloud_messages(self, messages_json):
+        """
+        AI bots can update message statuses and schedule delivery time.
+        :param messages_json: The messages json content
+        :return:
+        """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(">update_cloud_messages()")
+        headers = {"Content-Type": "application/json"}
+        j = json.dumps(messages_json)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|update_cloud_messages() data={}".format(j))
+        r = self._http_put("/cloud/json/messages", data=j, headers=headers)
+        j = json.loads(r.text)
+
+        _check_for_errors(j)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<update_cloud_messages() response={}".format(j))
+        return j
+
+    def get_cloud_messages(self, start_date_ms, end_date_ms, topic_id, read_status):
+        """
+        Get messages from a location
+        :param start_date_ms: The start date in milliseconds
+        :param end_date_ms: The end date in milliseconds
+        :param topic_id: The topic ID
+        :param read_status: The read status
+        :return: Messages JSON
+        """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(">get_cloud_messages()")
+        params = {}
+        params['locationId'] = self.get_location_id()
+        params['startDate'] = start_date_ms
+        params["end_date_ms"] = end_date_ms
+        params["instance"] = self.get_bot_instance_id()
+        params["topic_id"] = topic_id
+        params["read_status"] = read_status
+
+        headers = {"Content-Type": "application/json"}
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|get_cloud_messages() params={}".format(params))
+        r = self._http_get("/cloud/json/messages", params=params, headers=headers)
+        j = json.loads(r.text)
+
+        _check_for_errors(j)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<get_cloud_messages() response={}".format(j))
+        return j
+
+    def update_cloud_message_read_status(self, message_id, read_status):
+        """
+        Update message read status
+        :param message_id: The message ID
+        :param read_status: The read status
+        :return:
+        """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(">update_cloud_message_read_status()")
+        params = {}
+        params['locationId'] = self.get_location_id()
+        params['messageId'] = message_id
+        params['readStatus'] = read_status
+
+        headers = {"Content-Type": "application/json"}
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|update_cloud_message_read_status() params={}".format(params))
+        r = self._http_put("/cloud/developer/messageRead", params=params, headers=headers)
+        j = json.loads(r.text)
+
+        _check_for_errors(j)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<update_cloud_message_read_status() response={}".format(j))
+        return j
+
     #===========================================================================
     # Tools
     #===========================================================================
@@ -12410,9 +14199,11 @@ class Question:
             body['placeholder'] = self.placeholder
 
         if self.response_type == self.QUESTION_RESPONSE_TYPE_SLIDER:
-            body['sliderMin'] = self.slider_min
-            body['sliderMax'] = self.slider_max
-            body['sliderInc'] = self.slider_inc
+            slider = {}
+            slider['min'] = self.slider_min
+            slider['max'] = self.slider_max
+            slider['inc'] = self.slider_inc
+            body['slider'] = slider
             
             if self.default_answer is None:
                 self.default_answer = int((self.slider_max - self.slider_min) / 2)
@@ -12646,6 +14437,7 @@ class Color:
     RED = Fore.RED
     BOLD = Style.BRIGHT
     END = Style.RESET_ALL
+    UNDERLINE = '\033[4m'
 
 
 
@@ -12670,8 +14462,14 @@ playback_variables = None
 # Playback timezone
 playback_timezone = None
 
+# Playback location priority
+playback_location_priority = None
+
 # Playback states
 playback_states = {}
+
+# Playback narratives
+playback_narratives = []
 
 # Playback modes
 playback_modes = []
@@ -12732,12 +14530,15 @@ def playback_flush_states(address, json_content, overwrite=True, timestamp_ms=No
     import pytz
     import copy
     dt = datetime.datetime.fromtimestamp(playback_timestamp_ms / 1000, pytz.timezone(playback_location_info['timezone']['id']))
+    _bot_loggers["botengine"].debug(">playback_flush_states() addess={} overwrite={} timestamp_ms={} publish_to_partner={} fields_updated={} fields_deleted={} json_content={}".format(address, overwrite, timestamp_ms, publish_to_partner, fields_updated, fields_deleted, json_content))
 
     if timestamp_ms not in playback_states:
         playback_states[timestamp_ms] = {}
 
-    playback_states[timestamp_ms][address] = copy.copy(json_content)
-
+    if not overwrite and address in playback_states[timestamp_ms]:
+        playback_states[timestamp_ms][address].update(json.loads(json.dumps(json_content)))
+    else:
+        playback_states[timestamp_ms][address] = json.loads(json.dumps(json_content))
     # Export final states
     # import copy
     # output_states = copy.deepcopy(playback_states)
@@ -12814,9 +14615,67 @@ def playback_narrate(title=None, description=None, priority=None, icon=None, ico
     global playback_timestamp_ms
     global playback_location_info
     global playback_session_id
+    global playback_narratives
     import pytz
     dt = datetime.datetime.fromtimestamp(playback_timestamp_ms / 1000, pytz.timezone(playback_location_info['timezone']['id']))
     _bot_loggers["botengine"].info(">narrate() event_type={}; priority={}; narrative_type={}; title={}; description={}; properties={}, status={}; to_admin={}".format(event_type, priority, narrative_type, title, description, extra_json_dict, status, admin))
+
+    narrative = {
+        'narrativeTime': timestamp_ms or playback_timestamp_ms
+    }
+
+    if event_type is not None:
+        narrative['eventType'] = event_type
+    if priority is not None:
+        narrative['priority'] = priority
+    if icon is not None:
+        narrative['icon'] = icon
+    if icon_font is not None:
+        narrative['iconFont'] = icon_font
+    if title is not None:
+        narrative['title'] = title
+    if description is not None:
+        narrative['description'] = description
+    if status is not None:
+        narrative['status'] = status
+    narrative
+    if narrative_type is not None:
+        narrative['narrativeType'] = narrative_type
+
+    target = {}
+
+    if file_ids is not None:
+        target['fileIDs'] = file_ids
+
+    if extra_json_dict is not None:
+        target.update(extra_json_dict)
+
+    if len(target) > 0:
+        narrative['target'] = target
+
+    params = {}
+
+    if update_narrative_id is not None:
+        params['narrativeId'] = update_narrative_id
+
+    if update_narrative_timestamp is not None:
+        params['narrativeTime'] = update_narrative_timestamp
+
+    if admin:
+        params['scope'] = 2
+    else:
+        params['scope'] = 1
+
+    # New server features to stream narratives to partner clouds
+    if publish_to_partner is not None:
+        params['publish'] = publish_to_partner
+
+    # Ignore analytic narratives
+    if narrative.get('priority') != -1:
+        now_timestamp = datetime.datetime.now().timestamp() * 1000
+
+        if narrative['narrativeTime'] >= now_timestamp - 1000 * 60 * 60 * 24 * 300:
+            playback_narratives.append((narrative, params))
 
     out = "[{} - {} - NARRATIVE]: event_type={}; priority={}; narrative_type={}; title={}; description={}; properties={}, status={}; to_admin={}\n".format(playback_timestamp_ms, dt.isoformat(), event_type, priority, narrative_type, title, description, extra_json_dict, status, admin)
 
@@ -12826,6 +14685,24 @@ def playback_narrate(title=None, description=None, priority=None, icon=None, ico
 def playback_resynchronize_questions():
     return
 
+def playback_set_location_priority(category, rank, comment=None):
+    global playback_location_priority
+    global playback_timestamp_ms
+    global playback_location_info
+    import pytz
+    priority = {
+        "priorityCategory": int(category),
+        "priorityRank": int(rank),
+        "priorityComment": comment
+    }
+    if comment:
+        priority["comment"] = comment
+    playback_location_priority = priority
+
+    dt = datetime.datetime.fromtimestamp(playback_timestamp_ms / 1000, pytz.timezone(playback_location_info['timezone']['id']))
+    out = "[{} - {} - PRIORITY]: category={}; rank={}; comment={}\n".format(playback_timestamp_ms, dt.isoformat(), category, rank, comment)
+    with open("playback_{}_location_priorities.txt".format(playback_session_id), "a") as myfile:
+        myfile.write(out)
 
 def playback_get_spaces():
     return []
@@ -12849,9 +14726,9 @@ def playback_get_datetime_from_timestamp(timestamp_ms, timezone_str):
         timezone_str = "US/Pacific"
     return datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone_str))
 
-def playback_send_request_for_chat_completion(key, params):
+def playback_send_request_for_chat_completion(key, data, openai_organization_id=None):
     global playback_chat_completions
-    playback_chat_completions.append((key, params))
+    playback_chat_completions.append((key, data, openai_organization_id))
     _bot_loggers["botengine"].info(">send_request_for_chat_completion() playback_chat_completions={}".format(playback_chat_completions))
     return
 

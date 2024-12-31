@@ -27,6 +27,7 @@ MEASUREMENT_CELL_STATUS = "cellStatus"
 NETWORK_TYPE_ETHERNET = 1
 NETWORK_TYPE_WIFI = 2
 NETWORK_TYPE_CELLULAR = 3
+NETWORK_TYPE_LOOPBACK = "lo"
 
 # Network type measurement
 MEASUREMENT_NETWORK_TYPE = "netType"
@@ -111,11 +112,30 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         if MEASUREMENT_CELL_STATUS in self.last_updated_params:
-            botengine.get_logger().info("gateway_develco_squidlink: cellStatus={}".format(self.measurements[MEASUREMENT_CELL_STATUS][0][0]))
+            botengine.get_logger(f'{__name__}.{__class__.__name__}').info("|did_connect_cellular() cellStatus={}".format(self.measurements[MEASUREMENT_CELL_STATUS][0][0]))
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_CONNECTED
         elif MEASUREMENT_NETWORK_TYPE in self.last_updated_params:
-            botengine.get_logger().info("gateway_develco_squidlink: netType={}".format(self.measurements[MEASUREMENT_NETWORK_TYPE][0][0]))
-            return self.measurements[MEASUREMENT_NETWORK_TYPE][0][0] == NETWORK_TYPE_CELLULAR
+            botengine.get_logger(f'{__name__}.{__class__.__name__}').info("|did_connect_cellular() netType={}".format(self.measurements[MEASUREMENT_NETWORK_TYPE][0][0]))
+
+            # Retrieve any other measurements with the same timestamp
+            current_measurements = [self.measurements[MEASUREMENT_NETWORK_TYPE][0]]
+            for measurement in self.measurements[MEASUREMENT_NETWORK_TYPE][1:]:
+                if measurement[1] == current_measurements[0][1]:
+                    current_measurements += [measurement]
+                    break
+            if any([measurement[0] in [NETWORK_TYPE_CELLULAR] for measurement in current_measurements]):
+                botengine.get_logger(f'{__name__}.{__class__.__name__}').info("|did_connect_cellular() netType={}".format(self.measurements[MEASUREMENT_NETWORK_TYPE]))
+                # May have just connected to cellular
+                if len(self.measurements[MEASUREMENT_NETWORK_TYPE]) == len(current_measurements):
+                    return True
+                else:
+                    # Check measurements prior to the current timestamp, ignoring `lo` (loopback) measurements.  
+                    for measurement in self.measurements[MEASUREMENT_NETWORK_TYPE]:
+                        if measurement[1] == current_measurements[0][1] or measurement[0] == NETWORK_TYPE_LOOPBACK:
+                            continue
+                        # Return True if the previous measurement was not cellular
+                        botengine.get_logger(f'{__name__}.{__class__.__name__}').info("|did_connect_cellular() previous_netType={}".format(measurement))
+                        return measurement[0] not in [NETWORK_TYPE_CELLULAR]
 
         return False
 
@@ -126,11 +146,31 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         if MEASUREMENT_CELL_STATUS in self.last_updated_params:
-            botengine.get_logger().info("gateway_develco_squidlink: cellStatus={}".format(self.measurements[MEASUREMENT_CELL_STATUS][0][0]))
+            botengine.get_logger(f'{__name__}.{__class__.__name__}').info("|did_connect_broadband() cellStatus={}".format(self.measurements[MEASUREMENT_CELL_STATUS][0][0]))
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_DISCONNECTED
         elif MEASUREMENT_NETWORK_TYPE in self.last_updated_params:
-            botengine.get_logger().info("gateway_develco_squidlink: netType={}".format(self.measurements[MEASUREMENT_NETWORK_TYPE][0][0]))
-            return self.measurements[MEASUREMENT_NETWORK_TYPE][0][0] != NETWORK_TYPE_CELLULAR
+            botengine.get_logger(f'{__name__}.{__class__.__name__}').info("|did_connect_broadband() netType={}".format(self.measurements[MEASUREMENT_NETWORK_TYPE][0][0]))
+
+            # Retrieve any other measurements with the same timestamp
+            current_measurements = [self.measurements[MEASUREMENT_NETWORK_TYPE][0]]
+            for measurement in self.measurements[MEASUREMENT_NETWORK_TYPE][1:]:
+                if measurement[1] == current_measurements[0][1]:
+                    current_measurements += [measurement]
+                    break
+
+            if any([measurement[0] in [NETWORK_TYPE_ETHERNET, NETWORK_TYPE_WIFI] for measurement in current_measurements]):
+                botengine.get_logger(f'{__name__}.{__class__.__name__}').info("|did_connect_broadband() netType={}".format(self.measurements[MEASUREMENT_NETWORK_TYPE]))
+                # May have just connected to broadband
+                if len(self.measurements[MEASUREMENT_NETWORK_TYPE]) == len(current_measurements):
+                    return True
+                else:
+                    # Check measurements prior to the current timestamp, ignoring `lo` (loopback) measurements.  
+                    for measurement in self.measurements[MEASUREMENT_NETWORK_TYPE]:
+                        if measurement[1] == current_measurements[0][1] or measurement[0] == NETWORK_TYPE_LOOPBACK:
+                            continue
+                        # Return True if the previous measurement was not broadband
+                        botengine.get_logger(f'{__name__}.{__class__.__name__}').info("|did_connect_broadband() previous_netType={}".format(measurement))
+                        return measurement[0] not in [NETWORK_TYPE_ETHERNET, NETWORK_TYPE_WIFI]
 
         return False
 
@@ -143,9 +183,12 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         if MEASUREMENT_CELL_STATUS in self.measurements:
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_DISCONNECTED
         if MEASUREMENT_NETWORK_TYPE in self.measurements:
-            return self.measurements[MEASUREMENT_NETWORK_TYPE][0][0] != NETWORK_TYPE_CELLULAR
+            # Retrieve the latest measurement that is not `lo` (loopback)
+            for measurement in self.measurements[MEASUREMENT_NETWORK_TYPE]:
+                if measurement[0] != NETWORK_TYPE_LOOPBACK:
+                    return measurement[0] in [NETWORK_TYPE_ETHERNET, NETWORK_TYPE_WIFI]
 
-        return self.is_connected
+        return False
 
     def is_cellular_connected(self, botengine):
         """
@@ -156,7 +199,10 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         if MEASUREMENT_CELL_STATUS in self.measurements:
             return self.measurements[MEASUREMENT_CELL_STATUS][0][0] == CELL_STATUS_CONNECTED
         if MEASUREMENT_NETWORK_TYPE in self.measurements:
-            return self.measurements[MEASUREMENT_NETWORK_TYPE][0][0] == NETWORK_TYPE_CELLULAR
+            # Retrieve the latest measurement that is not `lo` (loopback)
+            for measurement in self.measurements[MEASUREMENT_NETWORK_TYPE]:
+                if measurement[0] != NETWORK_TYPE_LOOPBACK:
+                    return measurement[0] in [NETWORK_TYPE_CELLULAR]
 
         return False
 

@@ -23,6 +23,9 @@
         "address": "update_dashboard_content"
       },
       {
+        "address": "clear_dashboard_content"
+      },
+      {
         "address": "clear_dashboard_headers"
       },
       {

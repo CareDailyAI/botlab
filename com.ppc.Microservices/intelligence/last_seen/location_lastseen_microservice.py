@@ -11,12 +11,12 @@ file 'LICENSE.txt', which is part of this source code package.
 from intelligence.intelligence import Intelligence
 from devices.motion.motion import MotionDevice
 from devices.entry.entry import EntryDevice
-from devices.vayyar.vayyar import VayyarDevice
+from devices.radar.radar import RadarDevice
 
 import utilities.utilities as utilities
 import signals.dashboard as dashboard
 import signals.insights as insights
-import signals.vayyar as vayyar
+import signals.radar as radar
 
 # Time between narrations
 TIME_BETWEEN_NARRATIONS_MS = utilities.ONE_MINUTE_MS
@@ -173,11 +173,11 @@ class LocationLastSeenMicroservice(Intelligence):
                 return
 
     #===========================================================================
-    # Vayyar Home events
+    # Radar events
     #===========================================================================
-    def knowledge_did_update_vayyar_occupants(self, botengine, device_object, total_occupants):
+    def knowledge_did_update_radar_occupants(self, botengine, device_object, total_occupants):
         """
-        Updated vayyar occupants for the given device
+        Updated radar occupants for the given device
         Declare what room the occupants are in
         :param botengine:
         :param device_object:
@@ -187,7 +187,7 @@ class LocationLastSeenMicroservice(Intelligence):
         max_occupants = 0
         max_device = None
         for device in list(self.parent.devices.values()):
-            if isinstance(device, VayyarDevice):
+            if isinstance(device, RadarDevice):
                 if device.knowledge_total_occupants > max_occupants:
                     max_occupants = device.knowledge_total_occupants
                     max_device = device
@@ -274,7 +274,7 @@ class LocationLastSeenMicroservice(Intelligence):
     # We leave this information-level to allow it to refresh periodically throughout the night.
     def information_did_leave_bed(self, botengine, device_object, unique_id, context_id, name):
         botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_leave_bed()" + utilities.Color.END)
-        self.knowledge_did_update_vayyar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
+        self.knowledge_did_update_radar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
 
     def knowledge_did_arrive_shower(self, botengine, device_object, unique_id, context_id, name):
         botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_arrive_shower()" + utilities.Color.END)
@@ -300,7 +300,7 @@ class LocationLastSeenMicroservice(Intelligence):
 
     def knowledge_did_leave_shower(self, botengine, device_object, unique_id, context_id, name):
         botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_leave_shower()" + utilities.Color.END)
-        self.knowledge_did_update_vayyar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
+        self.knowledge_did_update_radar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
 
     # We keep this 'information'-based because it's higher frequency and makes for a better live demo of the technology
     def information_did_arrive_chair(self, botengine, device_object, unique_id, context_id, name):
@@ -328,7 +328,7 @@ class LocationLastSeenMicroservice(Intelligence):
     # We keep this 'information'-based because it's higher frequency and makes for a better live demo of the technology
     def information_did_leave_chair(self, botengine, device_object, unique_id, context_id, name):
         botengine.get_logger().info(utilities.Color.RED + "location_lastseen_microservice: information_did_leave_chair()" + utilities.Color.END)
-        self.knowledge_did_update_vayyar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
+        self.knowledge_did_update_radar_occupants(botengine, device_object, device_object.knowledge_total_occupants)
 
     def timer_fired(self, botengine, argument):
         """

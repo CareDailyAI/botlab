@@ -36,7 +36,7 @@ class LocationDaylightMicroservice(Intelligence):
         :param parent: Parent object, either a location or a device object.
         """
 
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">__init__()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(">__init__()")
         Intelligence.__init__(self, botengine, parent)
 
         if self.parent.latitude is not None and self.parent.longitude is not None:
@@ -44,7 +44,7 @@ class LocationDaylightMicroservice(Intelligence):
 
         # Initialize the 'is_daylight' class variable in the Location object.
         self.parent.is_daylight = self.is_daylight(botengine)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<__init__() intelligence_id={}".format(self.intelligence_id))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<__init__() intelligence_id={}".format(self.intelligence_id))
 
     def initialize(self, botengine):
         """
@@ -52,11 +52,11 @@ class LocationDaylightMicroservice(Intelligence):
         :param botengine: BotEngine environment
         """
 
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">initialize()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(">initialize()")
         if not self.is_timer_running(botengine) and not botengine.is_executing_timer():
             if self.parent.latitude is not None and self.parent.longitude is not None:
                 self._set_sunrise_sunset_alarm(botengine)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<initialize()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<initialize()")
         return
 
     def destroy(self, botengine):
@@ -268,23 +268,27 @@ class LocationDaylightMicroservice(Intelligence):
         try:
             ephem = importlib.import_module("ephem")
         except ImportError:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|next_sunrise_timestamp_ms() ephem library not found.")
             ephem = None
 
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunrise_timestamp_ms() current_date={}".format(self.parent.get_local_datetime(botengine)))
         if self.parent.longitude is None or self.parent.latitude is None or ephem is None:
             # Ya, we don't have any coordinate information. Call it 8 AM.
             dt = self.parent.get_local_datetime(botengine).replace(hour=8)
-            now = datetime.datetime.now(dt.tzinfo)
+            now = self.parent.get_local_datetime(botengine)
             if dt < now:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunrise_timestamp_ms() Already past sunrise. Adding 24 hours.")
                 dt = dt + datetime.timedelta(hours=24)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<next_sunrise_timestamp_ms() local_dt={}".format(dt))
             return int(dt.timestamp()) * 1000
 
         o = ephem.Observer()
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunrise_timestamp_ms() current_date={}".format(self.parent.get_local_datetime(botengine)))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunrise_timestamp_ms() current_date={}".format(self.parent.get_local_datetime(botengine)))
         o.date = self.parent.get_local_datetime(botengine)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunrise_timestamp_ms() latitude={} longitude".format(self.parent.latitude, self.parent.longitude))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunrise_timestamp_ms() latitude={} longitude={}".format(self.parent.latitude, self.parent.longitude))
         o.lat = str(self.parent.latitude)
         o.long = str(self.parent.longitude)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunrise_timestamp_ms() next_rising={}".format(o.next_rising(ephem.Sun())))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunrise_timestamp_ms() next_rising={}".format(o.next_rising(ephem.Sun())))
         from zoneinfo import ZoneInfo
         zone = ZoneInfo(self.parent.get_local_timezone_string(botengine))
         local_dt = ephem.to_timezone(o.next_rising(ephem.Sun()), zone)
@@ -302,21 +306,24 @@ class LocationDaylightMicroservice(Intelligence):
         except ImportError:
             ephem = None
 
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunset_timestamp_ms() current_date={}".format(self.parent.get_local_datetime(botengine)))
         if self.parent.longitude is None or self.parent.latitude is None or ephem is None:
             # We don't have any coordinate information. Call it 8 PM.
             dt = self.parent.get_local_datetime(botengine).replace(hour=20)
-            now = datetime.datetime.now(dt.tzinfo)
+            now = self.parent.get_local_datetime(botengine)
             if dt < now:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunset_timestamp_ms() Already past sunset. Adding 24 hours.")
                 dt = dt + datetime.timedelta(hours=24)
 
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<next_sunset_timestamp_ms() local_dt={}".format(dt))
             return int(dt.timestamp()) * 1000
 
         o = ephem.Observer()
         o.date = self.parent.get_local_datetime(botengine)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunset_timestamp_ms() current_date={}".format(self.parent.get_local_datetime(botengine)))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunset_timestamp_ms() current_date={}".format(self.parent.get_local_datetime(botengine)))
         o.lat = str(self.parent.latitude)
         o.long = str(self.parent.longitude)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|next_sunset_timestamp_ms() latitude={} longitude".format(self.parent.latitude, self.parent.longitude))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|next_sunset_timestamp_ms() latitude={} longitude".format(self.parent.latitude, self.parent.longitude))
         from zoneinfo import ZoneInfo
         zone = ZoneInfo(self.parent.get_local_timezone_string(botengine))
         local_dt = ephem.to_timezone(o.next_setting(ephem.Sun()), zone)

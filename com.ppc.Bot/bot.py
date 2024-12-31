@@ -169,7 +169,7 @@ def get_intelligence_statistics(botengine):
 
 
 def trigger_event(botengine, controller, trigger_type, triggers):
-    botengine.get_logger(f"{__name__}").info(">trigger_event() trigger_event={}".format(trigger_event))
+    botengine.get_logger(f"{__name__}").info(">trigger_event() trigger_type={}".format(trigger_type))
     # SCHEDULE TRIGGER
     if trigger_type & botengine.TRIGGER_SCHEDULE != 0:
         schedule_ids = ["DEFAULT"]
@@ -425,17 +425,30 @@ def trigger_event(botengine, controller, trigger_type, triggers):
         botengine.get_logger(f"{__name__}").info("|trigger_event() Data request received")
         events = {}
         data = botengine.get_data_block()
+        botengine.get_logger(f"{__name__}").debug("|trigger_event() data={}".format(data))
 
         if botengine.playback:
-            events['all'] = {}
+            for d in data:
+                reference = None
+                if 'key' in d:
+                    reference = d['key']
 
-            for device_id, csv_data in data.items():
-                device = controller.get_device(device_id)
-                if device is not None:
-                    events['all'][device] = csv_data
+                if reference not in events:
+                    events[reference] = {}
+                botengine.get_logger(f"{__name__}").info("|trigger_event() Inserting from playback {} ({} bytes)...".format(d['deviceId'], d['dataLength']))
+                events[reference][d['deviceId']] = d['data']
 
-            for reference in events:
-                controller.data_request_ready(botengine, reference, events[reference])
+            data_events = {}
+
+            for reference, value in events.items():
+                if reference not in data_events:
+                    data_events[reference] = {}
+
+                for device_id, decompressed_content in value.items():
+                    data_events[reference][controller.get_device(device_id)] = decompressed_content
+
+            for reference in data_events:
+                controller.data_request_ready(botengine, reference, data_events[reference])
 
         else:
             imported = False
@@ -472,7 +485,66 @@ def trigger_event(botengine, controller, trigger_type, triggers):
 
                 for reference in data_events:
                     controller.data_request_ready(botengine, reference, data_events[reference])
+
+    # MESSAGES
+    if trigger_type & botengine.TRIGGER_MESSAGES != 0:
+        messages = botengine.get_messages_block()
+        botengine.get_logger().info("|trigger_event() Message received, messages={}".format(messages))
+        if messages is not None:
+            controller.sync_messages(botengine, messages)
+
     botengine.get_logger(f"{__name__}").info("<trigger_event()")
+
+
+def extract_available_device_type_classes(botengine):
+    """
+    Extract all available device type classes from a module
+    :return List of device type classes
+    """
+    # 
+    # Walk through our devices directory
+    available_device_type_classes = []
+    
+    import os
+    from os import walk
+    
+    dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "devices")
+    
+    for (dirpath, dirnames, filenames) in walk(dir_path):
+        # Walk through each subdirectory
+        for dirname in dirnames:                        
+            for (_dirpath, _dirnames, _filenames) in walk(os.path.join(dirpath, dirname)):
+                # Walk through each python file in the subdirectory
+                ignore_dirname_strings = ["__pycache__", "tests"]
+                if any([s in _dirpath for s in ignore_dirname_strings]):
+                    continue
+                for filename in _filenames:
+                    if not filename.endswith(".py") and not filename.endswith(".pyc"):
+                        continue
+                    
+                    # Form the module name like "devices.*.*.py"
+                    from pathlib import Path
+                    devices_index = _dirpath.split("/").index("devices")
+                    module_name = "{}.{}".format(".".join(_dirpath.split("/")[devices_index:]), Path(filename).with_suffix(''))
+                    
+                    # Import the module
+                    import importlib
+                    try:
+                        module = importlib.import_module(module_name)
+                    except Exception as e:
+                        self.get_logger(f"{__name__}.{__class__.__name__}").error("Failed to import module. path={} filename={} module_name={}; error={}".format(_dirpath, filename, module_name, e))
+                        continue
+                    
+                    # Get all the classes in the module
+                    from inspect import isclass
+                    classes = [x for x in dir(module) if isclass(getattr(module, x))]
+                    for class_name in classes:
+                        # Extract only classes that conform to the Device class with one or more specified device type
+                        class_ = getattr(module, class_name)
+                        if hasattr(class_, "DEVICE_TYPES") and class_ not in available_device_type_classes:
+                            available_device_type_classes.append(class_)
+
+    return available_device_type_classes
 
 #===============================================================================
 # Location Intelligence Timers

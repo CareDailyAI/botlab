@@ -9,15 +9,17 @@ file 'LICENSE.txt', which is part of this source code package.
 
 import utilities.utilities as utilities
 
-def track(botengine, location_object, event_name, properties={}):
+def track(botengine, location_object, event_name, properties={}, event_description=None):
     """
     Track an event.
     This will buffer your events and flush them to the server altogether at the end of all bot executions,
     and before variables get saved.
 
     :param botengine: BotEngine environment
+    :param location_object: Location object
     :param event_name: (string) A name describing the event
     :param properties: (dict) Additional data to record; keys should be strings and values should be strings, numbers, or booleans
+    :param event_description: (string) A description of the event for narrative purposes
     """
     if properties is not None:
         properties.update({
@@ -26,7 +28,7 @@ def track(botengine, location_object, event_name, properties={}):
 
     if not location_object.is_definitely_absent(botengine):
         botengine.narrate(title=event_name,
-                          description=None,
+                          description=event_description,
                           priority=botengine.NARRATIVE_PRIORITY_ANALYTIC,
                           icon="cogs",
                           icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,

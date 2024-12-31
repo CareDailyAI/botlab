@@ -22,7 +22,8 @@
         "dill",
         "tzlocal",
         "requests",
-        "colorama"
+        "colorama",
+        "pydantic"
   ],
 
   # Share microservices across multiple bots by copying the target end-directory into the local /intelligence directory

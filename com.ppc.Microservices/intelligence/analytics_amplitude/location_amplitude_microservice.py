@@ -45,7 +45,8 @@ class LocationAmplitudeMicroservice(Intelligence):
         event_name = content.get('event_name')
         event_properties = content.get('properties')
         if event_name is None or event_properties is None:
-            botengine.get_logger().warning("Analytics: Missing event_name or properties")
+            import traceback
+            botengine.get_logger().warning("Analytics: Missing event_name or properties. content={} traceback={}".format(content, traceback.format_exc()))
             return
         
         event_time = content.get('event_time')
@@ -226,6 +227,7 @@ class LocationAmplitudeMicroservice(Intelligence):
 
         try:
             requests.post(url, headers=http_headers, data=json.dumps(body), timeout=AMPLITUDE_HTTP_TIMEOUT_S)
+            botengine.get_logger().debug("location_amplitude_microservice: body={}".format(json.dumps(body)))
             botengine.get_logger().info("location_amplitude_microservice: Flushed()")
 
         except requests.HTTPError:

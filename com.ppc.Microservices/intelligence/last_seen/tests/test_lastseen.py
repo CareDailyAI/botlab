@@ -3,7 +3,7 @@ from botengine_pytest import BotEnginePyTest
 
 from devices.motion.motion import MotionDevice
 from devices.entry.entry import EntryDevice
-from devices.vayyar.vayyar import VayyarDevice
+from devices.radar.radar import RadarDevice
 
 from locations.location import Location
 
@@ -32,11 +32,11 @@ class TestLastSeenMicroservice():
         self.entry = EntryDevice(self.botengine, self.location, "entry_id_1", "10014", "Test Entry")
         self.entry.initialize(self.botengine)
 
-        self.vayyar = VayyarDevice(self.botengine, self.location, "vayyar_id_1", 0, "Vayyar Device", precache_measurements=False)
-        self.vayyar.born_on = 0
+        self.radar = RadarDevice(self.botengine, self.location, "radar_id_1", 0, "Radar Device", precache_measurements=False)
+        self.radar.born_on = 0
         self.location.devices[self.entry.device_id] = self.entry
         self.location.devices[self.motion.device_id] = self.motion
-        self.location.devices[self.vayyar.device_id] = self.vayyar
+        self.location.devices[self.radar.device_id] = self.radar
 
         # Start up the bot
         self.location.new_version(self.botengine)
@@ -62,9 +62,9 @@ class TestLastSeenMicroservice():
         measurements = [{'deviceId': 'entry_id_1', 'updated': True, 'name': 'doorStatus', 'value': False, 'time': self.botengine.get_timestamp() - 1000}]
         self.entry.update(self.botengine, measurements)
 
-    def test_vayyar_lastseen(self):
+    def test_radar_lastseen(self):
         self.current_test = CURRENT_TEST_VAYYAR
-        self.lastseen_intelligence.knowledge_did_update_vayyar_occupants(self.botengine, self.vayyar, None)
+        self.lastseen_intelligence.knowledge_did_update_radar_occupants(self.botengine, self.radar, None)
 
     def datastream_updated(self, botengine, address, content):
         """
@@ -86,7 +86,7 @@ class TestLastSeenMicroservice():
             assert self.lastseen_intelligence.last_observed_motion_object == self.motion
 
         elif self.current_test == CURRENT_TEST_VAYYAR:
-            assert insight_json["device_id"] == self.vayyar.device_id
+            assert insight_json["device_id"] == self.radar.device_id
 
     def initialize(self, botengine):
         """

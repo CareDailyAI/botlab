@@ -41,14 +41,23 @@ class LocationDashboardMicroservice(Intelligence):
         # List of content ID's we're tracking
         self.content_id = []
 
-        # New bot? Destroy all previous dashboard content.
-        self.destroy(botengine)
-
     def new_version(self, botengine):
         """
         Upgraded to a new bot version
         :param botengine: BotEngine environment
         """
+        return
+    
+    def clear_dashboard_content(self, botengine, content):
+        """
+        Clear all dashboard content
+        :param botengine:
+        :param content:
+        :return:
+        """
+        self.content_id = []
+        self.parent.set_location_property_separately(botengine, NOW_UI_PROPERTY_NAME, {"cards": []})
+        self.parent.set_location_property_separately(botengine, SERVICES_UI_PROPERTY_NAME, {"cards": []})
         return
 
     def update_dashboard_content(self, botengine, card_content):
@@ -101,8 +110,8 @@ class LocationDashboardMicroservice(Intelligence):
 
         if comment is None:
             if card_content['content']['id'] not in self.content_id:
-                # This doesn't exist already, take no action.
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<update_dashboard_content() No content to updated. card_content={}".format(json.dumps(card_content)))
+                # Attempting to delete a card that does no exist, this is OK.
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<update_dashboard_content() No content to update. card_content={}".format(json.dumps(card_content)))
                 return
 
         # Delete all possible alarms associated with this content for command ID's -2, -1, 0, 1, 2:
@@ -162,7 +171,7 @@ class LocationDashboardMicroservice(Intelligence):
                         break
                 except Exception as e:
                     import traceback
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|update_dashboard_content() Error parsing content. Error={} trace={}".format(e, traceback.format_exc()))
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|update_dashboard_content() Error parsing content. focused_dashboard={} content={} card_content={} error={} trace={}".format(json.dumps(focused_dashboard), json.dumps(content), json.dumps(card_content), e, traceback.format_exc()))
                     pass
 
             if card_content['content']['id'] not in self.content_id:
@@ -233,15 +242,18 @@ class LocationDashboardMicroservice(Intelligence):
                                 del (focused_dashboard['cards'][card_index])
 
         # After pruning out orphaned cards, find the next alarm to set
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_content() Finding next alarm to set.")
         next_alarm_ms = None
         for card in focused_dashboard['cards']:
             for content in card['content']:
                 if 'alarms' in content:
                     for alarm_ms in list(content['alarms']):
                         if next_alarm_ms is None:
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_content() Found first alarm to set. content={}".format(content))
                             next_alarm_ms = int(alarm_ms)
 
                         elif int(alarm_ms) < next_alarm_ms:
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_content() Found earlier alarm to set. content={}".format(content))
                             next_alarm_ms = int(alarm_ms)
 
         if next_alarm_ms is not None:
@@ -299,6 +311,15 @@ class LocationDashboardMicroservice(Intelligence):
 
                                 if content['status'] == COMMAND_DELETE:
                                     content['comment'] = None
+                                if content['status'] in {COMMAND_SET_STATUS_WARNING, COMMAND_SET_STATUS_CRITICAL}:
+                                    try:
+                                        if content['comments'] and (comment := content['comments'].get(alarm_ms)):
+                                            content['comment'] = comment
+
+                                    except Exception as e:
+                                        import traceback
+                                        botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|update_dashboard_content() Error setting status. dashboard={} content={} error={} trace={}".format(json.dumps(dashboard), json.dumps(content), e, traceback.format_exc()))
+                                        pass
 
                                 updated_card_content = {
                                     "type": card['type'],
@@ -310,7 +331,7 @@ class LocationDashboardMicroservice(Intelligence):
 
                                 # Prune out this alarm and older
                                 for index, timestamp_ms in enumerate(dict(updated_card_content['content']['alarms'])):
-                                    if int(timestamp_ms) < botengine.get_timestamp():
+                                    if int(timestamp_ms) <= botengine.get_timestamp():
                                         del (updated_card_content['content']['alarms'][timestamp_ms])
 
                                 botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|timer_fired() Alarm fired - Updating card content status: {}".format(updated_card_content))

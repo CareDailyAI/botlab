@@ -159,7 +159,7 @@ def login(server, username, password, admin=False, cache_api_key=True):
         }
 
         if admin:
-            pref_delivery_type = input('To use your email to get your passcode type "y"?: ')
+            pref_delivery_type = input('To use SMS to get your passcode type "y"?: ')
             pref_delivery_type = 3 if len(pref_delivery_type) == 0 or pref_delivery_type[0].lower() == 'y' else 2
             params['keyType'] = 11
             params['prefDeliveryType'] = pref_delivery_type
@@ -468,7 +468,7 @@ def get_devices(cloud_url, admin_key, location_id):
         'locationId': location_id
     }
 
-    r = _session().get(cloud_url + "/admin/json/devices", params=params, headers=headers)
+    r = _session().get(cloud_url + "/cloud/json/devices", params=params, headers=headers)
     j = json.loads(r.text)
     _check_for_errors(j)
     if 'devices' in j:
@@ -1574,26 +1574,17 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
     :param timezone_string: Timezone string like "America/Los_Angeles"
     :return: Newly created CSV filename
     """
-
+    # Required fields
     device_type = device_object['type']
-    location_id = device_object['location']['id']
+    location_id = device_object['locationId']
     device_id = device_object['id']
-    device_model = "NoModel"
-    device_description = "NoDescription"
-    original_device_name = "NoDescription"
-    behavior = -1
-
-    if 'modelId' in device_object:
-        device_model = device_object['modelId']
-
-    if 'desc' in device_object:
-        device_description = device_object['desc'].strip()
-        original_device_name = device_description
-        import re
-        device_description = re.sub('[^0-9a-zA-Z]+', '-', device_description)
-
-    if 'goalId' in device_object:
-        behavior = device_object['goalId']
+    
+    # Optional fields
+    import re
+    device_model = re.sub('[^0-9a-zA-Z]+', '-', device_object.get('modelId', "NoModel").strip())
+    device_description = re.sub('[^0-9a-zA-Z]+', '-', device_object.get('desc', "NoDescription").strip())
+    behavior = device_object.get('goalId', -1)
+    spaces = [f"{space['type']}" for space in device_object.get('spaces',[])]
 
     new_filename = "{}_{}_{}_{}_{}.csv".format(device_type, device_model, device_id, device_description, type)
     new_file_path = os.path.join(os.path.dirname(original_csv_file), new_filename)
@@ -1653,7 +1644,7 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
 
         with open(new_file_path, 'w') as out:
             # STEP 2. Output CSV header
-            out.write("trigger,location_id,device_type,device_id,description,timestamp_ms,timestamp_iso,timestamp_excel,behavior")
+            out.write("trigger,location_id,device_type,device_id,description,timestamp_ms,timestamp_iso,timestamp_excel,behavior,spaces")
 
 
             for p in sorted(list(parameters.keys())):
@@ -1719,9 +1710,9 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
                             timezone_string = device_object['timezone']['id']
                         timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
 
-                        line_buffer = "{},{},{},{},{},{},{},{},{}".format(trigger, location_id, device_type, device_id,
+                        line_buffer = "{},{},{},{},{},{},{},{},{},{}".format(trigger, location_id, device_type, device_id,
                                                                         device_description, timestamp_ms, timestamp_iso,
-                                                                        timestamp_excel, behavior)
+                                                                        timestamp_excel, behavior,"&&".join(spaces))
 
                         for p in sorted(list(parameters.keys())):
                             # Remove quotes on values - not sure where the quotes came from but it would be more ideal to remove them earlier.
@@ -1789,7 +1780,7 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
 
         with open(new_file_path, 'w') as out:
             # STEP 2. Output CSV header
-            out.write("trigger,location_id,device_type,device_id,description,timestamp_ms,timestamp_iso,timestamp_excel,behavior")
+            out.write("trigger,location_id,device_type,device_id,description,timestamp_ms,timestamp_iso,timestamp_excel,behavior,spaces")
 
             out.write("," + "alert_type")
 
@@ -1863,9 +1854,9 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
                                 timezone_string = device_object['timezone']['id']
                             timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
 
-                            line_buffer = "{},{},{},{},{},{},{},{},{},{}".format(trigger, location_id, device_type, device_id,
+                            line_buffer = "{},{},{},{},{},{},{},{},{},{},{}".format(trigger, location_id, device_type, device_id,
                                                                             device_description, timestamp_ms, timestamp_iso,
-                                                                            timestamp_excel, behavior, alert_name)
+                                                                            timestamp_excel, behavior, "&&".join(spaces), alert_name)
 
                             for p in sorted(list(alert_params.keys())):
                                 if p not in cur_alert_params:
@@ -1958,7 +1949,7 @@ def transform_datastreams_csv(original_csv_file, location_object):
 
     # Here's what it should get transformed into
     # trigger, location_id, timestamp_ms, timestamp_iso,timestamp_excel, address, feed
-    # 256, 1306512, 1596740404000, 2022-12-06T05:34:02Z, 12/05/2022 21:34:02, do_something, {'thing':{'type':'0'}&&'other_thing':123}
+    # 256, 1306512, 1596740404000, 2022-12-06T05:34:02Z, 12/05/2022 21:34:02, do_something, '{""thing"":{""type"":""0""}&&""other_thing"":123}'
 
     location_id = location_object['id']
 
@@ -1990,7 +1981,7 @@ def transform_datastreams_csv(original_csv_file, location_object):
                                                                       pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
                     feed_content = {}
                     idx = line.find(line_list[FEED_COLUMN])
-                    feed_content = line[idx:].replace('"{','{').replace('}"','}').replace('""','"').replace(',','&&')
+                    feed_content = line[idx:].replace('"{','{').replace('}"','}').replace(',','&&')
                     out.write("{},{},{},{},{},{},{}\n".format(256,
                                                               location_id,
                                                               timestamp_ms,
@@ -2243,6 +2234,14 @@ def _generate_recordings(cloud_url, admin_key, location_id, transformed_files, d
                 # We do it this way so our file remains totally readable and editable later.
                 lines = 0
                 out.write("{\n")
+                if data_request_files:
+                    param_data_request_files = {}
+                    for key, filename in data_request_files.items():
+                        if "_param" in key and device_id in key:
+                            param_data_request_files[key.replace("_param","")] = os.path.basename(filename)
+
+                    out.write("\"data_requests\":" + json.dumps(param_data_request_files) + ",\n")
+                    data_request_files.clear()
                 out.write("\"location_info\":" + json.dumps(location_info) + ",\n")
                 out.write("\"device_properties\":" + json.dumps(device_properties) + ",\n")
                 out.write("\"data\":[\n")
@@ -2293,8 +2292,8 @@ def _csv_file_to_python(csv_file):
                     if len(values[i]) == 0:
                         continue
                     data[h] = values[i] \
-                        .replace(COMMA_DELIMITER_REPLACEMENT_CHARACTER, ",") \
-                        .replace(QUOTE_DELIMITER_REPLACEMENT_CHARACTER, "\"")
+                    .replace(COMMA_DELIMITER_REPLACEMENT_CHARACTER, ",") \
+                    .replace(QUOTE_DELIMITER_REPLACEMENT_CHARACTER, "\"")
                 all_data.append(data)
     return all_data
 
