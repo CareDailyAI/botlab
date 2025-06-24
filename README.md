@@ -21,7 +21,7 @@ under the License.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/license/apache-2-0)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/CareDailyAI/botlab?sort=semver)](https://github.com/CareDailyAI/botlab/tree/latest)
-[![Documentation](https://img.shields.io/badge/docs-iotapps.docs.apiary.io-blue.svg)](https://iotapps.docs.apiary.io)
+[![Documentation](https://img.shields.io/badge/docs-apidocs-blue.svg)](https://app.peoplepowerco.com/cloud/apidocs/html/cloud.html)
 
 
 <picture width="500">
@@ -70,15 +70,16 @@ We host and run them for you on our servers. Of course, you can also run them li
 
 Want to jump right in and watch a bot in action run? Playback some recorded data using the BotEngine in a new CodeSpace:
 
-`./botengine --playback tests/data/12-days-of-data.json -r com.ppc.Tests`
+`./botengine --playback tests/data/14-days-of-data -r com.ppc.Tests`
 
 For help on creating a new CodeSpace please refer to [GitHub](https://github.com/features/codespaces) documentation.
 
 ## Partners and Services
 
-BotLab can coordinate events and messages from various partner services, manufacturers and platforms.  Here are some major solutions partnering today:
+BotLab can coordinate events and messages from various partner services, manufacturers and platforms.  
 
-
+<!-- Here are some major solutions partnering today: -->
+<!--  -->
 <!-- <p align="center"> -->
   <!-- TODO: Add all major brands -->
   <!-- <img src="https://media.peoplepowerco.com/develco-logo.png" alt="develco" border="0" width="200"/> -->
@@ -134,10 +135,10 @@ how to set up a development environment.
 
 ## Repo Activity
 
-<a href="https://next.ossinsight.io/widgets/official/compose-org-active-contributors?owner_id=11855343&period=past_28_days&activity=active" target="_blank" style="display: block" align="center">
+<a href="https://next.ossinsight.io/widgets/official/compose-org-active-contributors?period=past_12_months&activity=active&owner_id=113403165" target="_blank" style="display: block" align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-org-active-contributors/thumbnail.png?owner_id=11855343&period=past_28_days&activity=active&image_size=2x3&color_scheme=dark" width="273" height="auto">
-    <img alt="Active participants of pingcap - past 28 days" src="https://next.ossinsight.io/widgets/official/compose-org-active-contributors/thumbnail.png?owner_id=11855343&period=past_28_days&activity=active&image_size=2x3&color_scheme=light" width="273" height="auto">
+    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-org-active-contributors/thumbnail.png?owner_id=113403165&period=past_12_months&activity=active&image_size=2x3&color_scheme=dark" width="273" height="auto">
+    <img alt="Active participants of pingcap - past 28 days" src="https://next.ossinsight.io/widgets/official/compose-org-active-contributors/thumbnail.png?owner_id=113403165&period=past_12_months&activity=active&image_size=2x3&color_scheme=light" width="273" height="auto">
   </picture>
 </a>
 

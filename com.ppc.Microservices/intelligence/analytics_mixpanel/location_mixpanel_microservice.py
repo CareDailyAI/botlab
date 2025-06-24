@@ -41,15 +41,17 @@ class LocationMixpanelMicroservice(Intelligence):
         :param content: (dict) A dictionary containing:
             event_name: (string) A name describing the event
             event_time: (int) The time of the event in milliseconds since the epoch
-            event_properties: (dict) Additional data to record; keys should be strings and values should be strings, numbers, or booleans
+            properties: (dict) Additional data to record; keys should be strings and values should be strings, numbers, or booleans
         """
         if botengine.is_test_location():
             return
 
         event_name = content['event_name']
-        event_properties = content['event_properties']
+        event_properties = content['properties']
 
-        botengine.get_logger().info("Analytics: Tracking {} => {}".format(self.total, event_name))
+        botengine.get_logger().info("Analytics: Tracking {}".format(event_name))
+        if botengine.playback:
+            return
         mp = mixpanel.Mixpanel(properties.get_property(botengine, "MIXPANEL_TOKEN"), consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
         mp.track(self._get_distinct_id(botengine), event_name, event_properties)
         self._flush(botengine, mp)
@@ -66,6 +68,8 @@ class LocationMixpanelMicroservice(Intelligence):
         properties_dict = content['properties_dict']
 
         botengine.get_logger().debug("analytics.py: Setting user info - {}".format(properties_dict))
+        if botengine.playback:
+            return
         mp = mixpanel.Mixpanel(properties.get_property(botengine, "MIXPANEL_TOKEN"), consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
         mp.people_set(self._get_distinct_id(botengine), properties_dict)
         self._flush(botengine, mp)
@@ -82,6 +86,8 @@ class LocationMixpanelMicroservice(Intelligence):
         properties_dict = content['properties_dict']
 
         botengine.get_logger().info("Analytics: Incrementing user info - {}".format(properties_dict))
+        if botengine.playback:
+            return
         mp = mixpanel.Mixpanel(properties.get_property(botengine, "MIXPANEL_TOKEN"), consumer=mixpanel.BufferedConsumer(request_timeout=MIXPANEL_HTTP_TIMEOUT_S))
         mp.people_increment(self._get_distinct_id(botengine), properties_dict)
         self._flush(botengine, mp)
@@ -107,6 +113,8 @@ class LocationMixpanelMicroservice(Intelligence):
         Required. Implement the mechanisms to flush your analytics.
         :param botengine: BotEngine
         """
+        if botengine.playback:
+            return
         try:
             self._sync_user(botengine, mp)
             mp._consumer._consumer._request_timeout = MIXPANEL_HTTP_TIMEOUT_S
@@ -121,6 +129,8 @@ class LocationMixpanelMicroservice(Intelligence):
         Sync the user account information
         :param botengine: BotEngine environment
         """
+        if botengine.playback:
+            return
         mp.people_set(self._get_distinct_id(botengine), {
             'location_id': botengine.get_location_id()
         })
