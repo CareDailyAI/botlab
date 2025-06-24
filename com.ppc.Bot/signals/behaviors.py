@@ -39,4 +39,6 @@ def set_behaviors(botengine, location_object, device_types, behaviors):
             menu[device_type] = "behaviors_{}".format(device_type)
         botengine.save_shared_variable("behaviors_{}".format(device_type), behaviors)
 
-    location_object.distribute_datastream_message(botengine, "set_behaviors", menu, internal=True, external=True)
+    location_object.distribute_datastream_message(
+        botengine, "set_behaviors", menu, internal=True, external=True
+    )

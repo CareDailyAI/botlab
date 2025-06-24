@@ -1,19 +1,21 @@
-'''
+"""
 Created on March 20, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
-from devices.device import Device
 import utilities.utilities as utilities
+from devices.device import Device
+
 
 class KeypadDevice(Device):
     """
     Keypad Device
     """
+
     # Low battery tag
     LOW_BATTERY_TAG = "lowbattery_aa"
 
@@ -23,7 +25,15 @@ class KeypadDevice(Device):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = []
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -32,7 +42,15 @@ class KeypadDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
     def initialize(self, botengine):
         """
@@ -151,4 +169,3 @@ class KeypadDevice(Device):
         :return: The event type
         """
         raise NotImplementedError
-

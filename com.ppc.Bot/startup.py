@@ -1,11 +1,11 @@
-'''
+"""
 Created on June 21, 2022
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: Edward Liu
-'''
+"""
 
 import utilities.utilities as utilities
 
@@ -14,7 +14,7 @@ class StartUpUtil:
     """
     This is the main class that will coordinate all our sensors and behavior
     """
-    
+
     def __init__(self):
         """
         Constructor
@@ -91,4 +91,6 @@ class StartUpUtil:
         Bot may crashed and the startup may be always in preparing status.
         :param botengine: BotEngine environment
         """
-        return (botengine.get_timestamp() - self.start_timestamps) > utilities.ONE_MINUTE_MS * 3
+        return (
+            botengine.get_timestamp() - self.start_timestamps
+        ) > utilities.ONE_MINUTE_MS * 3

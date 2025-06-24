@@ -1,13 +1,21 @@
-'''
+"""
 Created on May 14, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
-from intelligence.intelligence import Intelligence
+import datetime
+import json
+import traceback
+
+import bundle  # type: ignore
+import properties  # type: ignore
+import pytz
+import requests
+from intelligence.intelligence import Intelligence  # type: ignore
 
 # Variable name for tracking people
 AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME = "amplitude_user"
@@ -15,8 +23,8 @@ AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME = "amplitude_user"
 # HTTP timeout
 AMPLITUDE_HTTP_TIMEOUT_S = 2
 
-class LocationAmplitudeMicroservice(Intelligence):
 
+class LocationAmplitudeMicroservice(Intelligence):
     def __init__(self, botengine, parent):
         """
         Instantiate this object
@@ -24,7 +32,7 @@ class LocationAmplitudeMicroservice(Intelligence):
         """
         Intelligence.__init__(self, botengine, parent)
 
-        self.analytics_track(botengine, {'event_name': 'reset', 'properties': None})
+        self.analytics_track(botengine, {"event_name": "reset", "properties": None})
 
     def analytics_track(self, botengine, content):
         """
@@ -42,21 +50,32 @@ class LocationAmplitudeMicroservice(Intelligence):
         if botengine.is_test_location():
             return
 
-        event_name = content.get('event_name')
-        event_properties = content.get('properties')
+        event_name = content.get("event_name")
+        event_properties = content.get("properties")
         if event_name is None or event_properties is None:
-            import traceback
-            botengine.get_logger().warning("Analytics: Missing event_name or properties. content={} traceback={}".format(content, traceback.format_exc()))
+
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
+                "<analytics_track() Missing event_name or properties. content={} traceback={}".format(
+                    content, traceback.format_exc()
+                )
+            )
             return
-        
-        event_time = content.get('event_time')
+
+        event_time = content.get("event_time")
         if event_time is None:
-            import datetime
-            import pytz
             timezone = self.parent.get_local_timezone_string(botengine)
-            event_time = int(datetime.datetime.fromtimestamp(datetime.datetime.now().timestamp(), pytz.timezone(timezone)).timestamp() * 1000)
-            
-        botengine.get_logger().info("Analytics: Tracking {} (trigger_time={} event_time={})".format(event_name, botengine.get_timestamp(), event_time))
+            event_time = int(
+                datetime.datetime.fromtimestamp(
+                    datetime.datetime.now().timestamp(), pytz.timezone(timezone)
+                ).timestamp()
+                * 1000
+            )
+
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|analytics_track() Tracking {} (trigger_time={} event_time={})".format(
+                event_name, botengine.get_timestamp(), event_time
+            )
+        )
 
         if event_properties is None:
             event_properties = {}
@@ -64,20 +83,22 @@ class LocationAmplitudeMicroservice(Intelligence):
         event_properties["locationId"] = botengine.get_location_id()
         event_properties["organizationId"] = botengine.get_organization_id()
 
-        self._flush(botengine,
-                   [
-                        {
-                            "user_id": self._get_user_id(botengine),
-                            "device_id": self._get_device_id(botengine),
-                            "time": event_time,
-                            "event_type": event_name,
-                            "event_properties": event_properties,
-                            "user_properties": {
-                                "locationId": botengine.get_location_id(),
-                                "organizationId": botengine.get_organization_id()
-                            }
-                        }
-                   ])
+        self._flush(
+            botengine,
+            [
+                {
+                    "user_id": self._get_user_id(botengine),
+                    "device_id": self._get_device_id(botengine),
+                    "time": event_time,
+                    "event_type": event_name,
+                    "event_properties": event_properties,
+                    "user_properties": {
+                        "locationId": botengine.get_location_id(),
+                        "organizationId": botengine.get_organization_id(),
+                    },
+                }
+            ],
+        )
 
     def analytics_people_set(self, botengine, content):
         """
@@ -88,28 +109,37 @@ class LocationAmplitudeMicroservice(Intelligence):
         if botengine.is_test_location():
             return
 
-        properties_dict = content['properties_dict']
+        properties_dict = content["properties_dict"]
 
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "|analytics_people_set() Setting user info - {}".format(properties_dict)
+        )
 
-        botengine.get_logger().debug("analytics.py: Setting user info - {}".format(properties_dict))
-
-        focused_properties = botengine.load_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME)
+        focused_properties = botengine.load_variable(
+            AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME
+        )
         if focused_properties is None:
             focused_properties = properties_dict
         focused_properties.update(properties_dict)
         focused_properties["locationId"] = botengine.get_location_id()
         focused_properties["organizationId"] = botengine.get_organization_id()
-        botengine.save_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME, focused_properties, required_for_each_execution=False)
+        botengine.save_variable(
+            AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME,
+            focused_properties,
+            required_for_each_execution=False,
+        )
 
-        self._flush(botengine,
-                    [
-                        {
-                            "user_id": self._get_user_id(botengine),
-                            "device_id": self._get_device_id(botengine),
-                            "time": botengine.get_timestamp(),
-                            "user_properties": focused_properties
-                        }
-                    ])
+        self._flush(
+            botengine,
+            [
+                {
+                    "user_id": self._get_user_id(botengine),
+                    "device_id": self._get_device_id(botengine),
+                    "time": botengine.get_timestamp(),
+                    "user_properties": focused_properties,
+                }
+            ],
+        )
 
     def analytics_people_increment(self, botengine, content):
         """
@@ -120,11 +150,17 @@ class LocationAmplitudeMicroservice(Intelligence):
         if botengine.is_test_location():
             return
 
-        properties_dict = content['properties_dict']
+        properties_dict = content["properties_dict"]
 
-        botengine.get_logger().info("Analytics: Incrementing user info - {}".format(properties_dict))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|analytics_people_increment() Incrementing user info - {}".format(
+                properties_dict
+            )
+        )
 
-        focused_properties = botengine.load_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME)
+        focused_properties = botengine.load_variable(
+            AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME
+        )
 
         if focused_properties is None:
             focused_properties = properties_dict
@@ -136,17 +172,23 @@ class LocationAmplitudeMicroservice(Intelligence):
 
         focused_properties["locationId"] = botengine.get_location_id()
         focused_properties["organizationId"] = botengine.get_organization_id()
-        botengine.save_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME, focused_properties, required_for_each_execution=False)
+        botengine.save_variable(
+            AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME,
+            focused_properties,
+            required_for_each_execution=False,
+        )
 
-        self._flush(botengine,
-                    [
-                        {
-                            "user_id": self._get_user_id(botengine),
-                            "device_id": self._get_device_id(botengine),
-                            "time": botengine.get_timestamp(),
-                            "user_properties": focused_properties
-                        }
-                    ])
+        self._flush(
+            botengine,
+            [
+                {
+                    "user_id": self._get_user_id(botengine),
+                    "device_id": self._get_device_id(botengine),
+                    "time": botengine.get_timestamp(),
+                    "user_properties": focused_properties,
+                }
+            ],
+        )
 
     def analytics_people_unset(self, botengine, content):
         """
@@ -157,11 +199,15 @@ class LocationAmplitudeMicroservice(Intelligence):
         if botengine.is_test_location():
             return
 
-        properties_list = content['properties_list']
+        properties_list = content["properties_list"]
 
-        botengine.get_logger().info("Analytics: Removing user info - {}".format(properties_list))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|analytics_people_unset() Removing user info - {}".format(properties_list)
+        )
 
-        focused_properties = botengine.load_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME)
+        focused_properties = botengine.load_variable(
+            AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME
+        )
 
         if focused_properties is None:
             # Nothing to unset
@@ -173,17 +219,23 @@ class LocationAmplitudeMicroservice(Intelligence):
 
         focused_properties["locationId"] = botengine.get_location_id()
         focused_properties["organizationId"] = botengine.get_organization_id()
-        botengine.save_variable(AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME, focused_properties, required_for_each_execution=False)
+        botengine.save_variable(
+            AMPLITUDE_USER_PROPERTIES_VARIABLE_NAME,
+            focused_properties,
+            required_for_each_execution=False,
+        )
 
-        self._flush(botengine,
-                    [
-                        {
-                            "user_id": self._get_user_id(botengine),
-                            "device_id": self._get_device_id(botengine),
-                            "time": botengine.get_timestamp(),
-                            "user_properties": focused_properties
-                        }
-                    ])
+        self._flush(
+            botengine,
+            [
+                {
+                    "user_id": self._get_user_id(botengine),
+                    "device_id": self._get_device_id(botengine),
+                    "time": botengine.get_timestamp(),
+                    "user_properties": focused_properties,
+                }
+            ],
+        )
 
     def _flush(self, botengine, data):
         """
@@ -191,13 +243,10 @@ class LocationAmplitudeMicroservice(Intelligence):
         :param botengine: BotEngine
         """
         if botengine.is_test_location() or botengine.is_playback():
-            botengine.get_logger().debug("Analytics: This test location will not record analytics.")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "<_flush() This test location will not record analytics."
+            )
             return
-
-        import properties
-        import json
-        import requests
-        import bundle
 
         token = None
         amplitude_tokens = properties.get_property(botengine, "AMPLITUDE_TOKENS")
@@ -208,43 +257,66 @@ class LocationAmplitudeMicroservice(Intelligence):
 
         if token is None:
             # Nothing to do
-            botengine.get_logger().info("analytics_amplitude.flush(): No analytics token for {}".format(bundle.CLOUD_ADDRESS))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|flush() No analytics token for {}".format(bundle.CLOUD_ADDRESS)
+            )
             return
 
         if token == "":
             # Nothing to do
-            botengine.get_logger().info("analytics_amplitude.flush(): No analytics token for {}".format(bundle.CLOUD_ADDRESS))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|flush() No analytics token for {}".format(bundle.CLOUD_ADDRESS)
+            )
             return
 
         http_headers = {"Content-Type": "application/json"}
 
-        body = {
-            "api_key": token,
-            "events": data
-        }
+        body = {"api_key": token, "events": data}
 
         url = "https://api.amplitude.com/2/httpapi"
 
         try:
-            requests.post(url, headers=http_headers, data=json.dumps(body), timeout=AMPLITUDE_HTTP_TIMEOUT_S)
-            botengine.get_logger().debug("location_amplitude_microservice: body={}".format(json.dumps(body)))
-            botengine.get_logger().info("location_amplitude_microservice: Flushed()")
+            requests.post(
+                url,
+                headers=http_headers,
+                data=json.dumps(body),
+                timeout=AMPLITUDE_HTTP_TIMEOUT_S,
+            )
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "|flush() body={}".format(json.dumps(body))
+            )
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|flush() Flushed"
+            )
 
         except requests.HTTPError:
-            botengine.get_logger().info("Generic HTTP error calling POST " + url)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|flush() Generic HTTP error calling POST " + url
+            )
 
         except requests.ConnectionError:
-            botengine.get_logger().info("Connection HTTP error calling POST " + url)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|flush() Connection HTTP error calling POST " + url
+            )
 
         except requests.Timeout:
-            botengine.get_logger().info(str(AMPLITUDE_HTTP_TIMEOUT_S) + " second HTTP Timeout calling POST " + url)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|flush()"
+                + str(AMPLITUDE_HTTP_TIMEOUT_S)
+                + " second HTTP Timeout calling POST "
+                + url
+            )
 
         except requests.TooManyRedirects:
-            botengine.get_logger().info("Too many redirects HTTP error calling POST " + url)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|flush() Too many redirects HTTP error calling POST " + url
+            )
 
         except Exception as e:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|flush() Generale error " + str(e)
+            )
             return
-
 
     def _get_user_id(self, botengine):
         """

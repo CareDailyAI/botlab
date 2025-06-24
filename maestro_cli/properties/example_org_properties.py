@@ -1,11 +1,11 @@
-'''
+"""
 Created on May 25, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 ############### BRANDING AND ORGANIZATION ###############
 # Organization short name, which allows us to send emails to this organization's administrators
@@ -18,24 +18,24 @@ SERVICE_NAME = "ACME Service"
 ORGANIZATION_BRAND = "acme"
 
 # Default language for this brand
-DEFAULT_LANGUAGE = 'en'
+DEFAULT_LANGUAGE = "en"
 
 # Default timezone for this brand
-DEFAULT_TIMEZONE = 'US/Pacific'
+DEFAULT_TIMEZONE = "US/Pacific"
 
 # Dashboard title comments for the 'last seen' service which runs all the time
 LAST_SEEN_DASHBOARD = [
-            "Looking Good",
-            "Everything Looks Fine",
-            "All Right",
-            "Going Well",
-            "All Good Here",
-            "All Good",
-            "Okay",
-            "No Problems Found",
-            "Things are Good",
-            "Good"
-        ]
+    "Looking Good",
+    "Everything Looks Fine",
+    "All Right",
+    "Going Well",
+    "All Good Here",
+    "All Good",
+    "Okay",
+    "No Problems Found",
+    "Things are Good",
+    "Good",
+]
 
 # Name of the chat bot assistant
 CHAT_ASSISTANT_NAME = "Arti"
@@ -56,7 +56,7 @@ ADMIN_DEFAULT_TIMEZONE = "US/Pacific"
 # Command Center URLs
 COMMAND_CENTER_URLS = {
     "app.peoplepowerco.com": "https://app.caredaily.ai",
-    "sboxall.peoplepowerco.com": "https://app-sbox.caredaily.ai"
+    "sboxall.peoplepowerco.com": "https://app-sbox.caredaily.ai",
 }
 
 
@@ -66,34 +66,26 @@ COMMAND_CENTER_URLS = {
 CARE_SERVICES = True
 
 # User facing modes. { "MODE": "User Facing Name" }
-USER_FACING_MODES = {
-    "HOME": "OFF",
-    "AWAY": "AWAY",
-    "STAY": "STAY",
-    "TEST": "TEST"
-}
+USER_FACING_MODES = {"HOME": "OFF", "AWAY": "AWAY", "STAY": "STAY", "TEST": "TEST"}
 
 ############### ANALYTICS ###############
 # MixPanel token
 MIXPANEL_TOKEN = None
 
 # Amplitude tokens
-AMPLITUDE_TOKENS = {
-    "app.peoplepowerco.com": "",
-    "sboxall.peoplepowerco.com": ""
-}
+AMPLITUDE_TOKENS = {"app.peoplepowerco.com": "", "sboxall.peoplepowerco.com": ""}
 
 
 ############### APP DOWNLOAD ###############
 # iOS download URL
-APP_IOS_URL = "https://apple.co/3PEaSnK"
+APP_IOS_URL = None
 
 # Android download URL
-APP_ANDROID_URL = "https://play.google.com/store/apps/details?id=com.peoplepowerco.family"
+APP_ANDROID_URL = None
 
 ############### CUSTOMER SUPPORT ###############
 # Customer support calendar scheduling and assisted connect URL
-CS_SCHEDULE_URL = "https://calendly.com/d/gsc-qhr-nhd/assisted-connection-session"
+CS_SCHEDULE_URL = None
 
 # Customer support email
 CS_EMAIL_ADDRESS = "support@peoplepowerco.com"
@@ -102,4 +94,4 @@ CS_EMAIL_ADDRESS = "support@peoplepowerco.com"
 CS_PHONE_NUMBER = None
 
 # After creating a new location and firing up the bot for the first time, how long do we wait before suggesting a virtual install session?
-CS_VIRTUAL_CONNECT_SMS_DELAY_MS = 60 * 60 * 1000 * 4 # 4 hours
+CS_VIRTUAL_CONNECT_SMS_DELAY_MS = 60 * 60 * 1000 * 4  # 4 hours

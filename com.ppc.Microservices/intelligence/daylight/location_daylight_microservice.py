@@ -345,7 +345,7 @@ class LocationDaylightMicroservice(Intelligence):
         except ImportError:
             # We don't have this ephem library. Avoid re-executing this code in the meantime and revisit in a future bot update.
             self.start_timer_ms(botengine, utilities.ONE_DAY_MS)
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_set_sunrise_sunset_alarm()")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_set_sunrise_sunset_alarm() missing ephem library")
             return
 
         try:

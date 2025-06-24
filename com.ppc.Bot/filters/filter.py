@@ -1,11 +1,11 @@
-'''
+"""
 Created on October 21, 2021
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 import bot
 import utilities.utilities as utilities
@@ -25,12 +25,14 @@ class Filter:
 
     Filters can receive data stream messages to enable filter configurations and communications.
     """
+
     def __init__(self, botengine, parent):
         """
         Instantiate this object
         :param parent: Parent object, either a location or a device object.
         """
         import uuid
+
         self.filter_id = str(uuid.uuid4())
         self.parent = parent
 
@@ -47,7 +49,7 @@ class Filter:
         :param botengine: BotEngine environment
         """
         return
-    
+
     def destroy(self, botengine):
         """
         This object is getting permanently deleted. Clean up.
@@ -188,9 +190,9 @@ class Filter:
         """
         return
 
-    #===============================================================================
+    # ===============================================================================
     # Built-in Timer and Alarm methods.
-    #===============================================================================
+    # ===============================================================================
     def start_timer_ms(self, botengine, milliseconds, argument=None, reference=""):
         """
         Start a relative timer in milliseconds
@@ -199,7 +201,13 @@ class Filter:
         :param argument: Optional argument to provide when the timer fires.
         :param reference: Optional reference to use to manage this timer.
         """
-        bot.start_location_intelligence_timer_ms(botengine, milliseconds, self.filter_id, argument, self.filter_id + str(reference))
+        bot.start_location_intelligence_timer_ms(
+            botengine,
+            milliseconds,
+            self.filter_id,
+            argument,
+            self.filter_id + str(reference),
+        )
 
     def start_timer_s(self, botengine, seconds, argument=None, reference=""):
         """
@@ -219,7 +227,13 @@ class Filter:
         :param argument: Optional argument to provide when the timer fires.
         :param reference: Optional reference to use to manage this timer.
         """
-        bot.start_location_intelligence_timer(botengine, seconds, self.filter_id, argument, self.filter_id + str(reference))
+        bot.start_location_intelligence_timer(
+            botengine,
+            seconds,
+            self.filter_id,
+            argument,
+            self.filter_id + str(reference),
+        )
 
     def is_timer_running(self, botengine, reference=""):
         """
@@ -247,8 +261,14 @@ class Filter:
         :param reference: Optional reference to use to manage this timer.
         """
         # We seed the reference with this intelligence ID to make it unique against all other intelligence modules.
-        bot.set_location_intelligence_alarm(botengine, timestamp_ms, self.filter_id, argument, self.filter_id + str(reference))
-        
+        bot.set_location_intelligence_alarm(
+            botengine,
+            timestamp_ms,
+            self.filter_id,
+            argument,
+            self.filter_id + str(reference),
+        )
+
     def is_alarm_running(self, botengine, reference=""):
         """
         Check if a timer or alarm with the given reference is running
@@ -268,9 +288,9 @@ class Filter:
         # They're all the same thing underneath, and this is a convenience method help to avoid confusion and questions.
         botengine.cancel_timers(self.filter_id + str(reference))
 
-    #===============================================================================
+    # ===============================================================================
     # Helper methods for data manipulation
-    #===============================================================================
+    # ===============================================================================
     def get_parameter(self, measurements, name, index=None):
         """
         Attempt to retrieve the parameter's dictionary object from the given measurements.
@@ -294,19 +314,27 @@ class Filter:
         :return: The dictionary representing the parameter, if found.
         """
         for m in measurements:
-            if m['name'] == name:
+            if m["name"] == name:
                 if index is not None:
-                    if 'index' in m:
-                        if utilities.normalize_measurement(m['index']) == index:
-                            m['value'] = utilities.normalize_measurement(m['value'])
+                    if "index" in m:
+                        if utilities.normalize_measurement(m["index"]) == index:
+                            m["value"] = utilities.normalize_measurement(m["value"])
                             return m
                 else:
-                    m['value'] = utilities.normalize_measurement(m['value'])
+                    m["value"] = utilities.normalize_measurement(m["value"])
                     return m
 
         return None
 
-    def generate_synthetic_parameter(self, botengine, device_object, parameter_name, value, index=None, timestamp_ms=None):
+    def generate_synthetic_parameter(
+        self,
+        botengine,
+        device_object,
+        parameter_name,
+        value,
+        index=None,
+        timestamp_ms=None,
+    ):
         """
         Generate a synthetic parameter.
         Inject it into our representative model and local cache, and trigger microservices to execute from this generated parameter.
@@ -323,7 +351,7 @@ class Filter:
             "deviceId": device_object.device_id,
             "name": parameter_name,
             "value": value,
-            "updated": True
+            "updated": True,
         }
 
         if timestamp_ms is not None:

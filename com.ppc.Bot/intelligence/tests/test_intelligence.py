@@ -1,15 +1,12 @@
+import unittest
+
+from intelligence.intelligence import Intelligence
+from locations.location import Location
 
 from botengine_pytest import BotEnginePyTest
 
-from locations.location import Location
-import utilities.utilities as utilities
-from intelligence.intelligence import *
-
-import unittest
-from unittest.mock import MagicMock, patch
 
 class TestIntelligence(unittest.TestCase):
-
     def test_intelligence_constructor(self):
         # Initial setup
         botengine = BotEnginePyTest({})
@@ -17,7 +14,7 @@ class TestIntelligence(unittest.TestCase):
 
         mut = Intelligence(botengine, location_object)
         mut.reset_statistics(botengine)
-        
+
         assert mut is not None
         assert mut.intelligence_id is not None
         assert mut.parent == location_object
@@ -30,7 +27,7 @@ class TestIntelligence(unittest.TestCase):
 
         mut = Intelligence(botengine, location_object)
         assert mut is not None
-        
+
         import time
 
         t = time.time()
@@ -38,4 +35,3 @@ class TestIntelligence(unittest.TestCase):
         mut.track_statistics(botengine, (time.time() - t) * 1000)
         assert mut.statistics["calls"] == 1
         assert int(mut.statistics["time"] / 1000) == 1
-    

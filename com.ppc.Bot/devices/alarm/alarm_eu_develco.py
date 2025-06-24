@@ -1,11 +1,11 @@
-'''
+"""
 Created on February 17, 2022
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: Parth Agrawal
-'''
+"""
 
 from devices.alarm.alarm import AlarmDevice
 
@@ -25,7 +25,6 @@ class DevelcoEuDevice(AlarmDevice):
     MEASUREMENT_NAME_VOLTAGE = "batteryVoltage"
     # Signal Strength
     MEASUREMENT_NAME_RSSI = "rssi"
-
 
     def get_device_type_name(self):
         """

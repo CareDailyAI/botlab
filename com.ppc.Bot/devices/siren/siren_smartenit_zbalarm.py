@@ -1,25 +1,24 @@
-'''
+"""
 Created on May 6, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.siren.siren import SirenDevice
 
-
-#1.  Alarm sound.
-#Parameters:
-#ppc.alarmWarn - Alarm sound from 1 to 3.
-#ppc.alarmDuration - duration in seconds. I think 240 is maximum, but I did not try.
-#ppc.alarmStrobe - 1 - to flash LED's
+# 1.  Alarm sound.
+# Parameters:
+# ppc.alarmWarn - Alarm sound from 1 to 3.
+# ppc.alarmDuration - duration in seconds. I think 240 is maximum, but I did not try.
+# ppc.alarmStrobe - 1 - to flash LED's
 #
-#2. "Beep"
-#Parameters:
-#ppc.alarmSquawk - 0 = once, 1 = twice
-#ppc.alarmStrobe - 1 - to flash LED's
+# 2. "Beep"
+# Parameters:
+# ppc.alarmSquawk - 0 = once, 1 = twice
+# ppc.alarmStrobe - 1 - to flash LED's
 
 
 # ALARM SQUAWK
@@ -47,8 +46,8 @@ ALARM_WARN_LIU = 8
 ALARM_WARN_QI = 9
 ALARM_WARN_BA = 10
 ALARM_WARN_JIU = 11
-ALARM_WARN_SAI = 12  #??
-ALARM_WARN_SHI_YEN = 13 #??
+ALARM_WARN_SAI = 12  # ??
+ALARM_WARN_SHI_YEN = 13  # ??
 ALARM_WARN_STROBE_ONLY = 14
 ALARM_WARN_DOORBELL = 15
 
@@ -59,7 +58,15 @@ class SmartenitZbalarmDevice(SirenDevice):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [9002]
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -68,14 +75,22 @@ class SmartenitZbalarmDevice(SirenDevice):
         :param device_description:
         :param precache_measurements:
         """
-        SirenDevice.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        SirenDevice.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # Microservice this siren is locked to
         self.locked_microservice = None
 
-    #===========================================================================
+    # ===========================================================================
     # Commands
-    #===========================================================================
+    # ===========================================================================
     def squawk(self, botengine, warning=False, microservice_identifier=""):
         """
         Squawk
@@ -83,15 +98,23 @@ class SmartenitZbalarmDevice(SirenDevice):
         """
         if self.locked_microservice is not None:
             if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                botengine.get_logger().info(
+                    "Siren: Currently locked by {}, cannot play sound from microservice {}".format(
+                        self.locked_microservice, microservice_identifier
+                    )
+                )
                 return
 
         style = ALARM_WARN_WOOP_WOOP
         if not warning:
             style = ALARM_WARN_HIGH_PITCH
 
-        self.custom_squawk(botengine, style, ALARM_STROBE_ON, microservice_identifier=microservice_identifier)
-
+        self.custom_squawk(
+            botengine,
+            style,
+            ALARM_STROBE_ON,
+            microservice_identifier=microservice_identifier,
+        )
 
     def alarm(self, botengine, on, microservice_identifier=""):
         """
@@ -100,16 +123,33 @@ class SmartenitZbalarmDevice(SirenDevice):
         """
         if self.locked_microservice is not None:
             if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                botengine.get_logger().info(
+                    "Siren: Currently locked by {}, cannot play sound from microservice {}".format(
+                        self.locked_microservice, microservice_identifier
+                    )
+                )
                 return
 
         if on:
-            self.custom_alarm(botengine, ALARM_WARN_WOOP_WOOP, 900, ALARM_STROBE_ON, microservice_identifier=microservice_identifier)
+            self.custom_alarm(
+                botengine,
+                ALARM_WARN_WOOP_WOOP,
+                900,
+                ALARM_STROBE_ON,
+                microservice_identifier=microservice_identifier,
+            )
         else:
-            self.custom_alarm(botengine, ALARM_WARN_OFF, 1, ALARM_STROBE_OFF, microservice_identifier=microservice_identifier)
+            self.custom_alarm(
+                botengine,
+                ALARM_WARN_OFF,
+                1,
+                ALARM_STROBE_OFF,
+                microservice_identifier=microservice_identifier,
+            )
 
-
-    def custom_squawk(self, botengine, alarm_warn, alarm_strobe, microservice_identifier=""):
+    def custom_squawk(
+        self, botengine, alarm_warn, alarm_strobe, microservice_identifier=""
+    ):
         """
         Custom Squawk
         :param alarm_squawk: 0 or 1
@@ -117,28 +157,29 @@ class SmartenitZbalarmDevice(SirenDevice):
         """
         if self.locked_microservice is not None:
             if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                botengine.get_logger().info(
+                    "Siren: Currently locked by {}, cannot play sound from microservice {}".format(
+                        self.locked_microservice, microservice_identifier
+                    )
+                )
                 return
 
-        squawk = {
-                  "name": "ppc.alarmWarn",
-                  "value": alarm_warn
-                  }
+        squawk = {"name": "ppc.alarmWarn", "value": alarm_warn}
 
-        strobe = {
-                  "name": "ppc.alarmStrobe",
-                  "value": alarm_strobe
-                  }
+        strobe = {"name": "ppc.alarmStrobe", "value": alarm_strobe}
 
-        duration = {
-                  "name": "ppc.alarmDuration",
-                  "value": "1"
-                  }
+        duration = {"name": "ppc.alarmDuration", "value": "1"}
 
         botengine.send_commands(self.device_id, [squawk, strobe, duration])
 
-
-    def custom_alarm(self, botengine, alarm_warn, alarm_duration, alarm_strobe, microservice_identifier=""):
+    def custom_alarm(
+        self,
+        botengine,
+        alarm_warn,
+        alarm_duration,
+        alarm_strobe,
+        microservice_identifier="",
+    ):
         """
         Custom Alarm
         :param alarm_warn: Which sound to make (see ALARM_WARN_* definitions)
@@ -147,23 +188,18 @@ class SmartenitZbalarmDevice(SirenDevice):
         """
         if self.locked_microservice is not None:
             if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                botengine.get_logger().info(
+                    "Siren: Currently locked by {}, cannot play sound from microservice {}".format(
+                        self.locked_microservice, microservice_identifier
+                    )
+                )
                 return
 
-        warn = {
-                "name": "ppc.alarmWarn",
-                "value": alarm_warn
-                }
+        warn = {"name": "ppc.alarmWarn", "value": alarm_warn}
 
-        duration = {
-                    "name": "ppc.alarmDuration",
-                    "value": alarm_duration
-                    }
+        duration = {"name": "ppc.alarmDuration", "value": alarm_duration}
 
-        strobe = {
-                  "name": "ppc.alarmStrobe",
-                  "value": alarm_strobe
-                  }
+        strobe = {"name": "ppc.alarmStrobe", "value": alarm_strobe}
 
         botengine.send_commands(self.device_id, [warn, duration, strobe])
 
@@ -184,10 +220,18 @@ class SmartenitZbalarmDevice(SirenDevice):
         :return:
         """
         if self.locked_microservice is None:
-            botengine.get_logger().info("Siren: LOCKING SIREN TO MICROSERVICE {}".format(microservice_identifier))
+            botengine.get_logger().info(
+                "Siren: LOCKING SIREN TO MICROSERVICE {}".format(
+                    microservice_identifier
+                )
+            )
             self.locked_microservice = microservice_identifier
         else:
-            botengine.get_logger().info("siren_smartenit_zbalarm: Cannot lock siren again - siren is currently locked by {}".format(self.locked_microservice))
+            botengine.get_logger().info(
+                "siren_smartenit_zbalarm: Cannot lock siren again - siren is currently locked by {}".format(
+                    self.locked_microservice
+                )
+            )
 
     def unlock(self, botengine):
         """

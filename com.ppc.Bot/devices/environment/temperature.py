@@ -1,11 +1,11 @@
-'''
+"""
 Created on October 30, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.device import Device
 
@@ -24,10 +24,7 @@ class TemperatureDevice(Device):
     # Degrees C measurement parameter
     MEASUREMENT_DEG_C = "degC"
 
-    MEASUREMENT_PARAMETERS_LIST = [
-        MEASUREMENT_DEG_C
-    ]
-
+    MEASUREMENT_PARAMETERS_LIST = [MEASUREMENT_DEG_C]
 
     def get_device_type_name(self):
         """
@@ -35,7 +32,7 @@ class TemperatureDevice(Device):
         """
         # NOTE: Device type name
         return _("Temperature Sensor")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
@@ -49,7 +46,6 @@ class TemperatureDevice(Device):
         :return:
         """
         return False
-
 
     def get_temperature_c(self, botengine=None):
         """

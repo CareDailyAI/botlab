@@ -45,6 +45,8 @@ class Settings(object):
             language = 'sv-SE'
         if language == 'fr':
             language = 'fr-FR'
+        if language == 'nl':
+            language = 'nl-NL'
         
         self.language = language
         self.voice = voice

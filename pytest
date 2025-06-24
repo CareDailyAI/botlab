@@ -4,19 +4,52 @@
 # USAGE:  ./pytest --core ../botlab-private/
 
 import importlib
-import sys
 import os
 import shutil
+import sys
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
+
 import pytest
 
-from argparse import ArgumentParser
-from argparse import RawDescriptionHelpFormatter
-
-parser = ArgumentParser(description="Bot PyTest Tool", formatter_class=RawDescriptionHelpFormatter, add_help=False)
+parser = ArgumentParser(
+    description="Bot PyTest Tool",
+    formatter_class=RawDescriptionHelpFormatter,
+    add_help=False,
+)
 developer_group = parser.add_argument_group("Bot Configuration")
-developer_group.add_argument("--core", dest="core_directory", help="For repository structures that separate a shared core bot repository from a private proprietary repository, this is the absolute path to the core bot repository.")
-developer_group.add_argument("-m", "--mut", dest="mut", action="append", help="Specific microservice packages to test, you can append more than one")
-developer_group.add_argument("-b", "--bundle", dest="bundle_id", help="Specific microservices bundle (e.g., app) to test the microservice within. Default to com.ppc.Tests")
+developer_group.add_argument(
+    "--core",
+    dest="core_directory",
+    help="For repository structures that separate a shared core bot repository from a private proprietary repository, this is the absolute path to the core bot repository.",
+)
+developer_group.add_argument(
+    "-m",
+    "--mut",
+    dest="mut",
+    action="append",
+    help="Specific microservice packages to test, you can append more than one",
+)
+developer_group.add_argument(
+    "-b",
+    "--bundle",
+    dest="bundle_id",
+    help="Specific microservices bundle (e.g., app) to test the microservice within. Default to `com.ppc.Tests`",
+)
+developer_group.add_argument(
+    "-d",
+    "--directory",
+    dest="directory",
+    default="",
+    help="Specific directory to test the microservice within. i.e., `intelligence`",
+)
+developer_group.add_argument(
+    "-v",
+    "--verbose",
+    dest="verbose",
+    action="store_true",
+    default="",
+    help="Verbose output",
+)
 args = parser.parse_args()
 
 print("args: {}".format(args))
@@ -27,8 +60,8 @@ if args.core_directory is not None:
 print("Using $BOTLAB_CORE = {}".format(core))
 
 # Load the botengine.
-shutil.copy(os.path.join('./', 'botengine'), 'botengine.py')
-botengine = importlib.import_module('botengine')
+shutil.copy(os.path.join("./", "botengine"), "botengine.py")
+botengine = importlib.import_module("botengine")
 
 # Generate the bot
 botname = "com.ppc.Tests"
@@ -36,30 +69,55 @@ if args.bundle_id is not None:
     botname = args.bundle_id
 base_path = os.path.join(os.getcwd(), "." + botname)
 print("Using base_path = {}".format(base_path))
-botengine._merge_redirects(os.path.join(core, botname), base_path, botname, core_directory=core)
+botengine._merge_redirects(
+    os.path.join(core, botname), base_path, botname, core_directory=core
+)
 
 # Here we're going to overwrite the set of microservices in the bot with ALL the available microservice packages.
 # This is because when we load up ISM data environments from other bots, we need to be able to unpickle objects and land on files that exist.
-for original_microservice_dir in os.listdir(os.path.join(os.getcwd(), "." + botname, 'intelligence')):
-    if os.path.isdir(os.path.join(os.getcwd(), "." + botname, 'intelligence', original_microservice_dir)):
-        if original_microservice_dir not in os.listdir(os.path.join(base_path, 'intelligence')):
-            shutil.copytree(os.path.join(os.getcwd(), "." + botname, 'intelligence', original_microservice_dir), os.path.join(base_path, 'intelligence', original_microservice_dir))
+for original_microservice_dir in os.listdir(
+    os.path.join(os.getcwd(), "." + botname, "intelligence")
+):
+    if os.path.isdir(
+        os.path.join(
+            os.getcwd(), "." + botname, "intelligence", original_microservice_dir
+        )
+    ):
+        if original_microservice_dir not in os.listdir(
+            os.path.join(base_path, "intelligence")
+        ):
+            shutil.copytree(
+                os.path.join(
+                    os.getcwd(),
+                    "." + botname,
+                    "intelligence",
+                    original_microservice_dir,
+                ),
+                os.path.join(base_path, "intelligence", original_microservice_dir),
+            )
 
 extras = []
 if args.mut is not None:
     for mut in args.mut:
         print("MUT: {}".format(mut))
-        extras += ['-k', mut]
+        extras += ["-k", mut]
 
 # Delete the 'botengine.py' module which was temporarily created for this task
 try:
-    os.remove('botengine.py')
-except:
+    os.remove("botengine.py")
+except Exception as e:
+    print("Error removing botengine.py: {}".format(e))
     pass
 
 # Copy the botengine pytest stubs into this directory
-botengine_destination =  os.path.join(core, base_path, 'botengine_pytest.py')
-shutil.copyfile('./botengine_pytest.py', botengine_destination)
+botengine_destination = os.path.join(core, base_path, "botengine_pytest.py")
+shutil.copyfile("./botengine_pytest.py", botengine_destination)
+
+# Import the base pass into the system path
+sys.path.insert(0, base_path)
+
+# Import localization module to ensure gettext is initialized
+import localization  # noqa: F401, E402 # type: ignore
 
 # Run pytest
-pytest.main(['-q', base_path, '-v', '-s'] + extras)
+pytest.main(["-vv" if args.verbose else "-q", os.path.join(base_path, args.directory), "-s"] + extras)

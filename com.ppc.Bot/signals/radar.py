@@ -6,6 +6,7 @@ file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
 """
+
 # Subregion Contexts
 SUBREGION_CONTEXT_IGNORE = -1
 
@@ -39,15 +40,15 @@ SUBREGION_CONTEXT_EXIT = 100
 
 # fall_sensitivity
 FALL_SENSITIVITY_NO_FALLING = 0
-FALL_SENSITIVITY_LOW        = 1
-FALL_SENSITIVITY_NORMAL     = 2
+FALL_SENSITIVITY_LOW = 1
+FALL_SENSITIVITY_NORMAL = 2
 
 # led_mode
 LED_MODE_OFF = 0
-LED_MODE_ON  = 1
+LED_MODE_ON = 1
 
 # Volume
-VOLUME_ON  = 100
+VOLUME_ON = 100
 VOLUME_OFF = 0
 
 # Feedback classification
@@ -178,7 +179,11 @@ def context_to_recommended_falls_and_presence_detects(context_id):
         return False, False, True
 
     elif context_id == SUBREGION_CONTEXT_BATHTUB:
-        return False, True, False  # Controversial - a bathtub full of water will produce a fall detect. Need to handle that based on the duration of time spent in the bathtub.
+        return (
+            False,
+            True,
+            False,
+        )  # Controversial - a bathtub full of water will produce a fall detect. Need to handle that based on the duration of time spent in the bathtub.
 
     elif context_id == SUBREGION_CONTEXT_WALK_IN_SHOWER:
         return True, True, False
@@ -197,6 +202,7 @@ def context_to_recommended_falls_and_presence_detects(context_id):
 
     return True, True, False
 
+
 def context_to_recommended_low_sensor_energy_and_is_door(context_id):
     """
     Convert a context_id to a recommendation of whether to low sensor energy and is door
@@ -205,9 +211,10 @@ def context_to_recommended_low_sensor_energy_and_is_door(context_id):
     """
     if context_id == SUBREGION_CONTEXT_EXIT:
         return False, True, True
-    
+
     return True, False, False
-    
+
+
 def at_or_in(context_id):
     """
     Should I use 'at' or 'in'? For example, a person may be 'in' bed or 'at' the sink.
@@ -216,7 +223,11 @@ def at_or_in(context_id):
     :param context_id: context_id
     :return: 'at' or 'in'
     """
-    if context_id == SUBREGION_CONTEXT_TOILET or context_id == SUBREGION_CONTEXT_SINK or context_id == SUBREGION_CONTEXT_EXIT:
+    if (
+        context_id == SUBREGION_CONTEXT_TOILET
+        or context_id == SUBREGION_CONTEXT_SINK
+        or context_id == SUBREGION_CONTEXT_EXIT
+    ):
         # Note: You are 'at' the sink or 'at' the toilet or 'at' the exit
         return _("at")
 
@@ -230,7 +241,17 @@ def is_context_bed(context_id):
     :param context_id: Context ID
     :return: True if the context_id is a bed
     """
-    return context_id == SUBREGION_CONTEXT_BED or context_id == SUBREGION_CONTEXT_BED_KING or context_id == SUBREGION_CONTEXT_BED_CALKING or context_id == SUBREGION_CONTEXT_BED_QUEEN or context_id == SUBREGION_CONTEXT_BED_FULL or context_id == SUBREGION_CONTEXT_BED_TWINXL or context_id == SUBREGION_CONTEXT_BED_TWIN or context_id == SUBREGION_CONTEXT_BED_CRIB
+    return (
+        context_id == SUBREGION_CONTEXT_BED
+        or context_id == SUBREGION_CONTEXT_BED_KING
+        or context_id == SUBREGION_CONTEXT_BED_CALKING
+        or context_id == SUBREGION_CONTEXT_BED_QUEEN
+        or context_id == SUBREGION_CONTEXT_BED_FULL
+        or context_id == SUBREGION_CONTEXT_BED_TWINXL
+        or context_id == SUBREGION_CONTEXT_BED_TWIN
+        or context_id == SUBREGION_CONTEXT_BED_CRIB
+    )
+
 
 def is_context_chair(context_id):
     """
@@ -238,7 +259,10 @@ def is_context_chair(context_id):
     :param context_id: Context ID
     :return: True if the context_id is a chair
     """
-    return context_id == SUBREGION_CONTEXT_CHAIR or context_id == SUBREGION_CONTEXT_COUCH
+    return (
+        context_id == SUBREGION_CONTEXT_CHAIR or context_id == SUBREGION_CONTEXT_COUCH
+    )
+
 
 def is_context_shower(context_id):
     """
@@ -246,7 +270,11 @@ def is_context_shower(context_id):
     :param context_id: Context ID
     :return: True if the context_id is a shower
     """
-    return context_id == SUBREGION_CONTEXT_BATHTUB or context_id == SUBREGION_CONTEXT_WALK_IN_SHOWER
+    return (
+        context_id == SUBREGION_CONTEXT_BATHTUB
+        or context_id == SUBREGION_CONTEXT_WALK_IN_SHOWER
+    )
+
 
 def is_context_bathroom(context_id):
     """
@@ -255,6 +283,7 @@ def is_context_bathroom(context_id):
     :return: True if the context_id is a bathroom
     """
     return context_id == SUBREGION_CONTEXT_BATHROOM
+
 
 def is_context_toilet(context_id):
     """

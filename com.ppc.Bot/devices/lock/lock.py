@@ -1,29 +1,33 @@
-'''
+"""
 Created on February 8, 2018
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
+
+from enum import IntEnum
 
 from devices.device import Device
-from enum import IntEnum
+
 
 # Possible lock states
 class LockStatus(IntEnum):
-    UNLOCKED    = 0
-    LOCKED      = 1
+    UNLOCKED = 0
+    LOCKED = 1
+
 
 # Possible lock alarm states
 class LockStatusAlarm(IntEnum):
-    OK                          = 0
-    JAMMED                      = 1
-    RESET_TO_FACTORY_DEFAULTS   = 2
-    MODULE_POWER_CYCLED         = 3
-    WRONG_CODE_ENTRY_LIMIT      = 4
-    FRONT_ESCUTCHEON_REMOVED    = 5
-    DOOR_FORCED_OPEN            = 6
+    OK = 0
+    JAMMED = 1
+    RESET_TO_FACTORY_DEFAULTS = 2
+    MODULE_POWER_CYCLED = 3
+    WRONG_CODE_ENTRY_LIMIT = 4
+    FRONT_ESCUTCHEON_REMOVED = 5
+    DOOR_FORCED_OPEN = 6
+
 
 class LockDevice(Device):
     """Lock Device"""
@@ -32,8 +36,8 @@ class LockDevice(Device):
     DEVICE_TYPES = [9010]
 
     # Measurement name for the lock status
-    MEASUREMENT_NAME_LOCK_STATUS = 'lockStatus'
-    MEASUREMENT_NAME_LOCK_STATUS_ALARM = 'lockStatusAlarm'
+    MEASUREMENT_NAME_LOCK_STATUS = "lockStatus"
+    MEASUREMENT_NAME_LOCK_STATUS_ALARM = "lockStatusAlarm"
 
     MEASUREMENT_PARAMETERS_LIST = [
         MEASUREMENT_NAME_LOCK_STATUS,
@@ -42,11 +46,27 @@ class LockDevice(Device):
 
     # Goals
     GOAL_INTELLIGENT_AUTO_LOCK = 101
-    GOAL_STATIC_AUTO_LOCK = 102 # Deprecated
+    GOAL_STATIC_AUTO_LOCK = 102  # Deprecated
     GOAL_UNLOCK_WITH_KEYPADS = 103
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # Default behavior
         self.goal_id = LockDevice.GOAL_INTELLIGENT_AUTO_LOCK
@@ -57,7 +77,7 @@ class LockDevice(Device):
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
         return _("Lock")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
@@ -84,7 +104,10 @@ class LockDevice(Device):
         """
         locked = False
         if self.MEASUREMENT_NAME_LOCK_STATUS in self.last_updated_params:
-            locked = self.is_fully_locked(botengine) and self.is_partially_locked(botengine) == None
+            locked = (
+                self.is_fully_locked(botengine)
+                and self.is_partially_locked(botengine) is None
+            )
         botengine.get_logger().debug("lock.did_lock {}".format(locked))
         return locked
 
@@ -97,9 +120,10 @@ class LockDevice(Device):
         partially_locked = False
         if self.MEASUREMENT_NAME_LOCK_STATUS_ALARM in self.last_updated_params:
             partially_locked = self.is_partially_locked(botengine)
-        botengine.get_logger().debug("lock.did_partially_lock {}".format(partially_locked))
+        botengine.get_logger().debug(
+            "lock.did_partially_lock {}".format(partially_locked)
+        )
         return partially_locked
-
 
     def is_fully_locked(self, botengine=None):
         """
@@ -110,7 +134,10 @@ class LockDevice(Device):
         """
         fully_locked = None
         if self.MEASUREMENT_NAME_LOCK_STATUS in self.measurements:
-            fully_locked = self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS][0][0] == LockStatus.LOCKED
+            fully_locked = (
+                self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS][0][0]
+                == LockStatus.LOCKED
+            )
         botengine.get_logger().debug("lock.is_fully_locked {}".format(fully_locked))
         return fully_locked
 
@@ -121,11 +148,19 @@ class LockDevice(Device):
         """
         partially_locked = None
         if self.MEASUREMENT_NAME_LOCK_STATUS_ALARM in self.measurements:
-            partially_locked = self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS_ALARM][0][0] == LockStatusAlarm.JAMMED
+            partially_locked = (
+                self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS_ALARM][0][0]
+                == LockStatusAlarm.JAMMED
+            )
             if self.MEASUREMENT_NAME_LOCK_STATUS in self.measurements:
-                if self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS_ALARM][0][1] < self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS][0][1]:
+                if (
+                    self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS_ALARM][0][1]
+                    < self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS][0][1]
+                ):
                     partially_locked = None
-        botengine.get_logger().debug("lock.is_partially_locked {}".format(partially_locked))
+        botengine.get_logger().debug(
+            "lock.is_partially_locked {}".format(partially_locked)
+        )
         return partially_locked
 
     def is_unlocked(self, botengine=None):
@@ -137,7 +172,10 @@ class LockDevice(Device):
         """
         unlocked = None
         if self.MEASUREMENT_NAME_LOCK_STATUS in self.measurements:
-            unlocked = self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS][0][0] == LockStatus.UNLOCKED
+            unlocked = (
+                self.measurements[self.MEASUREMENT_NAME_LOCK_STATUS][0][0]
+                == LockStatus.UNLOCKED
+            )
         botengine.get_logger().debug("lock.is_unlocked {}".format(unlocked))
         return unlocked
 
@@ -146,11 +184,15 @@ class LockDevice(Device):
         Lock the door
         :param botengine: BotEngine environment
         """
-        botengine.send_command(self.device_id, self.MEASUREMENT_NAME_LOCK_STATUS, LockStatus.LOCKED)
+        botengine.send_command(
+            self.device_id, self.MEASUREMENT_NAME_LOCK_STATUS, LockStatus.LOCKED
+        )
 
     def unlock(self, botengine):
         """
         Unlock the door
         :param botengine: BotEngine environment
         """
-        botengine.send_command(self.device_id, self.MEASUREMENT_NAME_LOCK_STATUS, LockStatus.UNLOCKED)
+        botengine.send_command(
+            self.device_id, self.MEASUREMENT_NAME_LOCK_STATUS, LockStatus.UNLOCKED
+        )

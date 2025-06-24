@@ -1,19 +1,20 @@
-'''
+"""
 Created on January 17, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.smartplug.smartplug import SmartplugDevice
+
 
 class SmartenitLargeLoadControllerDevice(SmartplugDevice):
     """
     Large load controller from Smartenit
     """
-    
+
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [9017]
 
@@ -29,5 +30,3 @@ class SmartenitLargeLoadControllerDevice(SmartplugDevice):
         """
         # NOTE: Device type name - Smartenit Large Load Controller
         return _("Large Load Controller")
-    
-    

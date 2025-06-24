@@ -56,9 +56,9 @@ VOLUME_ON = radar.VOLUME_ON
 VOLUME_OFF = radar.VOLUME_OFF
 
 # telementry_policy
-TELEMETRY_POLICY_OFF           = 0
-TELEMETRY_POLICY_ON            = 1
-TELEMETRY_POLICY_FALLS_ONLY    = 2
+TELEMETRY_POLICY_OFF = 0
+TELEMETRY_POLICY_ON = 1
+TELEMETRY_POLICY_FALLS_ONLY = 2
 TELEMETRY_POLICY_PRESENCE_ONLY = 3
 
 # Feedback classification
@@ -68,17 +68,17 @@ FEEDBACK_CLASSIFICATION_FALSE_NEGATIVE = radar.FEEDBACK_CLASSIFICATION_FALSE_NEG
 FEEDBACK_CLASSIFICATION_TEST_FALL = radar.FEEDBACK_CLASSIFICATION_TEST_FALL
 
 # Dry Contacts
-DRY_CONTACT_PRIMARY_KEY   = "primary"
+DRY_CONTACT_PRIMARY_KEY = "primary"
 DRY_CONTACT_SECONDARY_KEY = "secondary"
 
-DRY_CONTACT_MODE_ACTIVE_LOW  = 0
+DRY_CONTACT_MODE_ACTIVE_LOW = 0
 DRY_CONTACT_MODE_ACTIVE_HIGH = 1
 
-DRY_CONTACT_POLICY_OFF               = 0
-DRY_CONTACT_POLICY_ON_FALL           = 1
-DRY_CONTACT_POLICY_OUT_OF_BED        = 2
+DRY_CONTACT_POLICY_OFF = 0
+DRY_CONTACT_POLICY_ON_FALL = 1
+DRY_CONTACT_POLICY_OUT_OF_BED = 2
 DRY_CONTACT_POLICY_ON_SENSITIVE_FALL = 3
-DRY_CONTACT_POLICY_ON_ANY_FALL       = 4
+DRY_CONTACT_POLICY_ON_ANY_FALL = 4
 
 # Default occupancy target reporting rate in milliseconds
 DEFAULT_REPORTING_RATE_MS = 5500
@@ -92,6 +92,7 @@ DEFAULT_EXIT_DURATION = radar.DEFAULT_EXIT_DURATION
 # Fall location target ID
 TARGET_ID_FALL_LOC = radar.TARGET_ID_FALL_LOC
 
+
 def context_to_name(context_id):
     """
     Convert a context_id to a descriptive name
@@ -99,6 +100,7 @@ def context_to_name(context_id):
     :return: Descriptive name
     """
     return radar.context_to_name(context_id)
+
 
 def context_to_recommended_falls_and_presence_detects(context_id):
     """
@@ -108,6 +110,7 @@ def context_to_recommended_falls_and_presence_detects(context_id):
     """
     return radar.context_to_recommended_falls_and_presence_detects(context_id)
 
+
 def context_to_recommended_low_sensor_energy_and_is_door(context_id):
     """
     Convert a context_id to a recommendation of whether to low sensor energy and is door
@@ -115,7 +118,8 @@ def context_to_recommended_low_sensor_energy_and_is_door(context_id):
     :return: (low_sensor_energy, is_door, force) tuple of Booleans
     """
     return radar.context_to_recommended_low_sensor_energy_and_is_door(context_id)
-    
+
+
 def at_or_in(context_id):
     """
     Should I use 'at' or 'in'? For example, a person may be 'in' bed or 'at' the sink.
@@ -126,6 +130,7 @@ def at_or_in(context_id):
     """
     return radar.at_or_in(context_id)
 
+
 def is_context_bed(context_id):
     """
     Is this context a bed?
@@ -133,6 +138,7 @@ def is_context_bed(context_id):
     :return: True if the context_id is a bed
     """
     return radar.is_context_bed(context_id)
+
 
 def is_context_chair(context_id):
     """
@@ -142,6 +148,7 @@ def is_context_chair(context_id):
     """
     return radar.is_context_chair(context_id)
 
+
 def is_context_shower(context_id):
     """
     Is this context a shower?
@@ -149,6 +156,7 @@ def is_context_shower(context_id):
     :return: True if the context_id is a shower
     """
     return radar.is_context_shower(context_id)
+
 
 def is_context_bathroom(context_id):
     """
@@ -158,6 +166,7 @@ def is_context_bathroom(context_id):
     """
     return radar.is_context_bathroom(context_id)
 
+
 def is_context_toilet(context_id):
     """
     Is this context a toilet?
@@ -165,6 +174,7 @@ def is_context_toilet(context_id):
     :return: True if the context_id is a toilet
     """
     return radar.is_context_toilet(context_id)
+
 
 def is_same_general_context(context_id_1, context_id_2):
     """

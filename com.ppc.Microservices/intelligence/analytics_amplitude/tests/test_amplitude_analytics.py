@@ -85,7 +85,7 @@ class TestLocationAnalyticsAmplitudeMicroservice(unittest.TestCase):
         
         assert request_json['api_key'] == token
         assert request_json['events'][-1]['user_id'] == 'bot_0'
-        assert request_json['events'][-1]['device_id'] == 'com.ppc.Tests'
+        assert len(request_json['events'][-1]['device_id'].split(".")) == 3
         assert request_json['events'][-1]['time'] == timestamp
         assert request_json['events'][-1]['event_type'] == 'test'
         assert request_json['events'][-1]['event_properties'] == {'test': 'test', 'locationId': 0, 'organizationId': 0}

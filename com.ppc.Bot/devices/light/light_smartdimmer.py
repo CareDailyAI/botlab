@@ -1,11 +1,11 @@
-'''
+"""
 Created on May 6, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.light.light import LightDevice
 

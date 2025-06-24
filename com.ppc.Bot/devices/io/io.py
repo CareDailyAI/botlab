@@ -1,14 +1,15 @@
-'''
+"""
 Created on June 30, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
-from devices.device import Device
 import utilities.utilities as utilities
+from devices.device import Device
+
 
 class IoDevice(Device):
     """
@@ -21,6 +22,7 @@ class IoDevice(Device):
     Saves cabling efforts
     Remote data collection and control of wired devices
     """
+
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [9104]
 
@@ -33,7 +35,15 @@ class IoDevice(Device):
     MEASUREMENT_NAME_REVERSEPOLARITY = "reversePolarity"
     COMMAND_NAME_OUTPUT = "output"
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -42,7 +52,15 @@ class IoDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # Default behavior
         self.goal_id = IoDevice.GOAL_CUSTOM
@@ -53,7 +71,7 @@ class IoDevice(Device):
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
         return _("IO Module")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
@@ -96,9 +114,7 @@ class IoDevice(Device):
         :param index:
         :return:
         """
-        return "{}.{}".format(self.MEASUREMENT_NAME_INPUT, index) in self.last_updated_params
-
-
-
-
-
+        return (
+            "{}.{}".format(self.MEASUREMENT_NAME_INPUT, index)
+            in self.last_updated_params
+        )

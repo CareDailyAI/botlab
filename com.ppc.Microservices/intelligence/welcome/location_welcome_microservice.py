@@ -60,7 +60,7 @@ class LocationWelcomeMicroservice(Intelligence):
                 title = _("Welcome")
 
             if properties.get_property(botengine, "IN_APP_WELCOME_MESSAGE", complain_if_missing=False) is not None:
-                description = properties.get_property(botengine, "IN_APP_WELCOME_MESSAGE")
+                description = properties.get_property(botengine, "IN_APP_WELCOME_MESSAGE", False)
             else:
                 description = _("This screen will capture the history of events that are happening in your home. Please remember to add other people to help watch over your home inside the Trusted Circle tab.")
 
@@ -80,7 +80,7 @@ class LocationWelcomeMicroservice(Intelligence):
             # Send welcome SMS/push notifications to download the app.
             self.start_timer_ms(botengine, utilities.ONE_MINUTE_MS * 5, reference=TIMER_REFERENCE_BIRTH, argument=TIMER_REFERENCE_BIRTH)
 
-            delay_ms = properties.get_property(botengine, "CS_VIRTUAL_CONNECT_SMS_DELAY_MS")
+            delay_ms = properties.get_property(botengine, "CS_VIRTUAL_CONNECT_SMS_DELAY_MS", False)
             if delay_ms is None:
                 delay_ms = utilities.ONE_HOUR_MS * 4
 
@@ -205,8 +205,8 @@ class LocationWelcomeMicroservice(Intelligence):
         """
         if argument == TIMER_REFERENCE_BIRTH:
             # This fires one time, 5 minutes after birth
-            ios_url = properties.get_property(botengine, "APP_IOS_URL")
-            android_url = properties.get_property(botengine, "APP_ANDROID_URL")
+            ios_url = properties.get_property(botengine, "APP_IOS_URL", False)
+            android_url = properties.get_property(botengine, "APP_ANDROID_URL", False)
 
             if ios_url is not None or android_url is not None:
                 message = _("Thanks for signing up! Here's how to download {}.").format(properties.get_property(botengine, "SERVICE_NAME"))

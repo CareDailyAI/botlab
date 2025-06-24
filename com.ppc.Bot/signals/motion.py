@@ -17,7 +17,13 @@ def did_start_detecting_motion(botengine, location_object, device_object):
     :param device_object: Device object that started detecting motion
     """
     # Note this cannot be distributed externally because we're passing the device_object directly as an argument.
-    location_object.distribute_datastream_message(botengine, "did_start_detecting_motion", device_object, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine,
+        "did_start_detecting_motion",
+        device_object,
+        internal=True,
+        external=False,
+    )
 
 
 def did_stop_detecting_motion(botengine, location_object, device_object):
@@ -29,7 +35,14 @@ def did_stop_detecting_motion(botengine, location_object, device_object):
     :param device_object: Device object that stopped detecting motion
     """
     # Note this cannot be distributed externally because we're passing the device_object directly as an argument.
-    location_object.distribute_datastream_message(botengine, "did_stop_detecting_motion", device_object, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine,
+        "did_stop_detecting_motion",
+        device_object,
+        internal=True,
+        external=False,
+    )
+
 
 def did_continue_detecting_motion(botengine, location_object, device_object):
     """
@@ -40,4 +53,10 @@ def did_continue_detecting_motion(botengine, location_object, device_object):
     :param device_object: Device object that stopped detecting motion
     """
     # Note this cannot be distributed externally because we're passing the device_object directly as an argument.
-    location_object.distribute_datastream_message(botengine, "did_continue_detecting_motion", device_object, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine,
+        "did_continue_detecting_motion",
+        device_object,
+        internal=True,
+        external=False,
+    )

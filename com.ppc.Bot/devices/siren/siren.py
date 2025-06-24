@@ -1,11 +1,11 @@
-'''
+"""
 Created on May 6, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.device import Device
 
@@ -14,7 +14,16 @@ class SirenDevice(Device):
     """
     Siren
     """
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -23,7 +32,15 @@ class SirenDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # Microservice this siren is locked to
         self.locked_microservice = None
@@ -34,7 +51,7 @@ class SirenDevice(Device):
         """
         # NOTE: Device type name
         return _("Siren")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
@@ -47,11 +64,12 @@ class SirenDevice(Device):
         :return: The name of the icon font package
         """
         import utilities.utilities as utilities
+
         return utilities.ICON_FONT_FONTAWESOME_REGULAR
 
-    #===========================================================================
+    # ===========================================================================
     # Capabilities
-    #===========================================================================
+    # ===========================================================================
     def has_dogbark(self, botengine):
         """
         Determine if this siren supports a dog bark sound
@@ -68,10 +86,12 @@ class SirenDevice(Device):
         """
         return False
 
-    #===========================================================================
+    # ===========================================================================
     # Commands
-    #===========================================================================
-    def play_sound(self, botengine, sound_id, strobe, duration_sec, microservice_identifier=""):
+    # ===========================================================================
+    def play_sound(
+        self, botengine, sound_id, strobe, duration_sec, microservice_identifier=""
+    ):
         """
         Squawk the given sound ID
         :param botengine: BotEngine
@@ -176,10 +196,18 @@ class SirenDevice(Device):
         :return:
         """
         if self.locked_microservice is None:
-            botengine.get_logger().info("Siren: LOCKING SIREN TO MICROSERVICE {}".format(microservice_identifier))
+            botengine.get_logger().info(
+                "Siren: LOCKING SIREN TO MICROSERVICE {}".format(
+                    microservice_identifier
+                )
+            )
             self.locked_microservice = microservice_identifier
         else:
-            botengine.get_logger().info("Siren: Cannot lock siren again - siren is currently locked by {}".format(self.locked_microservice))
+            botengine.get_logger().info(
+                "Siren: Cannot lock siren again - siren is currently locked by {}".format(
+                    self.locked_microservice
+                )
+            )
 
     def unlock(self, botengine):
         """
@@ -189,4 +217,3 @@ class SirenDevice(Device):
         :return:
         """
         self.locked_microservice = None
-

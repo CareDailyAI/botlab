@@ -1,4 +1,4 @@
-'''
+"""
 Created on July 22, 2020
 
 This file is subject to the terms and conditions defined in the
@@ -8,7 +8,7 @@ DEPRECATED SEPTEMBER 22, 2020
 REPLACED WITH button_panic_develco.py
 
 @author: David Moss
-'''
+"""
 
 from devices.device import Device
 
@@ -19,17 +19,25 @@ class DevelcoButtonDevice(Device):
     """
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [] # [9101] < Deprecated, see button_panic_develco.py >
+    DEVICE_TYPES = []  # [9101] < Deprecated, see button_panic_develco.py >
 
     # Measurement name for the button status
-    MEASUREMENT_NAME_BUTTON_STATUS = 'buttonStatus'
+    MEASUREMENT_NAME_BUTTON_STATUS = "buttonStatus"
 
     # Goals
     GOAL_BUTTON_SIGNAL_PEOPLE_WHO_LIVE_HERE = 100
     GOAL_BUTTON_SIGNAL_FAMILY_FRIENDS = 105
     GOAL_BUTTON_CALL_FOR_HELP_MEDICAL = 111
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -38,7 +46,15 @@ class DevelcoButtonDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # Default behavior
         self.goal_id = DevelcoButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL
@@ -62,7 +78,10 @@ class DevelcoButtonDevice(Device):
         :param botengine:
         :return:
         """
-        return self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params and self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        return (
+            self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params
+            and self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        )
 
     def did_exit_panic(self, botengine=None):
         """
@@ -70,7 +89,10 @@ class DevelcoButtonDevice(Device):
         :param botengine:
         :return:
         """
-        return self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params and not self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        return (
+            self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params
+            and not self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        )
 
     def is_in_panic(self, botengine=None):
         """

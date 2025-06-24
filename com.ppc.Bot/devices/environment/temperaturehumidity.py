@@ -1,21 +1,21 @@
-'''
+"""
 Created on May 6, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
-from devices.device import Device
 import utilities.utilities as utilities
+from devices.device import Device
 
 
 class TemperatureHumidityDevice(Device):
     """
     Temperature & Humidity Sensor
     """
-    
+
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [10034, 9134]
 
@@ -45,18 +45,15 @@ class TemperatureHumidityDevice(Device):
     # Humidity measurement parameter
     MEASUREMENT_HUMIDITY = "relativeHumidity"
 
-    MEASUREMENT_PARAMETERS_LIST = [
-        MEASUREMENT_DEG_C,
-        MEASUREMENT_HUMIDITY
-    ]
-    
+    MEASUREMENT_PARAMETERS_LIST = [MEASUREMENT_DEG_C, MEASUREMENT_HUMIDITY]
+
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Device type name
         return _("Temperature and Humidity Sensor")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
@@ -89,7 +86,9 @@ class TemperatureHumidityDevice(Device):
         :return: relative humidity %
         """
         if TemperatureHumidityDevice.MEASUREMENT_HUMIDITY in self.measurements:
-            return self.measurements[TemperatureHumidityDevice.MEASUREMENT_HUMIDITY][0][0]
+            return self.measurements[TemperatureHumidityDevice.MEASUREMENT_HUMIDITY][0][
+                0
+            ]
 
         return None
 
@@ -113,7 +112,11 @@ class TemperatureHumidityDevice(Device):
         """
         :return: True if this sensor's state was updated just now
         """
-        return (TemperatureHumidityDevice.MEASUREMENT_DEG_C in self.last_updated_params) or (TemperatureHumidityDevice.MEASUREMENT_HUMIDITY in self.last_updated_params)
+        return (
+            TemperatureHumidityDevice.MEASUREMENT_DEG_C in self.last_updated_params
+        ) or (
+            TemperatureHumidityDevice.MEASUREMENT_HUMIDITY in self.last_updated_params
+        )
 
     def did_detect_shower(self, botengine, minutes=15):
         """
@@ -141,5 +144,3 @@ class TemperatureHumidityDevice(Device):
                 return True
 
         return False
-
-

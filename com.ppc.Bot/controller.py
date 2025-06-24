@@ -1,36 +1,29 @@
-'''
+"""
 Created on March 27, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 import copy
 
 from locations.location import Location
 
-# Deprecated:
-from devices.smartplug.smartplug_centralite_3series import Centralite3SeriesSmartplugDevice
-from devices.button.button import ButtonDevice
-from devices.button.button_develco import DevelcoButtonDevice
-from devices.button.button_linkhigh import LinkHighButtonDevice
-from devices.gateway.gateway_peoplepower_xseries import PeoplePowerXSeriesDevice
-from devices.movement.touch import TouchDevice
 
 class Controller:
     """
     This is the main class that will coordinate all our sensors and behavior
     """
-    
+
     def __init__(self):
         """
         Constructor
         """
         # A list of our locations, where the key is the location ID.
         self.locations = {}
-            
+
         # A map of device_id : locationId
         self.location_devices = {}
 
@@ -46,26 +39,36 @@ class Controller:
         This is mandatory to call once for each new execution of the bot
         :param botengine: BotEngine environment
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">initialize() Last execution={}; Current execution={}".format(self.exec_timestamp, botengine.get_timestamp()))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(">initialize()")
+
+        if hasattr(self, "exec_timestamp"):
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|initialize() Last execution={}; Current execution={}".format(
+                    self.exec_timestamp, botengine.get_timestamp()
+                )
+            )
         self.exec_timestamp = botengine.get_timestamp()
-        
+
         if len(self.locations) == 0:
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").error("<initialize() No locations")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                "<initialize() No locations"
+            )
             return
         for key in self.locations:
             self.locations[key].initialize(botengine)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<initialize()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<initialize()")
 
     def print_status(self, botengine):
         """
         Print the status of this object
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
-            "Controller Status" \
-            "\nt-----" \
-            "\n\tself.locations: {}" \
-            "\n\tself.location_devices: {}" \
-            "\n\t-----".format(str(self.locations), str(self.location_devices)))
+            "Controller Status"
+            "\nt-----"
+            "\n\tself.locations: {}"
+            "\n\tself.location_devices: {}"
+            "\n\t-----".format(str(self.locations), str(self.location_devices))
+        )
 
     def get_intelligence_statistics(self, botengine):
         """
@@ -79,36 +82,67 @@ class Controller:
                 "name": "microservice_name",
                 "calls": 3,
                 "time": 280 # ms
-            }   
+            }
         ]
         """
         all_intelligence_module_statistics = []
         for location_id in self.locations:
             # Gather location intelligence modules
-            for intelligence_module in self.locations[location_id].intelligence_modules.keys():
-                all_intelligence_module_statistics.append((intelligence_module, self.locations[location_id].intelligence_modules[intelligence_module].get_statistics(botengine)))
+            for intelligence_module in self.locations[
+                location_id
+            ].intelligence_modules.keys():
+                all_intelligence_module_statistics.append(
+                    (
+                        intelligence_module,
+                        self.locations[location_id]
+                        .intelligence_modules[intelligence_module]
+                        .get_statistics(botengine),
+                    )
+                )
             # Gather device intelligence modules
             for device_id in self.locations[location_id].devices:
-                for intelligence_module in self.locations[location_id].devices[device_id].intelligence_modules.keys():
-                    all_intelligence_module_statistics.append((intelligence_module, self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module].get_statistics(botengine)))
+                for intelligence_module in (
+                    self.locations[location_id]
+                    .devices[device_id]
+                    .intelligence_modules.keys()
+                ):
+                    all_intelligence_module_statistics.append(
+                        (
+                            intelligence_module,
+                            self.locations[location_id]
+                            .devices[device_id]
+                            .intelligence_modules[intelligence_module]
+                            .get_statistics(botengine),
+                        )
+                    )
 
         stats = []
 
-        for (intelligence_module, intelligence_module_statistics) in all_intelligence_module_statistics:
+        for (
+            intelligence_module,
+            intelligence_module_statistics,
+        ) in all_intelligence_module_statistics:
             # Assign the microservice package name to the "name" field
-            if "intelligence" != intelligence_module.split(".")[0] or len(intelligence_module.split(".")) == 1:
+            if (
+                "intelligence" != intelligence_module.split(".")[0]
+                or len(intelligence_module.split(".")) == 1
+            ):
                 continue
-            
+
             # botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_intelligence_statistics() \t{} - {}".format(intelligence_module, intelligence_module_statistics))
 
             intelligence_module_package_name = intelligence_module.split(".")[1]
             # Aggregate intelligence module statistics by package name
-            _stats = [stat for stat in stats if stat["name"] == intelligence_module_package_name]
+            _stats = [
+                stat
+                for stat in stats
+                if stat["name"] == intelligence_module_package_name
+            ]
             if len(_stats) == 0:
                 stat = {
                     "name": intelligence_module_package_name,
                     "calls": intelligence_module_statistics["calls"],
-                    "time": intelligence_module_statistics["time"]
+                    "time": intelligence_module_statistics["time"],
                 }
                 stats.append(stat)
             else:
@@ -118,11 +152,9 @@ class Controller:
 
             # Remove floating point
             stat["time"] = int(stat["time"])
-                
-        
+
         return stats
 
-    
     def track_new_and_deleted_devices(self, botengine, precache_measurements=True):
         """
         Track any new or deleted devices
@@ -130,54 +162,85 @@ class Controller:
         :param controller: Controller object managing all locations and devices
         :param precache_measurements: True to pre-cache measurements for each new device
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(">track_new_and_deleted_devices()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">track_new_and_deleted_devices()"
+        )
         location_id = botengine.get_location_id()
         if len(self.locations) == 0:
             if location_id not in self.locations:
                 # The location isn't being tracked yet, add it
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() \t=> Now tracking location " + str(location_id))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                    "|track_new_and_deleted_devices() \t=> Now tracking location "
+                    + str(location_id)
+                )
                 self.locations[location_id] = Location(botengine, location_id)
 
         access = botengine.get_access_block()
 
         if access is None:
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|track_new_and_deleted_devices() No 'access' block in our inputs!")
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
+                "|track_new_and_deleted_devices() No 'access' block in our inputs!"
+            )
             return
 
         # Maintenance: Add new devices
         for item in access:
-            if item['category'] == botengine.ACCESS_CATEGORY_MODE:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|track_new_and_deleted_devices() Updating Location Information")
-                if 'location' in item:
-                    if 'latitude' in item['location'] and 'longitude' in item['location']:
-                        self.locations[location_id].update_coordinates(botengine, item['location']['latitude'], item['location']['longitude'])
-                
-            elif item['category'] == botengine.ACCESS_CATEGORY_DEVICE:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|track_new_and_deleted_devices() Adding New Devices")
-                if 'device' not in item:
+            if item["category"] == botengine.ACCESS_CATEGORY_MODE:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|track_new_and_deleted_devices() Updating Location Information"
+                )
+                if "location" in item:
+                    if (
+                        "latitude" in item["location"]
+                        and "longitude" in item["location"]
+                    ):
+                        self.locations[location_id].update_coordinates(
+                            botengine,
+                            item["location"]["latitude"],
+                            item["location"]["longitude"],
+                        )
+
+            elif item["category"] == botengine.ACCESS_CATEGORY_DEVICE:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|track_new_and_deleted_devices() Adding New Devices"
+                )
+                if "device" not in item:
                     import json
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warn("|track_new_and_deleted_devices() Got a Device Category in our access block, but there was no 'device' element:\n" + json.dumps(access, indent=2, sort_keys=True))
+
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warn(
+                        "|track_new_and_deleted_devices() Got a Device Category in our access block, but there was no 'device' element:\n"
+                        + json.dumps(access, indent=2, sort_keys=True)
+                    )
                     continue
 
-                if 'description' in item['device']:
-                    device_desc = str(item['device']['description']).strip()
+                if "description" in item["device"]:
+                    device_desc = str(item["device"]["description"]).strip()
                 else:
                     device_desc = ""
 
-                device_id = str(item['device']['deviceId'])
-                device_type = int(item['device']['deviceType'])
-                location_id = int(item['device']['locationId'])
+                device_id = str(item["device"]["deviceId"])
+                device_type = int(item["device"]["deviceType"])
+                location_id = int(item["device"]["locationId"])
 
                 if len(self.locations) > 0 and location_id not in self.locations:
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|track_new_and_deleted_devices() Device ID {} is being accessed by bot instance {} in location {}, but its location is {}.".format(device_id, botengine.get_bot_instance_id(), list(self.locations.keys()), location_id))
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
+                        "|track_new_and_deleted_devices() Device ID {} is being accessed by bot instance {} in location {}, but its location is {}.".format(
+                            device_id,
+                            botengine.get_bot_instance_id(),
+                            list(self.locations.keys()),
+                            location_id,
+                        )
+                    )
                     continue
 
                 device_object = self.get_device(device_id)
                 location_object = self.locations[location_id]
 
                 if device_object is not None:
-                    if not hasattr(device_object, 'device_type'):
-                        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() No device_type, deleting...")
+                    if not hasattr(device_object, "device_type"):
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                            "|track_new_and_deleted_devices() No device_type, deleting..."
+                        )
                         self.delete_device(botengine, device_id)
                         device_object = None
                         continue
@@ -187,106 +250,114 @@ class Controller:
                         # This happens when a device gets registered to our cloud and looks like some device type,
                         # and then starts reporting extra information and features in later that make the cloud realize
                         # it is actually a different device type than what was originally conceived.
-                        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() Mismatched device_type {}<>{}, deleting...".format(device_type, device_object.device_type))
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                            "|track_new_and_deleted_devices() Mismatched device_type {}<>{}, deleting...".format(
+                                device_type, device_object.device_type
+                            )
+                        )
                         self.delete_device(botengine, device_id)
                         device_object = None
                         continue
-                
+
                 # Load any available device type class within this bundle
-                device_type_classes = self._extract_available_device_type_classes(botengine)
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|track_new_and_deleted_devices() Extracted available device type classes")
+                device_type_classes = self._extract_available_device_type_classes(
+                    botengine
+                )
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|track_new_and_deleted_devices() Extracted available device type classes"
+                )
 
                 if device_object is None:
                     # Instantiate the device object based on the device type
                     for device_type_class in device_type_classes:
                         if device_type in device_type_class.DEVICE_TYPES:
-                            device_object = device_type_class(botengine, location_object, device_id, device_type, device_desc, precache_measurements)
+                            device_object = device_type_class(
+                                botengine,
+                                location_object,
+                                device_id,
+                                device_type,
+                                device_desc,
+                                precache_measurements,
+                            )
                             break
                     if device_object is None:
-                        botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("|track_new_and_deleted_devices() Unsupported device type: " + str(device_type) + " ('" + device_desc + "')")
+                        botengine.get_logger(
+                            f"{__name__}.{__class__.__name__}"
+                        ).warning(
+                            "|track_new_and_deleted_devices() Unsupported device type: "
+                            + str(device_type)
+                            + " ('"
+                            + device_desc
+                            + "')"
+                        )
                         continue
 
-                if 'connected' in item['device']:
-                    device_object.is_connected = item['device']['connected']
-                else:
-                    device_object.is_connected = False
-
-                device_object.can_read = item['read']
-                device_object.can_control = item['control']
+                # Translate connectionStatus to connected attribute
+                connection_status = item["device"].get("connectionStatus", 0)
+                device_object.is_connected = (
+                    connection_status == 1
+                    if connection_status != 0
+                    else item["device"].get("connected", False)
+                )
+                device_object.can_read = item["read"]
+                device_object.can_control = item["control"]
                 device_object.device_id = str(device_id)
                 device_object.description = str(device_desc).strip()
-                
-                if 'remoteAddrHash' in item['device']:
-                    device_object.remote_addr_hash = str(item['device']['remoteAddrHash'])
-                
-                if 'proxyId' in item['device']:
-                    device_object.proxy_id = str(item['device']['proxyId'])
-                
-                if 'goalId' in item['device']:
-                    goal_id = int(item['device']['goalId'])
+
+                if "remoteAddrHash" in item["device"]:
+                    device_object.remote_addr_hash = str(
+                        item["device"]["remoteAddrHash"]
+                    )
+
+                if "proxyId" in item["device"]:
+                    device_object.proxy_id = str(item["device"]["proxyId"])
+
+                if "goalId" in item["device"]:
+                    goal_id = int(item["device"]["goalId"])
                     if goal_id is None or goal_id >= 0:
-                        device_object.is_goal_changed = device_object.goal_id is None or (device_object.goal_id is not None and device_object.goal_id != goal_id)
+                        device_object.is_goal_changed = (
+                            device_object.goal_id is None
+                            or (
+                                device_object.goal_id is not None
+                                and device_object.goal_id != goal_id
+                            )
+                        )
                         device_object.goal_id = goal_id
 
-                if 'startDate' in item['device']:
-                    device_object.born_on = int(item['device']['startDate'])
-                elif device_object.born_on is None:
-                    device_object.born_on = botengine.get_timestamp()
-                    
+                if "startDate" in item["device"]:
+                    device_object.born_on = int(item["device"]["startDate"])
+
                 if hasattr(device_object, "user_id"):
-                    user_id = item['device'].get('userId')
+                    user_id = item["device"].get("userId")
                     if hasattr(device_object, "last_user_id"):
-                        device_object.last_user_id = int(device_object.user_id) if device_object.user_id is not None else None
+                        device_object.last_user_id = (
+                            int(device_object.user_id)
+                            if device_object.user_id is not None
+                            else None
+                        )
                     device_object.user_id = user_id
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|track_new_and_deleted_devices() Synchronizing device")
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|track_new_and_deleted_devices() Synchronizing device"
+                )
                 self.sync_device(botengine, location_id, device_id, device_object)
-
-                if hasattr(device_object, "latitude") and hasattr(device_object, "longitude"):
-                    if 'latitude' in item['device'] and 'longitude' in item['device']:
-                        if float(item['device']['latitude']) != device_object.latitude or float(item['device']['longitude']) != device_object.longitude:
-                            device_object.update_coordinates(botengine, float(item['device']['latitude']), float(item['device']['longitude']))
 
         # Maintenance: Prune out old devices
         for device_id in copy.copy(self.location_devices):
             found = False
 
             for item in access:
-                if item['category'] == botengine.ACCESS_CATEGORY_DEVICE:
-                    if 'device' in item:
-                        if item['device']['deviceId'] == device_id:
+                if item["category"] == botengine.ACCESS_CATEGORY_DEVICE:
+                    if "device" in item:
+                        if item["device"]["deviceId"] == device_id:
                             found = True
                             break
-    
+
             if not found:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() Not provided in access, deleting...")
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                    "|track_new_and_deleted_devices() Not provided in access, deleting..."
+                )
                 self.delete_device(botengine, device_id)
-
-            else:
-                # Delete deprecated objects
-                if isinstance(self.locations[self.location_devices[device_id]].devices[device_id], ButtonDevice):
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() Deprecated device type ButtonDevice, deleting...")
-                    self.delete_device(botengine, device_id)
-
-                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], LinkHighButtonDevice):
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() Deprecated device type LinkHighButtonDevice, deleting...")
-                    self.delete_device(botengine, device_id)
-
-                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], DevelcoButtonDevice):
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() Deprecated device type DevelcoButtonDevice, deleting...")
-                    self.delete_device(botengine, device_id)
-
-                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], Centralite3SeriesSmartplugDevice):
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() Deprecated device type Centralite3SeriesSmartplugDevice, deleting...")
-                    self.delete_device(botengine, device_id)
-
-                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], PeoplePowerXSeriesDevice):
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() Deprecated device type PeoplePowerXSeriesDevice, deleting...")
-                    self.delete_device(botengine, device_id)
-
-                elif isinstance(self.locations[self.location_devices[device_id]].devices[device_id], TouchDevice):
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|track_new_and_deleted_devices() Deprecated device type TouchDevice, deleting...")
-                    self.delete_device(botengine, device_id)
 
     def sync_device(self, botengine, location_id, device_id, device_object):
         """
@@ -296,7 +367,7 @@ class Controller:
         + Move the device to the correct location if it's in the wrong location
         + Make sure the location is tracking this device object
         + Tell the location to re-evaluate its state based on this new information
-        
+
         :param botengine: BotEngine environment
         :param location_id: Location ID
         :param device_id: Device ID
@@ -308,21 +379,32 @@ class Controller:
 
         if location_id not in self.locations:
             # The location isn't being tracked yet, add it
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|sync_device() \t=> Now tracking location " + str(location_id))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|sync_device() \t=> Now tracking location " + str(location_id)
+            )
             self.locations[location_id] = Location(botengine, location_id)
 
         # Make sure the device is being tracked, and it's in the correct location
         if device_id not in self.location_devices:
             # The device isn't being tracked at all - add it
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|sync_device() \t=> Now tracking device " + str(device_id))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|sync_device() \t=> Now tracking device " + str(device_id)
+            )
             self.location_devices[device_id] = location_id
             self.locations[location_id].add_device(botengine, device_object)
             device_object.location_object = self.locations[location_id]
 
         elif self.location_devices[device_id] != location_id:
             # The device is in the wrong location, move it.
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|sync_device() \t=> Moving device " + str(device_id) + " to location " + str(location_id))
-            self.locations[self.location_devices[device_id]].delete_device(botengine, device_id)
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|sync_device() \t=> Moving device "
+                + str(device_id)
+                + " to location "
+                + str(location_id)
+            )
+            self.locations[self.location_devices[device_id]].delete_device(
+                botengine, device_id
+            )
             self.location_devices[device_id] = location_id
             self.locations[location_id].devices[device_id] = device_object
             device_object.location_object = self.locations[location_id]
@@ -335,7 +417,9 @@ class Controller:
         :param device_object: Device object pending update
         :param measurements: Measurements dictionary we're about to trigger with, which is modified in place.
         """
-        self.locations[location_id].filter_measurements(botengine, device_object, measurements)
+        self.locations[location_id].filter_measurements(
+            botengine, device_object, measurements
+        )
 
     def device_measurements_updated(self, botengine, location_id, device_object):
         """
@@ -344,7 +428,24 @@ class Controller:
         :param location_id: Location ID
         :param device_object: Device object
         """
-        self.locations[location_id].device_measurements_updated(botengine, device_object)
+        self.locations[location_id].device_measurements_updated(
+            botengine, device_object
+        )
+
+        if any(
+            param in device_object.last_updated_params
+            for param in ["latitude", "longitude"]
+        ) and all(
+            param in device_object.measurements for param in ["latitude", "longitude"]
+        ):
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|device_measurements_updated() Device coordinates changed"
+            )
+            device_object.update_coordinates(
+                botengine,
+                float(device_object.measurements["latitude"][0][0]),
+                float(device_object.measurements["longitude"][0][0]),
+            )
 
     def device_metadata_updated(self, botengine, location_id, device_object):
         """
@@ -355,7 +456,9 @@ class Controller:
         """
         self.locations[location_id].device_metadata_updated(botengine, device_object)
 
-    def device_alert(self, botengine, location_id, device_object, alert_type, alert_params):
+    def device_alert(
+        self, botengine, location_id, device_object, alert_type, alert_params
+    ):
         """
         Device alerts were updated
         :param botengine: BotEngine environment
@@ -365,7 +468,9 @@ class Controller:
         :param alert_params: Dictionary of alert parameters
         :return:
         """
-        self.locations[location_id].device_alert(botengine, device_object, alert_type, alert_params)
+        self.locations[location_id].device_alert(
+            botengine, device_object, alert_type, alert_params
+        )
 
     def file_uploaded(self, botengine, device_object, file):
         """
@@ -380,22 +485,46 @@ class Controller:
         file_id = None
         filesize_bytes = None
 
-        if 'contentType' in file:
-            content_type = file['contentType']
+        if "contentType" in file:
+            content_type = file["contentType"]
 
-        if 'extension' in file:
-            file_extension = file['extension']
+        if "extension" in file:
+            file_extension = file["extension"]
 
-        if 'fileId' in file:
-            file_id = file['fileId']
+        if "fileId" in file:
+            file_id = file["fileId"]
 
-        if 'fileSize' in file:
-            filesize_bytes = file['fileSize']
+        if "fileSize" in file:
+            filesize_bytes = file["fileSize"]
 
-        device_object.file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
-        self.locations[location_id].file_uploaded(botengine, device_object, file_id, filesize_bytes, content_type, file_extension)
+        device_object.file_uploaded(
+            botengine,
+            device_object,
+            file_id,
+            filesize_bytes,
+            content_type,
+            file_extension,
+        )
+        self.locations[location_id].file_uploaded(
+            botengine,
+            device_object,
+            file_id,
+            filesize_bytes,
+            content_type,
+            file_extension,
+        )
 
-    def user_role_updated(self, botengine, location_id, user_id, role, category, location_access, previous_category, previous_location_access):
+    def user_role_updated(
+        self,
+        botengine,
+        location_id,
+        user_id,
+        role,
+        category,
+        location_access,
+        previous_category,
+        previous_location_access,
+    ):
         """
         A user changed roles
         :param botengine: BotEngine environment
@@ -410,10 +539,20 @@ class Controller:
         """
         if location_id not in self.locations:
             # The location isn't being tracked yet, add it
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|user_role_updated() \t=> Now tracking location " + str(location_id))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|user_role_updated() \t=> Now tracking location " + str(location_id)
+            )
             self.locations[location_id] = Location(botengine, location_id)
 
-        self.locations[location_id].user_role_updated(botengine, user_id, role, category, location_access, previous_category, previous_location_access)
+        self.locations[location_id].user_role_updated(
+            botengine,
+            user_id,
+            role,
+            category,
+            location_access,
+            previous_category,
+            previous_location_access,
+        )
 
     def call_center_updated(self, botengine, location_id, user_id, status):
         """
@@ -425,7 +564,9 @@ class Controller:
         """
         if location_id not in self.locations:
             # The location isn't being tracked yet, add it
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|call_center_updated() \t=> Now tracking location " + str(location_id))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|call_center_updated() \t=> Now tracking location " + str(location_id)
+            )
             self.locations[location_id] = Location(botengine, location_id)
 
         self.locations[location_id].call_center_updated(botengine, user_id, status)
@@ -438,24 +579,28 @@ class Controller:
         :param device_csv_dict: { 'device_id': 'csv data string' }
         """
         for location_id in self.locations:
-            self.locations[location_id].data_request_ready(botengine, reference, device_csv_dict)
+            self.locations[location_id].data_request_ready(
+                botengine, reference, device_csv_dict
+            )
 
     def sync_mode(self, botengine, mode, location_id):
         """
         Update the mode.
-        
+
         This notifies the specific location that its mode changed, and it is that location's responsibility to signal the mode_updated to all children device and location intelligence modules.
-        
+
         :param botengine: BotEngine environment
         :param mode: Mode of the home, like "HOME" or "AWAY"
         :param location_id: Location that had its mode changed
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|sync_mode() Received mode '{}'".format(mode))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|sync_mode() Received mode '{}'".format(mode)
+        )
         if location_id not in self.locations:
             self.locations[location_id] = Location(botengine, location_id)
 
         self.locations[location_id].mode_updated(botengine, mode)
-        
+
     def sync_datastreams(self, botengine, address, content):
         """
         Synchronize the data stream messages across all location objects
@@ -465,8 +610,7 @@ class Controller:
         """
         for location_id in self.locations:
             self.locations[location_id].datastream_updated(botengine, address, content)
-    
-    
+
     def sync_question(self, botengine, question):
         """
         Synchronize an answered question
@@ -476,8 +620,7 @@ class Controller:
         # Sync location intelligence
         for location_id in self.locations:
             self.locations[location_id].question_answered(botengine, question)
-    
-    
+
     def sync_messages(self, botengine, messages):
         """
         Synchronize updated messages
@@ -485,12 +628,17 @@ class Controller:
         :param messages: List of changed messages
         """
         # Sync location intelligence
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">sync_messages()")
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|sync_messages() locations={}".format(self.locations))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">sync_messages()"
+        )
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|sync_messages() locations={}".format(self.locations)
+        )
         for location_id in self.locations:
             self.locations[location_id].messages_updated(botengine, messages)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<sync_messages()")
-
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<sync_messages()"
+        )
 
     def run_location_intelligence(self, botengine, intelligence_id, argument):
         """
@@ -499,9 +647,14 @@ class Controller:
         :param intelligence_id: ID of the intelligence module which needs its timer fired
         :param argument: Argument to pass into the timer_fired() method of the intelligence module
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">run_location_intelligence() Location Intelligence Timer Fired: " + str(intelligence_id))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">run_location_intelligence() Location Intelligence Timer Fired: "
+            + str(intelligence_id)
+        )
         for location_id in self.locations:
-            self.locations[location_id].timer_fired(botengine, intelligence_id, argument)
+            self.locations[location_id].timer_fired(
+                botengine, intelligence_id, argument
+            )
             return
 
     def run_device_intelligence(self, botengine, intelligence_id, argument):
@@ -511,27 +664,47 @@ class Controller:
         :param intelligence_id: ID of the intelligence module which needs its timer fired
         :param argument: Argument to pass into the timer_fired() method of the intelligence module
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|run_device_intelligence() Device Intelligence Timer Fired: " + str(intelligence_id))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|run_device_intelligence() Device Intelligence Timer Fired: "
+            + str(intelligence_id)
+        )
         for location_id in self.locations:
             for device_id in self.locations[location_id].devices:
-                for intelligence_module_name in self.locations[location_id].devices[device_id].intelligence_modules:
-                    if intelligence_id == self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module_name].intelligence_id:
+                for intelligence_module_name in (
+                    self.locations[location_id].devices[device_id].intelligence_modules
+                ):
+                    if (
+                        intelligence_id
+                        == self.locations[location_id]
+                        .devices[device_id]
+                        .intelligence_modules[intelligence_module_name]
+                        .intelligence_id
+                    ):
                         import time
+
                         t = time.time()
-                        self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module_name].timer_fired(botengine, argument)
-                        self.locations[location_id].devices[device_id].intelligence_modules[intelligence_module_name].track_statistics(botengine, (time.time() - t) * 1000)
+                        self.locations[location_id].devices[
+                            device_id
+                        ].intelligence_modules[intelligence_module_name].timer_fired(
+                            botengine, argument
+                        )
+                        self.locations[location_id].devices[
+                            device_id
+                        ].intelligence_modules[
+                            intelligence_module_name
+                        ].track_statistics(botengine, (time.time() - t) * 1000)
                         return
 
     def run_intelligence_schedules(self, botengine, schedule_id):
         """
-        Notify each location that the schedule fired. 
-        The location should be responsible for telling all device and location intelligence modules, 
+        Notify each location that the schedule fired.
+        The location should be responsible for telling all device and location intelligence modules,
         and performing periodic tasks like garbage collection.
         :param botengine: BotEngine environment
         """
         for location_id in self.locations:
             self.locations[location_id].schedule_fired(botengine, schedule_id)
-        
+
     def get_device(self, device_id):
         """
         Get the device represented by the device ID, if it exists
@@ -539,34 +712,40 @@ class Controller:
         """
         try:
             if self.location_devices[device_id] in self.locations:
-                return self.locations[self.location_devices[device_id]].devices[device_id]
-            
-        except:
+                return self.locations[self.location_devices[device_id]].devices[
+                    device_id
+                ]
+
+        except Exception:
             return None
-    
+
     def delete_device(self, botengine, device_id):
         """
         Delete the given device ID
         :param device_id: Device ID to delete
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">delete_device() Deleting device: " + str(device_id))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">delete_device() Deleting device: " + str(device_id)
+        )
         if device_id in self.location_devices:
             if self.location_devices[device_id] in self.locations:
                 location = self.locations[self.location_devices[device_id]]
                 location.delete_device(botengine, device_id)
             del self.location_devices[device_id]
-        
+
     def delete_location(self, botengine, location_id):
         """
         Delete the given location ID
         :param location_id: Location ID to delete
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">delete_location() Deleting Location: " + str(location_id))
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">delete_location() Deleting Location: " + str(location_id)
+        )
         if location_id in self.locations.keys():
             for device_id in copy.copy(self.location_devices):
                 if self.location_devices[device_id] == location_id:
                     self.delete_device(botengine, device_id)
-            
+
             del self.locations[location_id]
 
     def new_version(self, botengine):
@@ -583,16 +762,27 @@ class Controller:
         :param botengine: BotEngine environment
         :return: True if a new version was detected.
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">is_version_updated()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">is_version_updated()"
+        )
         import json
         import os
-        with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "runtime.json")) as f:
+
+        with open(
+            os.path.join(os.path.abspath(os.path.dirname(__file__)), "runtime.json")
+        ) as f:
             j = json.load(f)
             version = j["version"]["version"]
             if not hasattr(self, "version") or version != self.version:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<is_version_updated() New version detected {} >> {}".format(self.version if hasattr(self, "version") else "null", version))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                    "<is_version_updated() New version detected {} >> {}".format(
+                        self.version if hasattr(self, "version") else "null", version
+                    )
+                )
                 return True
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<is_version_updated()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<is_version_updated()"
+        )
         return False
 
     def update_version(self, botengine):
@@ -600,10 +790,15 @@ class Controller:
         Trigger the new_version() if we are indeed running a new version of the bot.
         :param botengine: BotEngine environment
         """
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">update_version()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">update_version()"
+        )
         import json
         import os
-        with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "runtime.json")) as f:
+
+        with open(
+            os.path.join(os.path.abspath(os.path.dirname(__file__)), "runtime.json")
+        ) as f:
             j = json.load(f)
             version = j["version"]["version"]
 
@@ -611,7 +806,9 @@ class Controller:
 
         # Notify all locations
         self.new_version(botengine)
-        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<update_version()")
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<update_version()"
+        )
 
     def _extract_available_device_type_classes(self, botengine):
         """
@@ -621,9 +818,12 @@ class Controller:
         # Efficiently grab this information once for bot playback
         if botengine.playback and hasattr(self, "available_device_type_classes"):
             return self.available_device_type_classes
-        
+
         import bot
-        available_device_type_classes = bot.extract_available_device_type_classes(botengine)
+
+        available_device_type_classes = bot.extract_available_device_type_classes(
+            botengine
+        )
 
         if botengine.playback:
             self.available_device_type_classes = available_device_type_classes

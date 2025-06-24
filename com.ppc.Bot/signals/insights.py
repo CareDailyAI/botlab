@@ -8,7 +8,19 @@ file 'LICENSE.txt', which is part of this source code package.
 """
 
 
-def capture_insight(botengine, location_object, insight_id, value, title, description, icon=None, icon_font=None, device_object=None, confidence_state=None, confidence_reason=None):
+def capture_insight(
+    botengine,
+    location_object,
+    insight_id,
+    value,
+    title,
+    description,
+    icon=None,
+    icon_font=None,
+    device_object=None,
+    confidence_state=None,
+    confidence_reason=None,
+):
     """
     Capture an insight
     :param botengine: BotEngine environment
@@ -23,29 +35,28 @@ def capture_insight(botengine, location_object, insight_id, value, title, descri
         "insight_id": insight_id,
         "value": value,
         "title": title,
-        "description": description
+        "description": description,
     }
 
     if icon is not None:
-        content['icon'] = icon
+        content["icon"] = icon
         if icon_font is not None:
-            content['icon_font'] = icon_font
+            content["icon_font"] = icon_font
 
     if device_object is not None:
-        content['device_id'] = device_object.device_id
-        content['device_desc'] = device_object.description
-        content['device_type'] = device_object.device_type
+        content["device_id"] = device_object.device_id
+        content["device_desc"] = device_object.description
+        content["device_type"] = device_object.device_type
 
     if confidence_state is not None:
-        content['confidence_state'] = confidence_state
+        content["confidence_state"] = confidence_state
         if confidence_reason is not None:
-            content['confidence_reason'] = confidence_reason
+            content["confidence_reason"] = confidence_reason
 
-    location_object.distribute_datastream_message(botengine,
-                                                  "capture_insight",
-                                                  content=content,
-                                                  internal=True,
-                                                  external=False)
+    location_object.distribute_datastream_message(
+        botengine, "capture_insight", content=content, internal=True, external=False
+    )
+
 
 def delete_insight(botengine, location_object, insight_id):
     """
@@ -55,11 +66,10 @@ def delete_insight(botengine, location_object, insight_id):
     :param device_object:
     :return:
     """
-    location_object.distribute_datastream_message(botengine,
-                                                  "capture_insight",
-                                                  content={
-                                                      "insight_id": insight_id
-                                                  },
-                                                  internal=True,
-                                                  external=False)
-
+    location_object.distribute_datastream_message(
+        botengine,
+        "capture_insight",
+        content={"insight_id": insight_id},
+        internal=True,
+        external=False,
+    )

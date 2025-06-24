@@ -158,8 +158,8 @@ class LocationTasksMicroservice(Intelligence):
         """
         botengine.save_variable("task.__init__", True)
         self.parent.set_location_property(botengine, "task.__init__", True, track=False)
-        if properties.get_property(botengine, "CARE_SERVICES") is not None:
-            if properties.get_property(botengine, "CARE_SERVICES"):
+        if properties.get_property(botengine, "CARE_SERVICES", False) is not None:
+            if properties.get_property(botengine, "CARE_SERVICES", False):
                 tasks.update_task(botengine,
                                   location_object=self.parent,
                                   task_id="__init__",
@@ -335,8 +335,8 @@ class LocationTasksMicroservice(Intelligence):
                         description = _("{} assigned a task to {}: {}").format(created_by_name, assigned_to_name, content['title'])
                         push_sms_fallback_content = _("{} assigned you a new task. To view it and mark it complete, please download and sign into the {} app.").format(created_by_name, properties.get_property(botengine, "SERVICE_NAME"))
 
-                        ios_url = properties.get_property(botengine, "APP_IOS_URL")
-                        android_url = properties.get_property(botengine, "APP_ANDROID_URL")
+                        ios_url = properties.get_property(botengine, "APP_IOS_URL", False)
+                        android_url = properties.get_property(botengine, "APP_ANDROID_URL", False)
 
                         if ios_url is not None:
                             # Note: iOS app download URL qualifier

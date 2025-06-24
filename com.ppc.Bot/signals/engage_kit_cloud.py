@@ -96,7 +96,9 @@ file 'LICENSE.txt', which is part of this source code package.
 # }
 
 
-def add_cloud_messages(botengine, location_object, messages_list: list, by_user: bool = False):
+def add_cloud_messages(
+    botengine, location_object, messages_list: list, by_user: bool = False
+):
     """
     Create a new messages to topic
     :param botengine:  BotEngine environment
@@ -106,8 +108,10 @@ def add_cloud_messages(botengine, location_object, messages_list: list, by_user:
     :return: array of messages ids
     """
     botengine.get_logger().info(
-        "engage_kit_cloud.add_cloud_messages: messages_list={}, by_user={}".format(messages_list,
-                                                                                   by_user))
+        "engage_kit_cloud.add_cloud_messages: messages_list={}, by_user={}".format(
+            messages_list, by_user
+        )
+    )
     if messages_list is None or len(messages_list) == 0:
         raise ValueError("messages_list is required")
     if not isinstance(messages_list, list):
@@ -115,9 +119,7 @@ def add_cloud_messages(botengine, location_object, messages_list: list, by_user:
     if not all(isinstance(message, dict) for message in messages_list):
         raise ValueError("messages_list must be a list of dictionaries")
 
-    content = {
-        "messages": messages_list
-    }
+    content = {"messages": messages_list}
     # location_id = location_object.location_id if by_user else None
 
     return botengine.create_cloud_messages(content, by_user)
@@ -138,14 +140,18 @@ def add_cloud_messages(botengine, location_object, messages_list: list, by_user:
 #   ]
 # }'''
 
-def update_cloud_messages(botengine,  updated_messages_list: list):
+
+def update_cloud_messages(botengine, updated_messages_list: list):
     """
     Update the status and/or delivery time for list of messsages
     :param botengine:  BotEngine environment
     :param updated_messages_list: messages JSON content.
     """
     botengine.get_logger().info(
-        "engage_kit_cloud.update_cloud_messages: updated_messages_list={}".format(updated_messages_list))
+        "engage_kit_cloud.update_cloud_messages: updated_messages_list={}".format(
+            updated_messages_list
+        )
+    )
     if updated_messages_list is None or len(updated_messages_list) == 0:
         raise ValueError("updated_messages_list is required")
     if not isinstance(updated_messages_list, list):
@@ -153,14 +159,8 @@ def update_cloud_messages(botengine,  updated_messages_list: list):
     if not all(isinstance(message, dict) for message in updated_messages_list):
         raise ValueError("messages_list must be a list of dictionaries")
 
-    content = {
-        "messages": updated_messages_list
-    }
+    content = {"messages": updated_messages_list}
 
     botengine.update_cloud_messages(content)
 
     return
-
-
-
-

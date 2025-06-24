@@ -30,6 +30,9 @@
       },
       {
         "address": "sunrise_fired"
+      },
+      {
+        "address": "daily_report_set_config"
       }
     ]
   }

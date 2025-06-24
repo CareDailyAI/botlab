@@ -1,13 +1,14 @@
-'''
+"""
 Created on October 27, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.vibration.vibration import VibrationDevice
+
 
 class LinkHighVibrationDevice(VibrationDevice):
     """
@@ -96,6 +97,8 @@ class LinkHighVibrationDevice(VibrationDevice):
         """
         if self.MEASUREMENT_NAME_VIBRATION_STATUS in self.measurements:
             if self.MEASUREMENT_NAME_VIBRATION_STATUS in self.last_updated_params:
-                return self.measurements[self.MEASUREMENT_NAME_VIBRATION_STATUS][0][0] == False
+                return not self.measurements[self.MEASUREMENT_NAME_VIBRATION_STATUS][0][
+                    0
+                ]
 
         return False

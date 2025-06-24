@@ -1,11 +1,11 @@
-'''
+"""
 Created on May 6, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.device import Device
 
@@ -14,21 +14,21 @@ class LightDevice(Device):
     """Lighting Device"""
 
     # Measurement Names
-    MEASUREMENT_NAME_STATUS = 'state'
-    MEASUREMENT_NAME_BRIGHTNESS = 'currentLevel'
-    MEASUREMENT_NAME_HUE = 'hue'
-    MEASUREMENT_NAME_SATURATION = 'saturation'
+    MEASUREMENT_NAME_STATUS = "state"
+    MEASUREMENT_NAME_BRIGHTNESS = "currentLevel"
+    MEASUREMENT_NAME_HUE = "hue"
+    MEASUREMENT_NAME_SATURATION = "saturation"
 
     MEASUREMENT_PARAMETERS_LIST = [
         MEASUREMENT_NAME_STATUS,
         MEASUREMENT_NAME_BRIGHTNESS,
         MEASUREMENT_NAME_HUE,
-        MEASUREMENT_NAME_SATURATION
+        MEASUREMENT_NAME_SATURATION,
     ]
 
     # Command Names
-    COMMAND_NAME_STATUS = 'state'
-    COMMAND_NAME_BRIGHTNESS = 'currentLevel'
+    COMMAND_NAME_STATUS = "state"
+    COMMAND_NAME_BRIGHTNESS = "currentLevel"
 
     # Lighting goals
     GOAL_LIGHT_SAVE_ENERGY = 60
@@ -38,10 +38,25 @@ class LightDevice(Device):
 
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [10036, 10071]
-    
-    
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # The boolean on/off state of this device that was saved
         self.saved_state = False
@@ -58,29 +73,28 @@ class LightDevice(Device):
         # Whether the saved_state is valid or not
         self.saved = False
 
-            
     def initialize(self, botengine):
         Device.initialize(self, botengine)
 
-        if not hasattr(self, 'saved_brightness'):
+        if not hasattr(self, "saved_brightness"):
             self.saved_brightness = None
 
-        if not hasattr(self, 'saved_hue'):
+        if not hasattr(self, "saved_hue"):
             self.saved_hue = None
 
-        if not hasattr(self, 'saved_saturation'):
+        if not hasattr(self, "saved_saturation"):
             self.saved_saturation = None
 
-    #===========================================================================
+    # ===========================================================================
     # Attributes
-    #===========================================================================
+    # ===========================================================================
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Device type name
         return _("Light")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
@@ -93,15 +107,16 @@ class LightDevice(Device):
         :return: The name of the icon font package
         """
         import utilities.utilities as utilities
+
         return utilities.ICON_FONT_FONTAWESOME_REGULAR
-    
+
     def is_command(self, measurement_name):
         """
         :param measurement_name: Name of a local measurement name
         :return: True if the given parameter name is a command
         """
         return measurement_name == LightDevice.COMMAND_NAME_STATUS
-    
+
     def is_light(self):
         """
         :return: True if this is a light
@@ -120,7 +135,10 @@ class LightDevice(Device):
         :param botengine: BotEngine environment
         :return: True if we can control brightness on this device
         """
-        return self.MEASUREMENT_NAME_HUE in self.measurements and self.MEASUREMENT_NAME_SATURATION in self.measurements
+        return (
+            self.MEASUREMENT_NAME_HUE in self.measurements
+            and self.MEASUREMENT_NAME_SATURATION in self.measurements
+        )
 
     def current_brightness(self, botengine=None):
         """
@@ -169,7 +187,7 @@ class LightDevice(Device):
         :return: True if this light is on
         """
         if self.MEASUREMENT_NAME_STATUS in self.measurements:
-            return self.measurements[self.MEASUREMENT_NAME_STATUS][0][0] == False
+            return not self.measurements[self.MEASUREMENT_NAME_STATUS][0][0]
 
         return False
 
@@ -181,7 +199,7 @@ class LightDevice(Device):
         """
         if self.MEASUREMENT_NAME_STATUS in self.measurements:
             if self.MEASUREMENT_NAME_STATUS in self.last_updated_params:
-                return self.measurements[self.MEASUREMENT_NAME_STATUS][0][0] == True
+                return self.measurements[self.MEASUREMENT_NAME_STATUS][0][0]
 
         return False
 
@@ -193,21 +211,21 @@ class LightDevice(Device):
         """
         if self.MEASUREMENT_NAME_STATUS in self.measurements:
             if self.MEASUREMENT_NAME_STATUS in self.last_updated_params:
-                return self.measurements[self.MEASUREMENT_NAME_STATUS][0][0] == False
+                return not self.measurements[self.MEASUREMENT_NAME_STATUS][0][0]
 
         return False
 
-    #===========================================================================
+    # ===========================================================================
     # Commands
-    #===========================================================================
+    # ===========================================================================
     def save(self, botengine):
         """Save the status of this device"""
         if not self.is_connected or not self.can_control:
             return False
-        
+
         try:
             self.saved_state = self.measurements[self.MEASUREMENT_NAME_STATUS][0][0]
-        except:
+        except Exception:
             self.saved_state = False
 
         self.saved_brightness = self.current_brightness(botengine)
@@ -215,7 +233,7 @@ class LightDevice(Device):
         self.saved_saturation = self.current_saturation(botengine)
         self.saved = True
         return True
-        
+
     def restore(self, botengine):
         """
         Restore the status of the device from the save point
@@ -226,9 +244,9 @@ class LightDevice(Device):
 
         if not self.saved:
             return False
-        
+
         self.saved = False
-            
+
         if self.saved_state:
             self.on(botengine)
         else:
@@ -237,15 +255,15 @@ class LightDevice(Device):
         # TODO : The DSR gateway does not support multiple parameters in a single command
         # Really this should be handled underneath this application layer, by the JEXL abstraction layer in the cloud.
         if self.saved_saturation:
-            #self.set_saturation(botengine, self.saved_saturation)
+            # self.set_saturation(botengine, self.saved_saturation)
             self.saved_saturation = None
 
         if self.saved_brightness:
-            #self.set_brightness(botengine, self.saved_brightness)
+            # self.set_brightness(botengine, self.saved_brightness)
             self.saved_brightness = None
 
         if self.saved_hue:
-            #self.set_hue(botengine, self.saved_hue)
+            # self.set_hue(botengine, self.saved_hue)
             self.saved_hue = None
 
         return True
@@ -274,7 +292,9 @@ class LightDevice(Device):
 
         # Turning on and off requires 2 commands
         commands = [
-            botengine.form_command(self.COMMAND_NAME_STATUS, True)  # This does accept True
+            botengine.form_command(
+                self.COMMAND_NAME_STATUS, True
+            )  # This does accept True
         ]
 
         botengine.send_commands(self.device_id, commands)
@@ -297,7 +317,9 @@ class LightDevice(Device):
 
         # Turning on and off requires 2 commands
         commands = [
-            botengine.form_command(self.COMMAND_NAME_STATUS, False)   # TODO this should accept False but does not
+            botengine.form_command(
+                self.COMMAND_NAME_STATUS, False
+            )  # TODO this should accept False but does not
         ]
 
         botengine.send_commands(self.device_id, commands)
@@ -313,12 +335,14 @@ class LightDevice(Device):
         if not self.is_connected or not self.can_control:
             return False
 
-        botengine.get_logger().info("Set brightness of " + str(self.description) + " to " + str(percent) + "%")
+        botengine.get_logger().info(
+            "Set brightness of " + str(self.description) + " to " + str(percent) + "%"
+        )
 
         # Adjusting the brightness requires 2 parameters for compatibility with our partners gateways
         commands = [
             botengine.form_command("currentLevel", percent),
-            botengine.form_command("commandName", "setLevel")
+            botengine.form_command("commandName", "setLevel"),
         ]
 
         botengine.send_commands(self.device_id, commands)
@@ -340,7 +364,9 @@ class LightDevice(Device):
             saturation = 254
 
         if self.MEASUREMENT_NAME_SATURATION in self.measurements:
-            botengine.send_command(self.device_id, self.MEASUREMENT_NAME_SATURATION, saturation)
+            botengine.send_command(
+                self.device_id, self.MEASUREMENT_NAME_SATURATION, saturation
+            )
 
     def set_hue(self, botengine, hue):
         """

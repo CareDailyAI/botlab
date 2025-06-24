@@ -3,6 +3,7 @@
 This microservice creates a daily report for the user.
 A signal can be received notifying this microservice that a new entry should be added to the daily report.
 A signal is sent to notify other microservices that the daily report updated.
+A signal can be received describing new configurations for the daily report.
 
 Supplementary services can be enabled from the UI using the Services and Alerts questions.
 
@@ -40,6 +41,7 @@ Provides configuration information and settings that describe the service.
 - `gpt.is_enabled` (Bool) GPT service enabled
 - `has_summary` (Bool) Summary microservice included in bundle
 - `summary.is_enabled` (Bool) Summary service enabled
+- `section_config` (Dict) Describes changes to default section properties
 
 #### Daily Report GPT
 
@@ -49,7 +51,7 @@ Provides configuration information and settings that describe the service.
 
 - `report_types` (Array) List of json objects describing hows the service should interpret reports
     - `id` (Int) Unique Report Type ID
-    - `role_type` (Int) Role Type ID (User.ROLE_TYPE_*)
+    - `role_type` (Int) Role Type ID (users.user.ROLE_TYPE_*)
     - `role` (String) Name of the role
     - `rules` ([String]) Rules for this role
     - `supported_section_ids` ([Int]) Supported section IDs (See dailyreport.SECTION_ID_*)
@@ -103,6 +105,12 @@ Datastream message to configure daily report types.
 
 **name:** `update_daily_report_gpt_report_types`
 
+#### Set Daily Report Configuration
+
+Datastream message to set configurations
+
+**name:** `daily_report_set_config`
+
 ### Signals
 
 Supplementary microservices can update the Daily Report microservice using the dailyreport signal method.
@@ -124,3 +132,7 @@ Add a section and bullet point the current monthly report.
 #### Report Status Updated
 
 Notify supplementary microservices that a report status has changed.
+
+#### Set Section Config
+
+Set the daily report section configuration.

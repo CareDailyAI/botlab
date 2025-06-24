@@ -1,0 +1,12 @@
+{
+  "version": {
+    "triggerParameters": [
+      "alarmStatus",
+      "alarmBehavior",
+      "alarmCancelDelay",
+      "batteryLevel",
+      "buttonActivationDelay",
+      "buttonCancelDelay"
+    ]
+  }
+}

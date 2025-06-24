@@ -64,7 +64,7 @@ class LocationDashboardMicroservice(Intelligence):
         """
         Update a dashboard card - Data Stream Message
 
-        # Create/Update a card
+        # Create/Update a NOW card
         card_content = {
             "type": 0,
             "title": "NOW",
@@ -83,13 +83,47 @@ class LocationDashboardMicroservice(Intelligence):
             }
         }
 
-        # Delete a card
+        # Delete a NOW card
         card_content = {
             "type": 0,
             "title": "NOW",
             "content": {
                 "comment": None,
                 "id": "unique_content_id"
+            }
+        }
+
+        # Create/Update a SERVICES card
+        card_content = {
+            "type": 1,
+            "title": "SERVICES",
+            "weight": 0,
+            "content": {
+                "title": "Title",
+                "comment": "Sleeping since 10:35 PM.",
+                "icon": "icon",
+                "icon_font": "icon_font",
+                "status": 0,
+                "percent": 0,
+                "active": True,
+                "id": "unique_content_id",
+                "weight": 0,
+                "question_id": "unique_question_key",
+                "collection_id": "Question",
+                "section_id": "unique_section_key",
+                "description": "Description",
+                "status_text": "Status Text",
+                "display_info": {
+                    "display_home_area": True,
+                }
+
+        # Delete a SERVICES card
+        card_content = {
+            "type": 1,
+            "title": "SERVICES",
+            "content": {
+                "id": "unique_content_id",
+                "comment": None
             }
         }
 
@@ -210,11 +244,11 @@ class LocationDashboardMicroservice(Intelligence):
             except StopIteration:
                 pass
 
-        # Delete cards that are too old
+        # Delete cards that are too old or have no comment (staged for deletion)
         for card_index, card in enumerate(focused_dashboard['cards']):
             if card['type'] == 0:
                 for content_index, content in enumerate(card['content']):
-                    if 'updated' not in content:
+                    if content.get('updated') is None or content.get("comment") is None:
                         # Delete yourself
                         content['updated'] = botengine.get_timestamp() - utilities.ONE_MONTH_MS
 
@@ -241,6 +275,11 @@ class LocationDashboardMicroservice(Intelligence):
                                 # Delete the card from the focused_dashboard.
                                 del (focused_dashboard['cards'][card_index])
 
+        # Sort it before finding next alarm.  Prioritize status, then weight, then time.
+        for card in focused_dashboard['cards']:
+            card['content'].sort(key=lambda x: (x.get('status', 1) * -1, x.get('weight', 50), x.get('updated', botengine.get_timestamp())))
+        focused_dashboard['cards'].sort(key=lambda x: x.get('weight', 50))
+
         # After pruning out orphaned cards, find the next alarm to set
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|update_dashboard_content() Finding next alarm to set.")
         next_alarm_ms = None
@@ -257,13 +296,9 @@ class LocationDashboardMicroservice(Intelligence):
                             next_alarm_ms = int(alarm_ms)
 
         if next_alarm_ms is not None:
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|update_dashboard_content() Setting alarm for {} ms from now.".format(int(next_alarm_ms) - botengine.get_timestamp()))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|update_dashboard_content() Setting alarm for {} ms from {}.".format(int(next_alarm_ms) - botengine.get_timestamp(), botengine.get_timestamp()))
             self.set_alarm(botengine, next_alarm_ms)
 
-        # Sort it out
-        for card in focused_dashboard['cards']:
-            card['content'].sort(key=lambda x: (x.get('weight', 50), x.get('updated', botengine.get_timestamp())))
-        focused_dashboard['cards'].sort(key=lambda x: x.get('weight', 50))
 
         # Save
         if card_content['type'] == CARD_TYPE_NOW:

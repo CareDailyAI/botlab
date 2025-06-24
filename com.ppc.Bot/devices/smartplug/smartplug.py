@@ -1,16 +1,14 @@
-'''
+"""
 Created on May 6, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
-from devices.device import Device
+from devices.device import cancel_reliable_command, Device, send_command_reliably
 
-from devices.device import send_command_reliably
-from devices.device import cancel_reliable_command
 
 class SmartplugDevice(Device):
     """Smart Plug Device"""
@@ -19,14 +17,14 @@ class SmartplugDevice(Device):
     DEVICE_TYPES = [10035]
 
     # Measurement names
-    MEASUREMENT_NAME_STATUS = 'outletStatus'
-    MEASUREMENT_NAME_POWER = 'power'
-    MEASUREMENT_NAME_ENERGY = 'energy'
+    MEASUREMENT_NAME_STATUS = "outletStatus"
+    MEASUREMENT_NAME_POWER = "power"
+    MEASUREMENT_NAME_ENERGY = "energy"
 
     MEASUREMENT_PARAMETERS_LIST = [
         MEASUREMENT_NAME_STATUS,
         MEASUREMENT_NAME_POWER,
-        MEASUREMENT_NAME_ENERGY
+        MEASUREMENT_NAME_ENERGY,
     ]
 
     # Smart plug goals
@@ -43,7 +41,15 @@ class SmartplugDevice(Device):
     GOAL_SMARTPLUG_APPLIANCE_MONITORING = 91
     GOAL_SMARTPLUG_MICROWAVE = 92
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -53,7 +59,15 @@ class SmartplugDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # The boolean on/off state of this device that was saved
         self.saved_state = False
@@ -69,29 +83,29 @@ class SmartplugDevice(Device):
         """
         Device.initialize(self, botengine)
 
-    #===========================================================================
+    # ===========================================================================
     # Attributes
-    #===========================================================================
+    # ===========================================================================
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Device type name - abstract smart plug
         return _("Smart Plug")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "plug"
-    
+
     def is_command(self, measurement_name):
         """
         :param measurement_name: Name of a local measurement name
         :return: True if the given parameter name is a command
         """
         return measurement_name == self.MEASUREMENT_NAME_STATUS
-        
+
     def is_light(self):
         """
         :return: True if this is a light
@@ -135,7 +149,7 @@ class SmartplugDevice(Device):
         :return: True if this plug is on
         """
         if self.MEASUREMENT_NAME_STATUS in self.measurements:
-            return self.measurements[self.MEASUREMENT_NAME_STATUS][0][0] == False
+            return not self.measurements[self.MEASUREMENT_NAME_STATUS][0][0]
 
         return False
 
@@ -147,7 +161,7 @@ class SmartplugDevice(Device):
         """
         if self.MEASUREMENT_NAME_STATUS in self.measurements:
             if self.MEASUREMENT_NAME_STATUS in self.last_updated_params:
-                return self.measurements[self.MEASUREMENT_NAME_STATUS][0][0] == True
+                return self.measurements[self.MEASUREMENT_NAME_STATUS][0][0]
 
         return False
 
@@ -159,7 +173,7 @@ class SmartplugDevice(Device):
         """
         if self.MEASUREMENT_NAME_STATUS in self.measurements:
             if self.MEASUREMENT_NAME_STATUS in self.last_updated_params:
-                return self.measurements[self.MEASUREMENT_NAME_STATUS][0][0] == False
+                return not self.measurements[self.MEASUREMENT_NAME_STATUS][0][0]
 
         return False
 
@@ -183,9 +197,9 @@ class SmartplugDevice(Device):
 
         return 0
 
-    #===========================================================================
+    # ===========================================================================
     # Commands
-    #===========================================================================
+    # ===========================================================================
     def save(self, botengine):
         """
         Save the status of this device
@@ -193,17 +207,21 @@ class SmartplugDevice(Device):
         """
         if not self.is_connected:
             return False
-        
+
         try:
             self.saved_state = self.measurements[self.MEASUREMENT_NAME_STATUS][0][0]
-        except:
+        except Exception:
             self.saved_state = False
-        
+
         self.saved = True
 
-        botengine.get_logger().info("{}: Smart Plug '{}' saved state is {}".format(self.device_id, self.description, self.saved_state))
+        botengine.get_logger().info(
+            "{}: Smart Plug '{}' saved state is {}".format(
+                self.device_id, self.description, self.saved_state
+            )
+        )
         return True
-        
+
     def restore(self, botengine, reliably=False):
         """
         Restore the status of the device from the save point
@@ -213,11 +231,11 @@ class SmartplugDevice(Device):
         """
         if not self.can_control:
             return False
-        
+
         botengine.get_logger().info(">restore(" + str(self.device_id) + ")")
         if not self.saved:
             return False
-        
+
         self.saved = False
 
         if self.saved_state:
@@ -226,7 +244,7 @@ class SmartplugDevice(Device):
             self.off(botengine, reliably)
 
         return True
-    
+
     def on(self, botengine, reliably=False):
         """
         Turn on
@@ -237,15 +255,20 @@ class SmartplugDevice(Device):
             return False
 
         if reliably:
-            cancel_reliable_command(botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS)
-            send_command_reliably(botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "1")
+            cancel_reliable_command(
+                botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS
+            )
+            send_command_reliably(
+                botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "1"
+            )
 
         else:
-            botengine.send_command(self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "1") # This does work with the keyword True.
+            botengine.send_command(
+                self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "1"
+            )  # This does work with the keyword True.
 
         return True
-    
-    
+
     def off(self, botengine, reliably=False):
         """
         Turn off
@@ -256,11 +279,17 @@ class SmartplugDevice(Device):
             return False
 
         if reliably:
-            cancel_reliable_command(botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS)
-            send_command_reliably(botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "0")
+            cancel_reliable_command(
+                botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS
+            )
+            send_command_reliably(
+                botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "0"
+            )
 
         else:
-            botengine.send_command(self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "0") # TODO this should be able to say the keyword False, but that doesn't work. Needs a server fix.
+            botengine.send_command(
+                self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "0"
+            )  # TODO this should be able to say the keyword False, but that doesn't work. Needs a server fix.
 
         return True
 
@@ -279,7 +308,6 @@ class SmartplugDevice(Device):
         else:
             self.on(botengine, reliably)
 
-
     def raw_command(self, botengine, name, value):
         """
         Send a command for the given local parameter name
@@ -289,5 +317,3 @@ class SmartplugDevice(Device):
                 self.on(botengine)
             else:
                 self.off(botengine)
-        
-    

@@ -1,11 +1,11 @@
-'''
+"""
 Created on September 22, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.device import Device
 
@@ -19,7 +19,7 @@ class PanicButtonDevice(Device):
     DEVICE_TYPES = []
 
     # Measurement name for the button status
-    MEASUREMENT_NAME_BUTTON_STATUS = 'buttonStatus'
+    MEASUREMENT_NAME_BUTTON_STATUS = "buttonStatus"
 
     # Goals
     GOAL_BUTTON_SIGNAL_PEOPLE_WHO_LIVE_HERE = 100
@@ -27,7 +27,15 @@ class PanicButtonDevice(Device):
     GOAL_BUTTON_CALL_FOR_HELP_MEDICAL = 111
     GOAL_BUTTON_SKIP = 300
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -36,7 +44,15 @@ class PanicButtonDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # Default behavior
         self.goal_id = PanicButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL
@@ -60,7 +76,10 @@ class PanicButtonDevice(Device):
         :param botengine:
         :return:
         """
-        return self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params and self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        return (
+            self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params
+            and self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        )
 
     def did_exit_panic(self, botengine=None):
         """
@@ -68,7 +87,10 @@ class PanicButtonDevice(Device):
         :param botengine:
         :return:
         """
-        return self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params and not self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        return (
+            self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params
+            and not self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        )
 
     def is_in_panic(self, botengine=None):
         """

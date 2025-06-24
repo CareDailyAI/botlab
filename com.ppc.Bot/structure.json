@@ -20,7 +20,6 @@
         "python-dateutil",
         "lz4",
         "dill",
-        "tzlocal",
         "requests",
         "colorama",
         "pydantic"

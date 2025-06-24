@@ -223,7 +223,8 @@ DATASTREAM_DAILY_REPORT_STATUS_UPDATED = "daily_report_status_updated"
 DAILYREPORT_STATE_VARIABLE_NAME = "dailyreport"
 
 # Services and Alerts Question Settings
-SERVICES_COLLECTION_NAME    = _("Daily Report Settings")
+_("Daily Report Settings")
+SERVICES_COLLECTION_NAME    = "Daily Report Settings"
 SERVICES_COLLECTION_WEIGHT  = 0
 
 # Enable or disable daily report services
@@ -238,12 +239,9 @@ class LocationDailyReportMicroservice(Intelligence):
     This microservice creates a daily report for the user.
     A signal can be received notifying this microservice that a new entry should be added to the daily report.
     A signal is sent to notify other microservices that the daily report updated.
-
-    States are managed in the `dailyreport` state variable.
-    {   
-        "version": Str, # Version of the daily report microservice
-        "dailyreport.is_enabled": Bool, # Is the daily report service enabled
-    }
+    A signal can be received describing new configurations for the daily report.
+    
+    See README.md for more information.
     """
 
     def __init__(self, botengine, parent):
@@ -277,6 +275,9 @@ class LocationDailyReportMicroservice(Intelligence):
         # Version
         self.version = None
 
+        # Section Config
+        self.section_config = None
+
     def new_version(self, botengine):
         """
         Upgraded to a new bot version
@@ -299,7 +300,10 @@ class LocationDailyReportMicroservice(Intelligence):
             self.monthly_reports = {}
 
         if not hasattr(self, 'version'):
-            self.version = VERSION
+            self.version = None
+
+        if not hasattr(self, 'section_config'):
+            self.section_config = None
         return
 
     def initialize(self, botengine):
@@ -309,8 +313,22 @@ class LocationDailyReportMicroservice(Intelligence):
         :return:
         """
         if self.version != VERSION:
-            self.parent.set_location_property_separately(botengine, DAILYREPORT_STATE_VARIABLE_NAME, {'version': VERSION})
+            self.version = VERSION
+            # Retreive location state
+            daily_report_state = self.parent.get_location_property(botengine, DAILYREPORT_STATE_VARIABLE_NAME)
+            if daily_report_state is None:
+                daily_report_state = {}
+
+            # Update the version
+            daily_report_state['version'] = VERSION
+            self.parent.set_location_property_separately(botengine, DAILYREPORT_STATE_VARIABLE_NAME, daily_report_state)
+
+            # Set configuration
+            if self.section_config is None:
+                self.section_config = daily_report_state.get("section_config", None)
+
             self._ask_questions(botengine)
+            
         return
 
     def destroy(self, botengine):
@@ -2537,6 +2555,59 @@ class LocationDailyReportMicroservice(Intelligence):
         self._add_monthly_entry(botengine, section_id, comment=comment, subtitle=subtitle, identifier=identifier, include_timestamp=include_timestamp, timestamp_override_ms=timestamp_override_ms)
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<daily_report_monthly_entry()")
 
+    def daily_report_set_config(self, botengine, content):
+        """
+        Set the daily report configuration
+
+        Section content can be configured in the following ways:
+        - Add a new section with specified properties
+        - Remove an existing default section by setting the section id value to empty dict {}
+        - Sort sections by weight
+        - Set the title, description, icon, and color of a section
+        - Describe trend IDs to include for a given section
+        - Describe insight IDs to include for a given section
+
+        To remove a configuration provide an empty string ("") or "null" as a value for the key
+
+        :param botengine: BotEngine environment
+        :param content: Data Stream Content
+        :return:
+        """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">daily_report_set_config() data stream message received {}".format(json.dumps(content)))
+        if 'section_config' in content: 
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").error("|daily_report_set_config() Updating section configuration.")
+            dailyreport_state =  botengine.get_state(DAILYREPORT_STATE_VARIABLE_NAME)
+            if dailyreport_state is None:
+                dailyreport_state = {}
+
+            section_config = dailyreport_state.get("section_config", {})
+            supported_params = ['title', 'description', 'icon', 'color', 'weight', 'insight_ids', 'trend_ids']
+
+            for section_id in content['section_config']:
+                if content['section_config'][section_id] == "null" or content['section_config'][section_id] == "":
+                    section_config.pop(section_id, None)
+                    continue
+                if section_id not in section_config:
+                    new_section = {param: content['section_config'][section_id].get(param, None) for param in supported_params}
+                    section_config[section_id] = {k: v for k, v in new_section.items() if v is not None}
+                    continue
+                updated_section = {param: content['section_config'][section_id].get(param, None) for param in supported_params}
+                params_to_remove = [param for param in supported_params.keys() if supported_params[param] == "" or supported_params[param] == "null"]
+                for param in params_to_remove:
+                    updated_section.pop(param, None)
+                    section_config[section_id].pop(param, None)
+                section_config[section_id] = {k: v for k, v in updated_section.items() if v is not None}
+
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|daily_report_set_config() section_config={}".format(json.dumps(section_config)))
+            
+            # Set the section configuration
+            self.section_config = section_config
+
+            # Save the section configuration to the location
+            self.parent.set_location_property_separately(botengine, DAILYREPORT_STATE_VARIABLE_NAME, {"section_config": section_config})
+
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<daily_report_set_config()")
+
     def _add_entry(self, botengine, section_id, comment=None, subtitle=None, identifier=None, include_timestamp=False, timestamp_override_ms=None, force_previous=False):
         """
         Add a section and bullet point the current daily report
@@ -2577,22 +2648,43 @@ class LocationDailyReportMicroservice(Intelligence):
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_add_entry() No comment, and no section found. Nothing to do.")
                 return
             botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_add_entry() Need to create a new section for section_id '{}'.".format(section_id))
-            if section_id not in DEFAULT_SECTION_PROPERTIES:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").error("<_add_entry() Unknown section '{}'".format(section_id))
+            section_properties = None
+            # Check if the section is a default section
+            if section_id in DEFAULT_SECTION_PROPERTIES:
+                section_properties = DEFAULT_SECTION_PROPERTIES[section_id]
+            # Check if the section is a custom section
+            if self.section_config is not None and self.section_config.get(section_id, None) is not None:
+                if self.section_config[section_id] == {}:
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_add_entry() Section ignored by custom configuration '{}'".format(section_id))
+                    return
+                if section_properties is None:
+                    section_properties = {
+                        dailyreport.SECTION_KEY_WEIGHT: 0,
+                        dailyreport.SECTION_KEY_TITLE: "", 
+                        dailyreport.SECTION_KEY_DESCRIPTION: "",
+                        dailyreport.SECTION_KEY_ICON: "",
+                        dailyreport.SECTION_KEY_COLOR: "",
+                        dailyreport.SECTION_KEY_TREND_IDS: [],
+                        dailyreport.SECTION_KEY_INSIGHT_IDS: [],
+                    }
+                section_properties.update(self.section_config[section_id])
+            if section_properties is None:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<_add_entry() No section properties found for section '{}'".format(section_id))
                 return
-            section_properties = DEFAULT_SECTION_PROPERTIES[section_id]
             focused_section = {
                 dailyreport.SECTION_KEY_ID: section_id,
                 dailyreport.SECTION_KEY_WEIGHT: section_properties[dailyreport.SECTION_KEY_WEIGHT],
                 dailyreport.SECTION_KEY_TITLE: section_properties[dailyreport.SECTION_KEY_TITLE],
+                dailyreport.SECTION_KEY_DESCRIPTION: section_properties[dailyreport.SECTION_KEY_DESCRIPTION],
                 dailyreport.SECTION_KEY_ICON: section_properties[dailyreport.SECTION_KEY_ICON],
                 dailyreport.SECTION_KEY_COLOR: section_properties[dailyreport.SECTION_KEY_COLOR],
                 dailyreport.SECTION_KEY_ITEMS: []
             }
 
             if section_id == dailyreport.SECTION_ID_WELLNESS:
-                # Wellness is a special case because it has a dynamic title
-                focused_section[dailyreport.SECTION_KEY_TITLE] = self._get_wellness_title(botengine, section_properties[dailyreport.SECTION_KEY_TITLE])
+                if self.section_config is None or self.section_config.get(section_id, {}).get('title', None) is None:
+                    # Wellness is a special case because it has a dynamic title
+                    focused_section[dailyreport.SECTION_KEY_TITLE] = self._get_wellness_title(botengine, section_properties[dailyreport.SECTION_KEY_TITLE])
 
             if 'sections' not in report:
                 report['sections'] = []
@@ -2724,6 +2816,7 @@ class LocationDailyReportMicroservice(Intelligence):
                 elif len(focused_section['items']) > 1:
                     focused_section['subtitle'] = _("Updated {} tasks today.").format(len(focused_section['items']))
 
+            # TODO: This does not make sense
             elif section_id == dailyreport.SECTION_ID_MEDICATION:
                 if len(focused_section['items']) == 0:
                     focused_section['subtitle'] = _("No medication accessed today.")
@@ -2734,6 +2827,7 @@ class LocationDailyReportMicroservice(Intelligence):
                 elif len(focused_section['items']) > 1:
                     focused_section['subtitle'] = _("Accessed medicine {} times today.").format(len(focused_section['items']))
 
+            # TODO: This does not make sense
             elif section_id == dailyreport.SECTION_ID_BATHROOM:
                 if len(focused_section['items']) == 0:
                     focused_section['subtitle'] = _("No bathroom visits observed today.")
@@ -2769,22 +2863,43 @@ class LocationDailyReportMicroservice(Intelligence):
         focused_section = self._get_section_object(botengine, report, section_id)
         if focused_section is None:
             botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_add_weekly_entry() Need to create a new section for section_id '{}'.".format(section_id))
-            if section_id not in DEFAULT_SECTION_PROPERTIES:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").error("<_add_weekly_entry() Unknown section '{}'".format(section_id))
+            section_properties = None
+            # Check if the section is a default section
+            if section_id in DEFAULT_SECTION_PROPERTIES:
+                section_properties = DEFAULT_SECTION_PROPERTIES[section_id]
+            # Check if the section is a custom section
+            if self.section_config is not None and self.section_config.get(section_id, None) is not None:
+                if self.section_config[section_id] == {}:
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_add_weekly_entry() Section ignored by custom configuration '{}'".format(section_id))
+                    return
+                if section_properties is None:
+                    section_properties = {
+                        dailyreport.SECTION_KEY_WEIGHT: 0,
+                        dailyreport.SECTION_KEY_TITLE: "", 
+                        dailyreport.SECTION_KEY_DESCRIPTION: "",
+                        dailyreport.SECTION_KEY_ICON: "",
+                        dailyreport.SECTION_KEY_COLOR: "",
+                        dailyreport.SECTION_KEY_TREND_IDS: [],
+                        dailyreport.SECTION_KEY_INSIGHT_IDS: [],
+                    }
+                section_properties.update(self.section_config[section_id])
+            if section_properties is None:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<_add_weekly_entry() No section properties found for section '{}'".format(section_id))
                 return
-            section_properties = DEFAULT_SECTION_PROPERTIES[section_id]
             focused_section = {
                 dailyreport.SECTION_KEY_ID: section_id,
                 dailyreport.SECTION_KEY_WEIGHT: section_properties[dailyreport.SECTION_KEY_WEIGHT],
                 dailyreport.SECTION_KEY_TITLE: section_properties[dailyreport.SECTION_KEY_TITLE],
+                dailyreport.SECTION_KEY_DESCRIPTION: section_properties[dailyreport.SECTION_KEY_DESCRIPTION],
                 dailyreport.SECTION_KEY_ICON: section_properties[dailyreport.SECTION_KEY_ICON],
                 dailyreport.SECTION_KEY_COLOR: section_properties[dailyreport.SECTION_KEY_COLOR],
                 dailyreport.SECTION_KEY_ITEMS: []
             }
 
             if section_id == dailyreport.SECTION_ID_WELLNESS:
-                # Wellness is a special case because it has a dynamic title
-                focused_section[dailyreport.SECTION_KEY_TITLE] = self._get_wellness_title(botengine, section_properties[dailyreport.SECTION_KEY_TITLE])
+                if self.section_config is None or self.section_config.get(section_id, {}).get('title', None) is None:
+                    # Wellness is a special case because it has a dynamic title
+                    focused_section[dailyreport.SECTION_KEY_TITLE] = self._get_wellness_title(botengine, section_properties[dailyreport.SECTION_KEY_TITLE])
 
             if 'sections' not in report:
                 report['sections'] = []
@@ -2923,22 +3038,43 @@ class LocationDailyReportMicroservice(Intelligence):
         focused_section = self._get_section_object(botengine, report, section_id)
         if focused_section is None:
             botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_add_monthly_entry() Need to create a new section for section_id '{}'.".format(section_id))
-            if section_id not in DEFAULT_SECTION_PROPERTIES:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").error("<_add_monthly_entry() Unknown section '{}'".format(section_id))
+            section_properties = None
+            # Check if the section is a default section
+            if section_id in DEFAULT_SECTION_PROPERTIES:
+                section_properties = DEFAULT_SECTION_PROPERTIES[section_id]
+            # Check if the section is a custom section
+            if self.section_config is not None and self.section_config.get(section_id, None) is not None:
+                if self.section_config[section_id] == {}:
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<_add_monthly_entry() Section ignored by custom configuration '{}'".format(section_id))
+                    return
+                if section_properties is None:
+                    section_properties = {
+                        dailyreport.SECTION_KEY_WEIGHT: 0,
+                        dailyreport.SECTION_KEY_TITLE: "", 
+                        dailyreport.SECTION_KEY_DESCRIPTION: "",
+                        dailyreport.SECTION_KEY_ICON: "",
+                        dailyreport.SECTION_KEY_COLOR: "",
+                        dailyreport.SECTION_KEY_TREND_IDS: [],
+                        dailyreport.SECTION_KEY_INSIGHT_IDS: [],
+                    }
+                section_properties.update(self.section_config[section_id])
+            if section_properties is None:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning("<_add_monthly_entry() No section properties found for section '{}'".format(section_id))
                 return
-            section_properties = DEFAULT_SECTION_PROPERTIES[section_id]
             focused_section = {
                 dailyreport.SECTION_KEY_ID: section_id,
                 dailyreport.SECTION_KEY_WEIGHT: section_properties[dailyreport.SECTION_KEY_WEIGHT],
                 dailyreport.SECTION_KEY_TITLE: section_properties[dailyreport.SECTION_KEY_TITLE],
+                dailyreport.SECTION_KEY_DESCRIPTION: section_properties[dailyreport.SECTION_KEY_DESCRIPTION],
                 dailyreport.SECTION_KEY_ICON: section_properties[dailyreport.SECTION_KEY_ICON],
                 dailyreport.SECTION_KEY_COLOR: section_properties[dailyreport.SECTION_KEY_COLOR],
                 dailyreport.SECTION_KEY_ITEMS: []
             }
 
             if section_id == dailyreport.SECTION_ID_WELLNESS:
-                # Wellness is a special case because it has a dynamic title
-                focused_section[dailyreport.SECTION_KEY_TITLE] = self._get_wellness_title(botengine, section_properties[dailyreport.SECTION_KEY_TITLE])
+                if self.section_config is None or self.section_config.get(section_id, {}).get('title', None) is None:
+                    # Wellness is a special case because it has a dynamic title
+                    focused_section[dailyreport.SECTION_KEY_TITLE] = self._get_wellness_title(botengine, section_properties[dailyreport.SECTION_KEY_TITLE])
 
             if 'sections' not in report:
                 report['sections'] = []
@@ -3253,8 +3389,15 @@ class LocationDailyReportMicroservice(Intelligence):
         :param id: Insight ID
         :return: Section ID if we should process this event, or None if we shouldn't
         """
+        if self.section_config is not None:
+            for section_id in self.section_config.keys():
+                if any(insight_id in id for insight_id in self.section_config[section_id].get(dailyreport.SECTION_KEY_INSIGHT_IDS, [])):
+                    return section_id
         for section_id in DEFAULT_SECTION_PROPERTIES.keys():
-            if any(trend_id in id for trend_id in DEFAULT_SECTION_PROPERTIES[section_id][dailyreport.SECTION_KEY_INSIGHT_IDS]):
+            if self.section_config is not None and section_id in self.section_config and self.section_config[section_id] is {}:
+                # Disabled by custom configuration
+                continue
+            if any(insight_id in id for insight_id in DEFAULT_SECTION_PROPERTIES[section_id][dailyreport.SECTION_KEY_INSIGHT_IDS]):
                 return section_id
         return None
 
@@ -3266,7 +3409,14 @@ class LocationDailyReportMicroservice(Intelligence):
         :param id: Trend ID
         :return: Section ID if we should process this event, or None if we shouldn't
         """
+        if self.section_config is not None:
+            for section_id in self.section_config.keys():
+                if any(trend_id in id for trend_id in self.section_config[section_id].get(dailyreport.SECTION_KEY_TREND_IDS, [])):
+                    return section_id
         for section_id in DEFAULT_SECTION_PROPERTIES.keys():
+            if self.section_config is not None and section_id in self.section_config and self.section_config[section_id] is {}:
+                # Disabled by custom configuration
+                continue
             if any(trend_id in id for trend_id in DEFAULT_SECTION_PROPERTIES[section_id][dailyreport.SECTION_KEY_TREND_IDS]):
                 return section_id
         return None
@@ -3289,12 +3439,18 @@ class LocationDailyReportMicroservice(Intelligence):
         :param botengine: BotEngine environment
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">ask_question()")
-        self.version = VERSION
+
+        try:
+            from localization import get_translations
+        except ImportError:
+            get_translations = None
 
         botengine.set_collection(name=SERVICES_COLLECTION_NAME,
-                                 icon="file-alt",
-                                 description=_("Daily Report Settings"),
-                                 weight=SERVICES_COLLECTION_WEIGHT)
+                                 icon="file-alt", 
+                                 description="Daily Report Settings",
+                                 weight=SERVICES_COLLECTION_WEIGHT,
+                                 ml_name=get_translations(botengine, SERVICES_COLLECTION_NAME) if get_translations else None,
+                                 ml_description=get_translations(botengine, "Daily Report Settings") if get_translations else None)
 
         dailyreport_state =  botengine.get_state(DAILYREPORT_STATE_VARIABLE_NAME)
         if dailyreport_state is None:

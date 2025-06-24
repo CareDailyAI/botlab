@@ -120,4 +120,10 @@ def set_rule_phrase(botengine, location_object, phrase_id, phrase_object):
     :param phrase_object: Dictionary, described above
     """
     botengine.save_shared_variable(phrase_id, phrase_object)
-    location_object.distribute_datastream_message(botengine, "set_rule_phrase", { "phrase_id" : phrase_id }, internal=True, external=True)
+    location_object.distribute_datastream_message(
+        botengine,
+        "set_rule_phrase",
+        {"phrase_id": phrase_id},
+        internal=True,
+        external=True,
+    )

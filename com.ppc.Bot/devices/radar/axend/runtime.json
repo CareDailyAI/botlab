@@ -1,0 +1,12 @@
+{
+  "version": {
+    "triggerParameters": [
+      "fallStatus",
+      "occupancy",
+      "br",
+      "hr",
+      "firmware",
+      "roomType"
+    ]
+  }
+}

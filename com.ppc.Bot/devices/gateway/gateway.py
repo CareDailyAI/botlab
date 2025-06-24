@@ -1,20 +1,37 @@
-'''
+"""
 Created on June 28, 2016
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.device import Device
 
+
 class GatewayDevice(Device):
     """Abstract gateway device"""
-    
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
-        
+
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
+
     def initialize(self, botengine):
         Device.initialize(self, botengine)
 
@@ -24,7 +41,7 @@ class GatewayDevice(Device):
         """
         # NOTE: Abstract device type name
         return _("Smart Home Center")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type

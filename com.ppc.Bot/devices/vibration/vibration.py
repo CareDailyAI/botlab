@@ -1,13 +1,14 @@
-'''
+"""
 Created on October 27, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.device import Device
+
 
 class VibrationDevice(Device):
     """
@@ -32,18 +33,18 @@ class VibrationDevice(Device):
 
     # Measurement Names
     # Vibration is continuous movement over time
-    MEASUREMENT_NAME_VIBRATION_STATUS = 'vibrationStatus'
+    MEASUREMENT_NAME_VIBRATION_STATUS = "vibrationStatus"
 
     # Movement is more instantaneous movement, like getting touched
-    MEASUREMENT_NAME_MOVEMENT_STATUS = 'movementStatus'
+    MEASUREMENT_NAME_MOVEMENT_STATUS = "movementStatus"
 
     # Sensitivity
-    MEASUREMENT_NAME_SENSITIVITY = 'vibrationSensitivity'
+    MEASUREMENT_NAME_SENSITIVITY = "vibrationSensitivity"
 
     # For machine learning algorithms
     MEASUREMENT_PARAMETERS_LIST = [
         MEASUREMENT_NAME_VIBRATION_STATUS,
-        MEASUREMENT_NAME_MOVEMENT_STATUS
+        MEASUREMENT_NAME_MOVEMENT_STATUS,
     ]
 
     # Low battery tag
@@ -55,8 +56,24 @@ class VibrationDevice(Device):
     # List of Device Types this class is compatible with
     DEVICE_TYPES = []
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # Default behavior
         self.goal_id = VibrationDevice.GOAL_ALERT_ON_EVERY_TOUCH

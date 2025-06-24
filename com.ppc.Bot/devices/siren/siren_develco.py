@@ -1,11 +1,11 @@
-'''
+"""
 Created on April 24, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.siren.siren import SirenDevice
 
@@ -20,24 +20,31 @@ class DevelcoSirenDevice(SirenDevice):
 
     # Sound library
     SOUNDS = {
-        "silence": 0,               # Silent
-        "burglar": 1,               # Slow UFO weeeaaaweeeaaweeeaaaweeaaa
-        "fire": 2,                  # Slow looooow-hiiigh-looow-hiiiigh-looow
-        "emergency": 3,             # Beep. I don't see how this is an 'emergency' sound at all.
-        "panic_p": 4,               # Fast UFO weaweaweaweawea (ppc.alarmDuration=5 => do-da-de-da-do-da-de-da)
-        "panic_f": 5,               # Fast low-high-low-high (ppc.alarmDuration=5 => do-da-de-da-do-da-de-da)
-        "panic_e": 6,               # Beep every 2 seconds (ppc.alarmDuration=5 => do-da-de-da-do-da-de-da)
-
-        "beepbeep_welcome": 12,     # ppc.alarmDuration=2 gives you a beep-beep and a do-da-de-da-do-da-de-da
-        "beep_welcome": 13,         # ppc.alarmDuration=2 gives you a beep and a do-da-de-da-do-da-de-da
-        "beepbeep": 14,             # Beep-Beep every second
-        "beep": 15,                 # Beep every second
+        "silence": 0,  # Silent
+        "burglar": 1,  # Slow UFO weeeaaaweeeaaweeeaaaweeaaa
+        "fire": 2,  # Slow looooow-hiiigh-looow-hiiiigh-looow
+        "emergency": 3,  # Beep. I don't see how this is an 'emergency' sound at all.
+        "panic_p": 4,  # Fast UFO weaweaweaweawea (ppc.alarmDuration=5 => do-da-de-da-do-da-de-da)
+        "panic_f": 5,  # Fast low-high-low-high (ppc.alarmDuration=5 => do-da-de-da-do-da-de-da)
+        "panic_e": 6,  # Beep every 2 seconds (ppc.alarmDuration=5 => do-da-de-da-do-da-de-da)
+        "beepbeep_welcome": 12,  # ppc.alarmDuration=2 gives you a beep-beep and a do-da-de-da-do-da-de-da
+        "beep_welcome": 13,  # ppc.alarmDuration=2 gives you a beep and a do-da-de-da-do-da-de-da
+        "beepbeep": 14,  # Beep-Beep every second
+        "beep": 15,  # Beep every second
     }
 
-    #===========================================================================
+    # ===========================================================================
     # Commands
-    #===========================================================================
-    def play_sound(self, botengine, sound_id, strobe, duration_sec, volume=3, microservice_identifier=""):
+    # ===========================================================================
+    def play_sound(
+        self,
+        botengine,
+        sound_id,
+        strobe,
+        duration_sec,
+        volume=3,
+        microservice_identifier="",
+    ):
         """
         Squawk the given sound ID
         :param botengine: BotEngine
@@ -48,7 +55,11 @@ class DevelcoSirenDevice(SirenDevice):
         """
         if self.locked_microservice is not None:
             if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                botengine.get_logger().info(
+                    "Siren: Currently locked by {}, cannot play sound from microservice {}".format(
+                        self.locked_microservice, microservice_identifier
+                    )
+                )
                 return
 
         all_params = []
@@ -60,10 +71,7 @@ class DevelcoSirenDevice(SirenDevice):
                     okay = True
 
         if not okay:
-            all_params.append({
-                              "name": "ppc.alarmStrobe",
-                              "value": int(strobe)
-                              })
+            all_params.append({"name": "ppc.alarmStrobe", "value": int(strobe)})
 
         okay = False
         if "ppc.alarmDuration" in self.measurements:
@@ -72,10 +80,7 @@ class DevelcoSirenDevice(SirenDevice):
                     okay = True
 
         if not okay:
-            all_params.append({
-                              "name": "ppc.alarmDuration",
-                              "value": int(duration_sec)
-                              })
+            all_params.append({"name": "ppc.alarmDuration", "value": int(duration_sec)})
 
         okay = False
         if "ppc.alarmLevel" in self.measurements:
@@ -84,15 +89,9 @@ class DevelcoSirenDevice(SirenDevice):
                     okay = True
 
         if not okay:
-            all_params.append({
-                              "name": "ppc.alarmLevel",
-                              "value": int(volume)
-                              })
+            all_params.append({"name": "ppc.alarmLevel", "value": int(volume)})
 
-        all_params.append({
-                          "name": "ppc.alarmWarn",
-                          "value": int(sound_id)
-                          })
+        all_params.append({"name": "ppc.alarmWarn", "value": int(sound_id)})
 
         botengine.send_commands(self.device_id, all_params)
 
@@ -103,15 +102,21 @@ class DevelcoSirenDevice(SirenDevice):
         """
         if self.locked_microservice is not None:
             if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                botengine.get_logger().info(
+                    "Siren: Currently locked by {}, cannot play sound from microservice {}".format(
+                        self.locked_microservice, microservice_identifier
+                    )
+                )
                 return
 
         if warning:
-            style = self.SOUNDS['panic_p']
+            style = self.SOUNDS["panic_p"]
         else:
-            style = self.SOUNDS['panic_f']
+            style = self.SOUNDS["panic_f"]
 
-        self.play_sound(botengine, style, False, 1, microservice_identifier=microservice_identifier)
+        self.play_sound(
+            botengine, style, False, 1, microservice_identifier=microservice_identifier
+        )
 
     def alarm(self, botengine, on, microservice_identifier=""):
         """
@@ -120,14 +125,30 @@ class DevelcoSirenDevice(SirenDevice):
         """
         if self.locked_microservice is not None:
             if self.locked_microservice != microservice_identifier:
-                botengine.get_logger().info("Siren: Currently locked by {}, cannot play sound from microservice {}".format(self.locked_microservice, microservice_identifier))
+                botengine.get_logger().info(
+                    "Siren: Currently locked by {}, cannot play sound from microservice {}".format(
+                        self.locked_microservice, microservice_identifier
+                    )
+                )
                 return
 
         if on:
-            self.play_sound(botengine, self.SOUNDS['burglar'], True, 900, microservice_identifier=microservice_identifier)
+            self.play_sound(
+                botengine,
+                self.SOUNDS["burglar"],
+                True,
+                900,
+                microservice_identifier=microservice_identifier,
+            )
 
         else:
-            self.play_sound(botengine, self.SOUNDS['silence'], False, 0, microservice_identifier=microservice_identifier)
+            self.play_sound(
+                botengine,
+                self.SOUNDS["silence"],
+                False,
+                0,
+                microservice_identifier=microservice_identifier,
+            )
 
     def doorbell(self, botengine):
         """
@@ -136,7 +157,7 @@ class DevelcoSirenDevice(SirenDevice):
         :return:
         """
         if self.locked_microservice is None:
-            self.play_sound(botengine, self.SOUNDS['panic_e'], True, 1)
+            self.play_sound(botengine, self.SOUNDS["panic_e"], True, 1)
 
     def force_silence(self, botengine):
         """
@@ -144,7 +165,13 @@ class DevelcoSirenDevice(SirenDevice):
         :param botengine:
         :return:
         """
-        self.play_sound(botengine, self.SOUNDS['silence'], False, 0, microservice_identifier=self.locked_microservice)
+        self.play_sound(
+            botengine,
+            self.SOUNDS["silence"],
+            False,
+            0,
+            microservice_identifier=self.locked_microservice,
+        )
 
     def silence(self, botengine, microservice_identifier=""):
         """
@@ -152,7 +179,13 @@ class DevelcoSirenDevice(SirenDevice):
         :param botengine:
         :return:
         """
-        self.play_sound(botengine, self.SOUNDS['silence'], False, 0, microservice_identifier=microservice_identifier)
+        self.play_sound(
+            botengine,
+            self.SOUNDS["silence"],
+            False,
+            0,
+            microservice_identifier=microservice_identifier,
+        )
 
     def disarmed(self, botengine, microservice_identifier=""):
         """
@@ -160,7 +193,13 @@ class DevelcoSirenDevice(SirenDevice):
         :param botengine:
         :return:
         """
-        self.play_sound(botengine, self.SOUNDS['beepbeep_welcome'], True, 2, microservice_identifier=microservice_identifier)
+        self.play_sound(
+            botengine,
+            self.SOUNDS["beepbeep_welcome"],
+            True,
+            2,
+            microservice_identifier=microservice_identifier,
+        )
 
     def short_warning(self, botengine, microservice_identifier=""):
         """
@@ -168,8 +207,18 @@ class DevelcoSirenDevice(SirenDevice):
         :param botengine:
         :return:
         """
-        botengine.get_logger().info("siren_develco '{}': short_warning() for microservice '{}'".format(self.device_id, microservice_identifier))
-        self.play_sound(botengine, self.SOUNDS['panic_f'], True, 1, microservice_identifier=microservice_identifier)
+        botengine.get_logger().info(
+            "siren_develco '{}': short_warning() for microservice '{}'".format(
+                self.device_id, microservice_identifier
+            )
+        )
+        self.play_sound(
+            botengine,
+            self.SOUNDS["panic_f"],
+            True,
+            1,
+            microservice_identifier=microservice_identifier,
+        )
 
     def about_to_arm(self, botengine, seconds_left, microservice_identifier=""):
         """
@@ -177,7 +226,13 @@ class DevelcoSirenDevice(SirenDevice):
         :param botengine:
         :return:
         """
-        self.play_sound(botengine, self.SOUNDS['beep'], True, seconds_left, microservice_identifier=microservice_identifier)
+        self.play_sound(
+            botengine,
+            self.SOUNDS["beep"],
+            True,
+            seconds_left,
+            microservice_identifier=microservice_identifier,
+        )
 
     def armed(self, botengine, microservice_identifier=""):
         """
@@ -185,8 +240,18 @@ class DevelcoSirenDevice(SirenDevice):
         :param botengine:
         :return:
         """
-        botengine.get_logger().info("siren_develco '{}': armed() for microservice '{}'".format(self.device_id, microservice_identifier))
-        self.play_sound(botengine, self.SOUNDS['panic_p'], True, 1, microservice_identifier=microservice_identifier)
+        botengine.get_logger().info(
+            "siren_develco '{}': armed() for microservice '{}'".format(
+                self.device_id, microservice_identifier
+            )
+        )
+        self.play_sound(
+            botengine,
+            self.SOUNDS["panic_p"],
+            True,
+            1,
+            microservice_identifier=microservice_identifier,
+        )
 
     def bark(self, botengine, duration_sec, microservice_identifier=""):
         """
@@ -203,4 +268,10 @@ class DevelcoSirenDevice(SirenDevice):
         :param botengine:
         :return:
         """
-        self.play_sound(botengine, self.SOUNDS['beepbeep'], True, 1, microservice_identifier=microservice_identifier)
+        self.play_sound(
+            botengine,
+            self.SOUNDS["beepbeep"],
+            True,
+            1,
+            microservice_identifier=microservice_identifier,
+        )

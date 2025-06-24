@@ -48,20 +48,17 @@ MICROSERVICES = {
         # This is a dictionary structure, where the keys are device types, and the value is a
         # list of all the microservices to add to that device type.
         # Use "botengine --device_types" to see the available device types for your brand / server.
-
         # Example of how to add a microservice for entry sensors (device type 10014):
-        #10014: [
+        # 10014: [
         #    {"module": "intelligence.example.device_entrysensor_microservice", "class": "DeviceEntrySensorMicroservice"}
         #    ]
     },
-
     # Map locations to their microservices
     "LOCATION_MICROSERVICES": [
         # A location is like your home. This is a list of microservices to add to your location, which listen to
         # and coordinate devices across your entire location. Location microservices trigger off of all data inputs
         # from all devices.
-
         # The next line is an example of how to add a location-based microservice
-        #{"module": "intelligence.example.location_example_microservice", "class": "LocationExampleMicroservice"}
-    ]
+        # {"module": "intelligence.example.location_example_microservice", "class": "LocationExampleMicroservice"}
+    ],
 }

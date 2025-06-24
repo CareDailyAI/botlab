@@ -1,31 +1,32 @@
-'''
+"""
 Created on December 23, 2019
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.motion.motion import MotionDevice
+
 
 class DevelcoMotionDevice(MotionDevice):
     """
     Develco Motion Sensor
     """
+
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [9138]
 
-
     # Motion status
-    MEASUREMENT_NAME_STATUS = 'motionStatus'
-    MEASUREMENT_NAME_ALARM = 'alarmStatus'
-    MEASUREMENT_DEG_C = 'degC'
+    MEASUREMENT_NAME_STATUS = "motionStatus"
+    MEASUREMENT_NAME_ALARM = "alarmStatus"
+    MEASUREMENT_DEG_C = "degC"
 
     MEASUREMENT_PARAMETERS_LIST = [
         MEASUREMENT_NAME_STATUS,
         MEASUREMENT_NAME_ALARM,
-        MEASUREMENT_DEG_C
+        MEASUREMENT_DEG_C,
     ]
 
     def get_temperature_c(self, botengine=None):
@@ -74,22 +75,29 @@ class DevelcoMotionDevice(MotionDevice):
         :param botengine:
         :return:
         """
-        is_true = False
+        alarm_status = False
+        motion_status = False
         if DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.measurements:
             if len(self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM]) > 0:
-                if self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][0][0] == True:
-                    is_true = True
+                if (
+                    self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][0][0]
+                ):
+                    alarm_status = True
         elif DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.measurements:
             if len(self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS]) > 0:
-                if self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][0][0] == True:
-                    is_true = True
-            
+                if (
+                    self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][0][0]
+                ):
+                    motion_status = True
 
-        if any([DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.measurements, DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.measurements]):
-            if botengine is not None:
-                botengine.get_logger().info("DevelcoMotionDevice.is_detecting_motion() {} alarmStatus={} motionStatus={}".format(is_true, self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][:1], self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][:1]))
-        
-        return is_true
+        if botengine is not None:
+            botengine.get_logger().info(
+                "DevelcoMotionDevice.is_detecting_motion() alarm_status={} motion_status={}".format(
+                    alarm_status, motion_status
+                )
+            )
+
+        return alarm_status or motion_status
 
     def did_start_detecting_motion(self, botengine=None):
         """
@@ -97,21 +105,29 @@ class DevelcoMotionDevice(MotionDevice):
         :param botengine: BotEngine environment
         :return: True if the light turned on in the last execution
         """
-        is_true = False
+        alarm_status_updated = False
+        motion_status_updated = False
         if DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.measurements:
             if DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.last_updated_params:
-                if self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][0][0] == True:
-                    is_true = True
-            
+                if (
+                    self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][0][0]
+                ):
+                    alarm_status_updated = True
+
         elif DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.measurements:
             if DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.last_updated_params:
-                if self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][0][0] == True:
-                    is_true = True
-        
-        if any([DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.measurements, DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.measurements]):
-            if botengine is not None:
-                botengine.get_logger().debug("DevelcoMotionDevice.did_start_detecting_motion() {} alarmStatus={} motionStatus={}".format(is_true, self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][:1], self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][:1]))
-        return is_true
+                if (
+                    self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][0][0]
+                ):
+                    motion_status_updated = True
+
+        if botengine is not None:
+            botengine.get_logger().debug(
+                "DevelcoMotionDevice.did_start_detecting_motion() alarm_status_updated={} motion_status_updated={}".format(
+                    alarm_status_updated, motion_status_updated
+                )
+            )
+        return alarm_status_updated or motion_status_updated
 
     def did_stop_detecting_motion(self, botengine=None):
         """
@@ -119,20 +135,28 @@ class DevelcoMotionDevice(MotionDevice):
         :param botengine: BotEngine environment
         :return: True if the light turned off in the last execution
         """
-        
-        is_true = False
+
+        alarm_status_updated = False
+        motion_status_updated = False
         if DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.measurements:
             if DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.last_updated_params:
-                if self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][0][0] == False:
-                    is_true = True
+                if (
+                    not self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][0][0]
+                ):
+                    alarm_status_updated = True
 
         elif DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.measurements:
             if DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.last_updated_params:
-                if self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][0][0] == False:
-                    is_true = True
+                if (
+                    not self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][0][0]
+                ):
+                    motion_status_updated = True
 
-        if any([DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.measurements, DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.measurements]):
-            if botengine is not None:
-                botengine.get_logger().info("DevelcoMotionDevice.did_stop_detecting_motion() {} alarmStatus={} is_updated={} motionStatus={} is_updated={}".format(is_true, self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_ALARM][:1], DevelcoMotionDevice.MEASUREMENT_NAME_ALARM in self.last_updated_params, self.measurements[DevelcoMotionDevice.MEASUREMENT_NAME_STATUS][:1], DevelcoMotionDevice.MEASUREMENT_NAME_STATUS in self.last_updated_params))
-        
-        return is_true
+        if botengine is not None:
+            botengine.get_logger().info(
+                "DevelcoMotionDevice.did_stop_detecting_motion() alarm_status_updated={} motion_status_updated={}".format(
+                    alarm_status_updated, motion_status_updated
+                )
+            )
+
+        return alarm_status_updated or motion_status_updated

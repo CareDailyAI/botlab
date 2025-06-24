@@ -6,7 +6,7 @@ The Vayyar Care device has a 135 degree viewing angle, and a 3D X/Y/Z coordinate
 
 ## Device Mounting
 
-The device is mounted (1) to the wall 5 feet off the ground to the center of the device or (2) on the ceiling at a 45 degree rotation.
+The device is mounted (1) to the wall 5 feet off the ground to the center of the device or (2) on the ceiling at a 45 degree rotation or (3) on the wall tilted down 45 degrees.
 
 ### Wall
 
@@ -26,7 +26,7 @@ Facing out into the room from the device for a wall installation:
 * vyrc.zMin = room boundary at floor height (0 meters).             zMin < zMax
 * vyrc.zMax = room boundary at ceiling height (2.5 meters ).        zMax > zMin
 * vyrc.sensorHeight = height off the ground (1.5 meters).
-* vyrc.sensorMounting = Wall - Vayyar Care sensor is mounted on a wall (0 Enum)
+* vyrc.sensorMounting = Wall - Vayyar Care sensor is mounted on a wall (0 Enum) or tilted down (3 Enum)
 
 ### Ceiling
 

@@ -1,11 +1,13 @@
-'''
+"""
 Created on July 12, 2016
 
 @author: David Moss
-'''
+"""
 
+import datetime
 import logging
-import time
+
+import pytz
 
 # States
 STATE_AWAKE = 0
@@ -16,41 +18,41 @@ DATA_LAST_MOVEMENT_RH = -1
 DATA_SLEEP_DURATION_MS = -2
 
 # Logging
-LOG_LEVEL=logging.INFO
-NON_SERVICE_LOG_LEVEL=logging.WARNING
-SERVICE_LOG_LEVEL=logging.DEBUG
+LOG_LEVEL = logging.ERROR
+NON_SERVICE_LOG_LEVEL = logging.WARNING
+SERVICE_LOG_LEVEL = logging.DEBUG
 
 # Name of our core variable
 CORE_VARIABLE_NAME = "-core-"
 
+
 class BotEnginePyTest:
     # You can override this with your own class to validate access or return responses.
 
-
     # Trigger Types
-    TRIGGER_UNPAUSED                = 0       # 0
-    TRIGGER_SCHEDULE                = 1 << 0  # 1
-    TRIGGER_MODE                    = 1 << 1  # 2
-    TRIGGER_DEVICE_ALERT            = 1 << 2  # 4
-    TRIGGER_DEVICE_MEASUREMENT      = 1 << 3  # 8
-    TRIGGER_QUESTION_ANSWER         = 1 << 4  # 16
-    TRIGGER_DEVICE_FILES            = 1 << 5  # 32
-    TRIGGER_TIMER                   = 1 << 6  # 64
-    TRIGGER_METADATA                = 1 << 7  # 128
-    TRIGGER_DATA_STREAM             = 1 << 8  # 256
-    TRIGGER_COMMAND_RESPONSE        = 1 << 9  # 512
-    TRIGGER_LOCATION_CONFIGURATION  = 1 << 10 # 1024
-    TRIGGER_DATA_REQUEST            = 1 << 11 # 2048
-    TRIGGER_MESSAGES                = 1 << 12 # 4096
-    TRIGGER_DOCUMENTS               = 1 << 13 # 8192
+    TRIGGER_UNPAUSED = 0  # 0
+    TRIGGER_SCHEDULE = 1 << 0  # 1
+    TRIGGER_MODE = 1 << 1  # 2
+    TRIGGER_DEVICE_ALERT = 1 << 2  # 4
+    TRIGGER_DEVICE_MEASUREMENT = 1 << 3  # 8
+    TRIGGER_QUESTION_ANSWER = 1 << 4  # 16
+    TRIGGER_DEVICE_FILES = 1 << 5  # 32
+    TRIGGER_TIMER = 1 << 6  # 64
+    TRIGGER_METADATA = 1 << 7  # 128
+    TRIGGER_DATA_STREAM = 1 << 8  # 256
+    TRIGGER_COMMAND_RESPONSE = 1 << 9  # 512
+    TRIGGER_LOCATION_CONFIGURATION = 1 << 10  # 1024
+    TRIGGER_DATA_REQUEST = 1 << 11  # 2048
+    TRIGGER_MESSAGES = 1 << 12  # 4096
+    TRIGGER_DOCUMENTS = 1 << 13  # 8192
 
     # Access category types
-    ACCESS_CATEGORY_MODE            = 1
-    ACCESS_CATEGORY_FILE            = 2
+    ACCESS_CATEGORY_MODE = 1
+    ACCESS_CATEGORY_FILE = 2
     ACCESS_CATEGORY_PROFESSIONAL_MONITORING = 3
-    ACCESS_CATEGORY_DEVICE          = 4
-    ACCESS_CATEGORY_CHALLENGE       = 5
-    ACCESS_CATEGORY_RULES           = 6
+    ACCESS_CATEGORY_DEVICE = 4
+    ACCESS_CATEGORY_CHALLENGE = 5
+    ACCESS_CATEGORY_RULES = 6
 
     # Question Responses
     QUESTION_RESPONSE_TYPE_BOOLEAN = 1
@@ -184,9 +186,9 @@ class BotEnginePyTest:
     DATA_REQUEST_TYPE_NARRATIVES = 5
     DATA_REQUEST_TYPE_DEVICES = 6
 
-    BOT_TYPE_LOCATION           = 0
-    BOT_TYPE_ORGANIZATION       = 1
-    BOT_TYPE_ORGANIZATION_RAG   = 2
+    BOT_TYPE_LOCATION = 0
+    BOT_TYPE_ORGANIZATION = 1
+    BOT_TYPE_ORGANIZATION_RAG = 2
 
     def __init__(self, inputs={}):
         """Constructor"""
@@ -194,11 +196,11 @@ class BotEnginePyTest:
         self.loggers = {}
         self.reset()
 
-
     def reset(self):
         """Reset all the flags that let us know how this class was accessed during testing"""
         self.notify_called = False
         self.command_sent = False
+        self.commands = []
         self.professional_monitoring_called = False
         self.admin_mail_notified = False
         self.mode = "HOME"
@@ -209,7 +211,6 @@ class BotEnginePyTest:
         self.customer_support_body = None
         self.customer_support_comments = []
 
-        import time
         # Execution time should be consistent
         # Set by default to June 1st, 2023 12:00 PM PST
         self.time_ms = 1685646000000
@@ -257,7 +258,7 @@ class BotEnginePyTest:
                 "email": {
                     "email": "john.smith@gmail.com",
                     "verified": True,
-                    "status": 0
+                    "status": 0,
                 },
                 "phone": "1234567890",
                 "phoneType": 1,
@@ -271,18 +272,10 @@ class BotEnginePyTest:
                 "smsPhone": "1234567890",
                 "language": "en",
                 "avatarFileId": 123,
-                "phoneChannels": {
-                    "sms": True,
-                    "mms": True,
-                    "voice": True
-                },
+                "phoneChannels": {"sms": True, "mms": True, "voice": True},
                 "schedules": [
-                    {
-                        "daysOfWeek": 127,
-                        "startTime": 10800,
-                        "endTime": 20800
-                    }
-                ]
+                    {"daysOfWeek": 127, "startTime": 10800, "endTime": 20800}
+                ],
             }
         ]
 
@@ -290,7 +283,10 @@ class BotEnginePyTest:
         self.device_properties = {}
 
         # Questions
+        self.collections = {}
         self.questions = {}
+        self.questions_to_delete = {}
+        self.questions_to_ask = {}
 
         self.pro_monitoring_status = {
             "callCenter": {
@@ -299,31 +295,19 @@ class BotEnginePyTest:
                 "alertDate": "2015-09-01T18:00:00Z",
                 "alertDateMs": 1441130400000,
                 "alertStatusDate": "2015-09-01T18:00:30Z",
-                "alertStatusDateMs": 1441130430000
+                "alertStatusDateMs": 1441130430000,
             }
         }
 
         # Placeholder for users of this location
         self.resident_user_names = [
-            {
-                'firstName': 'Resident',
-                'lastName': 'One'
-            },
-            {
-                'firstName': 'Resident',
-                'lastName': 'Two'
-            }
+            {"firstName": "Resident", "lastName": "One"},
+            {"firstName": "Resident", "lastName": "Two"},
         ]
 
         self.supporter_user_names = [
-            {
-                'firstName': 'Supporter',
-                'lastName': 'One'
-            },
-            {
-                'firstName': 'Supporter',
-                'lastName': 'Two'
-            }
+            {"firstName": "Supporter", "lastName": "One"},
+            {"firstName": "Supporter", "lastName": "Two"},
         ]
 
         # Last data stream message that was attempted to be sent
@@ -355,10 +339,9 @@ class BotEnginePyTest:
         # Logging service names to render
         self.logging_service_names = []
 
-    #============================================================================
+    # ============================================================================
     # Loggers
-    #============================================================================
-        
+    # ============================================================================
 
     def _playback_logger_timestamp(self, record, datefmt=None):
         """
@@ -367,35 +350,44 @@ class BotEnginePyTest:
         :param datefmt:
         :return:
         """
-        global playback_timestamp_ms
-        global playback_timezone
+        timestamp = self.get_timestamp() / 1000.0
+        timezone = (
+            self.get_location_info()
+            .get("location", {})
+            .get("timezone", {})
+            .get("id", "US/Pacific")
+        )
 
-        import pytz
-        import datetime
-        return datetime.datetime.fromtimestamp(self.get_timestamp() / 1000.0, pytz.timezone("US/Pacific"))
-    
+        return datetime.datetime.fromtimestamp(timestamp, pytz.timezone(timezone))
+
     def create_logger(self, name="bot"):
         """Create a logger"""
         logging.Formatter.formatTime = self._playback_logger_timestamp
         logger = logging.getLogger(name)
-        if len(self.logging_service_names) > 0 and not any([service_name in name for service_name in self.logging_service_names]):
+        if len(self.logging_service_names) > 0 and not any(
+            [service_name in name for service_name in self.logging_service_names]
+        ):
             # All other loggers should describe warning or error messages only
             log_level = NON_SERVICE_LOG_LEVEL
         else:
-            log_level = LOG_LEVEL if len(self.logging_service_names) == 0 else SERVICE_LOG_LEVEL
-        
+            log_level = (
+                LOG_LEVEL if len(self.logging_service_names) == 0 else SERVICE_LOG_LEVEL
+            )
+
         if not logger.handlers:
             # Create a console handler
             console_handler = logging.StreamHandler()
             console_handler.setLevel(log_level)
-            fmt = logging.Formatter('%(asctime)s %(levelname)-8s %(name)-12s %(message)s')
+            fmt = logging.Formatter(
+                "%(asctime)s %(levelname)-8s %(name)-12s %(message)s"
+            )
 
             console_handler.setFormatter(fmt)
 
             # Create a blank line handler
             blank_handler = logging.StreamHandler()
             blank_handler.setLevel(log_level)
-            blank_handler.setFormatter(logging.Formatter(fmt=''))
+            blank_handler.setFormatter(logging.Formatter(fmt=""))
 
             # Configure the logger
             logger.setLevel(log_level)
@@ -420,55 +412,57 @@ class BotEnginePyTest:
         logger.removeHandler(logger.console_handler)
         logger.addHandler(logger.blank_handler)
         for _ in range(num_of_blank_lines):
-            logger.info('')
+            logger.info("")
 
         # Switch back
         logger.removeHandler(logger.blank_handler)
         logger.addHandler(logger.console_handler)
         logger.info(message)
-        
 
-    #============================================================================
+    # ============================================================================
     # Inputs
-    #============================================================================
+    # ============================================================================
     def get_inputs(self):
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(">get_inputs()")
 
         response = self.inputs
 
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_inputs() response=" + str(response))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<get_inputs() response=" + str(response)
+        )
         return response
 
     def set_inputs(self, inputs):
         self.inputs = inputs
-        
 
-    #============================================================================
+    # ============================================================================
     # Triggers
-    #============================================================================
+    # ============================================================================
     def set_trigger_type(self, trigger_type):
-        self.inputs['trigger'] = trigger_type
+        self.inputs["trigger"] = trigger_type
 
     def get_trigger_type(self):
         """This method will return the type of trigger"""
-        if 'trigger' in self.inputs:
-            return int(self.inputs['trigger'])
+        if "trigger" in self.inputs:
+            return int(self.inputs["trigger"])
 
         return BotEnginePyTest.TRIGGER_SCHEDULE
 
     def get_trigger_info(self):
         """This method will find and return the information about what triggered this app."""
         try:
-            accessBlock = self.inputs['access']
+            accessBlock = self.inputs["access"]
         except KeyError:
-            self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_trigger_info")
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "<get_trigger_info"
+            )
             return None
 
         triggerBlock = None
 
         for block in accessBlock:
             try:
-                if block['trigger']:
+                if block["trigger"]:
                     triggerBlock = block
                     break
             except KeyError:
@@ -476,7 +470,7 @@ class BotEnginePyTest:
 
         self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_trigger_info")
         return triggerBlock
-    
+
     def get_triggers(self):
         """
         This method will find and return the information about what triggered this bot.
@@ -512,134 +506,113 @@ class BotEnginePyTest:
 
         :return: JSON structure describing what triggered this bot
         """
-        if 'access' not in self.inputs:
+        if "access" not in self.inputs:
             return []
 
         self.trigger_blocks = []
 
-        for block in self.inputs['access']:
-            if 'trigger' in block:
-                if block['trigger']:
+        for block in self.inputs["access"]:
+            if "trigger" in block:
+                if block["trigger"]:
                     self.trigger_blocks.append(block)
 
         return self.trigger_blocks
 
-    #============================================================================
+    # ============================================================================
     # Blocks
-    #============================================================================
+    # ============================================================================
     def get_measures_block(self):
         """Return the measurements block from our inputs, if any"""
-        if 'measures' in self.inputs:
-            return self.inputs['measures']
-
-        return None
+        return self.inputs.get("measures", None)
 
     def get_alerts_block(self):
         """Return the alerts block from our inputs, if any"""
-        if 'alerts' in self.inputs:
-            return self.inputs['alerts']
-
-        return None
+        return self.inputs.get("alerts", None)
 
     def get_access_block(self):
         """Return the access block from our inputs, if any"""
-        if 'access' in self.inputs:
-            return self.inputs['access']
-
-        return None
+        return self.inputs.get("access", None)
 
     def get_datastream_block(self):
         """
         :return: the data stream inputs, if any
         """
-        if 'dataStream' in self.inputs:
-            return self.inputs['dataStream']
-        
-        return None
+        return self.inputs.get("dataStream", None)
 
     def get_documents_request_id(self):
         """
         :return: the documents request ID
         """
-        return self.inputs.get('requestId', None)
+        return self.inputs.get("requestId", None)
 
     def get_document_block(self):
         """
         :return: the 'document' block for location configuration triggers
         """
-        return self.inputs.get('document', None)
+        return self.inputs.get("document", None)
 
     def get_users_block(self):
         """
         :return: The 'users' block for location configuration triggers
         """
-        if 'users' in self.inputs:
-            return self.inputs['users']
-
-        return None
+        return self.inputs.get("users", None)
 
     def get_callcenter_block(self):
         """
         :return: The 'callCenter' block for location configuration triggers
         """
-        if 'callCenter' in self.inputs:
-            return self.inputs['callCenter']
-
-        return None
+        return self.inputs.get("callCenter", None)
 
     def get_data_block(self):
         """
         :return: The 'data' block for asynchronous data request inputs
         """
-        if 'data' in self.inputs:
-            return self.inputs['data']
+        return self.inputs.get("data", None)
 
-        return None
-    
     def get_input_key(self):
         """
         :return: the key provided by the input, if any
         """
-        if 'key' in self.inputs:
-            return self.inputs['key']
-        
-        return None
-    
+        return self.inputs.get("key", None)
+
     def get_location_block(self):
         """Return the location access block from our inputs, if any"""
         access_block = self.get_access_block()
         if access_block:
             for block in access_block:
-                if 'category' in block and block['category'] == BotEnginePyTest.ACCESS_CATEGORY_MODE:
+                if (
+                    "category" in block
+                    and block["category"] == BotEnginePyTest.ACCESS_CATEGORY_MODE
+                ):
                     return block
 
         return {
-              "category": 1,
-              "control": True,
-              "location": {
+            "category": 1,
+            "control": True,
+            "location": {
                 "event": "HOME",
                 "latitude": "47.72328",
                 "locationId": 0,
                 "longitude": "-122.17426",
                 "name": "Apartment 103",
                 "timezone": {
-                  "dst": True,
-                  "id": "US/Pacific",
-                  "name": "Pacific Standard Time",
-                  "offset": -480
+                    "dst": True,
+                    "id": "US/Pacific",
+                    "name": "Pacific Standard Time",
+                    "offset": -480,
                 },
-                "zip": "98034"
-              },
-              "read": True,
-              "trigger": True
-            }
-    
+                "zip": "98034",
+            },
+            "read": True,
+            "trigger": True,
+        }
+
     def get_messages_block(self):
         """
         :return: the messages block from our inputs, if any
         """
-        if 'messages' in self.inputs:
-            return self.inputs['messages']
+        if "messages" in self.inputs:
+            return self.inputs["messages"]
         return None
 
     def get_bundle_id(self):
@@ -648,7 +621,8 @@ class BotEnginePyTest:
         This method simply returns the bundle ID from the contents of that file.
         :return: The bundle ID for this bot
         """
-        import bundle
+        import bundle  # type: ignore
+
         return bundle.BUNDLE_ID
 
     def get_cloud_address(self):
@@ -657,7 +631,8 @@ class BotEnginePyTest:
         This method simply returns the CLOUD_ADDRESS from the contents of the bundle.py file.
         :return: The cloud address for this bot
         """
-        import bundle
+        import bundle  # type: ignore
+
         return bundle.CLOUD_ADDRESS
 
     def get_bot_type(self):
@@ -666,8 +641,9 @@ class BotEnginePyTest:
         This method simply returns the BOT_TYPE from the contents of the bundle.py file.
         :return: The bot type for this bot
         """
-        import bundle
-        return int(bundle.BOT_TYPE if hasattr(bundle, 'BOT_TYPE') else 0)
+        import bundle  # type: ignore
+
+        return int(bundle.BOT_TYPE if hasattr(bundle, "BOT_TYPE") else 0)
 
     def get_bot_instance_id(self):
         """
@@ -681,8 +657,8 @@ class BotEnginePyTest:
         """
         location_info = self.get_location_info()
         if location_info is not None:
-            if 'locationId' in location_info['location']:
-                return location_info['location']['locationId']
+            if "locationId" in location_info["location"]:
+                return location_info["location"]["locationId"]
         return 0
 
     def get_name_by_user_id(self, user_id):
@@ -693,17 +669,14 @@ class BotEnginePyTest:
         """
         users = self.get_location_users()
         for user in users:
-            if int(user['id']) == int(user_id or -1):
-                name = {
-                    "firstName": "",
-                    "lastName": ""
-                }
+            if int(user["id"]) == int(user_id or -1):
+                name = {"firstName": "", "lastName": ""}
 
-                if 'firstName' in user:
-                    name['firstName'] = user['firstName']
+                if "firstName" in user:
+                    name["firstName"] = user["firstName"]
 
-                if 'lastName' in user:
-                    name['lastName'] = user['lastName']
+                if "lastName" in user:
+                    name["lastName"] = user["lastName"]
 
                 return name
 
@@ -717,7 +690,7 @@ class BotEnginePyTest:
         """
         name = self.get_name_by_user_id(user_id)
         if name is not None:
-            return "{} {}".format(name['firstName'], name['lastName']).strip()
+            return "{} {}".format(name["firstName"], name["lastName"]).strip()
 
         return None
 
@@ -745,7 +718,6 @@ class BotEnginePyTest:
         """
         return "1"
 
-
     def get_location_info(self):
         """
         :param location_id: Location ID to extract
@@ -771,9 +743,9 @@ class BotEnginePyTest:
     def get_location_name(self):
         return "PyTest Location"
 
-    #===========================================================================
+    # ===========================================================================
     # Location Settings
-    #===========================================================================
+    # ===========================================================================
     def set_location_priority(self, category, rank, comment=None):
         """
         Set the prioritized category of human attention needed for this location.
@@ -834,7 +806,9 @@ class BotEnginePyTest:
                             1 - managed
                             2 - measured
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").warning("botengine_pytest: Attempting to add_occupancy() but we haven't implemented this yet.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning(
+            "botengine_pytest: Attempting to add_occupancy() but we haven't implemented this yet."
+        )
         return
 
     def delete_occupancy(self, occupancy):
@@ -846,32 +820,45 @@ class BotEnginePyTest:
                             1 - managed
                             2 - measured
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").warning("botengine_pytest: Attempting to delete_occupancy() but we haven't implemented this yet.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning(
+            "botengine_pytest: Attempting to delete_occupancy() but we haven't implemented this yet."
+        )
         return
 
-    def get_language(self):
+    def get_language(self, user_id=None):
         """
-        :return: user's selected language
+        Get the language for the bot associated with this organization, bot domain, location, or user.
+        :param user_id: User ID to get the language for.
+        :return: language code
         """
+        import properties  # type: ignore
+
+        language_code = properties.get_property(
+            self, "DEFAULT_LANGUAGE", complain_if_missing=False
+        )
+
         location_info = self.get_location_info()
         if location_info is not None:
-            if 'language' in location_info['location']:
-                return location_info['location']['language']
+            if "language" in location_info["location"]:
+                language_code = location_info["location"]["language"]
+        if user_id is not None:
+            user = self.get_location_user(user_id)
+            if user is not None:
+                if "language" in user:
+                    language_code = user["language"]
+        # Default to English
+        return language_code if language_code is not None else "en"
 
-        return None
-
-
-
-    #============================================================================
+    # ============================================================================
     # Timestamps
-    #============================================================================
+    # ============================================================================
     def get_timestamp(self):
         """Return the current botengine time
 
         :return: time in ms
         """
-        if 'time' in self.inputs:
-            self.time_ms = self.inputs['time']
+        if "time" in self.inputs:
+            self.time_ms = self.inputs["time"]
         return self.time_ms
 
     def set_timestamp(self, timestamp):
@@ -879,8 +866,8 @@ class BotEnginePyTest:
 
         :param timestamp: time in ms
         """
-        if 'time' in self.inputs:
-            self.inputs['time'] = timestamp
+        if "time" in self.inputs:
+            self.inputs["time"] = timestamp
         self.time_ms = timestamp
 
     def add_timestamp(self, timestamp):
@@ -888,203 +875,263 @@ class BotEnginePyTest:
 
         :param timestamp: time in ms
         """
-        if 'time' in self.inputs:
-            self.inputs['time'] += timestamp
+        if "time" in self.inputs:
+            self.inputs["time"] += timestamp
         self.time_ms += timestamp
 
-
-    #============================================================================
+    # ============================================================================
     # Variables
-    #============================================================================
-    def save_variable(self, name, value, required_for_each_execution=False, shared=False):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("save_variable: {}:{}".format(name, value))
+    # ============================================================================
+    def save_variable(
+        self, name, value, required_for_each_execution=False, shared=False
+    ):
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "save_variable: {}:{}".format(name, value)
+        )
         self.variables[name] = value
 
     def save_shared_variable(self, name, value):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("save_shared_variable: {}:{}".format(name, value))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "save_shared_variable: {}:{}".format(name, value)
+        )
         self.variables[name] = value
 
-    def save_variables(self, variables_dictionary):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("save_variables: {}".format(variables_dictionary))
-        pass
-
-    def save_variables(self, variables_dictionary, required_for_each_execution=False, shared=False):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("load_variable: {} (required_for_each_execution={}; shared={})".format(variables_dictionary, required_for_each_execution, shared))
+    def save_variables(
+        self, variables_dictionary, required_for_each_execution=False, shared=False
+    ):
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "load_variable: {} (required_for_each_execution={}; shared={})".format(
+                variables_dictionary, required_for_each_execution, shared
+            )
+        )
         pass
 
     def load_variable(self, name):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("load_variable: {}".format(name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "load_variable: {}".format(name)
+        )
         if name in self.variables:
             return self.variables[name]
         else:
             return None
 
     def load_shared_variable(self, name):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("load_shared_variable: {}".format(name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "load_shared_variable: {}".format(name)
+        )
         if name in self.variables:
             return self.variables[name]
         else:
             return None
 
     def delete_variable(self, name):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("delete_variable: {}".format(name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "delete_variable: {}".format(name)
+        )
         if name in self.variables:
             del self.variables[name]
 
     def delete_all_variables(self):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("delete_all_variables")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "delete_all_variables"
+        )
         self.variables = {}
 
     def clear_variable(self, name):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("clear_variable: {}".format(name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "clear_variable: {}".format(name)
+        )
         pass
 
     def flush_binary_variables(self):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("flush_binary_variables")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "flush_binary_variables"
+        )
         pass
 
     def flush_variable(self):
         self.get_logger(f"{__name__}.{__class__.__name__}").debug("flush_variable")
         pass
 
-    
     def destroy_core_memory(self):
         pass
 
-    #============================================================================
+    # ============================================================================
     # Notifications
-    #============================================================================
-    def notify(self, 
-               push_title=None, push_subtitle=None, push_content=None, push_category=None, push_sound=None, push_sms_fallback_content=None, push_template_filename=None, push_template_model=None, push_info=None,
-               email_subject=None, email_content=None, email_html=False, email_attachments=None, email_template_filename=None, email_template_model=None, email_addresses=None,
-               sms_content=None, sms_template_filename=None, sms_template_model=None, sms_group_chat=True, 
-               device_message_device_id=None, device_message_title=None, device_message_text=None, device_message_from=None, device_message_duration=None, device_message_icon=None, device_message_muted=None, device_message_imageUrl=None, device_message_image=None,
-               admin_domain_name=None, brand=None, language=None, user_id=None, user_id_list=None, to_residents=False, to_supporters=False, to_admins=False):
-        
+    # ============================================================================
+    def notify(
+        self,
+        push_title=None,
+        push_subtitle=None,
+        push_content=None,
+        push_category=None,
+        push_sound=None,
+        push_sms_fallback_content=None,
+        push_template_filename=None,
+        push_template_model=None,
+        push_info=None,
+        email_subject=None,
+        email_content=None,
+        email_html=False,
+        email_attachments=None,
+        email_template_filename=None,
+        email_template_model=None,
+        email_addresses=None,
+        sms_content=None,
+        sms_template_filename=None,
+        sms_template_model=None,
+        sms_group_chat=True,
+        device_message_device_id=None,
+        device_message_title=None,
+        device_message_text=None,
+        device_message_from=None,
+        device_message_duration=None,
+        device_message_icon=None,
+        device_message_muted=None,
+        device_message_imageUrl=None,
+        device_message_image=None,
+        admin_domain_name=None,
+        brand=None,
+        language=None,
+        user_id=None,
+        user_id_list=None,
+        to_residents=False,
+        to_supporters=False,
+        to_admins=False,
+    ):
         self.get_logger(f"{__name__}.{__class__.__name__}").info(">notify()")
         if to_admins:
             import traceback
-            self.get_logger(f"{'botengine'}.{__class__.__name__}").error("|notify() called with to_admins=True, which is no longer supported. Please update your code: {}".format(traceback.format_exc()))
+
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").error(
+                "|notify() called with to_admins=True, which is no longer supported. Please update your code: {}".format(
+                    traceback.format_exc()
+                )
+            )
 
         notifications = {}
 
         user_declared = False
 
         if to_residents:
-            if 'userCategories' not in notifications:
-                notifications['userCategories'] = []
+            if "userCategories" not in notifications:
+                notifications["userCategories"] = []
             user_declared = True
-            notifications['userCategories'].append(1)
+            notifications["userCategories"].append(1)
 
         if to_supporters:
-            if 'userCategories' not in notifications:
-                notifications['userCategories'] = []
+            if "userCategories" not in notifications:
+                notifications["userCategories"] = []
             user_declared = True
-            notifications['userCategories'].append(2)
+            notifications["userCategories"].append(2)
 
         if user_id is not None:
-            if 'users' not in notifications:
-                notifications['users'] = []
+            if "users" not in notifications:
+                notifications["users"] = []
             user_declared = True
-            notifications['users'].append(user_id)
+            notifications["users"].append(user_id)
 
         if user_id_list is not None:
-            if 'users' not in notifications:
-                notifications['users'] = []
+            if "users" not in notifications:
+                notifications["users"] = []
             user_declared = True
-            notifications['users'] += user_id_list
+            notifications["users"] += user_id_list
 
         if email_addresses is not None:
             if len(email_addresses) > 0:
                 user_declared = True
 
         if not user_declared:
-            if 'userCategories' not in notifications:
-                notifications['userCategories'] = []
-            notifications['userCategories'].append(1)
+            if "userCategories" not in notifications:
+                notifications["userCategories"] = []
+            notifications["userCategories"].append(1)
 
         if brand is not None:
-            notifications['brand'] = brand
+            notifications["brand"] = brand
 
         if language is not None:
-            notifications['language'] = language
+            notifications["language"] = language
 
         send = False
 
         # The notification type is included in a push notification to the app to let the app know how to render it.
         # It is also included in the GET Notifications API available to apps, which I don't believe are being used anymore.
         # Type 4 says, "This message came from the bot."
-        notifications['type'] = 4
+        notifications["type"] = 4
 
         if sms_content is not None or sms_template_filename is not None:
             send = True
-            notifications['smsMessage'] = {}
+            notifications["smsMessage"] = {}
 
-            notifications['smsMessage']['individual'] = not sms_group_chat
+            notifications["smsMessage"]["individual"] = not sms_group_chat
 
             if sms_content:
-                notifications['smsMessage']['content'] = sms_content
+                notifications["smsMessage"]["content"] = sms_content
 
             if sms_template_filename:
-                notifications['smsMessage']['template'] = sms_template_filename
+                notifications["smsMessage"]["template"] = sms_template_filename
 
             if sms_template_model:
-                notifications['smsMessage']['model'] = sms_template_model
+                notifications["smsMessage"]["model"] = sms_template_model
 
-        if push_content is not None or push_template_filename is not None or push_info is not None:
+        if (
+            push_content is not None
+            or push_template_filename is not None
+            or push_info is not None
+        ):
             send = True
-            notifications['pushMessage'] = {}
+            notifications["pushMessage"] = {}
 
             if push_sms_fallback_content is not None:
-                notifications['pushMessage']['smsContent'] = push_sms_fallback_content
-        
+                notifications["pushMessage"]["smsContent"] = push_sms_fallback_content
+
             if push_title is not None:
-                notifications['pushMessage']['title'] = push_title
+                notifications["pushMessage"]["title"] = push_title
 
             if push_subtitle is not None:
-                notifications['pushMessage']['subtitle'] = push_subtitle
+                notifications["pushMessage"]["subtitle"] = push_subtitle
 
             if push_content is not None:
-                notifications['pushMessage']['content'] = push_content
-            
+                notifications["pushMessage"]["content"] = push_content
+
             if push_category is not None:
-                notifications['pushMessage']['category'] = push_category
+                notifications["pushMessage"]["category"] = push_category
 
             if push_sound is not None:
-                notifications['pushMessage']['sound'] = push_sound
+                notifications["pushMessage"]["sound"] = push_sound
 
             if push_template_filename is not None:
-                notifications['pushMessage']['template'] = push_template_filename
+                notifications["pushMessage"]["template"] = push_template_filename
 
             if push_template_model is not None:
-                notifications['pushMessage']['model'] = push_template_model
+                notifications["pushMessage"]["model"] = push_template_model
 
             if push_info is not None:
-                notifications['pushMessage']['info'] = push_info
+                notifications["pushMessage"]["info"] = push_info
 
         if email_content is not None or email_template_filename is not None:
             send = True
-            notifications['emailMessage'] = {}
+            notifications["emailMessage"] = {}
 
-            notifications['emailMessage']['html'] = email_html
+            notifications["emailMessage"]["html"] = email_html
 
             if email_subject is not None:
-                notifications['emailMessage']['subject'] = email_subject
+                notifications["emailMessage"]["subject"] = email_subject
 
             if email_content is not None:
-                notifications['emailMessage']['content'] = email_content
+                notifications["emailMessage"]["content"] = email_content
 
             if email_template_filename is not None:
-                notifications['emailMessage']['template'] = email_template_filename
+                notifications["emailMessage"]["template"] = email_template_filename
 
             if email_template_model is not None:
-                notifications['emailMessage']['model'] = email_template_model
+                notifications["emailMessage"]["model"] = email_template_model
 
             if email_attachments is not None:
-                notifications['emailMessage']['attachments'] = email_attachments
+                notifications["emailMessage"]["attachments"] = email_attachments
 
             if email_addresses is not None:
-                notifications['emailMessage']['recipients'] = email_addresses
+                notifications["emailMessage"]["recipients"] = email_addresses
 
         if device_message_text is not None:
             send = True
@@ -1108,19 +1155,21 @@ class BotEnginePyTest:
             if device_message_image is not None:
                 notifications["deviceMessage"]["image"] = device_message_image
 
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("|notify() notifications={}".format(notifications))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|notify() notifications={}".format(notifications)
+        )
         if send:
             self.notify_called = True
             self.notification_content = notifications
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("<notify() send={}".format(send))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<notify() send={}".format(send)
+        )
 
     def is_notify_called(self):
         """Reset the notify called variable to be able to check it multiple times"""
         answer = self.notify_called
         self.notify_called = False
         return answer
-    
-
 
     def make_voice_call(self, user_id, voice_model, call_time=None):
         """
@@ -1130,17 +1179,18 @@ class BotEnginePyTest:
         :param call_time: Call start time, in milliseconds since the epoch
         :return:
         """
-        body = {
-            "model": voice_model
-        }
-        params = {
-            "userId": user_id
-        }
+        body = {"model": voice_model}
+        params = {"userId": user_id}
 
         if call_time is not None:
             params["callTime"] = call_time
         import json
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine: make_voice_call() params={} body={}".format(json.dumps(params, indent=2), json.dumps(body, indent=2)))
+
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "botengine: make_voice_call() params={} body={}".format(
+                json.dumps(params, indent=2), json.dumps(body, indent=2)
+            )
+        )
         pass
 
     def set_incoming_voicecall(self, user_id, voice_model):
@@ -1150,15 +1200,16 @@ class BotEnginePyTest:
         :param voice_model: Voice call model
         :return:
         """
-        body = {
-            "model": voice_model
-        }
-        params = {
-            "userId": user_id
-        }
-        
+        body = {"model": voice_model}
+        params = {"userId": user_id}
+
         import json
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine: set_incoming_voicecall() params={} body={}".format(json.dumps(params), json.dumps(body)))
+
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "botengine: set_incoming_voicecall() params={} body={}".format(
+                json.dumps(params), json.dumps(body)
+            )
+        )
         pass
 
     def delete_incoming_voicecall(self, user_id):
@@ -1167,14 +1218,25 @@ class BotEnginePyTest:
         :param user_id:
         :return:
         """
-        params = {
-            "userId": user_id
-        }
+        params = {"userId": user_id}
         import json
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine: delete_incoming_voicecall() params={} body={}".format(json.dumps(params)))
+
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "botengine: delete_incoming_voicecall() params={}".format(
+                json.dumps(params)
+            )
+        )
         pass
 
-    def send_mms(self, user_id, media_content=None, url=None, media_type=1, ext=None, caption=None):
+    def send_mms(
+        self,
+        user_id,
+        media_content=None,
+        url=None,
+        media_type=1,
+        ext=None,
+        caption=None,
+    ):
         """
         Send an image or audio file to the user's phone.
         :param user_id: User ID
@@ -1185,12 +1247,39 @@ class BotEnginePyTest:
         :param caption: Additional text to accompany the media file.
         :return:
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">send_mss(): user_id={}; media_content={}; url={}; media_type={}; ext={}; caption={}".format(user_id, media_content, url, media_type, ext, caption))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">send_mss(): user_id={}; media_content={}; url={}; media_type={}; ext={}; caption={}".format(
+                user_id, media_content, url, media_type, ext, caption
+            )
+        )
         pass
 
-    def email_admins(self, email_subject=None, email_content=None, email_html=False, email_attachments=None, email_template_filename=None, email_template_model=None, email_addresses=None, brand=None, categories=[1,2]):
+    def email_admins(
+        self,
+        email_subject=None,
+        email_content=None,
+        email_html=False,
+        email_attachments=None,
+        email_template_filename=None,
+        email_template_model=None,
+        email_addresses=None,
+        brand=None,
+        categories=[1, 2],
+    ):
         self.admin_mail_notified = True
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">email_admins(): email_subject={}; email_content={} email_html={} email_attachments={} email_template_filename={} email_template_model={} email_addresses={} brand={} categories={}".format(email_subject, email_content, email_html, email_attachments, email_template_filename, email_template_model, email_addresses, brand, categories))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">email_admins(): email_subject={}; email_content={} email_html={} email_attachments={} email_template_filename={} email_template_model={} email_addresses={} brand={} categories={}".format(
+                email_subject,
+                email_content,
+                email_html,
+                email_attachments,
+                email_template_filename,
+                email_template_model,
+                email_addresses,
+                brand,
+                categories,
+            )
+        )
         return
 
     def get_resident_last_names(self):
@@ -1207,11 +1296,13 @@ class BotEnginePyTest:
         """
         users = self.get_location_users()
         for user in users:
-            if user['id'] == user_id:
+            if user["id"] == user_id:
                 return user
         return None
 
-    def get_location_user_names(self, to_residents=True, to_supporters=True, sms_only=True):
+    def get_location_user_names(
+        self, to_residents=True, to_supporters=True, sms_only=True
+    ):
         """
         Get a list of users' names associated with the location.
 
@@ -1247,13 +1338,10 @@ class BotEnginePyTest:
         :param device_id: Device ID
         :param properties: Device properties {"property": [{"name":"size", "value":"10"}, {xxx}]}
         """
-        property = {
-            "name": name,
-            "value": value
-        }
+        property = {"name": name, "value": value}
 
         if index is not None:
-            property['index'] = index
+            property["index"] = index
 
         if device_id not in self.device_properties:
             self.device_properties[device_id] = []
@@ -1300,9 +1388,9 @@ class BotEnginePyTest:
                     else:
                         del self.device_properties[device_id][i]
 
-    #============================================================================
+    # ============================================================================
     # Commands
-    #============================================================================
+    # ============================================================================
     def form_command(self, param_name, value, index=None):
         """This method will form a command.
 
@@ -1315,7 +1403,13 @@ class BotEnginePyTest:
         :params index: Optional index number / letters. Default is None.
         """
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            ">form_command() param_name=" + str(param_name) + ", value=" + str(value) + ", index=" + str(index))
+            ">form_command() param_name="
+            + str(param_name)
+            + ", value="
+            + str(value)
+            + ", index="
+            + str(index)
+        )
 
         response = None
 
@@ -1324,77 +1418,116 @@ class BotEnginePyTest:
         else:
             response = {"name": param_name, "index": index, "value": value}
 
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<form_command() response=" + str(response))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<form_command() response=" + str(response)
+        )
         return response
 
-    def send_command(self, device_id, param_name, value, index=None):
-        self.command_sent = True
+    def send_command(
+        self,
+        device_id,
+        param_name,
+        value,
+        index=None,
+        command_timeout_ms=None,
+        comment=None,
+    ):
+        self.send_commands(
+            device_id,
+            self.form_command(param_name, value, index),
+            command_timeout_ms,
+            comment,
+        )
 
-    def send_commands(self, device_id, commands):
+    def send_commands(self, device_id, commands, command_timeout_ms=None, comment=None):
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|send_commands() device_id={}; commands={}; command_timeout_ms={}; comment={}".format(
+                device_id, commands, command_timeout_ms, comment
+            )
+        )
         self.command_sent = True
+        self.commands.append((self.get_timestamp(), device_id, commands))
 
     def flush_commands(self):
         pass
 
-
-    #===========================================================================
+    # ===========================================================================
     # Data Stream Messages
-    #===========================================================================
-    def send_datastream_message(self, address, feed_dictionary, bot_instance_list=None, scope=1, location_id_list=None):
+    # ===========================================================================
+    def send_datastream_message(
+        self,
+        address,
+        feed_dictionary,
+        bot_instance_list=None,
+        scope=1,
+        location_id_list=None,
+    ):
         self.datastream = {address: feed_dictionary}
 
-    #============================================================================
+    # ============================================================================
     # Tags
-    #============================================================================
+    # ============================================================================
     def tag_user(self, tag):
         """Tag a user
-        
+
         :param tag The tag to give the user
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.tag_user(" + str(tag) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.tag_user(" + str(tag) + ")"
+        )
         self.user_tags.append(tag)
 
     def tag_location(self, tag):
         """Tag a location
-        
+
         :param tag The tag to give the location
         :param location_id The location ID to tag
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.tag_location(" + str(tag) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.tag_location(" + str(tag) + ")"
+        )
         self.location_tags.append(tag)
 
     def tag_device(self, tag, device_id):
         """Tag a device
-        
+
         :param tag The tag to give the device
         :param device_id The device ID to tag
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.tag_device(" + str(tag) + ", " + str(device_id) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.tag_device(" + str(tag) + ", " + str(device_id) + ")"
+        )
         self.device_tags.append(tag)
 
     def tag_file(self, tag, file_id):
         """Tag a file
-        
+
         :param tag The tag to give the file
         :param file_id The file ID to tag
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.tag_File(" + str(tag) + ", " + str(file_id) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.tag_File(" + str(tag) + ", " + str(file_id) + ")"
+        )
         self.file_tags.append(tag)
 
     def delete_user_tag(self, tag):
         """Delete a user tag
-        
+
         :param tag Tag to delete
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.delete_user_tag(" + str(tag) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.delete_user_tag(" + str(tag) + ")"
+        )
         self.deleted_user_tags.append(tag)
 
     def delete_location_tag(self, tag):
         """Delete a location tag
-        
+
         :param tag Tag to delete
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.delete_location_tag(" + str(tag) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.delete_location_tag(" + str(tag) + ")"
+        )
         self.deleted_location_tags.append(tag)
 
     def delete_device_tag(self, tag, device_id):
@@ -1402,15 +1535,19 @@ class BotEnginePyTest:
 
         :param tag Tag to delete
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.delete_device_tag(" + str(tag) + ", " + str(device_id) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.delete_device_tag(" + str(tag) + ", " + str(device_id) + ")"
+        )
         self.deleted_device_tags.append(tag)
 
     def delete_file_tag(self, tag, file_id):
         """Delete a location file
-        
+
         :param tag Tag to delete
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.delete_device_tag(" + str(tag) + ", " + str(file_id) + ")")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.delete_device_tag(" + str(tag) + ", " + str(file_id) + ")"
+        )
         self.deleted_file_tags.append(tag)
 
     def get_location_tags(self):
@@ -1420,10 +1557,9 @@ class BotEnginePyTest:
         print("\n\nWARNING: get_tags() called, but we can't return anything")
         return None
 
-
-    #============================================================================
+    # ============================================================================
     # Executions
-    #============================================================================
+    # ============================================================================
     def execute_again_in_n_seconds(self, seconds):
         self.execute_again_seconds = seconds
 
@@ -1434,37 +1570,76 @@ class BotEnginePyTest:
         self.execute_again_seconds = 0
         self.execute_again_timestamp = 0
 
-
-    #============================================================================
+    # ============================================================================
     # Timers
-    #============================================================================
+    # ============================================================================
     def set_alarm(self, timestamp_ms, function, argument=None, reference=None):
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.set_alarm(timestamp_ms={}, function={}, argument={}, reference={})".format(timestamp_ms, function, argument, reference))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.set_alarm(timestamp_ms={}, function={}, argument={}, reference={})".format(
+                timestamp_ms, function, argument, reference
+            )
+        )
         self.alarms[reference] = (timestamp_ms, argument, function)
 
     def start_timer_s(self, seconds, function, argument=None, reference=None):
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.start_timer_s(s={}, function={}, argument={}, reference={})".format(seconds, function, argument, reference))
-        self.timers[reference] = (self.get_timestamp() + seconds * 1000, argument, function)
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.start_timer_s(s={}, function={}, argument={}, reference={})".format(
+                seconds, function, argument, reference
+            )
+        )
+        self.timers[reference] = (
+            self.get_timestamp() + seconds * 1000,
+            argument,
+            function,
+        )
 
     def start_timer_ms(self, milliseconds, function, argument=None, reference=None):
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.start_timer_ms(ms={}, function={}, argument={}, reference={})".format(milliseconds, function, argument, reference))
-        self.timers[reference] = (self.get_timestamp() + milliseconds, argument, function)
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.start_timer_ms(ms={}, function={}, argument={}, reference={})".format(
+                milliseconds, function, argument, reference
+            )
+        )
+        self.timers[reference] = (
+            self.get_timestamp() + milliseconds,
+            argument,
+            function,
+        )
 
     def start_timer(self, seconds, function, argument=None, reference=None):
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.start_timer(s={}, function={}, argument={}, reference={})".format(seconds, function, argument, reference))
-        self.timers[reference] = (self.get_timestamp() + seconds * 1000, argument, function)
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">botengine.start_timer(s={}, function={}, argument={}, reference={})".format(
+                seconds, function, argument, reference
+            )
+        )
+        self.timers[reference] = (
+            self.get_timestamp() + seconds * 1000,
+            argument,
+            function,
+        )
 
     def cancel_timers(self, reference):
         if reference in self.timers:
-            self.get_logger(f"{__name__}.{__class__.__name__}").debug("cancel_timers: {} timers:[{}]".format(reference, len(self.timers[reference])))
-            del(self.timers[reference])
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "cancel_timers: {} timers:[{}]".format(
+                    reference, len(self.timers[reference])
+                )
+            )
+            del self.timers[reference]
 
         if reference in self.alarms:
-            self.get_logger(f"{__name__}.{__class__.__name__}").debug("cancel_timers: {} alarms:[{}]".format(reference, len(self.alarms[reference])))
-            del(self.alarms[reference])
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "cancel_timers: {} alarms:[{}]".format(
+                    reference, len(self.alarms[reference])
+                )
+            )
+            del self.alarms[reference]
 
     def is_timer_running(self, reference):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("is_timer_running: {} {}".format(reference, reference in self.timers or reference in self.alarms))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "is_timer_running: {} {}".format(
+                reference, reference in self.timers or reference in self.alarms
+            )
+        )
         return reference in self.timers or reference in self.alarms
 
     def is_executing_timer(self):
@@ -1484,7 +1659,7 @@ class BotEnginePyTest:
             if reference is not None and reference not in ref:
                 continue
             # Assign the first timer in our sorted list
-            timer =  (item[0], item[1], ref, item[2])
+            timer = (item[0], item[1], ref, item[2])
             # Override if it is an exact reference match
             if reference is not None and reference == ref:
                 timer = (item[0], item[1], ref, item[2])
@@ -1532,7 +1707,7 @@ class BotEnginePyTest:
 
     def fire_next_timer_or_alarm(self, intelligence_module, reference=None):
         """
-        Pick and fire the next timer, removing it from our stack. 
+        Pick and fire the next timer, removing it from our stack.
         Advance the local time.
 
         :param intelligence_module: The module that is firing the timer
@@ -1540,53 +1715,81 @@ class BotEnginePyTest:
         :return:
         """
         next_alarm_or_timer = self.get_next_alarm_or_timer(reference)
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">botengine.fire_next_timer_or_alarm(): All alarms={}".format(self.alarms))
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">botengine.fire_next_timer_or_alarm(): All timers={}".format(self.timers))
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">botengine.fire_next_timer_or_alarm(): Next alarm={}".format(next_alarm_or_timer))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">botengine.fire_next_timer_or_alarm(): All alarms={}".format(self.alarms)
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">botengine.fire_next_timer_or_alarm(): All timers={}".format(self.timers)
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">botengine.fire_next_timer_or_alarm(): Next alarm={}".format(
+                next_alarm_or_timer
+            )
+        )
 
         if next_alarm_or_timer is not None:
-            function = next_alarm_or_timer[3]
+            # function = next_alarm_or_timer[3]
             reference = next_alarm_or_timer[2]
             argument = next_alarm_or_timer[1]
             # Check if this module is the one that should fire the timer
             if intelligence_module.intelligence_id != argument[0]:
                 # If not, find the module that should fire the timer
-                for module in intelligence_module.parent.intelligence_modules:
-                    intelligence_module_lookup = intelligence_module.parent.intelligence_modules[module]
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(">botengine.fire_next_timer_or_alarm(): Microservice={} '{}'".format(module, intelligence_module_lookup.intelligence_id))
+                intelligence_modules = []
+                if hasattr(intelligence_module.parent, "location_object"):
+                    # Device intelligence module
+                    intelligence_modules = (
+                        intelligence_module.parent.location_object.intelligence_modules
+                    )
+                elif hasattr(intelligence_module.parent, "intelligence_modules"):
+                    # Location intelligence module
+                    intelligence_modules = (
+                        intelligence_module.parent.intelligence_modules
+                    )
+                for module in intelligence_modules:
+                    intelligence_module_lookup = intelligence_modules[module]
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                        ">botengine.fire_next_timer_or_alarm(): Microservice={} '{}'".format(
+                            module, intelligence_module_lookup.intelligence_id
+                        )
+                    )
                     if intelligence_module_lookup.intelligence_id == argument[0]:
                         intelligence_module = intelligence_module_lookup
                         break
 
             if intelligence_module is not None:
-
                 self.set_timestamp(next_alarm_or_timer[0])
                 self.cancel_timers(reference)
 
                 # Note that the microservice's real argument is placed in element 1,
                 # and element 0 contains the intelligence_id for the microservice to trigger.
-                self.get_logger(f"{__name__}.{__class__.__name__}").info("\n\n\n>botengine.fire_next_timer_or_alarm(): FIRING TIMER with argument={}".format(argument[1]))
-                import datetime
-                from dateutil.tz import tzlocal
-                self.get_logger(f"{__name__}.{__class__.__name__}").info(">botengine.fire_next_timer_or_alarm(): ISO time {}".format(datetime.datetime.fromtimestamp(int(self.get_timestamp()/1000), tzlocal()).isoformat()))
+                self.get_logger(f"{__name__}.{__class__.__name__}").info(
+                    "\n\n\n>botengine.fire_next_timer_or_alarm(): FIRING TIMER with argument={}".format(
+                        argument[1]
+                    )
+                )
+                location_object = None
+                if hasattr(intelligence_module.parent, "location_object"):
+                    # Device intelligence module
+                    location_object = intelligence_module.parent.location_object
+                elif hasattr(intelligence_module.parent, "intelligence_modules"):
+                    # Location intelligence module
+                    location_object = intelligence_module.parent
+                if location_object:
+                    self.get_logger(f"{__name__}.{__class__.__name__}").info(
+                        ">botengine.fire_next_timer_or_alarm(): ISO time {}".format(
+                            location_object.get_local_datetime(self)
+                        )
+                    )
                 intelligence_module.timer_fired(self, argument[1])
 
         else:
-            self.get_logger(f"{__name__}.{__class__.__name__}").info("\n\n\n>botengine.fire_next_timer_or_alarm(): NO TIMERS AVAILABLE TO FIRE")
+            self.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "\n\n\n>botengine.fire_next_timer_or_alarm(): NO TIMERS AVAILABLE TO FIRE"
+            )
 
-
-    def get_cloud_address(self):
-        """
-        When you generate a bot, botengine will automatically generate and add a 'bundle.py' file which contains the cloud address we're uploading the bot to.
-        This method simply returns the CLOUD_ADDRESS from the contents of the bundle.py file.
-        :return: The cloud address for this bot
-        """
-        import bundle
-        return bundle.CLOUD_ADDRESS
-
-    #===========================================================================
+    # ===========================================================================
     # Modes
-    #===========================================================================
+    # ===========================================================================
     def set_mode(self, location_id, mode, comment=None):
         """
         Set the mode
@@ -1595,7 +1798,9 @@ class BotEnginePyTest:
         """
         self.mode = mode
 
-    def get_mode_history(self, location_id, oldest_timestamp_ms=None, newest_timestamp_ms=None):
+    def get_mode_history(
+        self, location_id, oldest_timestamp_ms=None, newest_timestamp_ms=None
+    ):
         """
         This method will return location mode history in backward order (lastest first)
         Including the source of the mode change
@@ -1613,10 +1818,9 @@ class BotEnginePyTest:
         """
         return self.mode
 
-
-    #============================================================================
+    # ============================================================================
     # Subscriptions
-    #============================================================================
+    # ============================================================================
     def has_subscription(self, name):
         """All subscription are enabled"""
         return True
@@ -1625,36 +1829,96 @@ class BotEnginePyTest:
         """No SMS subscribers"""
         return set()
 
-
-    #============================================================================
+    # ============================================================================
     # Questions
-    #============================================================================
-    def set_collection(self, name, icon, description, weight=0, media=None, media_content_type=None):
-        return
+    # ============================================================================
+    def set_collection(
+        self,
+        name,
+        icon,
+        description,
+        ml_name=None,
+        ml_description=None,
+        weight=0,
+        media=None,
+        media_content_type=None,
+    ):
+        self.collections[name] = {
+            "name": name,
+            "icon": icon,
+            "description": description,
+            "ml_name": ml_name,
+            "ml_description": ml_description,
+            "weight": weight,
+            "media": media,
+            "media_content_type": media_content_type,
+        }
 
     def ask_question(self, question):
-        self.questions[question.key_identifier] = question
+        self.questions_to_ask[question.key_identifier] = question
         return
 
-    def retrieve_question(self, key):
-        """No questions"""
-        # if "care.midnightsnack" == key or "care.wandering" == key or "care.latenight" == key or "care.notbackhome" == key:
-        #     return Question(None, None, default_answer=True)
-
-        if key in self.questions:
-            return self.questions[key]
-
-        return None
-
     def delete_question(self, question):
+        if question._question_id is None:
+            # Then just don't ask the question
+            if question.key_identifier in self.questions_to_ask:
+                del self.questions_to_ask[question.key_identifier]
+
+        if question.key_identifier in self.questions:
+            # Delete the question from our saved questions
+            del self.questions[question.key_identifier]
+
+        self.questions_to_delete[question.key_identifier] = question
         return
 
     def flush_questions(self):
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">flush_questions() questions_to_delete={} questions_to_ask={}".format(
+                self.questions_to_delete, self.questions_to_ask
+            )
+        )
+        # Delete questions
+        for q_id in self.questions_to_delete:
+            question = self.questions_to_delete[q_id]
+            if question.key_identifier in self.questions:
+                # Delete the question from our saved questions
+                del self.questions[question.key_identifier]
+
+        if len(self.questions_to_ask) > 0:
+            body = {"questions": []}
+
+            for q_id in self.questions_to_ask:
+                question = self.questions_to_ask[q_id]
+                json_question = question._form_json_question()
+
+                body["questions"].append(json_question)
+            import random
+
+            response = {
+                "resultCode": 0,
+                "questions": [
+                    {"id": random.randint(0, 10000), "key": q_id}
+                    for q_id in self.questions_to_ask
+                ],
+            }
+            if response["resultCode"] == 0 and "questions" in response:
+                for response_block in response["questions"]:
+                    question = self.questions_to_ask[response_block["key"]]
+                    question._question_id = response_block["id"]
+                    question.answer_status = BotEnginePyTest.ANSWER_STATUS_QUEUED
+                    self.questions[question.key_identifier] = question
+        self.questions_to_delete = {}
+        self.questions_to_ask = {}
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<flush_questions() questions={}".format(self.questions)
+        )
         return
 
     def get_asked_questions(self):
         """
         Retrieve a dictionary of previously asked questions that still exist
+        Include any pending questions that need to be saved.
+        Exclude any pending questions that need to be deleted.
 
           {
             "question_id_1" : question_object_1,
@@ -1663,8 +1927,30 @@ class BotEnginePyTest:
 
         :return: a dictionary of questions we've previously asked. The question's ID is the dictionary's key, the question itself is the value.
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine_pytest: Attempting to get_asked_questions but we haven't implemented this yet.")
-        return {}
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">get_asked_questions()"
+        )
+        questions = self.questions
+        for q_id in self.questions_to_ask:
+            if q_id not in questions:
+                questions[q_id] = self.questions_to_ask[q_id]
+        for q_id in self.questions_to_delete:
+            if q_id in questions:
+                del questions[q_id]
+        return questions
+
+    def retrieve_question(self, key):
+        """No questions"""
+        # if "care.midnightsnack" == key or "care.wandering" == key or "care.latenight" == key or "care.notbackhome" == key:
+        #     return Question(None, None, default_answer=True)
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">retrieve_question() key={} questions={}".format(key, self.questions)
+        )
+        questions = self.get_asked_questions()
+        if key in questions:
+            return questions[key]
+
+        return None
 
     def change_answer(self, question, new_answer):
         """
@@ -1679,13 +1965,38 @@ class BotEnginePyTest:
         :param question: Question to update the answer for
         :param new_answer: New answer to inject into the question back to the user
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("botengine_pytest: Attempting to change_answer() but we haven't implemented this yet.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "botengine_pytest: Attempting to change_answer() but we haven't implemented this yet."
+        )
+        question.answer = new_answer
+        question.default_answer = new_answer
         return
 
     def resynchronize_questions(self):
         return
 
-    def generate_question(self, key_identifier, response_type, device_id=None, icon=None, icon_font=None, display_type=None, collection=None, editable=False, default_answer=None, correct_answer=None, answer_format=None, urgent=False, front_page=False, send_push=False, send_sms=False, send_email=False, ask_timestamp=None, section_id=0, question_weight=0):
+    def generate_question(
+        self,
+        key_identifier,
+        response_type,
+        device_id=None,
+        icon=None,
+        icon_font=None,
+        display_type=None,
+        collection=None,
+        editable=False,
+        default_answer=None,
+        correct_answer=None,
+        answer_format=None,
+        urgent=False,
+        front_page=False,
+        send_push=False,
+        send_sms=False,
+        send_email=False,
+        ask_timestamp=None,
+        section_id=0,
+        question_weight=0,
+    ):
         """
         Initializer
 
@@ -1717,8 +2028,27 @@ class BotEnginePyTest:
         :param question_weight: Weight of an individual question within a grouped section. The lighter the weight, the more the question rises to the top of the list in the UI. (default is 0)
         """
         # This should mirror exactly what the Question object provides
-        return Question(key_identifier, response_type, device_id, icon, icon_font, display_type, collection, editable, default_answer, correct_answer, answer_format, urgent,
-                        front_page, send_push, send_sms, send_email, ask_timestamp, section_id, question_weight)
+        return Question(
+            key_identifier,
+            response_type,
+            device_id,
+            icon,
+            icon_font,
+            display_type,
+            collection,
+            editable,
+            default_answer,
+            correct_answer,
+            answer_format,
+            urgent,
+            front_page,
+            send_push,
+            send_sms,
+            send_email,
+            ask_timestamp,
+            section_id,
+            question_weight,
+        )
 
     # ===========================================================================
     # Bot-to-UI content delivery
@@ -1756,10 +2086,19 @@ class BotEnginePyTest:
 
         return None
 
-    #===========================================================================
+    # ===========================================================================
     # Bot content delivery to state variables
-    #===========================================================================
-    def set_state(self, address, json_content, overwrite=True, timestamp_ms=None, publish_to_partner=True, fields_updated=[], fields_deleted=[]):
+    # ===========================================================================
+    def set_state(
+        self,
+        address,
+        json_content,
+        overwrite=True,
+        timestamp_ms=None,
+        publish_to_partner=True,
+        fields_updated=[],
+        fields_deleted=[],
+    ):
         """
         Set information to be consumed by user interfaces through a known address.
 
@@ -1780,32 +2119,50 @@ class BotEnginePyTest:
         :param fields_updated: To optimize integrations with 3rd party clouds, this is a list of the fields that were added/updated. Always used in conjunction with overwrite=True.
         :param fields_deleted: List of fields that were removed. Always used in conjunction with overwrite=True
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">set_state() address={} json_content={} overwrite={} timestamp_ms={}".format(address, json_content, overwrite, timestamp_ms))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">set_state() address={} json_content={} overwrite={} timestamp_ms={}".format(
+                address, json_content, overwrite, timestamp_ms
+            )
+        )
         if timestamp_ms is not None:
             if timestamp_ms not in self.states:
-                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Initialize timeseries state")
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|set_state() Initialize timeseries state"
+                )
                 self.states[timestamp_ms] = {}
 
             if not overwrite:
                 if address in self.states[timestamp_ms]:
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Update timeseries state")
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                        "|set_state() Update timeseries state"
+                    )
                     self.states[timestamp_ms][address].update(json_content)
                 else:
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Add timeseries state")
-                    self.states[timestamp_ms][address] = json_content    
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                        "|set_state() Add timeseries state"
+                    )
+                    self.states[timestamp_ms][address] = json_content
             else:
-                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Overwrite timeseries state")
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|set_state() Overwrite timeseries state"
+                )
                 self.states[timestamp_ms][address] = json_content
         else:
             if not overwrite:
                 if address in self.states:
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Update state")
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                        "|set_state() Update state"
+                    )
                     self.states[address].update(json_content)
                 else:
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Add state")
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                        "|set_state() Add state"
+                    )
                     self.states[address] = json_content
             else:
-                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|set_state() Overwrite state")
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|set_state() Overwrite state"
+                )
                 self.states[address] = json_content
         self.get_logger(f"{__name__}.{__class__.__name__}").debug("<set_state()")
 
@@ -1818,29 +2175,45 @@ class BotEnginePyTest:
         :param timestamp_ms: Optional timestamp for time-based state variables
         :return: The JSON value for this address, or None if it doesn't exist
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">get_state() address={} timestamp_ms={}".format(address, timestamp_ms))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">get_state() address={} timestamp_ms={}".format(address, timestamp_ms)
+        )
         state = None
         if timestamp_ms in self.states:
             if address in self.states[timestamp_ms]:
-                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_state() Found timeseries state")
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|get_state() Found timeseries state"
+                )
                 state = self.states[timestamp_ms][address]
-        
+
         else:
-            self.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_state() Initialize timeseries state")
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "|get_state() Initialize timeseries state"
+            )
             self.states[timestamp_ms] = {}
 
         if state is None:
             if timestamp_ms is not None:
                 if address in self.states[timestamp_ms]:
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_state() Found timeseries state")
+                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                        "|get_state() Found timeseries state"
+                    )
                     state = self.states[timestamp_ms][address]
             elif address in self.states:
-                self.get_logger(f"{__name__}.{__class__.__name__}").debug("|get_state() Found state")
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|get_state() Found state"
+                )
                 state = self.states[address]
         self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_state()")
         return state
 
-    def delete_state(self, address, timeseries_property=False, overwrite=True, publish_to_partner=True):
+    def delete_state(
+        self,
+        address,
+        timeseries_property=False,
+        overwrite=True,
+        publish_to_partner=True,
+    ):
         """
         Permanently delete a state variable. Must specify if it is a timeseries_property (default is non-time-series property).
 
@@ -1862,8 +2235,14 @@ class BotEnginePyTest:
         :param end_timestamp_ms: Optional end timestamp
         :return:
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("get_timeseries_state({}, {}, {})".format(address, start_timestamp_ms, end_timestamp_ms))
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("get_timeseries_state: timestamps: {}".format(self.states.keys()))
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "get_timeseries_state({}, {}, {})".format(
+                address, start_timestamp_ms, end_timestamp_ms
+            )
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "get_timeseries_state: timestamps: {}".format(self.states.keys())
+        )
 
         states = {}
         for timestamp_ms in [key for key in self.states.keys() if isinstance(key, int)]:
@@ -1918,131 +2297,170 @@ class BotEnginePyTest:
         """
         return
 
-
-    #============================================================================
+    # ============================================================================
     # Analytics
-    #============================================================================
+    # ============================================================================
     def is_playback(self):
         return self.playback
-    
+
     def is_test_location(self):
         """
         Do not log analytics while running tests
         """
         return True
 
-    #============================================================================
+    # ============================================================================
     # Rules
-    #============================================================================
+    # ============================================================================
     def get_rules(self, device_id):
         return {}
 
     def pause_rules(self):
         pass
 
-    def toggle_all_rules(self, enable, rule_id_list=[], device_type_list=[], device_id_list=[], default=None, hidden=None, user_id=None):
+    def toggle_all_rules(
+        self,
+        enable,
+        rule_id_list=[],
+        device_type_list=[],
+        device_id_list=[],
+        default=None,
+        hidden=None,
+        user_id=None,
+    ):
         return []
 
-    def delete_all_rules(self, status=None, rule_id_list=[], device_type_list=[], device_id_list=[], default=None,
-                         hidden=None, user_id=None):
+    def delete_all_rules(
+        self,
+        status=None,
+        rule_id_list=[],
+        device_type_list=[],
+        device_id_list=[],
+        default=None,
+        hidden=None,
+        user_id=None,
+    ):
         pass
 
-    #============================================================================
+    # ============================================================================
     # Narration
-    #============================================================================
-    def narrate(self, title=None, description=None, priority=None, icon=None, icon_font=None, status=None, timestamp_ms=None, narrative_type=NARRATIVE_TYPE_OBSERVATION, file_ids=None, extra_json_dict=None, event_type=None, update_narrative_id=None, update_narrative_timestamp=None, admin=False, publish_to_partner=None):
+    # ============================================================================
+    def narrate(
+        self,
+        title=None,
+        description=None,
+        priority=None,
+        icon=None,
+        icon_font=None,
+        status=None,
+        timestamp_ms=None,
+        narrative_type=NARRATIVE_TYPE_OBSERVATION,
+        file_ids=None,
+        extra_json_dict=None,
+        event_type=None,
+        update_narrative_id=None,
+        update_narrative_timestamp=None,
+        admin=False,
+        publish_to_partner=None,
+    ):
         # if self.playback:
         #     return None
 
         narrative = {}
 
-        location_id = self.get_location_id()
+        # location_id = self.get_location_id()
 
         if priority is not None:
-            narrative['priority'] = priority
+            narrative["priority"] = priority
 
         if icon is not None:
-            narrative['icon'] = icon
+            narrative["icon"] = icon
 
         if icon_font is not None:
-            narrative['iconFont'] = icon_font
+            narrative["iconFont"] = icon_font
 
         if title is not None:
-            narrative['title'] = title
+            narrative["title"] = title
 
         if description is not None:
-            narrative['description'] = description
+            narrative["description"] = description
 
         if status is not None:
-            narrative['status'] = status
+            narrative["status"] = status
 
         if timestamp_ms is not None:
-            narrative['narrativeTime'] = timestamp_ms
+            narrative["narrativeTime"] = timestamp_ms
 
         if narrative_type is not None:
             # if self.is_server_version_newer_than(1, 29):
-            narrative['narrativeType'] = narrative_type
+            narrative["narrativeType"] = narrative_type
 
         target = {}
 
         if file_ids is not None:
-            target['fileIDs'] = file_ids
+            target["fileIDs"] = file_ids
 
         if extra_json_dict is not None:
             target.update(extra_json_dict)
 
         if len(target) > 0:
-            narrative['target'] = target
+            narrative["target"] = target
 
         params = {}
 
         if update_narrative_id is not None:
-            params['narrativeId'] = update_narrative_id
+            params["narrativeId"] = update_narrative_id
 
         if update_narrative_timestamp is not None:
-            params['narrativeTime'] = update_narrative_timestamp
+            params["narrativeTime"] = update_narrative_timestamp
 
         if admin:
-            params['scope'] = 2
+            params["scope"] = 2
         else:
-            params['scope'] = 1
+            params["scope"] = 1
 
         # New server features to stream narratives to partner clouds
         # if self.is_server_version_newer_than(1, 22):
         if publish_to_partner is not None:
-            params['publish'] = publish_to_partner
+            params["publish"] = publish_to_partner
 
         if event_type is not None:
-            narrative['eventType'] = event_type
+            narrative["eventType"] = event_type
 
-        body = {
-                "narrative" : narrative
-                }
+        body = {"narrative": narrative}
 
         import json
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("|narrate() params={}".format(json.dumps(params, sort_keys=True)))
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("|narrate() body={}".format(json.dumps(body, sort_keys=True)))
+
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|narrate() params={}".format(json.dumps(params, sort_keys=True))
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|narrate() body={}".format(json.dumps(body, sort_keys=True))
+        )
         if extra_json_dict is not None:
             if "search_timestamp_ms" in extra_json_dict:
-                self.save_variable("search_timestamp_ms", extra_json_dict["search_timestamp_ms"])
+                self.save_variable(
+                    "search_timestamp_ms", extra_json_dict["search_timestamp_ms"]
+                )
             elif "expected_wake_ms" in extra_json_dict:
-                self.save_variable("expected_wake_ms", extra_json_dict["expected_wake_ms"])
+                self.save_variable(
+                    "expected_wake_ms", extra_json_dict["expected_wake_ms"]
+                )
             elif "device_id" in extra_json_dict:
                 self.save_variable("device_id", extra_json_dict["device_id"])
             elif "uuid" in extra_json_dict:
                 self.save_variable("uuid", extra_json_dict["uuid"])
 
-
         if event_type is not None:
             self.save_variable("eventType", event_type)
-        
+
         self.save_variable("body", body)
 
         return
-    
-    #===========================================================================
+
+    # ===========================================================================
     # Open AI
-    #===========================================================================
+    # ===========================================================================
 
     def send_request_for_chat_completion(self, key, data, openai_organization_id=None):
         """
@@ -2055,12 +2473,14 @@ class BotEnginePyTest:
         if key is None:
             raise ValueError("send_request_for_chat_completion() key cannot be None")
         if 0 == len(data.get("messages", [])):
-            raise ValueError("send_request_for_chat_completion() messages cannot be empty")
+            raise ValueError(
+                "send_request_for_chat_completion() messages cannot be empty"
+            )
         return {}
-    
-    #===========================================================================
+
+    # ===========================================================================
     # AI
-    #===========================================================================
+    # ===========================================================================
 
     def send_a_request_to_a_model(self, model_name, key, data):
         """
@@ -2072,14 +2492,19 @@ class BotEnginePyTest:
 
         The type of AI application is determined automatically by its unique name.
         The response from AI application is delivered to the bot in a data stream message to the address "ai".
-        
+
         :param model_name: Model ID to use for the AI model
         :param key: Key to identify this request
         :param data: Parameters to send to the AI model
         :return: JSON response from Care Daily API
         """
         import json
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("|send_a_request_to_a_model() model_name={} key={} data={}".format(model_name, key, json.dumps(data, sort_keys=True)))
+
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|send_a_request_to_a_model() model_name={} key={} data={}".format(
+                model_name, key, json.dumps(data, sort_keys=True)
+            )
+        )
         if model_name is None:
             raise ValueError("send_a_request_to_a_model() model_name cannot be None")
         if key is None:
@@ -2088,23 +2513,61 @@ class BotEnginePyTest:
             raise ValueError("send_a_request_to_a_model() data cannot be None")
         return {}
 
-    def request_customer_support(self, ticket_type, ticket_priority, subject, comment, brand="default"):
+    def delete_narration(self, narrative_id, narrative_timestamp): ...
+
+    def get_narration(self, narrative_id, admin=False): ...
+
+    def form_parameter(self, name, value, index=None):
+        if not name.startswith("syn."):
+            name = "syn." + name
+
+        param = {"name": name, "value": value}
+
+        if index:
+            param["index"] = index
+
+        return param
+
+    def inject_parameters(self, device_id, parameters_list, timestamp_ms=None): ...
+
+    def request_customer_support(
+        self,
+        ticket_type,
+        ticket_priority,
+        subject,
+        comment,
+        data=None,
+        custom_fields=None,
+        brand="default",
+        user_id=None,
+        template="",
+        language=None,
+    ):
         self.customer_support_body = {
             "brand": brand,
+            "user_id": user_id,
+            "template": template,
+            "language": language,
             "ticket": {
                 "type": ticket_type,
                 "priority": ticket_priority,
                 "subject": "Location {} - {}".format(self.get_location_id(), subject),
-                "comment": comment
-            }
+                "comment": comment,
+                "data": data,
+                "custom_fields": custom_fields,
+            },
         }
 
         self.customer_support_comments.append(comment)
-        
-        import json
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("request_customer_support() params={}".format(json.dumps(self.customer_support_body, sort_keys=True)))
-        return
 
+        import json
+
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "request_customer_support() params={}".format(
+                json.dumps(self.customer_support_body, sort_keys=True)
+            )
+        )
+        return
 
     # ===========================================================================
     # Cloud API for EngageKit
@@ -2114,8 +2577,12 @@ class BotEnginePyTest:
         Get a list of message topics
         :return: A list of message topics
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">get_cloud_message_topics()")
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("<get_cloud_message_topics()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">get_cloud_message_topics()"
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<get_cloud_message_topics()"
+        )
         return {}
 
     def update_cloud_message_topics(self, topics):
@@ -2124,8 +2591,12 @@ class BotEnginePyTest:
         :param topics: List of topics
         :return:
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">update_cloud_message_topics()")
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("<update_cloud_message_topics()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">update_cloud_message_topics()"
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<update_cloud_message_topics()"
+        )
         return {}
 
     def create_cloud_messages(self, messages_json=None, by_user: bool = False):
@@ -2135,8 +2606,12 @@ class BotEnginePyTest:
         :param messages_json: The messages json content
         :return:
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">create_cloud_messages()")
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("<create_cloud_messages()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">create_cloud_messages()"
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<create_cloud_messages()"
+        )
         return {}
 
     def update_cloud_messages(self, messages_json):
@@ -2145,8 +2620,12 @@ class BotEnginePyTest:
         :param messages_json: The messages json content
         :return:
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">update_cloud_messages()")
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("<update_cloud_messages()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">update_cloud_messages()"
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<update_cloud_messages()"
+        )
         return {}
 
     def get_cloud_messages(self, start_date_ms, end_date_ms, topic_id, read_status):
@@ -2158,8 +2637,12 @@ class BotEnginePyTest:
         :param read_status: The read status
         :return: Messages JSON
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">get_cloud_messages()")
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("<get_cloud_messages()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">get_cloud_messages()"
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<get_cloud_messages()"
+        )
         return {}
 
     def update_cloud_message_read_status(self, message_id, read_status):
@@ -2169,19 +2652,22 @@ class BotEnginePyTest:
         :param read_status: The read status
         :return:
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(">update_cloud_message_read_status()")
-        self.get_logger(f"{__name__}.{__class__.__name__}").info("<update_cloud_message_read_status()")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">update_cloud_message_read_status()"
+        )
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<update_cloud_message_read_status()"
+        )
         return {}
-    
-    #============================================================================
+
+    # ============================================================================
     # Professional monitoring
-    #============================================================================
+    # ============================================================================
     def has_professional_monitoring(self):
         """
         :return: True if this user has professional monitoring services
         """
         return self.has_pro_monitoring
-
 
     def professional_monitoring_status(self):
         """This method will return call center service statuses"""
@@ -2191,7 +2677,9 @@ class BotEnginePyTest:
         """This method will return call center service alerts"""
         return None
 
-    def raise_professional_monitoring_alert(self, message, code, device_id=None, latitude=None, longitude=None):
+    def raise_professional_monitoring_alert(
+        self, message, code, device_id=None, latitude=None, longitude=None
+    ):
         """Raise an alert to the professional monitoring services
 
         :param message: signal message
@@ -2236,11 +2724,13 @@ class BotEnginePyTest:
         :param device_id: device ID
         """
         self.professional_monitoring_cancelled = True
-    
+
     # ===========================================================================
     # Others
-    #============================================================================
-    def get_property(self, obj_arr, property_name, property_value, return_property_name):
+    # ============================================================================
+    def get_property(
+        self, obj_arr, property_name, property_value, return_property_name
+    ):
         """This method will locate the specified first object from object array, and then return the specified property value
 
         :params obj_arr: object array
@@ -2248,9 +2738,16 @@ class BotEnginePyTest:
         :params property_value: the value in searching criteria
         :params return_property_name: the key in the object indicates which corresponding value will be returned
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(">get_property() obj_arr=" + str(obj_arr) + ", property_name=" + str(property_name)
-                          + ", property_value=" + str(property_value) + ", return_property_name=" + str(
-            return_property_name))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">get_property() obj_arr="
+            + str(obj_arr)
+            + ", property_name="
+            + str(property_name)
+            + ", property_value="
+            + str(property_value)
+            + ", return_property_name="
+            + str(return_property_name)
+        )
 
         response = None
         for item in obj_arr:
@@ -2258,10 +2755,19 @@ class BotEnginePyTest:
                 response = item[return_property_name]
                 break
 
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_property() response=" + str(response))
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<get_property() response=" + str(response)
+        )
         return response
 
-    def add_email_attachment(self, destination_attachment_array, filename, base64_content, content_type, content_id):
+    def add_email_attachment(
+        self,
+        destination_attachment_array,
+        filename,
+        base64_content,
+        content_type,
+        content_id,
+    ):
         """This helper method will create an email attachment block and add it to a destination array of existing email attachments
 
         :params destination_attachment_array: Destination array of attachments. Pass in [] if you are starting a new list of attachments.
@@ -2276,20 +2782,44 @@ class BotEnginePyTest:
             "name": filename,
             "content": base64_content,
             "contentType": content_type,
-            "contentId": content_id
+            "contentId": content_id,
         }
         destination_attachment_array.append(attachment)
         return destination_attachment_array
-    
+
     def get_location_scenes_history(self, location_id):
         """Get location scenes history - can't do much"""
-        self.get_logger(f"{__name__}.{__class__.__name__}").warning("WARNING: get_location_scenes_history() is called, but we can't return anything")
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning(
+            "WARNING: get_location_scenes_history() is called, but we can't return anything"
+        )
         return {}
-    
-    def get_measurements(self, device_id, user_id=None, oldest_timestamp_ms=None, newest_timestamp_ms=None, param_name=None, index=None, last_rows=None):
-        self.get_logger(f"{__name__}.{__class__.__name__}").warning("WARNING: get_measurements() called, but we can't return anything")
+
+    def get_measurements(
+        self,
+        device_id,
+        user_id=None,
+        oldest_timestamp_ms=None,
+        newest_timestamp_ms=None,
+        param_name=None,
+        index=None,
+        last_rows=None,
+    ):
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning(
+            "WARNING: get_measurements() called, but we can't return anything"
+        )
         return {}
-    def request_data(self, type=1, device_id=None, oldest_timestamp_ms=None, newest_timestamp_ms=None, param_name_list=None, reference=None, index=None, ordered=1):
+
+    def request_data(
+        self,
+        type=1,
+        device_id=None,
+        oldest_timestamp_ms=None,
+        newest_timestamp_ms=None,
+        param_name_list=None,
+        reference=None,
+        index=None,
+        ordered=1,
+    ):
         """
         Selecting a large amount of data from the database can take a significant amount of time and impact server
         performance. To avoid this long waiting period while executing bots, a bot can submit a request for all the
@@ -2311,16 +2841,12 @@ class BotEnginePyTest:
         :param index: Index to download when parameters are available with multiple indices
         :param ordered: 1=Ascending (default); -1=Descending.
         """
-        self.get_logger(f"{__name__}.{__class__.__name__}").warning("WARNING: Attempted to request_data(), but we can't do anything here.")
+        self.get_logger(f"{__name__}.{__class__.__name__}").warning(
+            "WARNING: Attempted to request_data(), but we can't do anything here."
+        )
 
     def get_user_info(self):
-        return {
-            "user": {
-                "firstName": "Firstname",
-                "lastName": "Lastname",
-                "id": "0"
-            }
-        }
+        return {"user": {"firstName": "Firstname", "lastName": "Lastname", "id": "0"}}
 
     # AWS Secrets Manager
     def get_secret(self, secret_name, region_name="us-east-1"):
@@ -2334,13 +2860,14 @@ class BotEnginePyTest:
         return '{"appname": "some", "appsecret": "thing"}'
 
 
-#===============================================================================
+# ===============================================================================
 # Question Class
-#===============================================================================
+# ===============================================================================
 class Question:
     """
     Class to hold a question and its answer
     """
+
     # Question Responses
     QUESTION_RESPONSE_TYPE_BOOLEAN = 1
     QUESTION_RESPONSE_TYPE_MULTICHOICE_SINGLESELECT = 2
@@ -2381,7 +2908,6 @@ class Question:
     QUESTION_DISPLAY_DATETIME_DATE_AND_TIME = 0
     QUESTION_DISPLAY_DATETIME_DATE = 1
 
-
     # Answer Status
     ANSWER_STATUS_NOT_ASKED = -1
     ANSWER_STATUS_DELAYED = 0
@@ -2391,7 +2917,28 @@ class Question:
     ANSWER_STATUS_ANSWERED = 4
     ANSWER_STATUS_NO_ANSWER = 5
 
-    def __init__(self, key_identifier, response_type, device_id=None, icon=None, icon_font=None, display_type=None, collection=None, editable=False, default_answer=None, correct_answer=None, answer_format=None, urgent=False, front_page=False, send_push=False, send_sms=False, send_email=False, ask_timestamp=None, section_id=0, question_weight=0):
+    def __init__(
+        self,
+        key_identifier,
+        response_type,
+        device_id=None,
+        icon=None,
+        icon_font=None,
+        display_type=None,
+        collection=None,
+        editable=False,
+        default_answer=None,
+        correct_answer=None,
+        answer_format=None,
+        urgent=False,
+        front_page=False,
+        send_push=False,
+        send_sms=False,
+        send_email=False,
+        ask_timestamp=None,
+        section_id=0,
+        question_weight=0,
+    ):
         """
         Initializer
 
@@ -2454,24 +3001,31 @@ class Question:
         self.answer_correct = False
         self.answer_modified = False
         self.slider_min = 0
+        self.slider_max = None
+        self.slider_inc = None
+        self.slider_min_description = None
+        self.slider_max_description = None
+        self.slider_unit = None
         self.collection = collection
 
         # The user ID who answered this question
         self.user_id = None
-        
+
         if response_type == self.QUESTION_RESPONSE_TYPE_SLIDER:
             if display_type == self.QUESTION_DISPLAY_SLIDER_MINSEC:
                 # Minutes:Seconds slider - 60:00 max by default, in increments of 0:15 seconds
                 self.slider_max = 3600
                 self.slider_inc = 15
-                
+
             else:
                 # Float and Integer slider - 100 max by default, in increments of 5
                 self.slider_max = 100
                 self.slider_inc = 5
+            self.slider_min_description = None
+            self.slider_unit = None
 
     def _boolean_to_str(self, value):
-        if type(value) == bool:
+        if type(value) is bool:
             if value:
                 return "true"
             else:
@@ -2485,86 +3039,108 @@ class Question:
         :return: JSON string ready to send to the server
         """
         body = {
-             "key": self.key_identifier,
-             "urgent": self.urgent,
-             "front": self.front_page,
-             "push": self.send_push,
-             "sms": self.send_sms,
-             "email": self.send_email,
-             "responseType": self.response_type,
-             "editable": self.editable,
-             "question": self.question
-         }
+            "key": self.key_identifier,
+            "urgent": self.urgent,
+            "front": self.front_page,
+            "push": self.send_push,
+            "sms": self.send_sms,
+            "email": self.send_email,
+            "responseType": self.response_type,
+            "editable": self.editable,
+            "question": self.question,
+        }
 
         if self.device_id is not None:
-            body['deviceId'] = self.device_id
+            body["deviceId"] = self.device_id
 
         # Added May 27, 2020
-        if hasattr(self, 'icon_font'):
+        if hasattr(self, "icon_font"):
             if self.icon_font is not None:
-                body['iconFont'] = self.icon_font
+                body["iconFont"] = self.icon_font
 
         else:
             self.icon_font = None
 
         if self.icon is not None:
-            body['icon'] = self.icon
+            body["icon"] = self.icon
 
         if self.display_type is not None:
-            body['displayType'] = int(self.display_type)
-            
+            body["displayType"] = int(self.display_type)
+
         if len(self.section_title) > 0:
-            body['sectionTitle'] = self.section_title
-            
+            body["sectionTitle"] = self.section_title
+
         if self.section_id is not None:
-            body['sectionId'] = int(self.section_id)
-        
+            body["sectionId"] = int(self.section_id)
+
         if self.question_weight is not None:
-            body['questionWeight'] = int(self.question_weight)
-        
+            body["questionWeight"] = int(self.question_weight)
+
         if self.ask_timestamp:
-            body['askDateMs'] = self.ask_timestamp
+            body["askDateMs"] = self.ask_timestamp
 
         if len(self.placeholder) > 0:
-            body['placeholder'] = self.placeholder
+            body["placeholder"] = self.placeholder
 
         if self.response_type == self.QUESTION_RESPONSE_TYPE_SLIDER:
-            body['sliderMin'] = self.slider_min
-            body['sliderMax'] = self.slider_max
-            body['sliderInc'] = self.slider_inc
-            
+            slider = {}
+            slider["min"] = self.slider_min
+            slider["max"] = self.slider_max
+            slider["inc"] = self.slider_inc
+
+            if self.slider_min_description is not None:
+                slider["minDesc"] = self.slider_min_description
+            if self.slider_max_description is not None:
+                slider["maxDesc"] = self.slider_max_description
+            if self.slider_unit is not None:
+                slider["unitsDesc"] = self.slider_unit
+
+            body["slider"] = slider
+
             if self.default_answer is None:
                 self.default_answer = int((self.slider_max - self.slider_min) / 2)
 
         if len(self.tags) > 0:
-            body['tags'] = self.tags
+            body["tags"] = self.tags
 
         if self.answer is not None:
             # We've already gotten an answer to this question and we're asking it again, don't lose the previous answer.
             self.default_answer = self.answer
 
         if self.default_answer is not None:
-            body['defaultAnswer'] = self._boolean_to_str(self.default_answer)
+            body["defaultAnswer"] = self._boolean_to_str(self.default_answer)
 
         if self.correct_answer:
-            body['validAnswer'] = self.correct_answer
+            body["validAnswer"] = self.correct_answer
 
         if self.answer_format:
-            body['answerFormat'] = self.answer_format
+            body["answerFormat"] = self.answer_format
 
-        if not hasattr(self, 'collection'):
+        if not hasattr(self, "collection"):
             self.collection = None
 
         if self.collection:
-            body['collectionName'] = self.collection
+            body["collectionName"] = self.collection
 
-        if self.response_type == self.QUESTION_RESPONSE_TYPE_MULTICHOICE_MULTISELECT or self.response_type == self.QUESTION_RESPONSE_TYPE_MULTICHOICE_SINGLESELECT:
-            body['responseOptions'] = []
+        if (
+            self.response_type == self.QUESTION_RESPONSE_TYPE_MULTICHOICE_MULTISELECT
+            or self.response_type
+            == self.QUESTION_RESPONSE_TYPE_MULTICHOICE_SINGLESELECT
+        ):
+            body["responseOptions"] = []
             identifier = 0
             for option in self.response_options:
-                body['responseOptions'].append(option._get_json_dictionary(identifier))
+                if isinstance(option, dict):
+                    print(
+                        "Malformed question response option {}: {}".format(body, option)
+                    )
+                    body["responseOptions"].append(option)
+                else:
+                    body["responseOptions"].append(
+                        option._get_json_dictionary(identifier)
+                    )
                 identifier += 1
-        
+
         return body
 
     def get_id(self):
@@ -2592,7 +3168,18 @@ class Question:
         self.slider_min = slider_min
         self.slider_max = slider_max
         self.slider_inc = slider_inc
-        
+
+    def slider_description(self, minimum=None, maximum=None, unit=None):
+        """
+        Set the description of a slider question
+        :param minimum: Minimum slider description
+        :param maximum: Maximum slider description
+        :param unit: Unit of the slider
+        """
+        self.slider_min_description = minimum
+        self.slider_max_description = maximum
+        self.slider_unit = unit
+
     def set_placeholder_text(self, placeholder, language="en"):
         """
         A placeholder adds an example to a question that expects a text-based response.
@@ -2605,9 +3192,9 @@ class Question:
 
     def set_section_title(self, section_title, language="en"):
         """
-        Set the section title. 
+        Set the section title.
         The top most question in the section (lowest weight) sets the title.
-        
+
         :param section_title: Name of the section of questions
         :param language: Language for this section title, default is 'en'
         """
@@ -2640,7 +3227,7 @@ class Question:
         """
         self.tags.append(tag)
 
-    def generate_response_option(self, text=None, language='en'):
+    def generate_response_option(self, text=None, language="en"):
         """
         Get a QuestionResponseOption object
         :param text: Text for this response option
@@ -2658,10 +3245,16 @@ class Question:
         if len(self.question) == 0:
             return False
 
-        if self.response_type == self.QUESTION_RESPONSE_TYPE_RADIO or self.response_type == self.QUESTION_RESPONSE_TYPE_DROPDOWN or self.response_type == self.QUESTION_RESPONSE_TYPE_CHECKBOX or self.response_type == self.QUESTION_RESPONSE_TYPE_MULTISELECT:
+        if (
+            self.response_type == self.QUESTION_RESPONSE_TYPE_RADIO
+            or self.response_type == self.QUESTION_RESPONSE_TYPE_DROPDOWN
+            or self.response_type == self.QUESTION_RESPONSE_TYPE_CHECKBOX
+            or self.response_type == self.QUESTION_RESPONSE_TYPE_MULTISELECT
+        ):
             return len(self.response_options) > 0
 
         return True
+
 
 class QuestionResponseOption:
     """
@@ -2689,10 +3282,7 @@ class QuestionResponseOption:
         :param identifier: id of this response option relative to other option, starting with 0
         :return: Dictionary formatted to conform to the POST API
         """
-        block = {
-            "id": identifier,
-            "text": self.text
-        }
+        block = {"id": identifier, "text": self.text}
 
         if len(self.tags) > 0:
             block["tags"] = self.tags

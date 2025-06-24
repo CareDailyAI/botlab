@@ -11,7 +11,13 @@ file 'LICENSE.txt', which is part of this source code package.
 DATAREQUEST_REFERENCE_ALL = "all"
 
 
-def request_data(botengine, location_object, reference=DATAREQUEST_REFERENCE_ALL, oldest_timestamp_ms=None, force=False):
+def request_data(
+    botengine,
+    location_object,
+    reference=DATAREQUEST_REFERENCE_ALL,
+    oldest_timestamp_ms=None,
+    force=False,
+):
     """
     Perform a data request from all devices that will result in an integrated sensor matrix.
 
@@ -24,10 +30,12 @@ def request_data(botengine, location_object, reference=DATAREQUEST_REFERENCE_ALL
     content = {
         "reference": reference,
         "oldest_timestamp_ms": oldest_timestamp_ms,
-        "force": force
+        "force": force,
     }
 
-    location_object.distribute_datastream_message(botengine, 'download_data', content=content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "download_data", content=content, internal=True, external=False
+    )
 
 
 def add_tag(botengine, location_object, tag, timestamp_ms=None):
@@ -43,25 +51,38 @@ def add_tag(botengine, location_object, tag, timestamp_ms=None):
     if timestamp_ms is not None:
         ts = timestamp_ms
 
-    content = {
-        'type': tag,
-        'timestamp': int(ts)
-    }
+    content = {"type": tag, "timestamp": int(ts)}
 
-    location_object.distribute_datastream_message(botengine,
-                                                  address='capture_ml_feedback',
-                                                  content=content,
-                                                  internal=True,
-                                                  external=False)
+    location_object.distribute_datastream_message(
+        botengine,
+        address="capture_ml_feedback",
+        content=content,
+        internal=True,
+        external=False,
+    )
+
 
 def reset_machine_learning(botengine, location_object):
     """
     Reset all machine learning
     """
-    location_object.distribute_datastream_message(botengine, "reset_machine_learning", None, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "reset_machine_learning", None, internal=True, external=False
+    )
 
 
-def ism_updated(botengine, location_object, reference, integrated_sensor_matrix, total_motion, total_entry, total_pressure, csv_dictionary=None, csv_strings=None, csv_types=None):
+def ism_updated(
+    botengine,
+    location_object,
+    reference,
+    integrated_sensor_matrix,
+    total_motion,
+    total_entry,
+    total_pressure,
+    csv_dictionary=None,
+    csv_strings=None,
+    csv_types=None,
+):
     """
     Integrated sensor matrix (ISM) updated. Distribute to microservices.
 
@@ -78,36 +99,38 @@ def ism_updated(botengine, location_object, reference, integrated_sensor_matrix,
     """
     ism_object = {
         # Integrated sensor matrix
-        'integrated_sensor_matrix': integrated_sensor_matrix,
-
+        "integrated_sensor_matrix": integrated_sensor_matrix,
         # Reference passed into the data request
-        'reference': reference,
-
+        "reference": reference,
         # If 'recalculate' is true then this can be used to recalculate full machine learning models
-        'recalculate': reference == DATAREQUEST_REFERENCE_ALL,
-
+        "recalculate": reference == DATAREQUEST_REFERENCE_ALL,
         # Total motion sensors in the ISM
-        'total_motion': total_motion,
-
+        "total_motion": total_motion,
         # Total entry sensors in the ISM
-        'total_entry': total_entry,
-
+        "total_entry": total_entry,
         # Total pressure pads in the ISM
-        'total_pressure': total_pressure,
-
+        "total_pressure": total_pressure,
         # Raw CSV dictionary
-        'csv_dict': csv_dictionary,
-
+        "csv_dict": csv_dictionary,
         # Raw CSV strings
-        'csv_strings': csv_strings,
-
+        "csv_strings": csv_strings,
         # Raw CSV types
-        'csv_types': csv_types
+        "csv_types": csv_types,
     }
 
-    location_object.distribute_datastream_message(botengine, 'ism_updated', ism_object, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "ism_updated", ism_object, internal=True, external=False
+    )
 
-def radar_filter_input_updated(botengine, location_object, device_id, reference, radar_target_array, csv_dictionary=None):
+
+def radar_filter_input_updated(
+    botengine,
+    location_object,
+    device_id,
+    reference,
+    radar_target_array,
+    csv_dictionary=None,
+):
     """
     Radar filter targets input updated. Distribute to microservices.
 
@@ -120,26 +143,48 @@ def radar_filter_input_updated(botengine, location_object, device_id, reference,
     """
     radar_object = {
         # Radar targets data array
-        'radar_target_array': radar_target_array,
-
+        "radar_target_array": radar_target_array,
         # Device Id
-        'device_id': device_id,
-
+        "device_id": device_id,
         # Reference passed into the data request
-        'reference': reference,
-
+        "reference": reference,
         # If 'recalculate' is true then this can be used to recalculate full machine learning models
-        'recalculate': reference == DATAREQUEST_REFERENCE_ALL,
-
+        "recalculate": reference == DATAREQUEST_REFERENCE_ALL,
         # Raw CSV dictionary
-        'csv_dict': csv_dictionary
+        "csv_dict": csv_dictionary,
     }
 
-    location_object.distribute_datastream_message(botengine, 'radar_filter_input_updated', radar_object, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine,
+        "radar_filter_input_updated",
+        radar_object,
+        internal=True,
+        external=False,
+    )
     # Backwards compatibility
-    location_object.distribute_datastream_message(botengine, 'vayyar_filter_input_updated', radar_object, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine,
+        "vayyar_filter_input_updated",
+        radar_object,
+        internal=True,
+        external=False,
+    )
 
-def vayyar_filter_input_updated(botengine, location_object, device_id, reference, vayyar_target_array, csv_dictionary=None):
+
+def vayyar_filter_input_updated(
+    botengine,
+    location_object,
+    device_id,
+    reference,
+    vayyar_target_array,
+    csv_dictionary=None,
+):
     """Deprecated. Use radar_filter_input_updated instead."""
-    radar_filter_input_updated(botengine, location_object, device_id, reference, vayyar_target_array, csv_dictionary)
-    
+    radar_filter_input_updated(
+        botengine,
+        location_object,
+        device_id,
+        reference,
+        vayyar_target_array,
+        csv_dictionary,
+    )

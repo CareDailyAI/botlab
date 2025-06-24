@@ -1,11 +1,11 @@
-'''
+"""
 Created on June 28, 2016
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 # Narrative priority levels
 NARRATIVE_PRIORITY_ANALYTIC = -1
@@ -24,6 +24,7 @@ NARRATIVE_TYPE_JOURNAL = 4
 
 # High-frequency 'insight' entries for real-time CRITICAL exec-level communications to humans
 NARRATIVE_TYPE_INSIGHT = 5
+
 
 class Narrative:
     """
@@ -51,11 +52,16 @@ class Narrative:
         Resolve this narrative
         :param botengine: BotEngine environment
         """
-        response = botengine.narrate(update_narrative_id=self.narrative_id, update_narrative_timestamp=self.narrative_time, admin=self.admin, status=2)
+        response = botengine.narrate(
+            update_narrative_id=self.narrative_id,
+            update_narrative_timestamp=self.narrative_time,
+            admin=self.admin,
+            status=2,
+        )
 
         if response is not None:
-            self.narrative_id = response['narrativeId']
-            self.narrative_time = response['narrativeTime']
+            self.narrative_id = response["narrativeId"]
+            self.narrative_time = response["narrativeTime"]
 
     def add_comment(self, botengine, comment):
         """
@@ -70,19 +76,24 @@ class Narrative:
             return
 
         else:
-            if 'target' not in narrative_content:
-                narrative_content['target'] = {}
+            if "target" not in narrative_content:
+                narrative_content["target"] = {}
 
-            if 'comment' not in narrative_content['target']:
-                narrative_content['target']['comment'] = ""
+            if "comment" not in narrative_content["target"]:
+                narrative_content["target"]["comment"] = ""
 
-            narrative_content['target']['comment'] += comment + "\n"
+            narrative_content["target"]["comment"] += comment + "\n"
 
-            response = botengine.narrate(update_narrative_id=self.narrative_id, update_narrative_timestamp=self.narrative_time, admin=self.admin, extra_json_dict=narrative_content['target'])
+            response = botengine.narrate(
+                update_narrative_id=self.narrative_id,
+                update_narrative_timestamp=self.narrative_time,
+                admin=self.admin,
+                extra_json_dict=narrative_content["target"],
+            )
 
             if response is not None:
-                self.narrative_id = response['narrativeId']
-                self.narrative_time = response['narrativeTime']
+                self.narrative_id = response["narrativeId"]
+                self.narrative_time = response["narrativeTime"]
 
     def update_description(self, botengine, description):
         """
@@ -90,11 +101,16 @@ class Narrative:
         :param botengine: BotEngine environment
         :param description: New description
         """
-        response = botengine.narrate(update_narrative_id=self.narrative_id, update_narrative_timestamp=self.narrative_time, admin=self.admin, description=description)
+        response = botengine.narrate(
+            update_narrative_id=self.narrative_id,
+            update_narrative_timestamp=self.narrative_time,
+            admin=self.admin,
+            description=description,
+        )
 
         if response is not None:
-            self.narrative_id = response['narrativeId']
-            self.narrative_time = response['narrativeTime']
+            self.narrative_id = response["narrativeId"]
+            self.narrative_time = response["narrativeTime"]
 
     def delete(self, botengine):
         """

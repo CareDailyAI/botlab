@@ -1,13 +1,14 @@
-'''
+"""
 Created on September 10, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.health.health import HealthDevice
+
 
 class AppleHealthDevice(HealthDevice):
     """
@@ -15,8 +16,8 @@ class AppleHealthDevice(HealthDevice):
     """
 
     # Parameters
-    MEASUREMENT_NAME_MOVEMENT_STATUS            = "movementStatus"
-    MEASUREMENT_NAME_SLEEP_ANALYSIS             = "sleepAnalysis"
+    MEASUREMENT_NAME_MOVEMENT_STATUS = "movementStatus"
+    MEASUREMENT_NAME_SLEEP_ANALYSIS = "sleepAnalysis"
 
     # Movement Status
     MOVEMENT_STATUS_DETECTED = 1
@@ -44,7 +45,7 @@ class AppleHealthDevice(HealthDevice):
 
     # # TRENDS TO MONITOR
     # Alert on falls
-    # Detect wandering 
+    # Detect wandering
     # alert with gps location
     # monitor sleep quality
     # monitor fitness
@@ -56,15 +57,33 @@ class AppleHealthDevice(HealthDevice):
     MAXIMUM_DISTANCE_MOVED_M = 100
 
     # Sleep Analysis parameter measurement Indexes
-    SLEEP_ANALYSIS_INDEX_IN_BED       = 0 # The user is in bed.
-    SLEEP_ANALYSIS_INDEX_ASLEEP       = 1 # The user is asleep, but the specific stage isn’t known.
-    SLEEP_ANALYSIS_INDEX_AWAKE        = 2 # The user is awake.
-    SLEEP_ANALYSIS_INDEX_ASLEEP_CORE  = 3 # The user is in light or intermediate sleep.
-    SLEEP_ANALYSIS_INDEX_ASLEEP_DEEP  = 4 # The user is in deep sleep.
-    SLEEP_ANALYSIS_INDEX_ASLEEP_REM   = 5 # The user is in REM sleep.
+    SLEEP_ANALYSIS_INDEX_IN_BED = 0  # The user is in bed.
+    SLEEP_ANALYSIS_INDEX_ASLEEP = (
+        1  # The user is asleep, but the specific stage isn’t known.
+    )
+    SLEEP_ANALYSIS_INDEX_AWAKE = 2  # The user is awake.
+    SLEEP_ANALYSIS_INDEX_ASLEEP_CORE = 3  # The user is in light or intermediate sleep.
+    SLEEP_ANALYSIS_INDEX_ASLEEP_DEEP = 4  # The user is in deep sleep.
+    SLEEP_ANALYSIS_INDEX_ASLEEP_REM = 5  # The user is in REM sleep.
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
-        HealthDevice.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
+        HealthDevice.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # User ID associated with this device.  Used for communications and device association. Left empty for anonymous users.
         self.user_id = self.device_id.split(":")[-1]
@@ -88,11 +107,11 @@ class AppleHealthDevice(HealthDevice):
         """
         # NOTE: Device type name
         return _("Apple Health")
-    
-    #---------------------------------------------------------------------------
+
+    # ---------------------------------------------------------------------------
     # Attributes
-    #---------------------------------------------------------------------------
-    
+    # ---------------------------------------------------------------------------
+
     def set_health_user(self, botengine, detect_movements):
         """
         Set the movement detection settings
@@ -100,7 +119,7 @@ class AppleHealthDevice(HealthDevice):
         :param detect_movements: True if this device should monitor movement status
         """
         self.detect_movements = detect_movements
-    
+
     def set_user_position(self, botengine, latitude, longitude):
         """
         Update position
@@ -111,15 +130,17 @@ class AppleHealthDevice(HealthDevice):
         self.latitude = latitude
         self.longitude = longitude
 
-
     def did_update_movement_status(self, botengine):
         """
         Determine if we updated the movement status in this execution
         :param botengine: BotEngine environment
         :return: True if we updated the movement status in this execution
         """
-        return AppleHealthDevice.MEASUREMENT_NAME_MOVEMENT_STATUS in self.last_updated_params
-        
+        return (
+            AppleHealthDevice.MEASUREMENT_NAME_MOVEMENT_STATUS
+            in self.last_updated_params
+        )
+
     def get_movement_status(self, botengine):
         """
         Retrieve the most recent movement status value
@@ -127,7 +148,9 @@ class AppleHealthDevice(HealthDevice):
         :return:
         """
         if AppleHealthDevice.MEASUREMENT_NAME_MOVEMENT_STATUS in self.measurements:
-            return self.measurements[AppleHealthDevice.MEASUREMENT_NAME_MOVEMENT_STATUS][0][0]
+            return self.measurements[
+                AppleHealthDevice.MEASUREMENT_NAME_MOVEMENT_STATUS
+            ][0][0]
         return None
 
     def is_detecting_movement(self, botengine):
@@ -149,7 +172,10 @@ class AppleHealthDevice(HealthDevice):
         :param botengine: BotEngine environment
         :return: True if we updated the sleep analysis in this execution
         """
-        return any(AppleHealthDevice.MEASUREMENT_NAME_SLEEP_ANALYSIS in param for param in self.last_updatedparams)
+        return any(
+            AppleHealthDevice.MEASUREMENT_NAME_SLEEP_ANALYSIS in param
+            for param in self.last_updatedparams
+        )
 
     def get_sleep_analysis(self, botengine, index=SLEEP_ANALYSIS_INDEX_AWAKE):
         """
@@ -157,8 +183,13 @@ class AppleHealthDevice(HealthDevice):
         :param botengine:
         :return:
         """
-        if f"{AppleHealthDevice.MEASUREMENT_NAME_SLEEP_ANALYSIS}.{index}" in self.measurements:
-            return self.measurements[f"{AppleHealthDevice.MEASUREMENT_NAME_SLEEP_ANALYSIS}.{index}"][0][0]
+        if (
+            f"{AppleHealthDevice.MEASUREMENT_NAME_SLEEP_ANALYSIS}.{index}"
+            in self.measurements
+        ):
+            return self.measurements[
+                f"{AppleHealthDevice.MEASUREMENT_NAME_SLEEP_ANALYSIS}.{index}"
+            ][0][0]
         return None
 
     def get_health_user(self, botengine):
@@ -168,7 +199,6 @@ class AppleHealthDevice(HealthDevice):
         :param botengine:
         :return: Dictionary with room boundaries
         """
-        detect_movements = True
         updated_ms = 0
 
         for measurement in self.measurements:
@@ -211,31 +241,56 @@ class AppleHealthDevice(HealthDevice):
         :param location_object: Location Object
         :param device_object: Device Object
         """
-        botengine.get_logger().debug("devices/health.py - Deliver 'information_did_update_user' message to microservices")
+        botengine.get_logger().debug(
+            "devices/health.py - Deliver 'information_did_update_user' message to microservices"
+        )
         # Location microservices
         for microservice in location_object.intelligence_modules:
-            if hasattr(location_object.intelligence_modules[microservice], 'information_did_update_user'):
+            if hasattr(
+                location_object.intelligence_modules[microservice],
+                "information_did_update_user",
+            ):
                 try:
                     location_object.intelligence_modules[
-                        microservice].information_did_update_user(botengine, device_object)
+                        microservice
+                    ].information_did_update_user(botengine, device_object)
                 except Exception as e:
-                    botengine.get_logger().warning("devices/health.py - Error delivering 'information_did_update_user' to location microservice (continuing execution): " + str(e))
+                    botengine.get_logger().warning(
+                        "devices/health.py - Error delivering 'information_did_update_user' to location microservice (continuing execution): "
+                        + str(e)
+                    )
                     import traceback
+
                     botengine.get_logger().error(traceback.format_exc())
 
         # Device microservices
         for device_id in location_object.devices:
             if hasattr(location_object.devices[device_id], "intelligence_modules"):
-                for microservice in location_object.devices[device_id].intelligence_modules:
-                    if hasattr(location_object.devices[device_id].intelligence_modules[microservice], 'information_did_update_user'):
+                for microservice in location_object.devices[
+                    device_id
+                ].intelligence_modules:
+                    if hasattr(
+                        location_object.devices[device_id].intelligence_modules[
+                            microservice
+                        ],
+                        "information_did_update_user",
+                    ):
                         try:
-                            location_object.devices[device_id].intelligence_modules[microservice].information_did_update_user(botengine, device_object)
+                            location_object.devices[device_id].intelligence_modules[
+                                microservice
+                            ].information_did_update_user(botengine, device_object)
                         except Exception as e:
-                            botengine.get_logger().warning("devices/health.py - Error delivering 'information_did_update_user' message to device microservice (continuing execution): " + str(e))
+                            botengine.get_logger().warning(
+                                "devices/health.py - Error delivering 'information_did_update_user' message to device microservice (continuing execution): "
+                                + str(e)
+                            )
                             import traceback
+
                             botengine.get_logger().error(traceback.format_exc())
 
-    def health_movement_status_updated(botengine, location_object, device_object, movement_detected, movement_count):
+    def health_movement_status_updated(
+        botengine, location_object, device_object, movement_detected, movement_count
+    ):
         """
         Updated the movement detection status for the given user
 
@@ -245,25 +300,56 @@ class AppleHealthDevice(HealthDevice):
         :param movement_detected: True if a movement is currently detected on this measurement, False if it's not detected
         :param movement_count: Count of the consecutive number of movement detects based on the targets
         """
-        botengine.get_logger().debug("devices/health.py - Deliver 'health_movement_status_updated' message to microservices")
+        botengine.get_logger().debug(
+            "devices/health.py - Deliver 'health_movement_status_updated' message to microservices"
+        )
         # Location microservices
         for microservice in location_object.intelligence_modules:
-            if hasattr(location_object.intelligence_modules[microservice], 'health_movement_status_updated'):
+            if hasattr(
+                location_object.intelligence_modules[microservice],
+                "health_movement_status_updated",
+            ):
                 try:
-                    location_object.intelligence_modules[microservice].health_movement_status_updated(botengine, device_object, movement_detected, movement_count)
+                    location_object.intelligence_modules[
+                        microservice
+                    ].health_movement_status_updated(
+                        botengine, device_object, movement_detected, movement_count
+                    )
                 except Exception as e:
-                    botengine.get_logger().warning("devices/health.py - Error delivering 'health_movement_status_updated' to location microservice (continuing execution): " + str(e))
+                    botengine.get_logger().warning(
+                        "devices/health.py - Error delivering 'health_movement_status_updated' to location microservice (continuing execution): "
+                        + str(e)
+                    )
                     import traceback
+
                     botengine.get_logger().error(traceback.format_exc())
 
         # Device microservices
         for device_id in location_object.devices:
             if hasattr(location_object.devices[device_id], "intelligence_modules"):
-                for microservice in location_object.devices[device_id].intelligence_modules:
-                    if hasattr(location_object.devices[device_id].intelligence_modules[microservice], 'health_movement_status_updated'):
+                for microservice in location_object.devices[
+                    device_id
+                ].intelligence_modules:
+                    if hasattr(
+                        location_object.devices[device_id].intelligence_modules[
+                            microservice
+                        ],
+                        "health_movement_status_updated",
+                    ):
                         try:
-                            location_object.devices[device_id].intelligence_modules[microservice].health_movement_status_updated(botengine, device_object, movement_detected, movement_count)
+                            location_object.devices[device_id].intelligence_modules[
+                                microservice
+                            ].health_movement_status_updated(
+                                botengine,
+                                device_object,
+                                movement_detected,
+                                movement_count,
+                            )
                         except Exception as e:
-                            botengine.get_logger().warning("devices/health.py - Error delivering 'health_movement_status_updated' message to device microservice (continuing execution): " + str(e))
+                            botengine.get_logger().warning(
+                                "devices/health.py - Error delivering 'health_movement_status_updated' message to device microservice (continuing execution): "
+                                + str(e)
+                            )
                             import traceback
+
                             botengine.get_logger().error(traceback.format_exc())

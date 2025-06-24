@@ -16,7 +16,7 @@ class TestDashboardMicroservice():
         # Clear out any previous tests
         botengine.reset()
 
-        botengine.logging_service_names = ["dashboard"]
+        # botengine.logging_service_names = ["dashboard"] # Uncomment to see logging
 
         # Initialize the location
         location_object = Location(botengine, 0)

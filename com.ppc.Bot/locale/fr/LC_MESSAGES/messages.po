@@ -2,9 +2,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: English (BotLab)\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-31 09:30-0800\n"
-"PO-Revision-Date: 2024-12-31 17:29+0000\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-03-11 14:43-0700\n"
+"PO-Revision-Date: 2025-03-11 21:42+0000\n"
 "Last-Translator: Weblate <noreply-mt-weblate@weblate.org>\n"
 "Language: fr\n"
 "Language-Team: French <http://weblate-"
@@ -15,87 +15,87 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
 
-#: devices/thermostat/thermostat.py:245 devices/thermostat/thermostat.py:325
+#: devices/thermostat/thermostat.py:283 devices/thermostat/thermostat.py:502
 msgid "'{}' now set to {}"
 msgstr "'{}' est désormais défini sur {}"
 
-#: devices/thermostat/thermostat.py:974
+#: devices/thermostat/thermostat.py:1581
 msgid "'{}': Applying energy policies"
 msgstr "'{}' : Application des politiques énergétiques"
 
-#: devices/thermostat/thermostat_ecobee.py:146
-#: devices/thermostat/thermostat_ecobee.py:186
+#: devices/thermostat/thermostat_ecobee.py:179
+#: devices/thermostat/thermostat_ecobee.py:232
 msgid "'{}': Away mode"
 msgstr "'{}' : Mode Absent"
 
-#: devices/thermostat/thermostat_ecobee.py:262
+#: devices/thermostat/thermostat_ecobee.py:343
 msgid "'{}': Home mode"
 msgstr "'{}' : Mode domicile"
 
-#: devices/thermostat/thermostat.py:557
+#: devices/thermostat/thermostat.py:953
 msgid "'{}': Learned HOME cooling set point."
 msgstr "'{}' : Apprentissage du point de consigne de refroidissement HOME."
 
-#: devices/thermostat/thermostat.py:569
+#: devices/thermostat/thermostat.py:992
 msgid "'{}': Learned HOME heating set point."
 msgstr "'{}' : Apprentissage du point de consigne du chauffage HOME."
 
-#: devices/thermostat/thermostat.py:712
+#: devices/thermostat/thermostat.py:1243
 msgid "'{}': Learned away preferences."
 msgstr "'{}' : Apprentissage des préférences."
 
-#: devices/thermostat/thermostat.py:615 devices/thermostat/thermostat.py:654
-#: devices/thermostat/thermostat.py:757
+#: devices/thermostat/thermostat.py:1091 devices/thermostat/thermostat.py:1150
+#: devices/thermostat/thermostat.py:1313
 msgid "'{}': Learned night time preferences."
 msgstr "'{}' : Préférences nocturnes apprises."
 
-#: devices/thermostat/thermostat_ecobee.py:122
-#: devices/thermostat/thermostat_ecobee.py:221
+#: devices/thermostat/thermostat_ecobee.py:146
+#: devices/thermostat/thermostat_ecobee.py:280
 msgid "'{}': Sleep mode"
 msgstr "'{}' : Mode veille"
 
-#: utilities/utilities.py:290
+#: utilities/utilities.py:310
 msgid "0 seconds"
 msgstr "0 secondes"
 
-#: utilities/utilities.py:274
+#: utilities/utilities.py:294
 msgid "1 hour"
 msgstr "1 heure"
 
-#: utilities/utilities.py:279
+#: utilities/utilities.py:299
 msgid "1 minute"
 msgstr "1 minute"
 
-#: utilities/utilities.py:285
+#: utilities/utilities.py:305
 msgid "1 second"
 msgstr "1 seconde"
 
-#: signals/dashboard.py:13
+#: signals/dashboard.py:15
 msgid "ALERTS"
 msgstr "ALERTS"
 
-#: confidence/occupancy_confidence_machine.py:86
-#: confidence/occupancy_confidence_machine.py:136
-#: confidence/occupancy_confidence_machine.py:141
+#: confidence/occupancy_confidence_machine.py:92
+#: confidence/occupancy_confidence_machine.py:150
+#: confidence/occupancy_confidence_machine.py:155
 msgid "Add 1 Entry device to improve the confidence."
 msgstr "Ajouter 1 dispositif d'entrée pour améliorer la confiance."
 
-#: confidence/occupancy_confidence_machine.py:89
-#: confidence/occupancy_confidence_machine.py:132
+#: confidence/occupancy_confidence_machine.py:95
 #: confidence/occupancy_confidence_machine.py:144
+#: confidence/occupancy_confidence_machine.py:158
 msgid "Add 1 Motion or Radar device to improve the confidence."
 msgstr "Ajoutez 1 appareil Motion ou Radar pour améliorer la confiance."
 
-#: confidence/occupancy_confidence_machine.py:77
-#: confidence/sleep_confidence_machine.py:105
+#: confidence/occupancy_confidence_machine.py:81
+#: confidence/sleep_confidence_machine.py:114
 msgid "Add 1 more Motion or Radar device to improve the confidence."
 msgstr "Ajoutez 1 autre appareil Motion ou Radar pour améliorer la confiance."
 
-#: confidence/occupancy_confidence_machine.py:81
+#: confidence/occupancy_confidence_machine.py:87
 msgid "Add 1 more entry device to improve the confidence."
 msgstr "Ajouter un dispositif d'entrée supplémentaire pour améliorer la confiance."
 
-#: confidence/sleep_confidence_machine.py:113
+#: confidence/sleep_confidence_machine.py:126
 msgid ""
 "Add more Motion or Radar devices installed inside bedroom to improve the "
 "confidence."
@@ -103,7 +103,7 @@ msgstr ""
 "Ajoutez davantage de dispositifs de détection de mouvement ou de radar "
 "installés à l'intérieur de la chambre pour améliorer la confiance."
 
-#: confidence/sleep_confidence_machine.py:110
+#: confidence/sleep_confidence_machine.py:121
 msgid ""
 "Add more Motion or Radar devices installed outside bedroom to improve the"
 " confidence."
@@ -112,99 +112,99 @@ msgstr ""
 "installés à l’extérieur de la chambre pour améliorer la confiance."
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/alarm/alarm.py:27 devices/alarm/alarm_eu_develco.py:35
+#: devices/alarm/alarm.py:44 devices/alarm/alarm_eu_develco.py:36
 msgid "Alarm"
 msgstr "Alarme"
 
 #. Device type name
-#: devices/camera/camera_peoplepower_presenceandroid.py:22
+#: devices/camera/camera_peoplepower_presenceandroid.py:25
 msgid "Android Camera"
 msgstr "Appareil photo Android"
 
 #. Device type name
-#: devices/pictureframe/pictureframe_peoplepower_android.py:24
+#: devices/pictureframe/pictureframe_peoplepower_android.py:27
 msgid "Android Picture Frame"
 msgstr "Cadre photo Android"
 
 #. Device type name
-#: devices/health/health_apple.py:90
+#: devices/health/health_apple.py:111
 msgid "Apple Health"
 msgstr "Apple Health"
 
 #. Device type name.
-#: devices/proxy/proxy_apple.py:24
+#: devices/proxy/proxy_apple.py:26
 msgid "Apple Proxy"
 msgstr "Proxy Apple"
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/button/button_multi.py:63 devices/button/button_panic.py:49
+#: devices/button/button_multi.py:82 devices/button/button_panic.py:67
 msgid "Assist Button"
 msgstr "Bouton d'assistance"
 
-#: signals/radar.py:115
+#: signals/radar.py:118
 msgid "Bathtub / Shower"
 msgstr "Baignoire / Douche"
 
-#: signals/radar.py:79
+#: signals/radar.py:82
 msgid "Bed"
 msgstr "Lit"
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/button/button.py:67 devices/button/button_develco.py:51
-#: devices/button/button_linkhigh.py:60
+#: devices/button/button.py:85 devices/button/button_develco.py:69
+#: devices/button/button_linkhigh.py:78
 msgid "Button"
 msgstr "Bouton"
 
-#: signals/radar.py:106
+#: signals/radar.py:109
 msgid "CPAP Machine"
 msgstr "Machine CPAP"
 
-#: signals/radar.py:85
+#: signals/radar.py:88
 msgid "California King Bed"
 msgstr "Lit California King"
 
 #. Abstract device type name, doeesn't show up in end user documentation
-#: devices/camera/camera.py:24
+#: devices/camera/camera.py:42
 msgid "Camera"
 msgstr "Appareil photo"
 
 #. Device type name
-#: devices/gas/carbon_monoxide.py:35
+#: devices/gas/carbon_monoxide.py:54
 msgid "Carbon Monoxide Sensor"
 msgstr "Détecteur de monoxyde de carbone"
 
 #. Device type name
-#: devices/thermostat/thermostat_centralite_pearl.py:65
+#: devices/thermostat/thermostat_centralite_pearl.py:63
 msgid "Centralite Pearl Thermostat"
 msgstr "Thermostat Centralite Pearl"
 
-#: signals/radar.py:124
+#: signals/radar.py:127
 msgid "Chair"
 msgstr "Président"
 
-#: devices/thermostat/thermostat.py:273 devices/thermostat/thermostat.py:340
+#: devices/thermostat/thermostat.py:365 devices/thermostat/thermostat.py:550
 msgid "Cooling set point adjusted"
 msgstr "Réglage du point de consigne du refroidissement"
 
-#: signals/radar.py:127
+#: signals/radar.py:130
 msgid "Couch"
 msgstr "Couch"
 
-#: signals/radar.py:100
+#: signals/radar.py:103
 msgid "Crib"
 msgstr "Lit d'enfant"
 
-#: signals/dashboard.py:405
+#: signals/dashboard.py:480
 msgid "DISABLED"
 msgstr "DÉSACTIVÉ"
 
 #. Super abstract device type name
-#: devices/device.py:317
+#: devices/device.py:379
 msgid "Device"
 msgstr "Dispositif"
 
 #. Device type name
-#: devices/thermostat/thermostat_ecobee.py:70
+#: devices/thermostat/thermostat_ecobee.py:85
 msgid "Ecobee"
 msgstr "Ecobee"
 
@@ -213,287 +213,287 @@ msgstr "Ecobee"
 msgid "Emerson Thermostat"
 msgstr "Thermostat Emerson"
 
-#: signals/radar.py:103
+#: signals/radar.py:106
 msgid "End Table"
 msgstr "Table d'appoint"
 
 #. Device type name
-#: devices/entry/entry.py:62 tests/test_bot.py:412 tests/test_bot.py:441
+#: devices/entry/entry.py:79 tests/test_bot.py:941 tests/test_bot.py:972
 msgid "Entry Sensor"
 msgstr "Capteur d'entrée"
 
-#: signals/radar.py:130
+#: signals/radar.py:133
 msgid "Exit Door"
 msgstr "Porte de sortie"
 
-#: signals/radar.py:91
+#: signals/radar.py:94
 msgid "Full Bed"
 msgstr "Lit complet"
 
 #. Device type name
-#: devices/light/lightswitch_ge.py:42
+#: devices/light/lightswitch_ge.py:60
 msgid "GE In-Wall Switch"
 msgstr "Interrupteur mural GE"
 
 #. Device type name
-#: devices/health/health_google.py:43
+#: devices/health/health_google.py:46
 msgid "Google Health"
 msgstr "Google Santé"
 
 #. Device type name
-#: devices/health/health.py:84
+#: devices/health/health.py:101
 msgid "Health"
 msgstr "Santé"
 
-#: devices/thermostat/thermostat.py:303 devices/thermostat/thermostat.py:356
+#: devices/thermostat/thermostat.py:442 devices/thermostat/thermostat.py:592
 msgid "Heating set point adjusted"
 msgstr "Réglage du point de consigne du chauffage"
 
 #. Device type name
-#: devices/thermostat/thermostat_honeywell_lyric.py:35
+#: devices/thermostat/thermostat_honeywell_lyric.py:34
 msgid "Honeywell Lyric Thermostat"
 msgstr "Thermostat Honeywell Lyric"
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/io/io.py:55
+#: devices/io/io.py:75
 msgid "IO Module"
 msgstr "Module IO"
 
-#: signals/radar.py:76
+#: signals/radar.py:79
 msgid "Ignore Region"
 msgstr "Ignorer la région"
 
 #. Device type name
-#: devices/light/light_inwall_dimmer.py:24
+#: devices/light/light_inwall_dimmer.py:26
 msgid "In-Wall Dimmer"
 msgstr "Variateur mural"
 
 #. Device type name - In-Wall Outlet
-#: devices/smartplug/smartplug_inwall_outlet.py:24
+#: devices/smartplug/smartplug_inwall_outlet.py:26
 msgid "In-Wall Outlet"
 msgstr "Prise murale"
 
 #. Device type name
-#: devices/keypad/keypad.py:50 devices/keypad/keypad_develco.py:89
+#: devices/keypad/keypad.py:70 devices/keypad/keypad_develco.py:109
 msgid "Keypad"
 msgstr "Clavier"
 
-#: signals/radar.py:82
+#: signals/radar.py:85
 msgid "King Bed"
 msgstr "Lit King"
 
 #. Device type name - Smartenit Large Load Controller
-#: devices/smartplug/smartplug_smartenit_largeload.py:31
+#: devices/smartplug/smartplug_smartenit_largeload.py:34
 msgid "Large Load Controller"
 msgstr "Contrôleur de charge de grande taille"
 
 #. Device type name
-#: devices/leak/leak.py:39 devices/leak/leak_develco.py:54
+#: devices/leak/leak.py:56 devices/leak/leak_develco.py:71
 msgid "Leak Sensor"
 msgstr "Capteur de fuite"
 
 #. Device type name
-#: devices/light/lightswitch_leviton_decora.py:42
+#: devices/light/lightswitch_leviton_decora.py:60
 msgid "Leviton Decora In-Wall Switch"
 msgstr "Leviton Decora In-Wall Switch"
 
 #. Device type name
-#: devices/light/light.py:82
+#: devices/light/light.py:98
 msgid "Light"
 msgstr "Lumière"
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/lock/lock.py:59
+#: devices/lock/lock.py:80
 msgid "Lock"
 msgstr "Verrouiller"
 
 #. Device type name
-#: devices/gateway/gateway_peoplepower_mseries.py:26
+#: devices/gateway/gateway_peoplepower_mseries.py:28
 msgid "M-Series Smart Home Center"
 msgstr "Série M - Smart Home Center"
 
 #. Device type name
-#: devices/motion/motion.py:50
+#: devices/motion/motion.py:67
 msgid "Motion Sensor"
 msgstr "Détecteur de mouvement"
 
-#: signals/dashboard.py:12
+#: signals/dashboard.py:14
 msgid "NOW"
 msgstr "MAINTENANT"
 
-#: signals/dashboard.py:440
+#: signals/dashboard.py:526
 msgid "Okay, resolving the notification..."
 msgstr "Ok, résolution de la notification..."
 
 #. Device type name
-#: devices/pictureframe/pictureframe_peoplepower.py:107
+#: devices/pictureframe/pictureframe_peoplepower.py:124
 msgid "Picture Frame"
 msgstr "Cadre photo"
 
 #. This is an abstract name of a camera device that doesn't show up in end-user
 #. documentation.
-#: devices/camera/camera_peoplepower_presence.py:96
+#: devices/camera/camera_peoplepower_presence.py:113
 msgid "Presence Camera"
 msgstr "Caméra de présence"
 
-#: devices/pressure/pressure.py:56
+#: devices/pressure/pressure.py:73
 msgid "Pressure Pad"
 msgstr "Coussin de pression"
 
 #. Abstract device type name
-#: devices/proxy/proxy.py:26
+#: devices/proxy/proxy.py:45
 msgid "Proxy"
 msgstr "Proxy"
 
-#: signals/radar.py:88
+#: signals/radar.py:91
 msgid "Queen Bed"
 msgstr "Lit Queen"
 
-#: signals/dashboard.py:403
+#: signals/dashboard.py:478
 msgid "RUNNING"
 msgstr "COURSE"
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/radar/radar.py:130
+#: devices/radar/radar.py:150
 msgid "Radar"
 msgstr "Radar"
 
-#: signals/dashboard.py:440
+#: signals/dashboard.py:525
 msgid "Resolve"
 msgstr "Résoudre"
 
-#: signals/dashboard.py:16
+#: signals/dashboard.py:18
 msgid "SERVICES"
 msgstr "SERVICES"
 
 #. Device type name
-#: devices/thermostat/thermostat_sensibo_sky.py:53
+#: devices/thermostat/thermostat_sensibo_sky.py:69
 msgid "Sensibo Sky Thermostat"
 msgstr "Thermostat Sensibo Sky"
 
-#: devices/thermostat/thermostat_ecobee.py:147
-#: devices/thermostat/thermostat_ecobee.py:187
+#: devices/thermostat/thermostat_ecobee.py:180
+#: devices/thermostat/thermostat_ecobee.py:233
 msgid "Setting your ecobee thermostat into Away mode."
 msgstr "Mise en mode Absent de votre thermostat ecobee."
 
-#: devices/thermostat/thermostat_ecobee.py:263
+#: devices/thermostat/thermostat_ecobee.py:344
 msgid "Setting your ecobee thermostat into Home mode."
 msgstr "Régler votre thermostat ecobee en mode Home."
 
-#: devices/thermostat/thermostat_ecobee.py:123
-#: devices/thermostat/thermostat_ecobee.py:222
+#: devices/thermostat/thermostat_ecobee.py:147
+#: devices/thermostat/thermostat_ecobee.py:281
 msgid "Setting your ecobee thermostat into Sleep mode."
 msgstr "Mettre votre thermostat ecobee en mode veille."
 
-#: signals/radar.py:118
+#: signals/radar.py:121
 msgid "Shower"
 msgstr "Douche"
 
-#: signals/radar.py:121
+#: signals/radar.py:124
 msgid "Sink"
 msgstr "Evier"
 
 #. Device type name
-#: devices/siren/siren.py:36
+#: devices/siren/siren.py:55
 msgid "Siren"
 msgstr "Sirène"
 
 #. Device type name - Smart Breaker
-#: devices/smartplug/smartbreaker.py:87
+#: devices/smartplug/smartbreaker.py:106
 msgid "Smart Breaker"
 msgstr "Disjoncteur intelligent"
 
 #. Device type name
-#: devices/smartplug/smartcable_develco.py:21
+#: devices/smartplug/smartcable_develco.py:24
 msgid "Smart Cable"
 msgstr "Câble intelligent"
 
 #. Device type name
-#: devices/light/light_smartdimmer.py:24
+#: devices/light/light_smartdimmer.py:26
 msgid "Smart Dimmer"
 msgstr "Variateur intelligent"
 
 #. Abstract device type name
 #. Device type name
 #. Device type name.
-#: devices/gateway/gateway.py:26
-#: devices/gateway/gateway_develco_squidlink.py:48
-#: devices/gateway/gateway_dsr_sgw.py:24
-#: devices/gateway/gateway_peoplepower_edge.py:26
-#: devices/gateway/gateway_peoplepower_iotgateway.py:26
-#: devices/gateway/gateway_peoplepower_xseries.py:28
-#: devices/gateway/gateway_qorvo_lcgw.py:24
+#: devices/gateway/gateway.py:45
+#: devices/gateway/gateway_develco_squidlink.py:51
+#: devices/gateway/gateway_dsr_sgw.py:26
+#: devices/gateway/gateway_peoplepower_edge.py:28
+#: devices/gateway/gateway_peoplepower_iotgateway.py:28
+#: devices/gateway/gateway_peoplepower_xseries.py:31
+#: devices/gateway/gateway_qorvo_lcgw.py:26
 msgid "Smart Home Center"
 msgstr "Centre de la maison intelligente"
 
 #. Device type name - abstract smart plug
 #. Device type name - Centralte 3-series smart plug
 #. Device type name
-#: devices/smartplug/smartplug.py:80
-#: devices/smartplug/smartplug_centralite_3series.py:26
-#: devices/smartplug/smartplug_develco.py:21
+#: devices/smartplug/smartplug.py:96
+#: devices/smartplug/smartplug_centralite_3series.py:29
+#: devices/smartplug/smartplug_develco.py:24
 msgid "Smart Plug"
 msgstr "Prise intelligente"
 
-#: signals/radar.py:132
+#: signals/radar.py:135
 msgid "Subregion"
 msgstr "Sous-région"
 
 #. Device type name
-#: devices/environment/temperature.py:37
+#: devices/environment/temperature.py:36
 msgid "Temperature Sensor"
 msgstr "Temperature Sensor"
 
 #. Device type name
-#: devices/environment/temperaturehumidity.py:58
+#: devices/environment/temperaturehumidity.py:57
 msgid "Temperature and Humidity Sensor"
 msgstr "Capteur de température et d'humidité"
 
-#: signals/radar.py:109
+#: signals/radar.py:112
 msgid "Toilet"
 msgstr "Toilettes"
 
-#: signals/radar.py:112
+#: signals/radar.py:115
 msgid "Toilet Tank"
 msgstr "Réservoir des toilettes"
 
 #. Device type name
-#: devices/movement/touch.py:47
+#: devices/movement/touch.py:62
 msgid "Touch Sensor"
 msgstr "Capteur tactile"
 
 #. Device type name
-#: devices/touchpad/touchpad_peoplepower.py:76
+#: devices/touchpad/touchpad_peoplepower.py:94
 msgid "Touchpad"
 msgstr "Pavé tactile"
 
-#: signals/radar.py:97
+#: signals/radar.py:100
 msgid "Twin Bed"
 msgstr "Lit double"
 
-#: signals/radar.py:94
+#: signals/radar.py:97
 msgid "Twin XL Bed"
 msgstr "Lit Twin XL"
 
-#: signals/dashboard.py:440
+#: signals/dashboard.py:523
 msgid "UPDATE STATUS >"
 msgstr "METTRE À JOUR L'ÉTAT >"
 
-#: signals/dashboard.py:440
+#: signals/dashboard.py:524
 msgid "Update Status"
 msgstr "Mise à jour du statut"
 
 #. Abstract device type name, doesn't show up in end user documentation
-#: devices/radar/vayyar/radar.py:143
+#: devices/radar/vayyar/radar.py:162
 msgid "Vayyar Care"
 msgstr "Soins à Vayyar"
 
 #. Device type name
-#: devices/vibration/vibration.py:77
+#: devices/vibration/vibration.py:96
 msgid "Vibration Sensor"
 msgstr "Capteur de vibration"
 
-#: confidence/occupancy_confidence_machine.py:124
+#: confidence/occupancy_confidence_machine.py:132
 msgid ""
 "We don't have Motion or Radar or Entry device for occupancy home service "
 "to work."
@@ -509,27 +509,27 @@ msgstr ""
 "Nous n'avons pas suffisamment d'appareils de détection de mouvement ou de"
 " radar pour que le service d'occupation en absence fonctionne."
 
-#: confidence/sleep_confidence_machine.py:88
+#: confidence/sleep_confidence_machine.py:93
 msgid "We don't have enough devices for sleep service to work."
 msgstr ""
 "Nous n'avons pas assez d'appareils pour que le service de sommeil "
 "fonctionne."
 
-#: confidence/occupancy_confidence_machine.py:73
+#: confidence/occupancy_confidence_machine.py:75
 msgid "We have high confidence on the occupancy away service."
 msgstr ""
 "Nous avons une grande confiance dans le service d'éloignement de "
 "l'occupation."
 
-#: confidence/occupancy_confidence_machine.py:128
+#: confidence/occupancy_confidence_machine.py:138
 msgid "We have high confidence on the occupancy home service."
 msgstr "Nous avons une grande confiance dans le service d'occupation à domicile."
 
-#: confidence/sleep_confidence_machine.py:97
+#: confidence/sleep_confidence_machine.py:104
 msgid "We have high confidence on the sleep service."
 msgstr "Nous avons une grande confiance dans le service de sommeil."
 
-#: confidence/sleep_confidence_machine.py:102
+#: confidence/sleep_confidence_machine.py:109
 msgid ""
 "We have low confidence on the sleep service due to lack of recent "
 "measurements."
@@ -537,7 +537,7 @@ msgstr ""
 "Nous n'avons qu'une confiance limitée dans le service de sommeil en "
 "raison du manque de mesures récentes."
 
-#: confidence/sleep_confidence_machine.py:94
+#: confidence/sleep_confidence_machine.py:99
 msgid ""
 "We have medium confidence on the sleep service due to lack of recent "
 "measurements."
@@ -546,59 +546,64 @@ msgstr ""
 "raison du manque de mesures récentes."
 
 #. Device type name
-#: devices/health/health_withings_sleep.py:58
+#: devices/health/health_withings_sleep.py:77
 msgid "Withings Sleep"
 msgstr "Withings Sommeil"
 
-#: devices/thermostat/thermostat.py:274
+#. Device type name.
+#: devices/proxy/proxy_withings.py:26
+msgid "Withings Watch"
+msgstr "Montre Withings"
+
+#: devices/thermostat/thermostat.py:366
 msgid "Your '{}' cooling set point is set to {}."
 msgstr "Votre point de consigne de refroidissement '{}' est réglé sur {}."
 
-#: devices/thermostat/thermostat.py:341
+#: devices/thermostat/thermostat.py:551
 msgid "Your '{}' cooling set point was manually adjusted to {}."
 msgstr ""
 "Votre point de consigne de refroidissement '{}' a été réglé manuellement "
 "sur {}."
 
-#: devices/thermostat/thermostat.py:304
+#: devices/thermostat/thermostat.py:443
 msgid "Your '{}' heating set point is set to {}."
 msgstr "Votre point de consigne de chauffage '{}' est réglé sur {}."
 
-#: devices/thermostat/thermostat.py:357
+#: devices/thermostat/thermostat.py:593
 msgid "Your '{}' heating set point was manually adjusted to {}."
 msgstr ""
 "Le point de consigne de votre chauffage '{}' a été réglé manuellement sur"
 " {}."
 
-#: devices/thermostat/thermostat.py:326
+#: devices/thermostat/thermostat.py:510
 msgid "Your '{}' is now set to {}."
 msgstr "Votre \"{}\" est maintenant défini sur {}."
 
-#: devices/thermostat/thermostat.py:246
+#: devices/thermostat/thermostat.py:291
 msgid "Your '{}' is set to {}."
 msgstr "Votre \"{}\" est réglé sur {}."
 
-#: devices/thermostat/thermostat.py:713
+#: devices/thermostat/thermostat.py:1244
 msgid "Your '{}' learned the away cooling setpoint should be {} from HOME mode."
 msgstr ""
 "Votre '{}' a appris que le point de consigne de refroidissement à "
 "l'extérieur devrait être {} dans le mode HOME."
 
-#: devices/thermostat/thermostat.py:758
+#: devices/thermostat/thermostat.py:1316
 msgid "Your '{}' learned the away heating setpoint should be {} from HOME mode."
 msgstr ""
 "Votre '{}' a appris que le point de consigne du chauffage d'appoint "
 "devrait être {} dans le mode HOME."
 
-#: devices/thermostat/thermostat.py:616
+#: devices/thermostat/thermostat.py:1094
 msgid "Your '{}' learned the night time cooling setpoint."
 msgstr "Votre '{}' a appris le point de consigne du refroidissement nocturne."
 
-#: devices/thermostat/thermostat.py:655
+#: devices/thermostat/thermostat.py:1153
 msgid "Your '{}' learned the night time heating setpoint."
 msgstr "Votre '{}' a appris le point de consigne du chauffage de nuit."
 
-#: devices/thermostat/thermostat.py:558
+#: devices/thermostat/thermostat.py:956
 msgid ""
 "Your '{}' learned you want the cooling set point set to {} when you are "
 "home."
@@ -606,7 +611,7 @@ msgstr ""
 "Votre \"{}\" indique que vous souhaitez que le point de consigne de "
 "refroidissement soit réglé sur {} lorsque vous êtes à la maison."
 
-#: devices/thermostat/thermostat.py:570
+#: devices/thermostat/thermostat.py:995
 msgid ""
 "Your '{}' learned you want the heating set point set to {} when you are "
 "home."
@@ -614,230 +619,230 @@ msgstr ""
 "Votre \"{}\" indique que vous souhaitez que le point de consigne du "
 "chauffage soit réglé sur {} lorsque vous êtes à la maison."
 
-#: devices/thermostat/thermostat.py:975
+#: devices/thermostat/thermostat.py:1582
 msgid "Your new cooling set point is {} and heating setpoint is {}."
 msgstr ""
 "Votre nouveau point de consigne de refroidissement est {} et votre point "
 "de consigne de chauffage est {}."
 
-#: devices/smartplug/smartbreaker.py:233
+#: devices/smartplug/smartbreaker.py:272
 msgid "air"
 msgstr "l'air"
 
-#: signals/radar.py:221
+#: signals/radar.py:234
 msgid "at"
 msgstr "à"
 
-#: devices/motion/motion.py:76 devices/radar/radar.py:172
-#: devices/smartplug/smartbreaker.py:177
+#: devices/motion/motion.py:101 devices/radar/radar.py:203
+#: devices/smartplug/smartbreaker.py:214
 msgid "bath"
 msgstr "bain"
 
-#: devices/motion/motion.py:63 devices/radar/radar.py:156
-#: devices/smartplug/smartbreaker.py:165
+#: devices/motion/motion.py:83 devices/radar/radar.py:180
+#: devices/smartplug/smartbreaker.py:197
 msgid "bdrm"
 msgstr "chambre"
 
-#: devices/motion/motion.py:63 devices/radar/radar.py:156
-#: devices/smartplug/smartbreaker.py:165
+#: devices/motion/motion.py:81 devices/radar/radar.py:178
+#: devices/smartplug/smartbreaker.py:195
 msgid "bed"
 msgstr "lit"
 
-#: devices/motion/motion.py:63 devices/radar/radar.py:156
-#: devices/smartplug/smartbreaker.py:165
+#: devices/motion/motion.py:82 devices/radar/radar.py:179
+#: devices/smartplug/smartbreaker.py:196
 msgid "bett"
 msgstr "bett"
 
-#: devices/smartplug/smartbreaker.py:295
+#: devices/smartplug/smartbreaker.py:339
 msgid "charger"
 msgstr "chargeur"
 
-#: devices/smartplug/smartbreaker.py:233
+#: devices/smartplug/smartbreaker.py:273
 msgid "condition"
 msgstr "condition"
 
-#: devices/smartplug/smartbreaker.py:189
+#: devices/smartplug/smartbreaker.py:226
 msgid "cook"
 msgstr "cuisiner"
 
-#: devices/smartplug/smartbreaker.py:233
+#: devices/smartplug/smartbreaker.py:275
 msgid "cooler"
 msgstr "refroidisseur"
 
-#: devices/motion/motion.py:63 devices/radar/radar.py:156
-#: devices/smartplug/smartbreaker.py:165
+#: devices/motion/motion.py:87 devices/radar/radar.py:184
+#: devices/smartplug/smartbreaker.py:201
 msgid "dad's room"
 msgstr "chambre de papa"
 
-#: devices/motion/motion.py:63 devices/radar/radar.py:156
-#: devices/smartplug/smartbreaker.py:165
+#: devices/motion/motion.py:85 devices/radar/radar.py:182
+#: devices/smartplug/smartbreaker.py:199
 msgid "dads room"
 msgstr "chambre des pères"
 
-#: devices/smartplug/smartbreaker.py:189
+#: devices/smartplug/smartbreaker.py:226
 msgid "dinnete"
 msgstr "dînette"
 
-#: devices/smartplug/smartbreaker.py:255
+#: devices/smartplug/smartbreaker.py:299
 msgid "dishwasher"
 msgstr "lave-vaisselle"
 
-#: devices/smartplug/smartbreaker.py:245
+#: devices/smartplug/smartbreaker.py:289
 msgid "dryer"
 msgstr "séchoir"
 
 #. "The Moss family <typed a Duress code into the Touchpad>."
-#: utilities/utilities.py:172
+#: utilities/utilities.py:176
 msgid "entered a duress code, indicating a potential threat."
 msgstr "a entré un code de contrainte, indiquant une menace potentielle."
 
-#: devices/smartplug/smartbreaker.py:295
+#: devices/smartplug/smartbreaker.py:339
 msgid "ev"
 msgstr "ev"
 
-#: devices/smartplug/smartbreaker.py:189
+#: devices/smartplug/smartbreaker.py:226
 msgid "fridge"
 msgstr "frigo"
 
-#: devices/smartplug/smartbreaker.py:233
+#: devices/smartplug/smartbreaker.py:276
 msgid "furnace"
 msgstr "four"
 
-#: devices/smartplug/smartbreaker.py:213
+#: devices/smartplug/smartbreaker.py:250
 msgid "garage"
 msgstr "garage"
 
 #. "The Moss family <burglary alarm tripped>."
-#: utilities/utilities.py:152
+#: utilities/utilities.py:156
 msgid "has a burglar alarm"
 msgstr "dispose d'une alarme anti-intrusion"
 
 #. "The Moss family <burglary alarm tripped because a door opened>."
-#: utilities/utilities.py:160
+#: utilities/utilities.py:164
 msgid "has a burglar alarm because a door opened"
 msgstr "a une alarme antivol parce qu'une porte s'est ouverte"
 
 #. "The Moss family <burglary alarm tripped because a window opened>."
-#: utilities/utilities.py:156
+#: utilities/utilities.py:160
 msgid "has a burglar alarm because a window opened"
 msgstr "a une alarme antivol parce qu'une fenêtre s'est ouverte"
 
 #. "The Moss family <burglary alarm tripped shortly after arming>."
-#: utilities/utilities.py:168
+#: utilities/utilities.py:172
 msgid "has a burglar alarm, shortly after arming"
 msgstr "dispose d'une alarme antivol, peu de temps après l'avoir armée"
 
-#: devices/smartplug/smartbreaker.py:233
+#: devices/smartplug/smartbreaker.py:274
 msgid "heater"
 msgstr "chauffe-eau"
 
-#: devices/smartplug/smartbreaker.py:233
+#: devices/smartplug/smartbreaker.py:271
 msgid "hvac"
 msgstr "hvac"
 
 #. Device type name
-#: devices/camera/camera_peoplepower_presenceios.py:22
+#: devices/camera/camera_peoplepower_presenceios.py:25
 msgid "iOS Camera"
 msgstr "Appareil photo iOS"
 
 #. Device type name
-#: devices/pictureframe/pictureframe_peoplepower_ios.py:24
+#: devices/pictureframe/pictureframe_peoplepower_ios.py:27
 msgid "iOS Picture Frame"
 msgstr "Cadre photo iOS"
 
-#: signals/radar.py:224
+#: signals/radar.py:237
 msgid "in"
 msgstr "en"
 
 #. "The Moss family <is experiencing a water leak>."
-#: utilities/utilities.py:164
+#: utilities/utilities.py:168
 msgid "is experiencing a water leak"
 msgstr "est victime d'une fuite d'eau"
 
-#: devices/smartplug/smartbreaker.py:189
+#: devices/smartplug/smartbreaker.py:226
 msgid "kitch"
 msgstr "kitch"
 
-#: devices/smartplug/smartbreaker.py:201
+#: devices/smartplug/smartbreaker.py:238
 msgid "lamp"
 msgstr "lampe"
 
-#: devices/smartplug/smartbreaker.py:201
+#: devices/smartplug/smartbreaker.py:238
 msgid "lantern"
 msgstr "lanterne"
 
-#: devices/smartplug/smartbreaker.py:201
+#: devices/smartplug/smartbreaker.py:238
 msgid "light"
 msgstr "lumière"
 
 #. "The Moss family <may need some assistance>." - generic message
-#: utilities/utilities.py:176
+#: utilities/utilities.py:180
 msgid "may need some assistance"
 msgstr "peut avoir besoin d'une assistance"
 
-#: devices/motion/motion.py:63 devices/radar/radar.py:156
-#: devices/smartplug/smartbreaker.py:165
+#: devices/motion/motion.py:86 devices/radar/radar.py:183
+#: devices/smartplug/smartbreaker.py:200
 msgid "mom's room"
 msgstr "chambre de maman"
 
-#: devices/motion/motion.py:63 devices/radar/radar.py:156
-#: devices/smartplug/smartbreaker.py:165
+#: devices/motion/motion.py:84 devices/radar/radar.py:181
+#: devices/smartplug/smartbreaker.py:198
 msgid "moms room"
 msgstr "chambre des mamans"
 
-#: devices/smartplug/smartbreaker.py:201
+#: devices/smartplug/smartbreaker.py:238
 msgid "outlet"
 msgstr "sortie"
 
-#: devices/smartplug/smartbreaker.py:265
+#: devices/smartplug/smartbreaker.py:309
 msgid "oven"
 msgstr "four"
 
-#: devices/smartplug/smartbreaker.py:223
+#: devices/smartplug/smartbreaker.py:260
 msgid "pool"
 msgstr "piscine"
 
-#: devices/motion/motion.py:76 devices/radar/radar.py:172
-#: devices/smartplug/smartbreaker.py:177
+#: devices/motion/motion.py:101 devices/radar/radar.py:203
+#: devices/smartplug/smartbreaker.py:214
 msgid "powder"
 msgstr "poudre"
 
-#: devices/motion/motion.py:76 devices/radar/radar.py:172
-#: devices/smartplug/smartbreaker.py:177
+#: devices/motion/motion.py:101 devices/radar/radar.py:203
+#: devices/smartplug/smartbreaker.py:214
 msgid "schlaf"
 msgstr "schlaf"
 
-#: devices/motion/motion.py:76 devices/radar/radar.py:172
-#: devices/smartplug/smartbreaker.py:177
+#: devices/motion/motion.py:101 devices/radar/radar.py:203
+#: devices/smartplug/smartbreaker.py:214
 msgid "shower"
 msgstr "douche"
 
-#: devices/smartplug/smartbreaker.py:265
+#: devices/smartplug/smartbreaker.py:309
 msgid "stove"
 msgstr "poêle"
 
-#: devices/motion/motion.py:76 devices/radar/radar.py:172
-#: devices/smartplug/smartbreaker.py:177
+#: devices/motion/motion.py:101 devices/radar/radar.py:203
+#: devices/smartplug/smartbreaker.py:214
 msgid "toilet"
 msgstr "toilettes"
 
-#: devices/smartplug/smartbreaker.py:285
+#: devices/smartplug/smartbreaker.py:329
 msgid "tub"
 msgstr "baignoire"
 
-#: devices/smartplug/smartbreaker.py:275
+#: devices/smartplug/smartbreaker.py:319
 msgid "water heater"
 msgstr "chauffe-eau"
 
-#: utilities/utilities.py:276
+#: utilities/utilities.py:296
 msgid "{} hours"
 msgstr "{} heures"
 
-#: utilities/utilities.py:281
+#: utilities/utilities.py:301
 msgid "{} minutes"
 msgstr "{} minutes"
 
-#: utilities/utilities.py:287
+#: utilities/utilities.py:307
 msgid "{} seconds"
 msgstr "{} secondes"
 

@@ -86,7 +86,7 @@ Alternatively, you can run a specific test with:
 
 Lint the project with:
 
-`flake8`
+`ruff`
 
 ## API documentation
 

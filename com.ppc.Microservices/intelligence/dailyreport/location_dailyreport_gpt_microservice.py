@@ -19,7 +19,11 @@ import signals.analytics as analytics
 import signals.dailyreport as dailyreport
 import signals.dashboard as dashboard
 
-from users.user import User
+from users.user import (
+    User,
+    ROLE_TYPE_PROFESSIONAL_CAREGIVER,
+    ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER,
+)
 
 from intelligence.dailyreport.location_dailyreport_microservice import *
 
@@ -60,7 +64,7 @@ SERVICE_WEIGHT_GPT_ACTIVE      = 100
 DEFAULT_REPORT_TYPES = [
     {
         "id": 0,
-        "role_type": User.ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER,
+        "role_type": ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER,
         "assistant_example": "Digs had a low-average trips, little bit of wiggle room, but nothing major. Mostly chillin' recently.",
         "rules": [
             "Provide a concise summary in less than 30 words.",
@@ -149,7 +153,7 @@ DEFAULT_REPORT_TYPES = [
     },
     {
         "id": 1,
-        "role_type": User.ROLE_TYPE_PROFESSIONAL_CAREGIVER,
+        "role_type": ROLE_TYPE_PROFESSIONAL_CAREGIVER,
         "assistant_example": "In a 30-day period, this residence recorded an average of 0.2 potential falls, with a high variability as indicated by a standard deviation of 1.4. The standard score of 0.67 suggests the data is slightly above the mean. The information suggests fluctuating fall risks within this setting.",
         "rules": [
             "Provide a concise summary in less than 100 words.",
@@ -271,7 +275,7 @@ class LocationDailyReportGPTMicroservice(Intelligence):
         "report_types": [
             {
                 "id": Int, # Unique Report Type ID
-                "role_type": Int, # Role Type ID (User.ROLE_TYPE_*)
+                "role_type": Int, # Role Type ID (users.user.ROLE_TYPE_*)
                 "role": String, # Name of the role
                 "rules": [String], # Rules for this role
                 "supported_section_ids": [Int], # Supported section IDs (See dailyreport.SECTION_ID_*)
@@ -509,8 +513,8 @@ class LocationDailyReportGPTMicroservice(Intelligence):
                 # Process the next request in 10 minutes.  Pass through to completion if none are left.
                 # May be overridden by bot domain property GPT_PROMPT_DEFERRAL.
                 deferral_time_ms = DEFAULT_REPORT_DEFER_TIME
-                if properties.get_property(botengine, "GPT_PROMPT_DEFERRAL") is not None:
-                    gpt_prompt_deferral = properties.get_property(botengine, "GPT_PROMPT_DEFERRAL")
+                if properties.get_property(botengine, "GPT_PROMPT_DEFERRAL", False) is not None:
+                    gpt_prompt_deferral = properties.get_property(botengine, "GPT_PROMPT_DEFERRAL", False)
                     # Make sure the deferral time is at least 5 minutes
                     if gpt_prompt_deferral > REPORT_DEFER_TIME_MINIMUM:
                         deferral_time_ms = gpt_prompt_deferral
@@ -897,7 +901,7 @@ class LocationDailyReportGPTMicroservice(Intelligence):
         # Track Analytics
         analytics.track(botengine, self.parent, "dailyreport_gpt_generated", {"period": period, "report_type_id": report_type_id, "item_id": item_id, "usage": completion.get("usage", {})})
 
-        role = report_type.get("role_type", User.ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER)
+        role = report_type.get("role_type", ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER)
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_gpt_callback_response() role={}".format(role))
 
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_gpt_callback_response() len(messages)={} len(responses={}".format(len(messages), len(responses)))
@@ -931,7 +935,7 @@ class LocationDailyReportGPTMicroservice(Intelligence):
         # Track Analytics
         analytics.track(botengine, self.parent, "dailyreport_gpt_completed", {"period": period, "report_type_id": report_type_id, "messages": len(self.messages[period][report_type_id]["messages"])})
 
-        role = report_type.get("role_type", User.ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER)
+        role = report_type.get("role_type", ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER)
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() role={}".format(role))
         # Publish as analytic narrative
         self.parent.narrate(botengine,
@@ -944,10 +948,10 @@ class LocationDailyReportGPTMicroservice(Intelligence):
                             event_type="dailyreport_gpt_completed.{}".format(period))
 
         primary_caregiver_enabled = PRIMARY_CAREGIVER_GPT_REPORT_ENABLED
-        if properties.get_property(botengine, "GPT_PRIMARY_CAREGIVER_REPORT_ENABLED") is not None:
-            primary_caregiver_enabled = properties.get_property(botengine, "GPT_PRIMARY_CAREGIVER_REPORT_ENABLED")
+        if properties.get_property(botengine, "GPT_PRIMARY_CAREGIVER_REPORT_ENABLED", False) is not None:
+            primary_caregiver_enabled = properties.get_property(botengine, "GPT_PRIMARY_CAREGIVER_REPORT_ENABLED", False)
 
-        if role == User.ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER and primary_caregiver_enabled:
+        if role == ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER and primary_caregiver_enabled:
             # Publish as info narrative
             self.parent.narrate(botengine,
                             title=_("Daily Report Wellness Report"),
@@ -983,7 +987,7 @@ class LocationDailyReportGPTMicroservice(Intelligence):
                     subtitle=subtitle,
                     identifier="gpt_report_{}".format(period),
                 )
-        elif role == User.ROLE_TYPE_PROFESSIONAL_CAREGIVER:
+        elif role == ROLE_TYPE_PROFESSIONAL_CAREGIVER:
             self.parent.narrate(botengine,
                             title=_("Daily Report Wellness Report"),
                             description=self.messages[period][report_type_id]["responses"][0],

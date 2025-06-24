@@ -13,7 +13,19 @@ TASK_PRIORITY_INFO = 1
 TASK_PRIORITY_WARNING = 2
 TASK_PRIORITY_CRITICAL = 3
 
-def update_task(botengine, location_object, task_id, title, comment="", priority=TASK_PRIORITY_INFO, icon=None, icon_font=None, url=None, editable=True):
+
+def update_task(
+    botengine,
+    location_object,
+    task_id,
+    title,
+    comment="",
+    priority=TASK_PRIORITY_INFO,
+    icon=None,
+    icon_font=None,
+    url=None,
+    editable=True,
+):
     """
     Add or update a task
     :param botengine: BotEngine environment
@@ -27,26 +39,23 @@ def update_task(botengine, location_object, task_id, title, comment="", priority
     :param url: Instead of tapping into the task, jump straight to this URL when the user taps on the task from their Dashboard.
     :param editable: True if this task can be edited.
     """
-    task = {
-        "id": task_id,
-        "title": title,
-        "comment": comment,
-        "editable": editable
-    }
+    task = {"id": task_id, "title": title, "comment": comment, "editable": editable}
 
     if priority is not None:
-        task['priority'] = priority
+        task["priority"] = priority
 
     if icon is not None:
-        task['icon'] = icon
+        task["icon"] = icon
 
     if icon_font is not None:
-        task['icon_font'] = icon_font
+        task["icon_font"] = icon_font
 
     if url is not None:
-        task['url'] = url
+        task["url"] = url
 
-    location_object.distribute_datastream_message(botengine, "update_task", task, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_task", task, internal=True, external=False
+    )
 
 
 def delete_task(botengine, location_object, task_id):
@@ -56,9 +65,8 @@ def delete_task(botengine, location_object, task_id):
     :param location_object: Location object
     :param task_id: Task ID to delete
     """
-    task = {
-        "id": task_id
-    }
+    task = {"id": task_id}
 
-    location_object.distribute_datastream_message(botengine, "update_task", task, internal=True, external=False)
-
+    location_object.distribute_datastream_message(
+        botengine, "update_task", task, internal=True, external=False
+    )

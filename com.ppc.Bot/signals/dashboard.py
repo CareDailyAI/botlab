@@ -60,7 +60,21 @@ DASHBOARD_PRIORITY_SUBJECTIVE_WARNING = 5
 DASHBOARD_PRIORITY_CRITICAL_ALERT = 6
 
 
-def update_dashboard_header(botengine, location_object, name, priority, percent_good=100, title=None, comment=None, icon=None, icon_font=None, resolution_object=None, conversation_object=None, future_timestamp_ms=None, ttl_ms=None):
+def update_dashboard_header(
+    botengine,
+    location_object,
+    name,
+    priority,
+    percent_good=100,
+    title=None,
+    comment=None,
+    icon=None,
+    icon_font=None,
+    resolution_object=None,
+    conversation_object=None,
+    future_timestamp_ms=None,
+    ttl_ms=None,
+):
     """
     Update the dashboard header with the unique name.
     The conversation_object, once created with conversation.create_conversation(), will contain a resolution object and an optional feedback object.
@@ -182,40 +196,47 @@ def update_dashboard_header(botengine, location_object, name, priority, percent_
         "name": name,
         "priority": priority,
         "percent": percent_good,
-        "updated_ms": botengine.get_timestamp()
+        "updated_ms": botengine.get_timestamp(),
     }
 
     if title is not None:
-        content['title'] = title
+        content["title"] = title
 
     if comment is not None:
-        content['comment'] = comment
+        content["comment"] = comment
 
     if icon is not None:
-        content['icon'] = icon
+        content["icon"] = icon
 
     if icon_font is not None:
-        content['icon_font'] = icon_font
+        content["icon_font"] = icon_font
 
     if future_timestamp_ms is not None:
-        content['future_timestamp_ms'] = future_timestamp_ms
+        content["future_timestamp_ms"] = future_timestamp_ms
 
     if conversation_object is not None:
-        content['conversation_object'] = conversation_object
+        content["conversation_object"] = conversation_object
 
     if resolution_object is not None:
         # Flush questions so we make sure our questions all have question ID's
         botengine.flush_questions()
-        content['resolution'] = resolution_object
+        content["resolution"] = resolution_object
 
-    location_object.distribute_datastream_message(botengine, 'update_dashboard_header', content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_dashboard_header", content, internal=True, external=False
+    )
 
     if ttl_ms is not None:
         starting_time_ms = botengine.get_timestamp()
         if future_timestamp_ms is not None:
             starting_time_ms = future_timestamp_ms
 
-        delete_dashboard_header(botengine, location_object, name, future_timestamp_ms=starting_time_ms + ttl_ms)
+        delete_dashboard_header(
+            botengine,
+            location_object,
+            name,
+            future_timestamp_ms=starting_time_ms + ttl_ms,
+        )
 
 
 def refresh_dashboard_header(botengine, location_object):
@@ -228,7 +249,9 @@ def refresh_dashboard_header(botengine, location_object):
     :param location_object:
     :return:
     """
-    location_object.distribute_datastream_message(botengine, 'update_dashboard_header', {}, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_dashboard_header", {}, internal=True, external=False
+    )
 
 
 def delete_dashboard_header(botengine, location_object, name, future_timestamp_ms=None):
@@ -240,17 +263,35 @@ def delete_dashboard_header(botengine, location_object, name, future_timestamp_m
     :param future_timestamp_ms: Future timestamp in which to automatically delete this dashboard header
     :return:
     """
-    content = {
-        "name": name
-    }
+    content = {"name": name}
 
     if future_timestamp_ms is not None:
-        content['future_timestamp_ms'] = future_timestamp_ms
+        content["future_timestamp_ms"] = future_timestamp_ms
 
-    location_object.distribute_datastream_message(botengine, 'update_dashboard_header', content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_dashboard_header", content, internal=True, external=False
+    )
 
 
-def set_status(botengine, location_object, unique_identifier, comment, status=STATUS_GOOD, comment_weight=50, device_id=None, icon=None, icon_font=None, url=None, section_title=CARD_TITLE_NOW, section_weight=CARD_TYPE_NOW_WEIGHT, set_status_good_timestamp_ms=None, set_status_warning_timestamp_ms=None, set_status_critical_timestamp_ms=None, delete_timestamp_ms=None, status_comments=None):
+def set_status(
+    botengine,
+    location_object,
+    unique_identifier,
+    comment,
+    status=STATUS_GOOD,
+    comment_weight=50,
+    device_id=None,
+    icon=None,
+    icon_font=None,
+    url=None,
+    section_title=CARD_TITLE_NOW,
+    section_weight=CARD_TYPE_NOW_WEIGHT,
+    set_status_good_timestamp_ms=None,
+    set_status_warning_timestamp_ms=None,
+    set_status_critical_timestamp_ms=None,
+    delete_timestamp_ms=None,
+    status_comments=None,
+):
     """
     Set content for a status-style card.
     These are the multiple rows of information at the the top of the dashboard that say what is happening right now.
@@ -269,7 +310,7 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
     :return: Dashboard JSON content to be saved and used in updating later
     """
     alarms = {}
-    comments ={}
+    comments = {}
 
     element = {
         "status": status,
@@ -278,12 +319,11 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
         "id": unique_identifier,
         "icon": icon,
         "alarms": alarms,
-        "comments":comments
-
+        "comments": comments,
     }
 
     if icon_font is not None:
-        element['icon_font'] = icon_font
+        element["icon_font"] = icon_font
 
     if device_id is not None:
         element["device_id"] = device_id
@@ -295,7 +335,7 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
         "type": CARD_TYPE_NOW,
         "title": section_title,
         "weight": section_weight,
-        "content": element
+        "content": element,
     }
 
     if set_status_good_timestamp_ms is not None:
@@ -303,16 +343,22 @@ def set_status(botengine, location_object, unique_identifier, comment, status=ST
 
     if set_status_warning_timestamp_ms is not None:
         alarms[set_status_warning_timestamp_ms] = COMMAND_SET_STATUS_WARNING
-        comments[set_status_warning_timestamp_ms] = status_comments.get(STATUS_WARNING) if status_comments else None
+        comments[set_status_warning_timestamp_ms] = (
+            status_comments.get(STATUS_WARNING) if status_comments else None
+        )
 
     if set_status_critical_timestamp_ms is not None:
         alarms[set_status_critical_timestamp_ms] = COMMAND_SET_STATUS_CRITICAL
-        comments[set_status_critical_timestamp_ms] = status_comments.get(STATUS_CRITICAL) if status_comments else None
+        comments[set_status_critical_timestamp_ms] = (
+            status_comments.get(STATUS_CRITICAL) if status_comments else None
+        )
 
     if delete_timestamp_ms is not None:
         alarms[delete_timestamp_ms] = COMMAND_DELETE
 
-    location_object.distribute_datastream_message(botengine, "update_dashboard_content", content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_dashboard_content", content, internal=True, external=False
+    )
     return content
 
 
@@ -325,11 +371,15 @@ def update_status_content(botengine, location_object, content):
     :param content: Updated JSON dashboard content to set
     :return: Updated JSON content
     """
-    location_object.distribute_datastream_message(botengine, "update_dashboard_content", content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_dashboard_content", content, internal=True, external=False
+    )
     return content
 
 
-def delete_status(botengine, location_object, unique_identifier, section_title=CARD_TITLE_NOW):
+def delete_status(
+    botengine, location_object, unique_identifier, section_title=CARD_TITLE_NOW
+):
     """
     Delete content within a status-style card
     :param botengine: BotEngine environment
@@ -341,17 +391,36 @@ def delete_status(botengine, location_object, unique_identifier, section_title=C
     content = {
         "type": CARD_TYPE_NOW,
         "title": section_title,
-        "content": {
-            "id": unique_identifier,
-            "comment": None
-        }
+        "content": {"id": unique_identifier, "comment": None},
     }
 
-    location_object.distribute_datastream_message(botengine, "update_dashboard_content", content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_dashboard_content", content, internal=True, external=False
+    )
     return None
 
 
-def set_service(botengine, location_object, unique_identifier, title, comment, icon, icon_font=None, status=STATUS_GOOD, percent=100.0, active=True, description=None, status_text=None, question_id=None, collection_id=None, section_id=None, comment_weight=50, section_title=CARD_TITLE_SERVICES, section_weight=CARD_TYPE_SERVICES_WEIGHT):
+def set_service(
+    botengine,
+    location_object,
+    unique_identifier,
+    title,
+    comment,
+    icon,
+    icon_font=None,
+    status=STATUS_GOOD,
+    percent=100.0,
+    active=True,
+    description=None,
+    status_text=None,
+    question_id=None,
+    collection_id=None,
+    section_id=None,
+    comment_weight=50,
+    section_title=CARD_TITLE_SERVICES,
+    section_weight=CARD_TYPE_SERVICES_WEIGHT,
+    display_info=None,
+):
     """
     Set content for a service-style card.
     :param botengine: BotEngine environment
@@ -360,15 +429,19 @@ def set_service(botengine, location_object, unique_identifier, title, comment, i
     :param title: Title of the content
     :param comment: Comment to display. If None then this content gets deleted
     :param icon: Icon name to render from http://peoplepowerco.com/icons or http://fontawesome.com
-    :param icon: Icon font package to use. See the ICON_FONT_* descriptions in com.ppc.Bot/utilities/utilities.py
+    :param icon_font: Icon font package to use. See the ICON_FONT_* descriptions in com.ppc.Bot/utilities/utilities.py
     :param status: Status for color-coding the content
     :param percent: DEPRECATED. Percent complete.
     :param active: True if this element is active, False if it is disabled
+    :param status_text: Optional status text to show in the app
     :param question_id: Optional Question ID to link to
     :param collection_id: Optional Collection ID to link to
+    :param section_id: Optional Section ID to link to
     :param comment_weight: Weight of this comment relative to other comments
     :param section_title: Title of the section, in case we want multiple NOW-style cards
     :param section_weight: Weight of the section, in case we want to change it
+    :param display_info: Optional display info to show in the app
+        :param display_home_area: Optional home area to show in the app
     """
     if comment is not None:
         element = {
@@ -379,11 +452,11 @@ def set_service(botengine, location_object, unique_identifier, title, comment, i
             "percent": 100,
             "active": active,
             "id": unique_identifier,
-            "weight": comment_weight
+            "weight": comment_weight,
         }
 
         if icon_font is not None:
-            element['icon_font'] = icon_font
+            element["icon_font"] = icon_font
 
         if question_id is not None:
             element["question_id"] = question_id
@@ -403,6 +476,8 @@ def set_service(botengine, location_object, unique_identifier, title, comment, i
             element["status_text"] = _("RUNNING")
         else:
             element["status_text"] = _("DISABLED")
+        if display_info is not None:
+            element["display_info"] = display_info
 
     else:
         element = None
@@ -411,13 +486,17 @@ def set_service(botengine, location_object, unique_identifier, title, comment, i
         "type": CARD_TYPE_SERVICES,
         "title": section_title,
         "weight": section_weight,
-        "content": element
+        "content": element,
     }
 
-    location_object.distribute_datastream_message(botengine, "update_dashboard_content", content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_dashboard_content", content, internal=True, external=False
+    )
 
 
-def delete_service(botengine, location_object, unique_identifier, section_title=CARD_TITLE_SERVICES):
+def delete_service(
+    botengine, location_object, unique_identifier, section_title=CARD_TITLE_SERVICES
+):
     """
     Delete content within a service-style card
     :param botengine: BotEngine environment
@@ -428,16 +507,25 @@ def delete_service(botengine, location_object, unique_identifier, section_title=
     content = {
         "type": CARD_TYPE_SERVICES,
         "title": section_title,
-        "content": {
-            "id": unique_identifier,
-            "comment": None
-        }
+        "content": {"id": unique_identifier, "comment": None},
     }
 
-    location_object.distribute_datastream_message(botengine, "update_dashboard_content", content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine, "update_dashboard_content", content, internal=True, external=False
+    )
 
 
-def oneshot_resolution_object(botengine, name, dashboard_button=_("UPDATE STATUS >"), actionsheet_title=_("Update Status"), resolution_button=_("Resolve"), ack=_("Okay, resolving the notification..."), icon="thumbs-up", icon_font="far", response_options=None):
+def oneshot_resolution_object(
+    botengine,
+    name,
+    dashboard_button=_("UPDATE STATUS >"),
+    actionsheet_title=_("Update Status"),
+    resolution_button=_("Resolve"),
+    ack=_("Okay, resolving the notification..."),
+    icon="thumbs-up",
+    icon_font="far",
+    response_options=None,
+):
     """
     Generate a one-shot resolution object JSON structure.
     The resolution will actually be handled by the location_dashboardheader_microservice through a datastream message "resolve_dashboard" and content
@@ -459,33 +547,29 @@ def oneshot_resolution_object(botengine, name, dashboard_button=_("UPDATE STATUS
                 "ack": ack,
                 "icon": icon,
                 "icon_font": icon_font,
-                "content": {
-                    "answer": 0
-                }
+                "content": {"answer": 0},
             }
         ]
 
     return {
         # Question to place on the front page of the app
         "button": dashboard_button,
-
         # Title at the top of the bottom modal action sheet
         "title": actionsheet_title,
-
         # To answer this question, send a data stream message to this address ...
         "datastream_address": "resolve_dashboard_header",
-
         # ... and include this content merged with the 'content' from the selected option
         "content": {
             # Name of the dashboard item to resolve, to be received and handled in the datastream message from the app
             "name": name
         },
-
-        "response_options": response_options
+        "response_options": response_options,
     }
 
 
-def updated_dashboard_headers(botengine, location_object, published_header, all_headers):
+def updated_dashboard_headers(
+    botengine, location_object, published_header, all_headers
+):
     """
     Announce to other microservices that we've updated our dashboard headers and provide the recent stack of headers
 
@@ -494,9 +578,12 @@ def updated_dashboard_headers(botengine, location_object, published_header, all_
     :param published_header: Dashboard header we've published
     :param all_headers: Dictionary of all headers in the stack
     """
-    content = {
-        "published_header": published_header,
-        "all_headers": all_headers
-    }
+    content = {"published_header": published_header, "all_headers": all_headers}
 
-    location_object.distribute_datastream_message(botengine, "updated_dashboard_headers", content=content, internal=True, external=False)
+    location_object.distribute_datastream_message(
+        botengine,
+        "updated_dashboard_headers",
+        content=content,
+        internal=True,
+        external=False,
+    )

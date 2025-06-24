@@ -1,41 +1,41 @@
-'''
+"""
 Created on April 4, 2022
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: Destry Teeter
-'''
+"""
 
 from devices.device import Device
-import utilities.utilities as utilities
+
 
 class HealthDevice(Device):
     """
     Health Device
     """
-    # Parameters
-    MEASUREMENT_NAME_BED_STATUS                 = "bedStatus"
-    MEASUREMENT_NAME_HEART_RATE                 = "hr"
-    MEASUREMENT_NAME_HEART_RATE_RESTING         = "hrResting"
-    MEASUREMENT_NAME_STEPS                      = "steps"
-    MEASUREMENT_NAME_BREATHING_RATE             = "br"
-    MEASUREMENT_NAME_BREATHING_RATE_STABILITY   = "brStability"
-    MEASUREMENT_NAME_HEART_RATE_STABILITY       = "hrStability"
-    MEASUREMENT_NAME_MOTION_INDEX               = "motionIndex"
-    MEASUREMENT_NAME_MOTION_STABILITY           = "motionStability"
-    MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX     = "bloodPressure.diastolic_max" # REMOVE. Provide non-aggregated measurements only.
-    MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX     = "bloodPressure.systolic_max" # REMOVE. Provide non-aggregated measurements only.
-    MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC   = 'bloodPressureDiastolic'
-    MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC    = 'bloodPressureSystolic'
-    MEASUREMENT_NAME_HEMATOCRIT                 = 'hematocrit'
-    MEASUREMENT_NAME_HEMOGLOBIN                 = 'hemoglobin'
-    MEASUREMENT_NAME_HR_VARIABILITY             = 'hrVariability'
-    MEASUREMENT_NAME_PERFUSION_INDEX            = 'perfusionIndex'
-    MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX    = 'plethVariabilityIndex'
-    MEASUREMENT_NAME_PROTEIN                    = 'protein'
-    MEASUREMENT_NAME_SPO2                       = 'spo2'
 
+    # Parameters
+    MEASUREMENT_NAME_BED_STATUS = "bedStatus"
+    MEASUREMENT_NAME_HEART_RATE = "hr"
+    MEASUREMENT_NAME_HEART_RATE_RESTING = "hrResting"
+    MEASUREMENT_NAME_STEPS = "steps"
+    MEASUREMENT_NAME_BREATHING_RATE = "br"
+    MEASUREMENT_NAME_BREATHING_RATE_STABILITY = "brStability"
+    MEASUREMENT_NAME_HEART_RATE_STABILITY = "hrStability"
+    MEASUREMENT_NAME_MOTION_INDEX = "motionIndex"
+    MEASUREMENT_NAME_MOTION_STABILITY = "motionStability"
+    MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX = "bloodPressure.diastolic_max"  # REMOVE. Provide non-aggregated measurements only.
+    MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX = "bloodPressure.systolic_max"  # REMOVE. Provide non-aggregated measurements only.
+    MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC = "bloodPressureDiastolic"
+    MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC = "bloodPressureSystolic"
+    MEASUREMENT_NAME_HEMATOCRIT = "hematocrit"
+    MEASUREMENT_NAME_HEMOGLOBIN = "hemoglobin"
+    MEASUREMENT_NAME_HR_VARIABILITY = "hrVariability"
+    MEASUREMENT_NAME_PERFUSION_INDEX = "perfusionIndex"
+    MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX = "plethVariabilityIndex"
+    MEASUREMENT_NAME_PROTEIN = "protein"
+    MEASUREMENT_NAME_SPO2 = "spo2"
 
     # Bed Status
     BED_STATUS_IN_BED = 1
@@ -64,10 +64,25 @@ class HealthDevice(Device):
     # Device types
     DEVICE_TYPES = []
 
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
-        
     def new_version(self, botengine):
         """
         New version
@@ -75,14 +90,14 @@ class HealthDevice(Device):
         """
         Device.new_version(self, botengine)
         return
-        
+
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Device type name
         return _("Health")
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
@@ -96,7 +111,7 @@ class HealthDevice(Device):
         :return: True if we updated the bed status in this execution
         """
         return HealthDevice.MEASUREMENT_NAME_BED_STATUS in self.last_updated_params
-        
+
     def get_bed_status(self, botengine):
         """
         Retrieve the most recent bed status value
@@ -143,7 +158,7 @@ class HealthDevice(Device):
         :return: True if we updated the heart rate in this execution
         """
         return HealthDevice.MEASUREMENT_NAME_HEART_RATE in self.last_updated_params
-        
+
     def get_heart_rate(self, botengine):
         """
         Retrieve the most recent heart_rate value
@@ -153,7 +168,7 @@ class HealthDevice(Device):
         if HealthDevice.MEASUREMENT_NAME_HEART_RATE in self.measurements:
             return self.measurements[HealthDevice.MEASUREMENT_NAME_HEART_RATE][0][0]
         return None
-            
+
     def get_average_heart_rate(self, botengine):
         """
         Retrieve the most recent heart_rate value
@@ -162,7 +177,13 @@ class HealthDevice(Device):
         """
         if HealthDevice.MEASUREMENT_NAME_HEART_RATE in self.measurements:
             from statistics import mean
-            return mean([x[0] for x in self.measurements[HealthDevice.MEASUREMENT_NAME_HEART_RATE]])
+
+            return mean(
+                [
+                    x[0]
+                    for x in self.measurements[HealthDevice.MEASUREMENT_NAME_HEART_RATE]
+                ]
+            )
         return None
 
     def did_update_heart_rate_resting(self, botengine):
@@ -171,8 +192,10 @@ class HealthDevice(Device):
         :param botengine: BotEngine environment
         :return: True if we updated the heart rate resting in this execution
         """
-        return HealthDevice.MEASUREMENT_NAME_HEART_RATE_RESTING in self.last_updated_params
-        
+        return (
+            HealthDevice.MEASUREMENT_NAME_HEART_RATE_RESTING in self.last_updated_params
+        )
+
     def get_heart_rate_resting(self, botengine):
         """
         Retrieve the most recent heart rate resting value
@@ -180,9 +203,11 @@ class HealthDevice(Device):
         :return:
         """
         if HealthDevice.MEASUREMENT_NAME_HEART_RATE_RESTING in self.measurements:
-            return self.measurements[HealthDevice.MEASUREMENT_NAME_HEART_RATE_RESTING][0][0]
+            return self.measurements[HealthDevice.MEASUREMENT_NAME_HEART_RATE_RESTING][
+                0
+            ][0]
         return None
-    
+
     def get_average_heart_rate_resting(self, botengine):
         """
         Retrieve the most recent heart rate resting value
@@ -191,7 +216,15 @@ class HealthDevice(Device):
         """
         if HealthDevice.MEASUREMENT_NAME_HEART_RATE_RESTING in self.measurements:
             from statistics import mean
-            return mean([x[0] for x in self.measurements[HealthDevice.MEASUREMENT_NAME_HEART_RATE_RESTING]])
+
+            return mean(
+                [
+                    x[0]
+                    for x in self.measurements[
+                        HealthDevice.MEASUREMENT_NAME_HEART_RATE_RESTING
+                    ]
+                ]
+            )
         return None
 
     def did_update_steps(self, botengine):
@@ -220,8 +253,11 @@ class HealthDevice(Device):
         :return: True if the diastolic blood pressure changed
         """
         if HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX in self.measurements:
-            return HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX in self.last_updated_params
-        
+            return (
+                HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX
+                in self.last_updated_params
+            )
+
     def did_change_blood_pressure_diastolic_max(self, botengine):
         """
         Did the Diastolic blood pressure max change? (Bottom number of blood pressure)
@@ -229,7 +265,10 @@ class HealthDevice(Device):
         :return: True if the diastolic blood pressure changed
         """
         if HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX in self.measurements:
-            return HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX in self.last_updated_params
+            return (
+                HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX
+                in self.last_updated_params
+            )
 
     def did_change_blood_pressure_diastolic(self, botengine):
         """
@@ -238,7 +277,10 @@ class HealthDevice(Device):
         :return: True if the diastolic blood pressure changed
         """
         if HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC in self.measurements:
-            return HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC in self.last_updated_params
+            return (
+                HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC
+                in self.last_updated_params
+            )
 
     def did_change_blood_pressure_systolic(self, botengine):
         """
@@ -247,7 +289,10 @@ class HealthDevice(Device):
         :return: True if systolic blood pressure changed
         """
         if HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC in self.measurements:
-            return HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC in self.last_updated_params
+            return (
+                HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC
+                in self.last_updated_params
+            )
 
     def did_change_hematocrit(self, botengine):
         """
@@ -286,7 +331,9 @@ class HealthDevice(Device):
         :return: True if hr variability changed
         """
         if HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY in self.measurements:
-            return HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY in self.last_updated_params
+            return (
+                HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY in self.last_updated_params
+            )
 
     def did_change_perfusion_index(self, botengine):
         """
@@ -295,7 +342,10 @@ class HealthDevice(Device):
         :return: True if perfusion index change
         """
         if HealthDevice.MEASUREMENT_NAME_PERFUSION_INDEX in self.measurements:
-            return HealthDevice.MEASUREMENT_NAME_PERFUSION_INDEX in self.last_updated_params
+            return (
+                HealthDevice.MEASUREMENT_NAME_PERFUSION_INDEX
+                in self.last_updated_params
+            )
 
     def did_change_pleth_variability_index(self, botengine):
         """
@@ -304,7 +354,10 @@ class HealthDevice(Device):
         :return: True if pleth variability index changed
         """
         if HealthDevice.MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX in self.measurements:
-            return HealthDevice.MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX in self.last_updated_params
+            return (
+                HealthDevice.MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX
+                in self.last_updated_params
+            )
 
     def did_change_protein(self, botengine):
         """
@@ -331,11 +384,20 @@ class HealthDevice(Device):
         :return: diastolic blood pressure measurement
         """
         if HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX in self.measurements:
-            if len(self.measurements[HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX]) > 0:
-                return self.measurements[HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX][0][0]
+            if (
+                len(
+                    self.measurements[
+                        HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX
+                    ]
+                )
+                > 0
+            ):
+                return self.measurements[
+                    HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIA_MAX
+                ][0][0]
 
         return None
-    
+
     def get_blood_pressure_systolic_max(self, botengine):
         """
         Retrieve the Systolic blood pressure max change (Bottom number of blood pressure)
@@ -343,8 +405,17 @@ class HealthDevice(Device):
         :return: systolic blood pressure measurement
         """
         if HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX in self.measurements:
-            if len(self.measurements[HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX]) > 0:
-                return self.measurements[HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX][0][0]
+            if (
+                len(
+                    self.measurements[
+                        HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX
+                    ]
+                )
+                > 0
+            ):
+                return self.measurements[
+                    HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYS_MAX
+                ][0][0]
 
         return None
 
@@ -355,8 +426,17 @@ class HealthDevice(Device):
         :return: diastolic blood pressure measurement
         """
         if HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC in self.measurements:
-            if len(self.measurements[HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC]) > 0:
-                return self.measurements[HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC][0][0]
+            if (
+                len(
+                    self.measurements[
+                        HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC
+                    ]
+                )
+                > 0
+            ):
+                return self.measurements[
+                    HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_DIASTOLIC
+                ][0][0]
 
         return None
 
@@ -367,8 +447,17 @@ class HealthDevice(Device):
         :return: systolic blood pressure measurement
         """
         if HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC in self.measurements:
-            if len(self.measurements[HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC]) > 0:
-                return self.measurements[HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC][0][0]
+            if (
+                len(
+                    self.measurements[
+                        HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC
+                    ]
+                )
+                > 0
+            ):
+                return self.measurements[
+                    HealthDevice.MEASUREMENT_NAME_BLOOD_PRESSURE_SYSTOLIC
+                ][0][0]
 
         return None
 
@@ -407,10 +496,12 @@ class HealthDevice(Device):
         """
         if HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY in self.measurements:
             if len(self.measurements[HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY]) > 0:
-                return self.measurements[HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY][0][0]
+                return self.measurements[HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY][
+                    0
+                ][0]
 
         return None
-    
+
     def get_average_hr_variability(self, botengine):
         """
         Retrieve hr variability (The variance in time between the beats of your heart. If 60 beats
@@ -422,7 +513,15 @@ class HealthDevice(Device):
         if HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY in self.measurements:
             if len(self.measurements[HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY]) > 0:
                 from statistics import mean
-                return mean([x[0] for x in self.measurements[HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY]])
+
+                return mean(
+                    [
+                        x[0]
+                        for x in self.measurements[
+                            HealthDevice.MEASUREMENT_NAME_HR_VARIABILITY
+                        ]
+                    ]
+                )
 
         return None
 
@@ -433,8 +532,13 @@ class HealthDevice(Device):
         :return: perfusion index measurement
         """
         if HealthDevice.MEASUREMENT_NAME_PERFUSION_INDEX in self.measurements:
-            if len(self.measurements[HealthDevice.MEASUREMENT_NAME_PERFUSION_INDEX]) > 0:
-                return self.measurements[HealthDevice.MEASUREMENT_NAME_PERFUSION_INDEX][0][0]
+            if (
+                len(self.measurements[HealthDevice.MEASUREMENT_NAME_PERFUSION_INDEX])
+                > 0
+            ):
+                return self.measurements[HealthDevice.MEASUREMENT_NAME_PERFUSION_INDEX][
+                    0
+                ][0]
 
         return None
 
@@ -445,8 +549,17 @@ class HealthDevice(Device):
         :return: pleth variability measurement
         """
         if HealthDevice.MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX in self.measurements:
-            if len(self.measurements[HealthDevice.MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX]) > 0:
-                return self.measurements[HealthDevice.MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX][0][0]
+            if (
+                len(
+                    self.measurements[
+                        HealthDevice.MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX
+                    ]
+                )
+                > 0
+            ):
+                return self.measurements[
+                    HealthDevice.MEASUREMENT_NAME_PLETH_VARIABILITY_INDEX
+                ][0][0]
 
         return None
 
@@ -474,12 +587,12 @@ class HealthDevice(Device):
 
         return None
 
-    #- (Deprecated) -#
-    
+    # - (Deprecated) -#
+
     def set_health_user(self, botengine, detect_movements):
         # Deprecated
         pass
-    
+
     def set_user_position(self, botengine, latitude, longitude):
         # Deprecated
         pass
@@ -487,7 +600,7 @@ class HealthDevice(Device):
     def did_update_movement_status(self, botengine):
         # Deprecated
         pass
-        
+
     def get_movement_status(self, botengine):
         # Deprecated
         pass
@@ -520,6 +633,8 @@ class HealthDevice(Device):
         # Deprecated
         pass
 
-    def health_movement_status_updated(botengine, location_object, device_object, movement_detected, movement_count):
+    def health_movement_status_updated(
+        botengine, location_object, device_object, movement_detected, movement_count
+    ):
         # Deprecated
         pass

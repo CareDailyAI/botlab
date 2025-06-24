@@ -1,36 +1,42 @@
-'''
+"""
 Created on March 27, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 # Device Model
 # https://presence.atlassian.net/wiki/display/devices/Thermostat
-
-from devices.thermostat.thermostat import ThermostatDevice
 import signals.analytics as analytics
+from devices.thermostat.thermostat import ThermostatDevice
 
 
 class ThermostatEcobeeDevice(ThermostatDevice):
     """Honeywell Lyric Thermostat Device"""
-    
+
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [4240]
-    
+
     # Minimum setpoint in Celsius
     MIN_SETPOINT_C = 7.0
-    
+
     # Maximum setpoint in Celsius
     MAX_SETPOINT_C = 29.0
 
     # Ecobee-specific command to change the mode of the thermostat
     COMMAND_CLIMATE_MODE = "climate"
-    
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -39,14 +45,21 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         :param device_description:
         :param precache_measurements:
         """
-        ThermostatDevice.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements)
+        ThermostatDevice.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements,
+        )
 
         # Set to True to activate the 'climate' mode switching functionality which is incompatible with demand response events.
         self.ee_only = False
 
         # Start timestamp of EE events for tracking
         self.ee_timestamp_ms = None
-
 
     def initialize(self, botengine):
         """
@@ -56,10 +69,10 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         """
         ThermostatDevice.initialize(self, botengine)
 
-        if not hasattr(self, 'ee_only'):
+        if not hasattr(self, "ee_only"):
             self.ee_only = False
 
-        if not hasattr(self, 'ee_timestamp_ms'):
+        if not hasattr(self, "ee_timestamp_ms"):
             self.ee_timestamp_ms = None
 
     def get_device_type_name(self):
@@ -68,7 +81,6 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         """
         # NOTE: Device type name
         return _("Ecobee")
-        
 
     def set_system_mode(self, botengine, system_mode, reliably=False):
         """
@@ -87,7 +99,9 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         :param setpoint_celsius: Absolute setpoint in Celsius
         :param reliably: True to keep retrying to get the command through
         """
-        ThermostatDevice.set_cooling_setpoint(self, botengine, setpoint_celsius, reliably=False)
+        ThermostatDevice.set_cooling_setpoint(
+            self, botengine, setpoint_celsius, reliably=False
+        )
 
     def set_heating_setpoint(self, botengine, setpoint_celsius, reliably=False):
         """
@@ -96,8 +110,9 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         :param setpoint_celsius: Temperature in Celsius
         :param reliably: True to keep retrying to get the command through
         """
-        ThermostatDevice.set_heating_setpoint(self, botengine, setpoint_celsius, reliably=False)
-
+        ThermostatDevice.set_heating_setpoint(
+            self, botengine, setpoint_celsius, reliably=False
+        )
 
     def increment_energy_efficiency(self, botengine, identifier, max_offset_c=2.4):
         """
@@ -108,33 +123,48 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         :return: the system mode if the thermostat was paused successfully, None if the thermostat was not paused.
         """
         if not self.ee_only:
-            return ThermostatDevice.increment_energy_efficiency(self, botengine, identifier, max_offset_c)
+            return ThermostatDevice.increment_energy_efficiency(
+                self, botengine, identifier, max_offset_c
+            )
 
-        self.location_object.increment_location_property(botengine, "{}_total_ee_policies_applied".format(self.device_id))
-        self.location_object.increment_location_property(botengine, "{}_total_ee_incremental_policies_applied".format(self.device_id))
+        self.location_object.increment_location_property(
+            botengine, "{}_total_ee_policies_applied".format(self.device_id)
+        )
+        self.location_object.increment_location_property(
+            botengine, "{}_total_ee_incremental_policies_applied".format(self.device_id)
+        )
         if identifier == "sleep":
             if self.ee_timestamp_ms is None:
                 self.ee_timestamp_ms = botengine.get_timestamp()
 
             botengine.send_command(self.device_id, self.COMMAND_CLIMATE_MODE, "sleep")
             # NOTE: Energy efficiency policies for sleeping have been revoked.
-            self.location_object.narrate(botengine,
-                                         title=_("'{}': Sleep mode").format(self.description),
-                                         description=_("Setting your ecobee thermostat into Sleep mode."),
-                                         priority=botengine.NARRATIVE_PRIORITY_DEBUG,
-                                         icon='thermostat',
-                                         event_type="thermostat.thermostat_policy_set")
+            self.location_object.narrate(
+                botengine,
+                title=_("'{}': Sleep mode").format(self.description),
+                description=_("Setting your ecobee thermostat into Sleep mode."),
+                priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                icon="thermostat",
+                event_type="thermostat.thermostat_policy_set",
+            )
 
             policies = {
-                'device_id': self.device_id,
-                'device_description': self.description,
-                'is_connected': self.is_connected,
-                'thermostat_mode': self.thermostat_mode_to_string(self.get_system_mode(botengine)),
-                'ecobee_climate': "sleep",
-                'ee_start_timestamp_ms': self.ee_timestamp_ms
+                "device_id": self.device_id,
+                "device_description": self.description,
+                "is_connected": self.is_connected,
+                "thermostat_mode": self.thermostat_mode_to_string(
+                    self.get_system_mode(botengine)
+                ),
+                "ecobee_climate": "sleep",
+                "ee_start_timestamp_ms": self.ee_timestamp_ms,
             }
 
-            analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
+            analytics.track(
+                botengine,
+                self.location_object,
+                "thermostat_policy_set",
+                properties=policies,
+            )
 
         elif identifier == "away":
             if self.ee_timestamp_ms is None:
@@ -142,28 +172,37 @@ class ThermostatEcobeeDevice(ThermostatDevice):
 
             botengine.send_command(self.device_id, self.COMMAND_CLIMATE_MODE, "away")
             # NOTE: Energy efficiency policies for away have been revoked.
-            self.location_object.narrate(botengine,
-                                         title=_("'{}': Away mode").format(self.description),
-                                         description=_("Setting your ecobee thermostat into Away mode."),
-                                         priority=botengine.NARRATIVE_PRIORITY_DEBUG,
-                                         icon='thermostat',
-                                         event_type="thermostat.thermostat_policy_set")
+            self.location_object.narrate(
+                botengine,
+                title=_("'{}': Away mode").format(self.description),
+                description=_("Setting your ecobee thermostat into Away mode."),
+                priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                icon="thermostat",
+                event_type="thermostat.thermostat_policy_set",
+            )
 
             policies = {
-                'device_id': self.device_id,
-                'device_description': self.description,
-                'is_connected': self.is_connected,
-                'thermostat_mode': self.thermostat_mode_to_string(self.get_system_mode(botengine)),
-                'ecobee_climate': "away",
-                'ee_start_timestamp_ms': self.ee_timestamp_ms
+                "device_id": self.device_id,
+                "device_description": self.description,
+                "is_connected": self.is_connected,
+                "thermostat_mode": self.thermostat_mode_to_string(
+                    self.get_system_mode(botengine)
+                ),
+                "ecobee_climate": "away",
+                "ee_start_timestamp_ms": self.ee_timestamp_ms,
             }
 
-            analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
+            analytics.track(
+                botengine,
+                self.location_object,
+                "thermostat_policy_set",
+                properties=policies,
+            )
 
         else:
-            return ThermostatDevice.increment_energy_efficiency(self, botengine, identifier, max_offset_c)
-
-
+            return ThermostatDevice.increment_energy_efficiency(
+                self, botengine, identifier, max_offset_c
+            )
 
     def set_energy_efficiency_away(self, botengine):
         """
@@ -178,27 +217,40 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         if self.ee_timestamp_ms is None:
             self.ee_timestamp_ms = botengine.get_timestamp()
 
-        self.location_object.increment_location_property(botengine, "{}_total_ee_policies_applied".format(self.device_id))
-        self.location_object.increment_location_property(botengine, "{}_total_ee_away_policies_applied".format(self.device_id))
+        self.location_object.increment_location_property(
+            botengine, "{}_total_ee_policies_applied".format(self.device_id)
+        )
+        self.location_object.increment_location_property(
+            botengine, "{}_total_ee_away_policies_applied".format(self.device_id)
+        )
         botengine.send_command(self.device_id, self.COMMAND_CLIMATE_MODE, "away")
         # NOTE: Energy efficiency policies for away have been revoked.
-        self.location_object.narrate(botengine,
-                                     title=_("'{}': Away mode").format(self.description),
-                                     description=_("Setting your ecobee thermostat into Away mode."),
-                                     priority=botengine.NARRATIVE_PRIORITY_DEBUG,
-                                     icon='thermostat',
-                                     event_type="thermostat.thermostat_policy_set")
+        self.location_object.narrate(
+            botengine,
+            title=_("'{}': Away mode").format(self.description),
+            description=_("Setting your ecobee thermostat into Away mode."),
+            priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+            icon="thermostat",
+            event_type="thermostat.thermostat_policy_set",
+        )
 
         policies = {
-            'device_id': self.device_id,
-            'device_description': self.description,
-            'is_connected': self.is_connected,
-            'thermostat_mode': self.thermostat_mode_to_string(self.get_system_mode(botengine)),
-            'ecobee_climate': "away",
-            'ee_start_timestamp_ms': self.ee_timestamp_ms
+            "device_id": self.device_id,
+            "device_description": self.description,
+            "is_connected": self.is_connected,
+            "thermostat_mode": self.thermostat_mode_to_string(
+                self.get_system_mode(botengine)
+            ),
+            "ecobee_climate": "away",
+            "ee_start_timestamp_ms": self.ee_timestamp_ms,
         }
 
-        analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
+        analytics.track(
+            botengine,
+            self.location_object,
+            "thermostat_policy_set",
+            properties=policies,
+        )
 
     def set_energy_efficiency_sleep(self, botengine):
         """
@@ -213,27 +265,40 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         if self.ee_timestamp_ms is None:
             self.ee_timestamp_ms = botengine.get_timestamp()
 
-        self.location_object.increment_location_property(botengine, "{}_total_ee_policies_applied".format(self.device_id))
-        self.location_object.increment_location_property(botengine, "{}_total_ee_sleep_policies_applied".format(self.device_id))
+        self.location_object.increment_location_property(
+            botengine, "{}_total_ee_policies_applied".format(self.device_id)
+        )
+        self.location_object.increment_location_property(
+            botengine, "{}_total_ee_sleep_policies_applied".format(self.device_id)
+        )
         botengine.send_command(self.device_id, self.COMMAND_CLIMATE_MODE, "sleep")
         # NOTE: Energy efficiency policies for sleeping have been revoked.
-        self.location_object.narrate(botengine,
-                                     title=_("'{}': Sleep mode").format(self.description),
-                                     description=_("Setting your ecobee thermostat into Sleep mode."),
-                                     priority=botengine.NARRATIVE_PRIORITY_DEBUG,
-                                     icon='thermostat',
-                                     event_type="thermostat.thermostat_policy_set")
+        self.location_object.narrate(
+            botengine,
+            title=_("'{}': Sleep mode").format(self.description),
+            description=_("Setting your ecobee thermostat into Sleep mode."),
+            priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+            icon="thermostat",
+            event_type="thermostat.thermostat_policy_set",
+        )
 
         policies = {
-            'device_id': self.device_id,
-            'device_description': self.description,
-            'is_connected': self.is_connected,
-            'thermostat_mode': self.thermostat_mode_to_string(self.get_system_mode(botengine)),
-            'ecobee_climate': "sleep",
-            'ee_start_timestamp_ms': self.ee_timestamp_ms
+            "device_id": self.device_id,
+            "device_description": self.description,
+            "is_connected": self.is_connected,
+            "thermostat_mode": self.thermostat_mode_to_string(
+                self.get_system_mode(botengine)
+            ),
+            "ecobee_climate": "sleep",
+            "ee_start_timestamp_ms": self.ee_timestamp_ms,
         }
 
-        analytics.track(botengine, self.location_object, 'thermostat_policy_set', properties=policies)
+        analytics.track(
+            botengine,
+            self.location_object,
+            "thermostat_policy_set",
+            properties=policies,
+        )
 
     def set_energy_efficiency_home(self, botengine):
         """
@@ -243,35 +308,57 @@ class ThermostatEcobeeDevice(ThermostatDevice):
         if not self.ee_only:
             return ThermostatDevice.set_energy_efficiency_home(self, botengine)
 
-        self.location_object.increment_location_property(botengine, "{}_total_ee_home_policies_applied".format(self.device_id))
+        self.location_object.increment_location_property(
+            botengine, "{}_total_ee_home_policies_applied".format(self.device_id)
+        )
 
         if self.ee_timestamp_ms is not None:
             # End of all EE events
             duration_s = (botengine.get_timestamp() - self.ee_timestamp_ms) / 1000
             self.ee_timestamp_ms = None
-            analytics.track(botengine, self.location_object, "ee_complete", properties={'duration_s': duration_s, 'device_id': self.device_id, 'description': self.description})
+            analytics.track(
+                botengine,
+                self.location_object,
+                "ee_complete",
+                properties={
+                    "duration_s": duration_s,
+                    "device_id": self.device_id,
+                    "description": self.description,
+                },
+            )
 
             # This number will represent the total amount of time across ALL devices.
             # For example, if you have 1 thermostat and a EE event for 10000s, then the total is 10000s.
             # But if you have 2 thermostats and a EE event for 10000s, then the total is 20000s
-            analytics.people_increment(botengine, self.location_object, {'ee_total_s': duration_s})
+            analytics.people_increment(
+                botengine, self.location_object, {"ee_total_s": duration_s}
+            )
 
         botengine.send_command(self.device_id, self.COMMAND_CLIMATE_MODE, "home")
 
-        self.location_object.narrate(botengine,
-                                     title=_("'{}': Home mode").format(self.description),
-                                     description=_("Setting your ecobee thermostat into Home mode."),
-                                     priority=botengine.NARRATIVE_PRIORITY_DEBUG,
-                                     icon='thermostat',
-                                     event_type="thermostat.thermostat_policy_unset")
+        self.location_object.narrate(
+            botengine,
+            title=_("'{}': Home mode").format(self.description),
+            description=_("Setting your ecobee thermostat into Home mode."),
+            priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+            icon="thermostat",
+            event_type="thermostat.thermostat_policy_unset",
+        )
 
         policies = {
-            'device_id': self.device_id,
-            'device_description': self.description,
-            'is_connected': self.is_connected,
-            'thermostat_mode': self.thermostat_mode_to_string(self.get_system_mode(botengine)),
-            'ecobee_climate': "home"
+            "device_id": self.device_id,
+            "device_description": self.description,
+            "is_connected": self.is_connected,
+            "thermostat_mode": self.thermostat_mode_to_string(
+                self.get_system_mode(botengine)
+            ),
+            "ecobee_climate": "home",
         }
 
         # NOTE: Energy efficiency policies for absent or sleeping have been revoked because someone is home.
-        analytics.track(botengine, self.location_object, 'thermostat_policy_unset', properties=policies)
+        analytics.track(
+            botengine,
+            self.location_object,
+            "thermostat_policy_unset",
+            properties=policies,
+        )

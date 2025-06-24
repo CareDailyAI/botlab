@@ -1,27 +1,25 @@
-'''
+"""
 Created on August 16, 2022
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: Edward Liu
-'''
+"""
 
-from confidence.confidence_state import CONFIDENCE_OFFLINE
-from confidence.confidence_state import CONFIDENCE_LOW
-from confidence.confidence_state import CONFIDENCE_MEDIUM
-from confidence.confidence_state import CONFIDENCE_HIGH
-
-from devices.motion.motion import MotionDevice
+from confidence.confidence_state import (
+    CONFIDENCE_HIGH,
+    CONFIDENCE_LOW,
+    CONFIDENCE_MEDIUM,
+    CONFIDENCE_OFFLINE,
+)
 from devices.entry.entry import EntryDevice
-from devices.radar.radar import RadarDevice
 from devices.lock.lock import LockDevice
-
-import utilities.utilities as utilities
+from devices.motion.motion import MotionDevice
+from devices.radar.radar import RadarDevice
 
 
 class OccupancyConfidenceStateMachine:
-
     def __init__(self):
         """
         Instantiate this object
@@ -66,15 +64,21 @@ class OccupancyConfidenceStateMachine:
 
         if confidence_motion_points == 0 and confidence_entry_points == 0:
             state = CONFIDENCE_OFFLINE
-            self.away_reason = _("We don't have enough Motion or Radar devices for occupancy away service to work.")
+            self.away_reason = _(
+                "We don't have enough Motion or Radar devices for occupancy away service to work."
+            )
 
         elif confidence_motion_points > 1 and confidence_entry_points > 0:
             state = CONFIDENCE_HIGH
-            self.away_reason = _("We have high confidence on the occupancy away service.")
+            self.away_reason = _(
+                "We have high confidence on the occupancy away service."
+            )
 
         elif confidence_motion_points > 0 and confidence_entry_points > 0:
             state = CONFIDENCE_MEDIUM
-            self.away_reason = _("Add 1 more Motion or Radar device to improve the confidence.")
+            self.away_reason = _(
+                "Add 1 more Motion or Radar device to improve the confidence."
+            )
 
         elif confidence_motion_points > 1:
             state = CONFIDENCE_MEDIUM
@@ -86,7 +90,9 @@ class OccupancyConfidenceStateMachine:
                 self.away_reason = _("Add 1 Entry device to improve the confidence.")
 
             else:
-                self.away_reason = _("Add 1 Motion or Radar device to improve the confidence.")
+                self.away_reason = _(
+                    "Add 1 Motion or Radar device to improve the confidence."
+                )
 
         if self.away_confidence_state is None or self.away_confidence_state != state:
             self.away_confidence_state = state
@@ -121,15 +127,21 @@ class OccupancyConfidenceStateMachine:
 
         if confidence_motion_points == 0 and confidence_entry_points == 0:
             state = CONFIDENCE_OFFLINE
-            self.home_reason = _("We don't have Motion or Radar or Entry device for occupancy home service to work.")
+            self.home_reason = _(
+                "We don't have Motion or Radar or Entry device for occupancy home service to work."
+            )
 
         elif confidence_motion_points > 1 and confidence_entry_points > 0:
             state = CONFIDENCE_HIGH
-            self.home_reason = _("We have high confidence on the occupancy home service.")
+            self.home_reason = _(
+                "We have high confidence on the occupancy home service."
+            )
 
         elif confidence_motion_points > 0 and confidence_entry_points > 0:
             state = CONFIDENCE_MEDIUM
-            self.home_reason = _("Add 1 Motion or Radar device to improve the confidence.")
+            self.home_reason = _(
+                "Add 1 Motion or Radar device to improve the confidence."
+            )
 
         elif confidence_motion_points > 1:
             state = CONFIDENCE_MEDIUM
@@ -141,7 +153,9 @@ class OccupancyConfidenceStateMachine:
                 self.home_reason = _("Add 1 Entry device to improve the confidence.")
 
             else:
-                self.home_reason = _("Add 1 Motion or Radar device to improve the confidence.")
+                self.home_reason = _(
+                    "Add 1 Motion or Radar device to improve the confidence."
+                )
 
         if self.home_confidence_state is None or self.home_confidence_state != state:
             self.home_confidence_state = state
@@ -151,7 +165,6 @@ class OccupancyConfidenceStateMachine:
 
     def current_home_confidence(self):
         return self.home_confidence_state, self.home_reason
-    
+
     def is_away_confidence_good(self):
         return self.away_confidence_state > CONFIDENCE_LOW
-

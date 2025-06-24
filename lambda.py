@@ -8,12 +8,21 @@ AWS Lambda execution environment wrapper
 @contact:    dmoss@caredaily.ai, destry@caredaily.ai
 """
 
-import botengine as BotEngine
 import importlib
+import json
+import sys
 import time
+import traceback
 
-LOG_LEVEL_DEFAULT   = "warn" # Default log level
-LOG_LEVEL_EVENTS    = "info" # Event log level
+import botengine as BotEngine  # type: ignore
+import boto3  # type: ignore
+
+LOG_LEVEL_DEFAULT = "warn"  # Default log level
+LOG_LEVEL_EVENTS = "info"  # Event log level
+
+# AWS Lambda output size limit
+OUTPUT_SIZE = 256 * 1024  # 256 KiB
+
 
 def lambda_handler(data, context):
     """
@@ -24,28 +33,33 @@ def lambda_handler(data, context):
     """
     if data is None:
         # No data to process
-        return 0
-    
+        return {}
+
     # TODO: Allow multiple loggers to differentiate logs from different microservices
-    logger = LambdaLogger(log_level=LOG_LEVEL_EVENTS if data.get('logEvents', False) else LOG_LEVEL_DEFAULT)
-    
+    logger = LambdaLogger(
+        log_level=LOG_LEVEL_EVENTS
+        if data.get("logEvents", False)
+        else LOG_LEVEL_DEFAULT
+    )
+
+    # Get allowable output size
+    allowed_output_size = OUTPUT_SIZE - len(json.dumps(data).encode("utf-8"))
+
     try:
-        bot = importlib.import_module('bot')
+        bot = importlib.import_module("bot")
         botengine = BotEngine._run(bot, data, logger, context)
-        
-    except Exception as e:
-        import traceback
-        import sys
+
+    except Exception:
         (t, v, tb) = sys.exc_info()
-        logger.exception("Failed to execute bot: {}".format(traceback.format_exception(t, v, tb)))
-        return logger.get_lambda_return()
+        logger.exception(
+            "Failed to execute bot: {}".format(traceback.format_exception(t, v, tb))
+        )
+        return logger.get_lambda_return(allowed_output_size=allowed_output_size)
 
     # Check for asynchronous data request triggers which handle errors differently than synchronous executions of the bot.
-    if 'inputs' in data:
-        for i in data['inputs']:
-            if i['trigger'] == botengine.TRIGGER_DATA_REQUEST:
-                import sys
-
+    if "inputs" in data:
+        for i in data["inputs"]:
+            if i["trigger"] == botengine.TRIGGER_DATA_REQUEST:
                 if len(logger.logs) > 0:
                     sys.stdout.write("logs: ")
                     for log in logger.logs:
@@ -59,11 +73,14 @@ def lambda_handler(data, context):
                 sys.stdout.flush()
                 break
 
-    if 'sqsQueue' in data:
-        import json
-        send_sqs_message(data.get('sqsQueue'), json.dumps(logger.get_lambda_return(botengine, bot)), data.get('clientContext'))
+    if "sqsQueue" in data:
+        send_sqs_message(
+            data.get("sqsQueue"),
+            json.dumps(logger.get_lambda_return(botengine, bot, allowed_output_size)),
+            data.get("clientContext"),
+        )
 
-    return logger.get_lambda_return(botengine, bot)
+    return logger.get_lambda_return(botengine, bot, allowed_output_size)
 
 
 def send_sqs_message(queue_name, msg_body, client_context):
@@ -74,19 +91,18 @@ def send_sqs_message(queue_name, msg_body, client_context):
     :param client_context:
     :return:
     """
-    import boto3
-    sqs = boto3.resource('sqs')
+
+    sqs = boto3.resource("sqs")
     queue = sqs.get_queue_by_name(QueueName=queue_name)
-    queue.send_message(MessageBody=msg_body, MessageAttributes={
-        'ClientContext': {
-            'StringValue': client_context,
-            'DataType': 'String'
-        }
-    })
+    queue.send_message(
+        MessageBody=msg_body,
+        MessageAttributes={
+            "ClientContext": {"StringValue": client_context, "DataType": "String"}
+        },
+    )
 
 
-class LambdaLogger():
-    
+class LambdaLogger:
     def __init__(self, log_level=LOG_LEVEL_DEFAULT):
         # Tracebacks for crashes
         # DEPRECATED: Captured from AWS Lambda
@@ -100,7 +116,7 @@ class LambdaLogger():
         self.logs = []
 
         # Log events to return to the server
-        self.log_events = [] # [{"timestamp": time.time() * 1000, "message": "Log Me"}]
+        self.log_events = []  # [{"timestamp": time.time() * 1000, "message": "Log Me"}]
 
         # Start Code - provided by the server in response to the Start API
         self.start_code = 0
@@ -123,7 +139,7 @@ class LambdaLogger():
 
         if level == "warn":
             self.warn(message)
-        
+
         if level == "error":
             self.error(message)
 
@@ -131,58 +147,83 @@ class LambdaLogger():
         if self.log_level in ["debug"]:
             # Too granular
             # self.logs.append("{}: [{}] {} {}".format(time.time(), "DEBUG", self.service, message))
-            self.log_events.append({
-                'timestamp': int(time.time() * 1000),
-                'message': "[{}] {} {}".format("DEBUG", self.service, message)
-            })
+            self.log_events.append(
+                {
+                    "timestamp": int(time.time() * 1000),
+                    "message": "[{}] {} {}".format("DEBUG", self.service, message),
+                }
+            )
 
     def info(self, message):
         if self.log_level in ["debug", "info"]:
             # Too granular
             # self.logs.append("{}: [{}] {} {}".format(time.time(), "INFO", self.service, message))
-            self.log_events.append({
-                'timestamp': int(time.time() * 1000),
-                'message': "[{}] {} {}".format("INFO", self.service, message)
-            })
+            self.log_events.append(
+                {
+                    "timestamp": int(time.time() * 1000),
+                    "message": "[{}] {} {}".format("INFO", self.service, message),
+                }
+            )
 
     def warning(self, message):
         self.warn(message)
 
     def warn(self, message):
         if self.log_level in ["debug", "info", "warn"]:
-            self.logs.append("{}: [{}] {} {}".format(time.time(), "WARN", self.service, message))
+            self.logs.append(
+                "{}: [{}] {} {}".format(time.time(), "WARN", self.service, message)
+            )
             self.error_message = "[{}] {} {}".format("WARN", self.service, message)
-            self.log_events.append({
-                'timestamp': int(time.time() * 1000),
-                'message': "[{}] {} {}".format("WARN", self.service, message)
-            })
+            self.log_events.append(
+                {
+                    "timestamp": int(time.time() * 1000),
+                    "message": "[{}] {} {}".format("WARN", self.service, message),
+                }
+            )
 
     def error(self, message):
-        self.logs.append("{}: [{}] {} {}".format(time.time(), "ERROR", self.service, message))
+        self.logs.append(
+            "{}: [{}] {} {}".format(time.time(), "ERROR", self.service, message)
+        )
         self.error_message = "[{}] {} {}".format("ERROR", self.service, message)
-        self.log_events.append({
-                'timestamp': int(time.time() * 1000),
-                'message': "[{}] {} {}".format("ERROR", self.service, message)
-            })
+        self.log_events.append(
+            {
+                "timestamp": int(time.time() * 1000),
+                "message": "[{}] {} {}".format("ERROR", self.service, message),
+            }
+        )
 
     def critical(self, message):
-        self.logs.append("{}: [{}] {} {}".format(time.time(), "CRITICAL", self.service, message))
+        self.logs.append(
+            "{}: [{}] {} {}".format(time.time(), "CRITICAL", self.service, message)
+        )
         self.error_message = "[{}] {} {}".format("CRITICAL", self.service, message)
-        self.log_events.append({
-                'timestamp': int(time.time() * 1000),
-                'message': "[{}] {} {}".format("CRITICAL", self.service, message)
-            })
+        self.log_events.append(
+            {
+                "timestamp": int(time.time() * 1000),
+                "message": "[{}] {} {}".format("CRITICAL", self.service, message),
+            }
+        )
 
     def exception(self, message):
-        self.logs.append("{}: [{}] {} {}".format(time.time(), "EXCEPTION", self.service, message))
+        self.logs.append(
+            "{}: [{}] {} {}".format(time.time(), "EXCEPTION", self.service, message)
+        )
         self.error_message = "[{}] {} {}".format("EXCEPTION", self.service, message)
-        self.log_events.append({
-                'timestamp': int(time.time() * 1000),
-                'message': "[{}] {} {}".format("EXCEPTION", self.service, message)
-            })
+        self.log_events.append(
+            {
+                "timestamp": int(time.time() * 1000),
+                "message": "[{}] {} {}".format("EXCEPTION", self.service, message),
+            }
+        )
 
-    def get_lambda_return(self, botengine=None, bot=None):
+    def get_lambda_return(
+        self, botengine=None, bot=None, allowed_output_size=256 * 1024
+    ):
         """
+        Return the JSON structure to Lambda, limited to 256 KiB
+        by including logs and optional bot statistics
+
         :param botengine: BotEngine instance
         :param bot: Bot instance
         :return: JSON dictionary of execution details
@@ -190,69 +231,83 @@ class LambdaLogger():
         response = {}
 
         if botengine is None:
-            response['startTime'] = self.start_time_ms
-            response['endTime'] = int(time.time() * 1000)
+            response["startTime"] = self.start_time_ms
+            response["endTime"] = int(time.time() * 1000)
             response["logEvents"] = self.log_events
             if self.error_message is not None:
-                response['errorMessage'] = self.error_message
-            
+                response["errorMessage"] = self.error_message
+
             if len(self.tracebacks):
-                response['tracebacks'] = self.tracebacks
-            
+                response["tracebacks"] = self.tracebacks
+
             return response
 
-        # Include additional bot server statistics for individual microservices
-        if botengine.is_server_version_newer_than(1, 38):
-            if botengine.get_bot_type() == botengine.BOT_TYPE_ORGANIZATION_RAG:
-                response['ragOutput'] = {}
+        if botengine.get_bot_type() == botengine.BOT_TYPE_ORGANIZATION_RAG:
+            response["ragOutput"] = {}
 
-                if bot is not None:
-                    if hasattr(bot, 'get_document_property_updates'):
-                        response['ragOutput']['document'] = bot.get_document_property_updates(botengine)
-                    if hasattr(bot, 'get_documents_questions'):
-                        response['ragOutput']['questions'] = bot.get_documents_questions(botengine)
-                    import json
+            if bot is not None:
+                if hasattr(bot, "get_document_property_updates"):
+                    response["ragOutput"]["document"] = (
+                        bot.get_document_property_updates(botengine)
+                    )
+                if hasattr(bot, "get_documents_questions"):
+                    response["ragOutput"]["questions"] = bot.get_documents_questions(
+                        botengine
+                    )
 
-                    try:
-                        self.debug("RAG documents executed: inputs ={}".format(json.dumps(botengine.get_inputs())))
-                        self.debug("RAG documents updated : response={}".format(json.dumps(response)))
-                    except Exception as e:
-                        pass
+                try:
+                    self.debug(
+                        "RAG documents executed: inputs ={}".format(
+                            json.dumps(botengine.get_inputs())
+                        )
+                    )
+                    self.debug(
+                        "RAG documents updated : response={}".format(
+                            json.dumps(response)
+                        )
+                    )
+                except Exception:
+                    pass
 
+        response["startCode"] = self.start_code
+        response["startTime"] = self.start_time_ms
+        response["endTime"] = int(time.time() * 1000)
 
-            response['startCode'] = self.start_code
-            response["logEvents"] = self.log_events
-            if bot is not None and hasattr(bot, 'get_intelligence_statistics'):
-                response['microservices'] = bot.get_intelligence_statistics(botengine)
-            response['startTime'] = self.start_time_ms
-            response['endTime'] = int(time.time() * 1000)
+        if self.error_message is not None:
+            response["errorMessage"] = self.error_message
 
-            if self.error_message is not None:
-                response['errorMessage'] = self.error_message
-            
-            if len(self.tracebacks):
-                response['tracebacks'] = self.tracebacks
-            return response
-        
         if len(self.tracebacks):
-            response['tracebacks'] = self.tracebacks
+            response["tracebacks"] = self.tracebacks
 
-        if len(self.logs):
-            import re
-            response['logs'] = list(map(lambda x: re.sub(r'\033\[(\d|;)+?m', ' ', x).strip(), self.logs))
+        # Prioritize logging outputs
+        priorities = [["EXCEPTION", "CRITICAL", "ERROR", "WARN"], ["INFO"], ["DEBUG"]]
+        response["logEvents"] = []
+        for priority in priorities:
+            for log in self.log_events:
+                size_available = allowed_output_size - len(
+                    json.dumps(response).encode("utf-8")
+                )
+                priorities_available = {
+                    level: f"[{level}]" in log["message"] for level in priority
+                }
+                if size_available and any(priorities_available.values()):
+                    response["logEvents"].append(log)
 
-        response['startCode'] = self.start_code
-        
+        # Limit response to 256 KiB
+        if len(json.dumps(response).encode("utf-8")) > allowed_output_size:
+            # Remove last log
+            if len(response["logEvents"]) > 0:
+                response["logEvents"].pop()
+
+        # Include additional bot server statistics for individual microservices if space allows
+        # and if the bot has the capability to provide them
+        if bot is not None and hasattr(bot, "get_intelligence_statistics"):
+            statistics = bot.get_intelligence_statistics(botengine)
+            if (
+                len(json.dumps(response).encode("utf-8"))
+                + len(json.dumps(statistics).encode("utf-8"))
+                < allowed_output_size
+            ):
+                response["microservices"] = statistics
+
         return response
-
-    def put_log_events(self, log_group, stream_name):
-        """
-        Log a message to the server
-        :return:
-        """
-        try:
-            import boto3
-            client = boto3.client('logs')
-            client.put_log_events(logGroupName=log_group, logStreamName=stream_name, logEvents=self.log_events)
-        except Exception as e:
-            pass

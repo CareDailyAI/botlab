@@ -1,13 +1,14 @@
-'''
+"""
 Created on July 22, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.device import Device
+
 
 class MultiButtonDevice(Device):
     """
@@ -18,10 +19,10 @@ class MultiButtonDevice(Device):
     DEVICE_TYPES = []
 
     # Measurement name for the button status
-    MEASUREMENT_NAME_BUTTON_STATUS = 'buttonStatus'
+    MEASUREMENT_NAME_BUTTON_STATUS = "buttonStatus"
 
     # Low battery tag
-    LOW_BATTERY_TAG = ""
+    LOW_BATTERY_TAG = "lowbattery"
 
     # Type of battery
     BATTERY_TYPE = ""
@@ -41,7 +42,15 @@ class MultiButtonDevice(Device):
     # Demo scenarios
     GOAL_BUTTON_DEMO_VAYYAR = 200
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -50,7 +59,15 @@ class MultiButtonDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
         # Default behavior
         self.goal_id = MultiButtonDevice.GOAL_BUTTON_CALL_FOR_HELP_MEDICAL
@@ -68,41 +85,85 @@ class MultiButtonDevice(Device):
         """
         return "push-button"
 
-    def is_currently_pressed(self, botengine=None):
+    def is_currently_pressed(self, botengine, index=None):
         """
         :param botengine:
+        :param index: Button index if there are multiple buttons on this device.
         :return: True if the button is currently being pressed (from the perspective of the server)
         """
-        if self.MEASUREMENT_NAME_BUTTON_STATUS in self.measurements:
-            return self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        param_name = self.MEASUREMENT_NAME_BUTTON_STATUS
+        if index is not None:
+            param_name += f".{index}"
+        if param_name in self.measurements:
+            return self.measurements[param_name][0][0]
 
         return False
 
-    def is_single_button_pressed(self, botengine=None):
+    def is_single_button_pressed(self, botengine, index=None):
         """
         Find out if a single button is pressed on this device
         :param botengine:
-        :param button_index: Button index if there are multiple buttons on this device.
+        :param index: Button index if there are multiple buttons on this device.
         :return: True if the button is currently pressed
         """
-        return self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params and self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        param_name = self.MEASUREMENT_NAME_BUTTON_STATUS
+        if index is not None:
+            param_name += f".{index}"
+        return (
+            param_name in self.last_updated_params
+            and self.measurements[param_name][0][0]
+        )
 
-    def is_single_button_released(self, botengine=None):
+    def is_single_button_released(self, botengine, index=None):
         """
         Find out if a single button is pressed on this device
         :param botengine:
-        :param button_index: Button index if there are multiple buttons on this device.
+        :param index: Button index if there are multiple buttons on this device.
         :return: True if the button is currently pressed
         """
-        return self.MEASUREMENT_NAME_BUTTON_STATUS in self.last_updated_params and not self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][0]
+        param_name = self.MEASUREMENT_NAME_BUTTON_STATUS
+        if index is not None:
+            param_name += f".{index}"
+        return (
+            param_name in self.last_updated_params
+            and not self.measurements[param_name][0][0]
+        )
 
-    def get_timestamp(self):
+    def did_enter_panic(self, botengine=None):
+        """
+        Did the button enter panic mode (pressed for some time)
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def did_exit_panic(self, botengine=None):
+        """
+        Did the button exit panic mode (pressed for some time after having entered panic mode)
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def is_in_panic(self, botengine=None):
+        """
+        Is the button currently in panic mode
+        :param botengine:
+        :return:
+        """
+        return False
+
+    def get_timestamp(self, botengine=None, index=None):
         """
         Get the timestamp of the last buttonStatus measurement received
         :param botengine:
+        :param index: Button index if there are multiple buttons on this device.
         :return: Timestamp of the last buttonStatus measurement in ms; None if it doesn't exist
         """
-        if self.MEASUREMENT_NAME_BUTTON_STATUS in self.measurements:
-            return self.measurements[self.MEASUREMENT_NAME_BUTTON_STATUS][0][1]
+        param_name = self.MEASUREMENT_NAME_BUTTON_STATUS
+        if index is not None:
+            param_name += f".{index}"
+        if param_name in self.measurements:
+            return self.measurements[param_name][0][1]
 
         return None

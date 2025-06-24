@@ -1,6 +1,8 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 maestro_cli/downloads/
+playback_*.txt
+playback_*/
 .precommit
 *.pickle
 *.py[cod]
@@ -9,6 +11,7 @@ maestro_cli/downloads/
 _bot.zip
 _bot.tar
 botengine_bytecode
+TestHarness/data_*
 .*.dat
 *.zip
 .com.*

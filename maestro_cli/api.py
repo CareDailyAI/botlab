@@ -1451,7 +1451,7 @@ def get_location_subscriptions(cloud_url, admin_key, location_id):
     return subscriptions
 
 
-def get_parameter_names(cloud_url, admin_key, location_id, device_id):
+def get_current_device_parameters(cloud_url, admin_key, location_id, device_id):
     """
     Get a list of parameter names from the current device
 
@@ -1474,18 +1474,10 @@ def get_parameter_names(cloud_url, admin_key, location_id, device_id):
     r = _session().get(url, params=params, headers=headers)
     j = json.loads(r.text)
     _check_for_errors(j)
-
-    params_list = []
-    if 'devices' in j:
-        if len(j['devices']) > 0:
-            device = j['devices'][0]
-            if 'parameters' in device:
-                for p in device['parameters']:
-                    params_list.append(p['name'])
-                params_list = sorted(params_list)
-
-    print("Parameters: {}".format(params_list))
-    return params_list
+    try:
+        return j['devices'][0]['parameters']
+    except Exception:
+        return []
 
 
 def download_file(from_url, to_path):
@@ -1644,8 +1636,7 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
 
         with open(new_file_path, 'w') as out:
             # STEP 2. Output CSV header
-            out.write("trigger,location_id,device_type,device_id,description,timestamp_ms,timestamp_iso,timestamp_excel,behavior,spaces")
-
+            out.write("trigger,location_id,device_type,device_id,description,timestamp_ms,timestamp_iso,timestamp_excel,behavior,spaces,updated_params")
 
             for p in sorted(list(parameters.keys())):
                 out.write("," + p)
@@ -1655,6 +1646,7 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
             with open(original_csv_file, 'r') as f:
                 line_buffer = ""
                 last_timestamp_ms = 0
+                updated_params = []
 
                 for index, line in enumerate(f.readlines()):
                     if index > 0:
@@ -1693,6 +1685,7 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
 
                             out.write(line_buffer)
                             last_timestamp_ms = timestamp_ms
+                            updated_params = []
 
                         if len(param_index) > 0:
                             param_name = param_name + "." + param_index
@@ -1702,6 +1695,8 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
                         trigger = 8
                         if param_name == "[online]":
                             trigger = 4
+                        else:
+                            updated_params.append(param_name)
 
                         # ISO is UTC time while the Excel timestamp is in the user's local timezone
                         timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
@@ -1710,9 +1705,9 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
                             timezone_string = device_object['timezone']['id']
                         timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
 
-                        line_buffer = "{},{},{},{},{},{},{},{},{},{}".format(trigger, location_id, device_type, device_id,
+                        line_buffer = "{},{},{},{},{},{},{},{},{},{},{}".format(trigger, location_id, device_type, device_id,
                                                                         device_description, timestamp_ms, timestamp_iso,
-                                                                        timestamp_excel, behavior,"&&".join(spaces))
+                                                                        timestamp_excel, behavior,"&&".join(spaces),"&&".join(updated_params))
 
                         for p in sorted(list(parameters.keys())):
                             # Remove quotes on values - not sure where the quotes came from but it would be more ideal to remove them earlier.
@@ -1991,160 +1986,6 @@ def transform_datastreams_csv(original_csv_file, location_object):
                                                               feed_content.strip()))
     return new_file_path
 
-
-def care_active(folder_name, option):
-    care_folders = []
-    data_folder = os.path.join(folder_name, "Data")
-    for file in os.listdir(data_folder):
-        care_folders.append(os.path.join(data_folder, file))
-
-    location_zip_files = []
-    for file in os.listdir(folder_name):
-        if 'location' in file and file.endswith(".zip"):
-            location_zip_files.append(os.path.join(folder_name, file))
-
-    excel_file = os.path.join(folder_name, "PPC Location - CareActive Account.xlsx")
-    care_map_location = {}
-
-    df = pd.read_excel(excel_file, dtype={"PPCLocationID": str})
-    for value in df.values:
-        care_map_location[str(value[1])] = str(value[3])
-
-    for location_id, care_user in care_map_location.items():
-        location_zip_file = None
-        for file in location_zip_files:
-            if location_id in file:
-                location_zip_file = file
-
-        if location_zip_file is None:
-            continue
-
-        care_data_files = []
-        del_folder = None
-        for care_folder in care_folders:
-            if care_user in care_folder:
-                del_folder = care_folder
-
-                for root, dirs, files in os.walk(care_folder):
-                    for file in files:
-                        if '.csv' in file:
-                            care_data_files.append(os.path.join(root, file))
-
-                break
-
-        if del_folder is not None:
-            care_folders.remove(del_folder)
-
-        if care_data_files:
-            has_valid_data = False
-            unzip_folder, extension = os.path.splitext(location_zip_file)
-            file_path, file_name = os.path.split(unzip_folder)
-
-            if not os.path.exists(unzip_folder):
-                unzip_dest = unzip_folder
-                with zipfile.ZipFile(location_zip_file, "r") as z:
-                    for extracted_filename in z.namelist():
-                        if "__MACOSX" in extracted_filename:
-                            unzip_dest = file_path
-                            break
-
-                with zipfile.ZipFile(location_zip_file, "r") as z:
-                    for extracted_filename in z.namelist():
-                        if "__MACOSX" not in extracted_filename:
-                            z.extract(extracted_filename, unzip_dest)
-
-            recording_file = os.path.join(unzip_folder, "recording-{}.json".format(file_name))
-            if os.path.exists(recording_file):
-                recording = json.load(open(recording_file))
-                data = recording["data"]
-
-                location_info = json.dumps(recording["location_info"])
-                device_properties = json.dumps(recording["device_properties"])
-                import gc
-                del recording
-                recording = None
-                gc.collect()
-                start_timestamp = None
-                end_timestamp = None
-
-                for care_data_file in care_data_files:
-
-                    with open(care_data_file, 'r') as f:
-                        index = 0
-                        for line in f:
-                            if index > 0:
-                                has_valid_data = True
-                                values = line.split(",")
-                                timestamp_ms = int(values[0]) * 1000
-                                if start_timestamp is None or timestamp_ms < start_timestamp:
-                                    start_timestamp = timestamp_ms
-
-                                if end_timestamp is None or end_timestamp < timestamp_ms:
-                                    end_timestamp = timestamp_ms
-
-                                data.append({"trigger": "8", "location_id": location_id, "device_type": "999", "device_id": values[5], "description": values[6],
-                                             "timestamp_ms": str(timestamp_ms), "timestamp_iso": values[1], "timestamp_excel": values[1], "behavior": "0", "station_id": values[2],
-                                             "station_tag": values[3], "momentum": values[9], "momentummax": values[10], "rssi": values[8], "battery": values[12], "[online]": "1"})
-
-                            index += 1
-
-                        print("Done handle file: {}".format(care_data_file))
-
-                print("Start timestamp_ms: {} ---- End timestamp_ms: {}".format(start_timestamp, end_timestamp))
-                if has_valid_data:
-                    data = list(filter(lambda x: end_timestamp >= int(x["timestamp_ms"]) >= start_timestamp, data))
-                    data = sorted(data, key=lambda x: x["timestamp_ms"])
-
-                    output_filename = "merged-{}.json".format(file_name)
-                    if option == "merged":
-                        result_folder = os.path.join(folder_name, "MergedData")
-                        if not os.path.isdir(result_folder):
-                            os.mkdir(result_folder)
-
-                    output_file = os.path.join(result_folder, output_filename)
-                    print("Writing merged data: {}... it needs a while...".format(output_filename))
-
-                    first_item = True
-                    with open(output_file, 'w') as out:
-                        out.write("{\n")
-                        out.write("\"location_info\":" + location_info + ",\n")
-                        out.write("\"device_properties\":" + device_properties + ",\n")
-                        out.write("\"data\":[")
-                        for item in data:
-                            if first_item:
-                                first_item = False
-                                out.write(json.dumps(item, indent=2))
-                            else:
-                                out.write(",\n")
-                                out.write(json.dumps(item, indent=2))
-
-                        out.write("\n]}")
-                        out.close()
-
-                    if option == "default":
-                        print("Staring zip merged datas...")
-                        result_folder = os.path.join(folder_name, "MergedData")
-                        if not os.path.isdir(result_folder):
-                            os.mkdir(result_folder)
-
-                        with zipfile.ZipFile(os.path.join(result_folder, "{}.zip".format(file_name)), 'w', zipfile.ZIP_DEFLATED) as zipf:
-                            __zipdir(unzip_folder, zipf)
-
-                    print("{} generate done!".format(output_file))
-                else:
-                    print("No valid Care Active Data for {}, skip it...".format(file_name))
-
-                shutil.rmtree(unzip_folder)
-
-                import time
-                del data
-                data = None
-                time.sleep(10)
-                gc.collect()
-
-    print("All Done!")
-
-
 def __zipdir(path, z):
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -2161,8 +2002,10 @@ def _generate_recordings(cloud_url, admin_key, location_id, transformed_files, d
     location_info = get_location(cloud_url, admin_key, location_id)
     devices = get_devices(cloud_url, admin_key, location_id)
     device_properties = {}
+    device_parameters = {}
     for device in devices:
         device_properties[device['id']] = get_device_properties(cloud_url, admin_key, location_id, device['id'])
+        device_parameters[device['id']] = get_current_device_parameters(cloud_url, admin_key, location_id, device['id'])
 
     all_data = []
     for f in transformed_files:
@@ -2205,6 +2048,7 @@ def _generate_recordings(cloud_url, admin_key, location_id, transformed_files, d
 
         out.write("\"location_info\":" + json.dumps(location_info) + ",\n")
         out.write("\"device_properties\":" + json.dumps(device_properties) + ",\n")
+        out.write("\"device_parameters\":" + json.dumps(device_parameters) + ",\n")
         out.write("\"data\":[\n")
         for index, line in enumerate(all_data):
             out.write("{}".format(json.dumps(line)))
@@ -2243,7 +2087,8 @@ def _generate_recordings(cloud_url, admin_key, location_id, transformed_files, d
                     out.write("\"data_requests\":" + json.dumps(param_data_request_files) + ",\n")
                     data_request_files.clear()
                 out.write("\"location_info\":" + json.dumps(location_info) + ",\n")
-                out.write("\"device_properties\":" + json.dumps(device_properties) + ",\n")
+                out.write("\"device_properties\":" + json.dumps(device_properties[device['id']]) + ",\n")
+                out.write("\"device_parameters\":" + json.dumps(device_parameters[device['id']]) + ",\n")
                 out.write("\"data\":[\n")
                 for index, line in enumerate(lines_for_this_device):
                     out.write("{}".format(json.dumps(line)))

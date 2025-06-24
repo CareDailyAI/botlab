@@ -1,13 +1,14 @@
-'''
+"""
 Created on April 14, 2020
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 from devices.leak.leak import LeakDevice
+
 
 class DevelcoLeakDevice(LeakDevice):
     """
@@ -21,13 +22,19 @@ class DevelcoLeakDevice(LeakDevice):
     LOW_BATTERY_TAG = "lowbattery_li"
 
     # Measurement Names
-    MEASUREMENT_NAME_STATUS = 'waterLeak'
+    MEASUREMENT_NAME_STATUS = "waterLeak"
 
-    MEASUREMENT_PARAMETERS_LIST = [
-        MEASUREMENT_NAME_STATUS
-    ]
+    MEASUREMENT_PARAMETERS_LIST = [MEASUREMENT_NAME_STATUS]
 
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
         """
         Constructor
         :param botengine:
@@ -36,7 +43,15 @@ class DevelcoLeakDevice(LeakDevice):
         :param device_description:
         :param precache_measurements:
         """
-        LeakDevice.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
+        LeakDevice.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
 
     def initialize(self, botengine):
         """

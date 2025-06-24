@@ -1,11 +1,11 @@
-'''
+"""
 Created on September 15, 2018
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 # Analytics Variable Names
 DEPRECATED_ANALYTICS_VARIABLE = "[a]"
@@ -14,6 +14,7 @@ AMPLITUDE_VARIABLE = "[amp]"
 
 # Global analytics module
 analytics_module = None
+
 
 def get_analytics(botengine, must_exist=False):
     """
@@ -30,13 +31,15 @@ def get_analytics(botengine, must_exist=False):
         analytics_deleted = botengine.load_variable("analytics_deleted")
         if analytics_deleted is None:
             if DEPRECATED_ANALYTICS_VARIABLE in botengine.variables:
-                del (botengine.variables[DEPRECATED_ANALYTICS_VARIABLE])
+                del botengine.variables[DEPRECATED_ANALYTICS_VARIABLE]
             botengine.delete_variable(MIXPANEL_VARIABLE)
             botengine.delete_variable(AMPLITUDE_VARIABLE)
             botengine.delete_variable(DEPRECATED_ANALYTICS_VARIABLE)
-            botengine.save_variable("analytics_deleted", True, required_for_each_execution=True)
+            botengine.save_variable(
+                "analytics_deleted", True, required_for_each_execution=True
+            )
 
-    except:
+    except Exception:
         pass
 
     raise ImportError
@@ -46,6 +49,7 @@ class Analytics:
     """
     Base Analytics Class
     """
+
     def __init__(self, botengine):
         """
         :param token:

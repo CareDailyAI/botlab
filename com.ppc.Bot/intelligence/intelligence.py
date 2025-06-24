@@ -1,35 +1,38 @@
-'''
+"""
 Created on December 25, 2016
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
 import bot
 from locations.location import Location
+
 
 class Intelligence:
     """
     Base Intelligence Module Class / Interface
     """
+
     def __init__(self, botengine, parent):
         """
         Instantiate this object
         :param parent: Parent object, either a location or a device object.
         """
         import uuid
+
         self.intelligence_id = str(uuid.uuid4())
         self.parent = parent
-        
+
     def initialize(self, botengine):
         """
         Initialize
         :param botengine: BotEngine environment
         """
         return
-    
+
     def reset_statistics(self, botengine):
         """
         Reset statistics
@@ -37,7 +40,7 @@ class Intelligence:
         """
         self._init_statistics()
         return
-    
+
     def track_statistics(self, botengine, time_elapsed_ms):
         """
         Track statistics for this microservice
@@ -58,7 +61,7 @@ class Intelligence:
         if not hasattr(self, "statistics"):
             self._init_statistics()
         return self.statistics
-    
+
     def destroy(self, botengine):
         """
         This device or object is getting permanently deleted - it is no longer in the user's account.
@@ -89,7 +92,7 @@ class Intelligence:
         :param device_object: Device object that was updated
         """
         return
-    
+
     def device_metadata_updated(self, botengine, device_object):
         """
         Evaluate a device that is new or whose goal/scenario was recently updated
@@ -124,7 +127,7 @@ class Intelligence:
         :param device_object: Device object that is getting deleted
         """
         return
-    
+
     def question_answered(self, botengine, question_object):
         """
         The user answered a question
@@ -132,7 +135,7 @@ class Intelligence:
         :param question_object: Question object
         """
         return
-    
+
     def messages_updated(self, botengine, messages):
         """
         List of Messages were updated
@@ -140,7 +143,7 @@ class Intelligence:
         :param messages: Message objects
         """
         return
-    
+
     def datastream_updated(self, botengine, address, content):
         """
         Data Stream Message Received
@@ -150,7 +153,7 @@ class Intelligence:
         """
         if hasattr(self, address):
             getattr(self, address)(botengine, content)
-    
+
     def schedule_fired(self, botengine, schedule_id):
         """
         The bot executed on a hard coded schedule specified by our runtime.json file
@@ -158,7 +161,7 @@ class Intelligence:
         :param schedule_id: Schedule ID that is executing from our list of runtime schedules
         """
         return
-        
+
     def timer_fired(self, botengine, argument):
         """
         The bot's intelligence timer fired
@@ -167,7 +170,15 @@ class Intelligence:
         """
         return
 
-    def file_uploaded(self, botengine, device_object, file_id, filesize_bytes, content_type, file_extension):
+    def file_uploaded(
+        self,
+        botengine,
+        device_object,
+        file_id,
+        filesize_bytes,
+        content_type,
+        file_extension,
+    ):
         """
         A device file has been uploaded
         :param botengine: BotEngine environment
@@ -196,7 +207,16 @@ class Intelligence:
         """
         return
 
-    def user_role_updated(self, botengine, user_id, role, alert_category, location_access, previous_alert_category, previous_location_access):
+    def user_role_updated(
+        self,
+        botengine,
+        user_id,
+        role,
+        alert_category,
+        location_access,
+        previous_alert_category,
+        previous_location_access,
+    ):
         """
         A user changed roles
         :param botengine: BotEngine environment
@@ -253,9 +273,9 @@ class Intelligence:
         """
         return
 
-    #===============================================================================
+    # ===============================================================================
     # Built-in Timer and Alarm methods.
-    #===============================================================================
+    # ===============================================================================
     def start_timer_ms(self, botengine, milliseconds, argument=None, reference=""):
         """
         Start a relative timer in milliseconds
@@ -267,11 +287,23 @@ class Intelligence:
         # We seed the reference with this intelligence ID to make it unique against all other intelligence modules.
         if isinstance(self.parent, Location):
             # Location intelligence
-            bot.start_location_intelligence_timer_ms(botengine, milliseconds, self.intelligence_id, argument, self.intelligence_id + str(reference))
+            bot.start_location_intelligence_timer_ms(
+                botengine,
+                milliseconds,
+                self.intelligence_id,
+                argument,
+                self.intelligence_id + str(reference),
+            )
 
         else:
             # Device intelligence
-            bot.start_device_intelligence_timer_ms(botengine, milliseconds, self.intelligence_id, argument, self.intelligence_id + str(reference))
+            bot.start_device_intelligence_timer_ms(
+                botengine,
+                milliseconds,
+                self.intelligence_id,
+                argument,
+                self.intelligence_id + str(reference),
+            )
 
     def start_timer_s(self, botengine, seconds, argument=None, reference=""):
         """
@@ -294,11 +326,23 @@ class Intelligence:
         # We seed the reference with this intelligence ID to make it unique against all other intelligence modules.
         if isinstance(self.parent, Location):
             # Location intelligence
-            bot.start_location_intelligence_timer(botengine, seconds, self.intelligence_id, argument, self.intelligence_id + str(reference))
+            bot.start_location_intelligence_timer(
+                botengine,
+                seconds,
+                self.intelligence_id,
+                argument,
+                self.intelligence_id + str(reference),
+            )
 
         else:
             # Device intelligence
-            bot.start_device_intelligence_timer(botengine, seconds, self.intelligence_id, argument, self.intelligence_id + str(reference))
+            bot.start_device_intelligence_timer(
+                botengine,
+                seconds,
+                self.intelligence_id,
+                argument,
+                self.intelligence_id + str(reference),
+            )
 
     def is_timer_running(self, botengine, reference=""):
         """
@@ -328,11 +372,23 @@ class Intelligence:
         # We seed the reference with this intelligence ID to make it unique against all other intelligence modules.
         if isinstance(self.parent, Location):
             # Location intelligence
-            bot.set_location_intelligence_alarm(botengine, timestamp_ms, self.intelligence_id, argument, self.intelligence_id + str(reference))
+            bot.set_location_intelligence_alarm(
+                botengine,
+                timestamp_ms,
+                self.intelligence_id,
+                argument,
+                self.intelligence_id + str(reference),
+            )
 
         else:
             # Device intelligence
-            bot.set_device_intelligence_alarm(botengine, timestamp_ms, self.intelligence_id, argument, self.intelligence_id + str(reference))
+            bot.set_device_intelligence_alarm(
+                botengine,
+                timestamp_ms,
+                self.intelligence_id,
+                argument,
+                self.intelligence_id + str(reference),
+            )
 
     def is_alarm_running(self, botengine, reference=""):
         """
@@ -356,7 +412,7 @@ class Intelligence:
     # ===============================================================================
     # Private methods
     # ===============================================================================
-    
+
     def _init_statistics(self):
         self.statistics = {
             "calls": 0,

@@ -1,4 +1,4 @@
-'''
+"""
 Created on July 31, 2019
 
 This file is subject to the terms and conditions defined in the
@@ -7,10 +7,12 @@ file 'LICENSE.txt', which is part of this source code package.
 DEPRECATED SEPTEMBER 23, 2020
 
 @author: David Moss
-'''
+"""
+
+import json
 
 from devices.gateway.gateway import GatewayDevice
-import json
+
 
 class PeoplePowerXSeriesDevice(GatewayDevice):
     """
@@ -18,7 +20,7 @@ class PeoplePowerXSeriesDevice(GatewayDevice):
     """
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [] # [] < Deprecated, see gateway_peoplepower_xseries.py >
+    DEVICE_TYPES = []  # [] < Deprecated, see gateway_peoplepower_xseries.py >
 
     def get_device_type_name(self):
         """
@@ -35,18 +37,18 @@ class PeoplePowerXSeriesDevice(GatewayDevice):
         :param content: Content to deliver in JSON format
         :param request_id: Optional request ID for split-phase API calls
         """
-        content = {
-            "address": address,
-            "content": content
-        }
+        content = {"address": address, "content": content}
 
         if request_id is not None:
-            content['request_id'] = int(request_id)
+            content["request_id"] = int(request_id)
 
         import importlib
+
         try:
             bundle = importlib.import_module("info").BUNDLE
-        except:
+        except Exception:
             bundle = None
 
-        botengine.send_command(self.device_id, "stream", json.dumps(content), index=bundle)
+        botengine.send_command(
+            self.device_id, "stream", json.dumps(content), index=bundle
+        )

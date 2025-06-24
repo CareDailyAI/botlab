@@ -18,7 +18,13 @@ import signals.analytics as analytics
 import signals.dailyreport as dailyreport
 import signals.dashboard as dashboard
 
-from users.user import User
+from users.user import (
+    User,
+    ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER,
+    ROLE_TYPE_SECONDARY_FAMILY_CAREGIVER,
+    ROLE_TYPE_PROFESSIONAL_CAREGIVER,
+)
+
 
 from intelligence.dailyreport.location_dailyreport_microservice import *
 
@@ -349,7 +355,7 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
         user_ids = []
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() location_users={}".format(json.dumps(location_users)))
         for user in location_users:
-            if user.get("role") == User.ROLE_TYPE_PROFESSIONAL_CAREGIVER:
+            if user.get("role") == ROLE_TYPE_PROFESSIONAL_CAREGIVER:
                 user_ids.append(user.get("id"))
         
 
@@ -410,7 +416,7 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
         # Notify user's with role "2", "3" or "4" (Primary Family Caregiver) over Email
         user_ids = []
         for user in location_users:
-            if user.get("role") in [User.ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER, User.ROLE_TYPE_SECONDARY_FAMILY_CAREGIVER, User.ROLE_TYPE_PROFESSIONAL_CAREGIVER]:
+            if user.get("role") in [ROLE_TYPE_PRIMARY_FAMILY_CAREGIVER, ROLE_TYPE_SECONDARY_FAMILY_CAREGIVER, ROLE_TYPE_PROFESSIONAL_CAREGIVER]:
                 user_ids.append(user.get("id"))
         
         if len(user_ids) > 0:
@@ -455,7 +461,7 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
                     user_id_list=user_ids
                 )
             else:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").error("|_complete_report() No content to report over email to family and professional caregivers.")
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_complete_report() No content to report over email to family and professional caregivers.")
                 analytics.track(botengine, self.parent, "dailyreport_summary_notify_all_caregivers", {"delivered": False, "period": period, "user_ids": user_ids})
         else:
             analytics.track(botengine, self.parent, "dailyreport_summary_notify_all_caregivers", {"delivered": False, "period": period, "user_ids": []})
@@ -502,7 +508,7 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
         user_ids = []
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("|_complete_report() location_users={}".format(json.dumps(location_users)))
         for user in location_users:
-            if user.get("role") == User.ROLE_TYPE_PROFESSIONAL_CAREGIVER:
+            if user.get("role") == ROLE_TYPE_PROFESSIONAL_CAREGIVER:
                 user_ids.append(user.get("id"))
         
         if len(user_ids) > 0:
@@ -578,8 +584,8 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
                 continue
             botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_updated_report_at_sunrise() item={}".format(item_to_notify))
             item_id = item_to_notify["id"]
+            replaced = False
             for section in report.get("sections", []):
-                replaced = False
                 for item in section.get("items", []):
                     botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|_updated_report_at_sunrise() \titem={}".format(item))
                     if item.get("id") == item_id:
@@ -599,6 +605,8 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
         :param weighted_sections: Weighted sections
         :return: Randomly weighted sections
         """
+        if len(weighted_sections) == 0:
+            return []
         import random
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">_get_randomly_weighted_sections()")
         sorted_sections = [(max(weighted_sections) + 10) - weight for weight in weighted_sections]
@@ -822,7 +830,7 @@ class LocationDailyReportSummaryMicroservice(Intelligence):
             location_users = botengine.get_location_users()
             user_ids = []
             for user in location_users:
-                if user.get("role") == User.ROLE_TYPE_PROFESSIONAL_CAREGIVER:
+                if user.get("role") == ROLE_TYPE_PROFESSIONAL_CAREGIVER:
                     user_ids.append(user.get("id"))
             botengine.get_logger(f"{__name__}.{__class__.__name__}").info("|ai() Notifying user_ids={} text={}".format(user_ids, content.get("text")))
             analytics.track(botengine, self.parent, "dailyreport_summary_notify_professional_caregivers_delivered", {"delivered": True, "items_to_notify": self.items_to_notify, "user_ids": user_ids})

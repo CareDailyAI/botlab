@@ -1,14 +1,14 @@
-'''
+"""
 Created on May 6, 2017
 
 This file is subject to the terms and conditions defined in the
 file 'LICENSE.txt', which is part of this source code package.
 
 @author: David Moss
-'''
+"""
 
-from devices.device import Device
 import utilities.utilities as utilities
+from devices.device import Device
 
 # Here are a list of .mp3 files that *should be* pre-installed on smartphone-as-camera devices:
 #
@@ -94,28 +94,42 @@ class PeoplePowerPictureFrameDevice(Device):
 
     # Device types
     DEVICE_TYPES = []
-    
-    def __init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=True):
-        Device.__init__(self, botengine, location_object, device_id, device_type, device_description, precache_measurements=precache_measurements)
-        
-        
+
+    def __init__(
+        self,
+        botengine,
+        location_object,
+        device_id,
+        device_type,
+        device_description,
+        precache_measurements=True,
+    ):
+        Device.__init__(
+            self,
+            botengine,
+            location_object,
+            device_id,
+            device_type,
+            device_description,
+            precache_measurements=precache_measurements,
+        )
+
     def get_device_type_name(self):
         """
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Device type name
         return _("Picture Frame")
-    
-    
+
     def get_icon(self):
         """
         :return: the font icon name of this device type
         """
         return "touchpad"
-    
-    #===========================================================================
+
+    # ===========================================================================
     # Commands - Save for later
-    #===========================================================================
+    # ===========================================================================
     # def play_sound(self, botengine, sound, command_timeout_ms=5000):
     #     """
     #     :param sound: Play the given sound file, for example "beep.mp3" or "alarm.mp3"
@@ -202,7 +216,9 @@ class PeoplePowerPictureFrameDevice(Device):
         :param mode: New mode
         :return:
         """
-        botengine.send_command(self.device_id, "ppc.mode", str(mode), command_timeout_ms=command_timeout_ms)
+        botengine.send_command(
+            self.device_id, "ppc.mode", str(mode), command_timeout_ms=command_timeout_ms
+        )
 
     #
     # def notify(self, botengine, push_content, push_sound, command_timeout_ms=5000):
@@ -219,7 +235,6 @@ class PeoplePowerPictureFrameDevice(Device):
     #     botengine.send_commands(self.device_id, commands, command_timeout_ms=command_timeout_ms)
     #
 
-
     def play_sound(self, botengine, sound):
         """
         :param sound: Play the given sound file, for example "beep.mp3" or "alarm.mp3"
@@ -227,13 +242,15 @@ class PeoplePowerPictureFrameDevice(Device):
         if not self.is_connected:
             return False
 
-        botengine.get_logger().info("Playing file " + sound + " on camera " + self.description)
+        botengine.get_logger().info(
+            "Playing file " + sound + " on camera " + self.description
+        )
 
         botengine.send_command(self.device_id, "ppc.playSound", sound)
 
-    #===========================================================================
+    # ===========================================================================
     # Status
-    #===========================================================================
+    # ===========================================================================
     def is_screen_blacked_out(self, botengine):
         """
         Is the screen blacked out?
@@ -241,13 +258,15 @@ class PeoplePowerPictureFrameDevice(Device):
         :return: True if the screen is blacked out
         """
         if PeoplePowerPictureFrameDevice.BLACKOUT_SCREEN_PARAM in self.measurements:
-            return self.measurements[PeoplePowerPictureFrameDevice.BLACKOUT_SCREEN_PARAM][0][0]
+            return self.measurements[
+                PeoplePowerPictureFrameDevice.BLACKOUT_SCREEN_PARAM
+            ][0][0]
 
         return False
 
-    #===========================================================================
+    # ===========================================================================
     # Commands
-    #===========================================================================
+    # ===========================================================================
     def blackout(self, botengine, on):
         """
         Blackout the screen or not
@@ -255,9 +274,13 @@ class PeoplePowerPictureFrameDevice(Device):
         :param on: True to blackout the screen
         """
         if on:
-            botengine.send_command(self.device_id, PeoplePowerPictureFrameDevice.BLACKOUT_SCREEN_PARAM, 1)
+            botengine.send_command(
+                self.device_id, PeoplePowerPictureFrameDevice.BLACKOUT_SCREEN_PARAM, 1
+            )
         else:
-            botengine.send_command(self.device_id, PeoplePowerPictureFrameDevice.BLACKOUT_SCREEN_PARAM, 0)
+            botengine.send_command(
+                self.device_id, PeoplePowerPictureFrameDevice.BLACKOUT_SCREEN_PARAM, 0
+            )
 
     def dismiss_question(self, botengine, question_object, command_timeout_ms=60000):
         """
@@ -267,19 +290,32 @@ class PeoplePowerPictureFrameDevice(Device):
         :return:
         """
         if question_object._question_id is None:
-            botengine.get_logger().warn("Attempted to dismiss questions, but couldn't find a question ID")
+            botengine.get_logger().warn(
+                "Attempted to dismiss questions, but couldn't find a question ID"
+            )
             return
 
         commands = []
 
         commands.append(botengine.form_command("ppc.alertStatus", 2))
-        commands.append(botengine.form_command("ppc.alertQuestionId", question_object._question_id))
+        commands.append(
+            botengine.form_command("ppc.alertQuestionId", question_object._question_id)
+        )
 
-        botengine.send_commands(self.device_id, commands, command_timeout_ms=command_timeout_ms)
+        botengine.send_commands(
+            self.device_id, commands, command_timeout_ms=command_timeout_ms
+        )
 
-
-
-    def ask_question(self, botengine, title, subtitle, question_object, duration_ms=utilities.ONE_HOUR_MS, priority=1, play_sound=None):
+    def ask_question(
+        self,
+        botengine,
+        title,
+        subtitle,
+        question_object,
+        duration_ms=utilities.ONE_HOUR_MS,
+        priority=1,
+        play_sound=None,
+    ):
         """
         Ask a question through the digital picture frame
         :param botengine:
@@ -297,7 +333,9 @@ class PeoplePowerPictureFrameDevice(Device):
         botengine.flush_questions()
 
         if question_object._question_id is None:
-            botengine.get_logger().warn("Attempted to flush questions, but didn't get a question ID")
+            botengine.get_logger().warn(
+                "Attempted to flush questions, but didn't get a question ID"
+            )
             return
 
         commands = []
@@ -310,10 +348,14 @@ class PeoplePowerPictureFrameDevice(Device):
             commands.append(botengine.form_command("ppc.alertSubtitle", subtitle))
 
         # Question ID
-        commands.append(botengine.form_command("ppc.alertQuestionId", question_object._question_id))
+        commands.append(
+            botengine.form_command("ppc.alertQuestionId", question_object._question_id)
+        )
 
         # Absolute start timestamp in ms
-        commands.append(botengine.form_command("ppc.alertTimestampMs", botengine.get_timestamp()))
+        commands.append(
+            botengine.form_command("ppc.alertTimestampMs", botengine.get_timestamp())
+        )
 
         # Relative duration time in ms
         if duration_ms is not None:
@@ -327,8 +369,9 @@ class PeoplePowerPictureFrameDevice(Device):
         if play_sound is not None:
             commands.append(botengine.form_command("ppc.playSound", play_sound))
 
-
         if duration_ms is None:
             duration_ms = 60000
 
-        botengine.send_commands(self.device_id, commands, command_timeout_ms=duration_ms)
+        botengine.send_commands(
+            self.device_id, commands, command_timeout_ms=duration_ms
+        )

@@ -79,8 +79,6 @@ def main():
     functional_group.add_argument("--start_time_ms", dest="start_time_ms", help="For data downloads, this is an optional absolute Unix epoch start time in milliseconds")
     functional_group.add_argument("--days_ago", dest="days_ago", help="Number of days ago to start a data request. Instead of looking up a start_time_ms, this will figure it out for you.")
     functional_group.add_argument("--end_time_ms", dest="end_time_ms", help="For data downloads, this is an optional absolute Unix epoch end time in milliseconds")
-    functional_group.add_argument("--care_active", dest="care_active", help="CareActive folder path, merge care active datas with PPC location datas.")
-    functional_group.add_argument("--care_option", dest="care_option", choices=['default', 'merged'], default='default', help="The option for zip file, default is the whole data json file.")
 
     # Process arguments
     args, unknown = parser.parse_known_args()
@@ -88,10 +86,6 @@ def main():
     if args.help:
         parser.print_help()
         return 0
-
-    if args.care_active is not None:
-        api.care_active(args.care_active, args.care_option)
-        return
 
     if not args.cloud_url:
         args.cloud_url = DEFAULT_BASE_SERVER_URL
