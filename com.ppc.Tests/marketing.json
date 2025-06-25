@@ -13,12 +13,12 @@
     "marketing": [
       {
         "lang": "en",
-        "name": "com.ppc.Bot",
+        "name": "Test Bot",
         "author": "David Moss",
-        "copyright": "Copyright 2023 People Power Company",
-        "description": "Bot Microservices Demo",
+        "copyright": "Copyright 2025 CareDaily",
+        "description": "Bot Microservices",
         "marketingUrl": "http://caredaily.ai",
-        "supportUrl": "http://caredaily.zendesk.com",
+        "supportUrl": "",
         "videoUrl": "",
         "privacyUrl": "",
         "keywords": ""
