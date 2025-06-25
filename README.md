@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# BotLab
+# CareDaily BotLab
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/license/apache-2-0)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/CareDailyAI/botlab?sort=semver)](https://github.com/CareDailyAI/botlab/tree/latest)
@@ -28,12 +28,12 @@ under the License.
   <source
     width="600"
     media="(prefers-color-scheme: dark)"
-    src="https://github.com/caredailyai/botlab/img/botlab-logo-horiz-dark.svg"
+    src="img/botlab-logo-horiz-dark.svg"
     alt="BotLab logo (dark)"
   />
   <img
     width="600"
-    src="https://github.com/caredailyai/botlab/img/botlab-logo-horiz.svg"
+    src="img/botlab-logo-horiz.svg"
     alt="BotLab logo (light)"
   />
 </picture>
@@ -43,7 +43,8 @@ A modern, enterprise-ready business services development platform.
 [**BotLab**](#botlab) |
 [**Just Watch It Work**](#just-watch-it-work) |
 [**Getting Started**](#getting-started) |
-[**Lessons and Documentation**](#lessons) |
+[**Partners and Services**](#partners-and-services) |
+[**Lessons and Documentation**](#lessons-and-documentation) |
 [**Explore the docs**](https://iotapps.docs.apiary.io) |
 [**Sign Up**](https://app.caredaily.ai/signup)
 
@@ -70,7 +71,9 @@ We host and run them for you on our servers. Of course, you can also run them li
 
 Want to jump right in and watch a bot in action run? Playback some recorded data using the BotEngine in a new CodeSpace:
 
-`./botengine --playback tests/data/14-days-of-data -r com.ppc.Tests`
+```
+botengine --playback tests/data/14-days-of-data -r com.ppc.Tests
+```
 
 For help on creating a new CodeSpace please refer to [GitHub](https://github.com/features/codespaces) documentation.
 
@@ -133,7 +136,7 @@ Interested in contributing? Check out our
 to find resources around contributing along with a detailed guide on
 how to set up a development environment.
 
-## Repo Activity
+## Activity
 
 <a href="https://next.ossinsight.io/widgets/official/compose-org-active-contributors?period=past_12_months&activity=active&owner_id=113403165" target="_blank" style="display: block" align="center">
   <picture>
