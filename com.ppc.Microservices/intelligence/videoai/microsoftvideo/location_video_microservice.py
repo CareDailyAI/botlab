@@ -17,8 +17,6 @@ except ImportError:
     # Python 2
     import httplib as http_client
 import json
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import time
 
 # Copy/paste Microsoft Blob Storage Account Name
@@ -165,6 +163,14 @@ class LocationVideoMicroservice(Intelligence):
         :param content_type: The content type, for example 'video/mp4'
         :param file_extension: The file extension, for example 'mp4'
         """
+        try:
+            
+            from azure.identity import DefaultAzureCredential
+            from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+        except ImportError:
+            botengine.get_logger().error("Azure Blob Storage libraries are not installed. "
+                                         "Please install them using 'pip install -r com.ppc.VideoRecognitionMicrosoft/requirements.txt'.")
+            return
         # We are demonstrating video processing here, so avoid video processing on files that are not videos.
         if "video" not in content_type:
             botengine.get_logger().info("The uploaded file is not a video, skipping processing ...")

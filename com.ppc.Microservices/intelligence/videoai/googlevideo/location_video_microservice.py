@@ -8,8 +8,6 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from intelligence.intelligence import Intelligence
-from google.cloud import videointelligence
-from google.cloud import storage
 import os, uuid, sys
 
 # User authentication/authorization is done through Google Cloud
@@ -130,6 +128,13 @@ class LocationVideoMicroservice(Intelligence):
         :param content_type: The content type, for example 'video/mp4'
         :param file_extension: The file extension, for example 'mp4'
         """
+        try:
+            from google.cloud import videointelligence
+            from google.cloud import storage
+        except ImportError:
+            botengine.get_logger().error("Google Cloud Video Intelligence and Storage libraries are not installed. "
+                                         "Please install them using 'pip install -r com.ppc.VideoRecognitionGoogle/requirements.txt'.")
+            return
         # We are demonstrating video processing here, so avoid video processing on files that are not videos.
         if "video" not in content_type:
             botengine.get_logger().info("The uploaded file is not a video, skipping processing ...")
