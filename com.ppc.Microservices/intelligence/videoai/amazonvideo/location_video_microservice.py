@@ -8,10 +8,8 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from intelligence.intelligence import Intelligence
-import boto3
 import time
 import json
-from botocore.client import Config
 
 # Copy/paste your Amazon AWS Access Key ID here
 ACCESS_KEY_ID = ''
@@ -191,6 +189,13 @@ class LocationVideoMicroservice(Intelligence):
         :param content_type: The content type, for example 'video/mp4'
         :param file_extension: The file extension, for example 'mp4'
         """
+        try:
+            import boto3
+            from botocore.client import Config
+        except ImportError:
+            botengine.get_logger().error("Boto3 and Botocore libraries are not installed. "
+                                         "Please install them using 'pip install -r com.ppc.VideoRecognitionAmazon/requirements.txt'.")
+            return
         # We are demonstrating video processing here, so avoid video processing on files that are not videos.
         if "video" not in content_type:
             botengine.get_logger().info("The uploaded file is not a video, skipping processing ...")
