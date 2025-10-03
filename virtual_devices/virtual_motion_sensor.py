@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-Virtual Entry Sensor Device Emulator
+Virtual Motion Sensor Device Emulator
 """
 
-# This module will emulate an entry sensor device.
+# This module will emulate a motion sensor device.
 
 import getpass
 import json
@@ -23,7 +23,7 @@ _https_proxy: Optional[Dict[str, str]] = None
 
 def main(argv: Optional[list] = None) -> None:
     """
-    Main entry point for the virtual entry sensor device.
+    Main entry point for the virtual motion sensor device.
     
     :param argv: Command line arguments (defaults to sys.argv if None)
     """
@@ -87,14 +87,14 @@ def main(argv: Optional[list] = None) -> None:
     # Login to your user account
     app_key = _login(server, username, password)
 
-    # This is the device type of this entry sensor device
-    device_type = 10014
+    # This is the device type of this motion sensor device
+    device_type = 10038
 
     # Register the virtual device to your user's account
-    _register_device(server, app_key, location_id, device_id, device_type, "Virtual Entry Sensor")
+    _register_device(server, app_key, location_id, device_id, device_type, "Virtual Motion Sensor")
 
     # Persistent connection to listen for commands
-    # This entry sensor device does not receive commands, keeping this code here for templating purposes.
+    # This motion sensor device does not receive commands, keeping this code here for templating purposes.
     # t = threading.Thread(target=_listen, args=(device_server, device_id))
     # t.start()
 
@@ -111,11 +111,12 @@ def _menu(device_server: str, device_id: str) -> None:
     """
     while True:
         print("\n\n")
-        print(f"[{device_id}]: Virtual Entry Sensor")
-        print("0 - Door Closed")
-        print("1 - Door Opened")
-        print("2 - Fast toggle: Close / Open / Close")
-        print("3 - Fast toggle: Close/ Open / Close / Open / Close")
+        print(f"[{device_id}]: Virtual Motion Sensor")
+        print("0 - No Motion Detected")
+        print("1 - Motion Detected")
+        print("2 - Fast toggle: No Motion / Motion / No Motion")
+        print("3 - Fast toggle: No Motion / Motion / No Motion / Motion / No Motion")
+        print("4 - Simulate activity: Motion detected for 5 seconds")
 
         try:
             value = int(input('> '))
@@ -124,14 +125,26 @@ def _menu(device_server: str, device_id: str) -> None:
                 _do_command(device_server, device_id, value)
             elif value == 2:
                 _do_command(device_server, device_id, 0)
+                time.sleep(0.5)
                 _do_command(device_server, device_id, 1)
+                time.sleep(0.5)
                 _do_command(device_server, device_id, 0)
             elif value == 3:
                 _do_command(device_server, device_id, 0)
+                time.sleep(0.5)
                 _do_command(device_server, device_id, 1)
+                time.sleep(0.5)
                 _do_command(device_server, device_id, 0)
+                time.sleep(0.5)
                 _do_command(device_server, device_id, 1)
+                time.sleep(0.5)
                 _do_command(device_server, device_id, 0)
+            elif value == 4:
+                print("Simulating motion detected for 5 seconds...")
+                _do_command(device_server, device_id, 1)
+                time.sleep(5)
+                _do_command(device_server, device_id, 0)
+                print("Motion simulation complete.")
 
         except ValueError:
             print("???")
@@ -142,7 +155,7 @@ def _do_command(device_server: str, device_id: str, value: int) -> None:
     
     :param device_server: Server to use
     :param device_id: Device ID to command
-    :param value: Value to send (0 for closed, 1 for open)
+    :param value: Value to send (0 for no motion, 1 for motion detected)
     """
     global _https_proxy
     measurement_payload = {
@@ -154,7 +167,7 @@ def _do_command(device_server: str, device_id: str, value: int) -> None:
                 "deviceId": device_id,
                 "params": [
                     {
-                        "name": "doorStatus",
+                        "name": "motionStatus",
                         "value": value
                     }
                 ]
@@ -378,3 +391,4 @@ class Color:
 
 if __name__ == "__main__":
     sys.exit(main())
+
