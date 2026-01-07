@@ -195,18 +195,20 @@ class TestRadarDevice(unittest.TestCase):
 
         del botengine.device_properties[device_id]
 
-        botengine.states["radar_room"] = {
-            device_id: {
-                "x_min_meters": -1.0,
-                "x_max_meters": 1.0,
-                "y_min_meters": -1.0,
-                "y_max_meters": 1.0,
-                "z_min_meters": 0,
-                "z_max_meters": 1.0,
-                "mounting_type": 1,
-                "sensor_height_m": 2.3,
-                "updated_ms": botengine.get_timestamp(),
-                "near_exit": False,
+        botengine.states[botengine.get_location_id()] = {
+            "radar_room": {
+                device_id: {
+                    "x_min_meters": -1.0,
+                    "x_max_meters": 1.0,
+                    "y_min_meters": -1.0,
+                    "y_max_meters": 1.0,
+                    "z_min_meters": 0,
+                    "z_max_meters": 1.0,
+                    "mounting_type": 1,
+                    "sensor_height_m": 2.3,
+                    "updated_ms": botengine.get_timestamp(),
+                    "near_exit": False,
+                }
             }
         }
 
@@ -222,7 +224,7 @@ class TestRadarDevice(unittest.TestCase):
             "updated_ms": botengine.get_timestamp(),
             "near_exit": False,
         }
-        del botengine.states["radar_room"]
+        del botengine.states[botengine.get_location_id()]["radar_room"]
 
         # Test results with measurements
         mut.measurements = {

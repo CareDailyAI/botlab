@@ -14,7 +14,6 @@ import importlib
 import datetime
 import utilities.utilities as utilities
 import signals.analytics as analytics
-import signals.dashboard as dashboard
 import signals.daylight as daylight
 
 from intelligence.intelligence import Intelligence
@@ -64,7 +63,9 @@ class LocationDaylightMicroservice(Intelligence):
         This device or object is getting permanently deleted - it is no longer in the user's account.
         :param botengine: BotEngine environment
         """
-        return
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">destroy()")
+        
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info("<destroy()")
 
     def mode_updated(self, botengine, current_mode):
         """
@@ -134,31 +135,9 @@ class LocationDaylightMicroservice(Intelligence):
         self.parent.narrate(botengine,
                             title = _("Sunrise"),
                             description = _("It is sunrise at '{}'.").format(self.parent.get_location_name(botengine)),
-                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                            priority = botengine.NARRATIVE_PRIORITY_DETAIL,
                             icon = 'sunrise',
                             event_type="daylight.sunrise")
-
-        dashboard.update_dashboard_header(botengine,
-                                            location_object=self.parent,
-                                            name="daylight",
-                                            priority=dashboard.DASHBOARD_PRIORITY_OKAY,
-                                            percent_good=85,
-                                            title=_("Sunrise"),
-                                            comment=_("It is sunrise here.").format(self.parent.get_location_name(botengine)),
-                                            icon="sunrise",
-                                            icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
-                                            resolution_object=dashboard.oneshot_resolution_object(botengine,
-                                                                                                "daylight",
-                                                                                                dashboard_button=_("DISMISS >"),
-                                                                                                actionsheet_title=_("Update Status"),
-                                                                                                resolution_button=_("Dismiss"),
-                                                                                                ack=_("And now back to your regularly scheduled program..."),
-                                                                                                icon="thumbs-up",
-                                                                                                icon_font="far",
-                                                                                                response_options=None),
-                                            conversation_object=None,
-                                            future_timestamp_ms=None,
-                                            ttl_ms=utilities.ONE_MINUTE_MS * 15)
 
         analytics.track(botengine, self.parent, 'sunrise')
         self.parent.is_daylight = True
@@ -176,31 +155,9 @@ class LocationDaylightMicroservice(Intelligence):
         self.parent.narrate(botengine,
                             title = _("Sunset"),
                             description = _("It is sunset at '{}'.").format(self.parent.get_location_name(botengine)),
-                            priority = botengine.NARRATIVE_PRIORITY_DEBUG,
+                            priority = botengine.NARRATIVE_PRIORITY_DETAIL,
                             icon = 'sunset',
                             event_type="daylight.sunset")
-
-        dashboard.update_dashboard_header(botengine,
-                                            location_object=self.parent,
-                                            name="daylight",
-                                            priority=dashboard.DASHBOARD_PRIORITY_OKAY,
-                                            percent_good=85,
-                                            title=_("Sunset"),
-                                            comment=_("It is sunset here.").format(self.parent.get_location_name(botengine)),
-                                            icon="sunset",
-                                            icon_font=utilities.ICON_FONT_FONTAWESOME_REGULAR,
-                                            resolution_object=dashboard.oneshot_resolution_object(botengine,
-                                                                                                "daylight",
-                                                                                                dashboard_button=_("DISMISS >"),
-                                                                                                actionsheet_title=_("Update Status"),
-                                                                                                resolution_button=_("Dismiss"),
-                                                                                                ack=_("And now back to your regularly scheduled program..."),
-                                                                                                icon="thumbs-up",
-                                                                                                icon_font="far",
-                                                                                                response_options=None),
-                                            conversation_object=None,
-                                            future_timestamp_ms=None,
-                                            ttl_ms=utilities.ONE_MINUTE_MS * 15)
 
         analytics.track(botengine, self.parent, 'sunset')
         self.parent.is_daylight = False

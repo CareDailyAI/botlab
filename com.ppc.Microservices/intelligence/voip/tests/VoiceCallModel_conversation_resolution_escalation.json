@@ -1,0 +1,153 @@
+{
+    "model": 
+    {
+        "phrases": {
+            "BYE": "Goodbye!",
+            "ESCALATION_PHRASES": "Press 2 for Notify Adminstrators.. Press 3 for Notify the Emergency Call Center.. Press 4 for I do not need help..",
+            "ESCALATION_PROMPT": "Do you need help?",
+            "LOCATION_NAME": "PyTest Location",
+            "OOPS": "You pressed a wrong key.",
+            "READY_PROMPT": "Press 1 if you are ready to answer, otherwise press any other key",
+            "RESIDENT_MESSAGE": "Homeowner Message : Water leak.",
+            "RESOLUTION_PHRASES": "Press 1 for YES, there was a water leak.. Press 2 for NO, there was no water leak.. Press 3 for I cannot check if there was a water leak..",
+            "RESOLUTION_PROMPT": "Update Status",
+            "SERVICE_NAME": "Care Daily AI",
+            "SUPPORTER_MESSAGE": "Supporter Message : Water leak."
+        },
+        "settings": {
+            "language": "en-US",
+            "timeout": 10,
+            "voice": 5
+        },
+        "startStepId": 0,
+        "steps": [
+            {
+                "actions": [
+                    {
+                        "digits": "1",
+                        "nextStepId": 100
+                    }
+                ],
+                "answerKey": "e79d45fa-6fc0-42b8-864d-97422ee3227a",
+                "id": 0,
+                "mishitAlerts": [],
+                "text": "Hello, this is {SERVICE_NAME}. I'm calling from {LOCATION_NAME}. // {READY_PROMPT}",
+                "timeoutAlerts": [
+                    "Looks like you're busy right now. Let me call you back later!"
+                ]
+            },
+            {
+                "actions": [
+                    {
+                        "digits": "1",
+                        "nextStepId": 120
+                    },
+                    {
+                        "digits": "2",
+                        "nextStepId": 121
+                    },
+                    {
+                        "digits": "3",
+                        "nextStepId": 122
+                    }
+                ],
+                "answerKey": "RESOLUTION_OPTION",
+                "id": 100,
+                "mishitAlerts": [
+                    "{OOPS} {RESOLUTION_PHRASES}",
+                    "{OOPS} {RESIDENT_MESSAGE} // {RESOLUTION_PROMPT} {RESOLUTION_PHRASES}",
+                    "{OOPS} {BYE}"
+                ],
+                "text": "{RESIDENT_MESSAGE} // {RESOLUTION_PROMPT} {RESOLUTION_PHRASES}",
+                "timeoutAlerts": [
+                    "It is taking you longer than usual to answer the question, let me repeat it for you. {RESIDENT_MESSAGE} // {RESOLUTION_PROMPT} {RESOLUTION_PHRASES}",
+                    "{BYE}"
+                ]
+            },
+            {
+                "actions": [
+                    {
+                        "digits": "2",
+                        "nextStepId": 140
+                    },
+                    {
+                        "digits": "3",
+                        "nextStepId": 141
+                    },
+                    {
+                        "digits": "4",
+                        "nextStepId": 142
+                    }
+                ],
+                "answerKey": "ESCALATION_OPTION",
+                "id": 120,
+                "mishitAlerts": [
+                    "{OOPS} {ESCALATION_PHRASES}",
+                    "{OOPS} {RESIDENT_MESSAGE} // {ESCALATION_PROMPT} {ESCALATION_PHRASES}",
+                    "{OOPS} {BYE}"
+                ],
+                "text": "I understand. Marking this problem as confirmed... // {ESCALATION_PROMPT} {ESCALATION_PHRASES}",
+                "timeoutAlerts": [
+                    "It is taking you longer than usual to answer the question, let me repeat it for you. {RESIDENT_MESSAGE} // {RESOLUTION_PROMPT} {RESOLUTION_PHRASES}",
+                    "{BYE}"
+                ]
+            },
+            {
+                "actions": [],
+                "id": 121,
+                "mishitAlerts": [],
+                "text": "Thanks! Marking this problem resolved...",
+                "timeoutAlerts": []
+            },
+            {
+                "actions": [
+                    {
+                        "digits": "2",
+                        "nextStepId": 140
+                    },
+                    {
+                        "digits": "3",
+                        "nextStepId": 141
+                    },
+                    {
+                        "digits": "4",
+                        "nextStepId": 142
+                    }
+                ],
+                "answerKey": "ESCALATION_OPTION",
+                "id": 122,
+                "mishitAlerts": [
+                    "{OOPS} {ESCALATION_PHRASES}",
+                    "{OOPS} {RESIDENT_MESSAGE} // {ESCALATION_PROMPT} {ESCALATION_PHRASES}",
+                    "{OOPS} {BYE}"
+                ],
+                "text": "Okay, I'll see what I can do. // {ESCALATION_PROMPT} {ESCALATION_PHRASES}",
+                "timeoutAlerts": [
+                    "It is taking you longer than usual to answer the question, let me repeat it for you. {RESIDENT_MESSAGE} // {RESOLUTION_PROMPT} {RESOLUTION_PHRASES}",
+                    "{BYE}"
+                ]
+            },
+            {
+                "actions": [],
+                "id": 140,
+                "mishitAlerts": [],
+                "text": "I have notified the Adminstrators.",
+                "timeoutAlerts": []
+            },
+            {
+                "actions": [],
+                "id": 141,
+                "mishitAlerts": [],
+                "text": "I have notified the Emergency Call Center.",
+                "timeoutAlerts": []
+            },
+            {
+                "actions": [],
+                "id": 142,
+                "mishitAlerts": [],
+                "text": "Thank you.",
+                "timeoutAlerts": []
+            }
+        ]
+    }
+}

@@ -8,7 +8,9 @@ from localization import get_translations
 
 from botengine_pytest import BotEnginePyTest
 
-
+# Provides an fixture to include bot variables for regression tests
+@pytest.mark.usefixtures("bot_variables")
+@pytest.mark.usefixtures("location_id")
 class TestBot(unittest.TestCase):
     """ """
 
@@ -21,6 +23,184 @@ class TestBot(unittest.TestCase):
             {
                 "time": 1687373406646,
                 "trigger": 0,
+                "source": 0,
+                "locationId": self.location_id or 1546987,
+                "access": [
+                    {
+                        "category": 1,
+                        "trigger": False,
+                        "read": True,
+                        "control": True,
+                        "location": {
+                            "locationId": self.location_id or 1546987,
+                            "name": "Destry Teeter's Home",
+                            "event": "HOME.:.PRESENT.AI",
+                            "timezone": {
+                                "id": "America/Los_Angeles",
+                                "offset": -480,
+                                "dst": True,
+                                "name": "Pacific Standard Time",
+                            },
+                            "zip": "83501",
+                            "latitude": "46.39950",
+                            "longitude": "-117.02710",
+                            "language": "en",
+                            "priorityCategory": 4,
+                            "priorityRank": 73,
+                            "priorityDateMs": 1687363210000,
+                            "organizationId": 202,
+                            "organization": {
+                                "organizationId": 202,
+                                "organizationName": "PPCg Dev",
+                                "domainName": "ppcgdev",
+                                "brand": "familycare",
+                                "parentId": 104,
+                                "features": "b,g,m,n,p",
+                            },
+                        },
+                    },
+                    {
+                        "category": 4,
+                        "trigger": True,
+                        "read": True,
+                        "control": True,
+                        "device": {
+                            "deviceId": "0015BC001A100466",
+                            "deviceType": 9138,
+                            "description": "Test Motion",
+                            "locationId": self.location_id or 1546987,
+                            "startDate": 1654623396000,
+                            "connected": True,
+                        },
+                    },
+                ],
+            },
+            bot_variables=self.bot_variables,
+        )
+
+        bot.run(botengine)
+
+        controller = bot.load_controller(botengine)
+        assert controller is not None
+        assert len(controller.locations) == 1
+
+    def test_bot_run_add_device_sub_location(self):
+        """
+        This test is to ensure that the botengine is initialized correctly with the correct location 
+        when a sub location with devices is added
+        :return:
+        """
+        botengine = BotEnginePyTest(
+            {
+                "time": 1687373406646,
+                "trigger": 1024,
+                "source": 0,
+                "locationId": self.location_id or 1546987,
+                "access": [
+                    {
+                        "category": 1,
+                        "trigger": True,
+                        "read": True,
+                        "control": True,
+                        "location": {
+                            "locationId": 1546988,
+                            "subType": 1,
+                            "name": "Destry Teeter's Devices",
+                            "event": "HOME.:.PRESENT.AI",
+                            "timezone": {
+                                "id": "America/Los_Angeles",
+                                "offset": -480,
+                                "dst": True,
+                                "name": "Pacific Standard Time",
+                            },
+                            "zip": "83501",
+                            "latitude": "46.39950",
+                            "longitude": "-117.02710",
+                            "language": "en",
+                            "priorityCategory": 4,
+                            "priorityRank": 73,
+                            "priorityDateMs": 1687363210000,
+                            "organizationId": 202,
+                            "organization": {
+                                "organizationId": 202,
+                                "organizationName": "PPCg Dev",
+                                "domainName": "ppcgdev",
+                                "brand": "familycare",
+                                "parentId": 104,
+                                "features": "b,g,m,n,p",
+                            },
+                        },
+                    },
+                    {
+                        "category": 1,
+                        "trigger": False,
+                        "read": True,
+                        "control": True,
+                        "location": {
+                            "locationId": self.location_id or 1546987,
+                            "subType": 0,
+                            "name": "Destry Teeter's Home",
+                            "event": "HOME.:.PRESENT.AI",
+                            "timezone": {
+                                "id": "America/Los_Angeles",
+                                "offset": -480,
+                                "dst": True,
+                                "name": "Pacific Standard Time",
+                            },
+                            "zip": "83501",
+                            "latitude": "46.39950",
+                            "longitude": "-117.02710",
+                            "language": "en",
+                            "priorityCategory": 4,
+                            "priorityRank": 73,
+                            "priorityDateMs": 1687363210000,
+                            "organizationId": 202,
+                            "organization": {
+                                "organizationId": 202,
+                                "organizationName": "PPCg Dev",
+                                "domainName": "ppcgdev",
+                                "brand": "familycare",
+                                "parentId": 104,
+                                "features": "b,g,m,n,p",
+                            },
+                        },
+                    },
+                    {
+                        "category": 4,
+                        "trigger": False,
+                        "read": True,
+                        "control": True,
+                        "device": {
+                            "deviceId": "0015BC001A100466",
+                            "deviceType": 9138,
+                            "description": "Test Motion",
+                            "locationId": 1546988,
+                            "startDate": 1654623396000,
+                            "connected": True,
+                        },
+                    },
+                ],
+            },
+            bot_variables=self.bot_variables,
+        )
+
+        bot.run(botengine)
+
+        controller = bot.load_controller(botengine)
+        assert controller is not None
+        assert len(controller.locations) == 2
+        assert len(controller.locations[self.location_id or 1546987].devices) == 1
+        assert len(controller.locations[1546988].devices) == 0
+
+    def test_bot_run_timer(self):
+        """
+        This test initializes a new bot instance with a trigger type of 64 (timer).
+        :return:
+        """
+        botengine = BotEnginePyTest(
+            {
+                "time": 1687373406646,
+                "trigger": BotEnginePyTest.TRIGGER_TIMER,
                 "source": 0,
                 "locationId": 1546987,
                 "access": [
@@ -62,10 +242,6 @@ class TestBot(unittest.TestCase):
         )
 
         bot.run(botengine)
-
-        controller = bot.load_controller(botengine)
-        assert controller is not None
-        assert len(controller.locations) == 1
 
     def test_bot_run_datastream(self):
         """
@@ -924,19 +1100,19 @@ class TestBot(unittest.TestCase):
     def test_properties(self):
         botengine = BotEnginePyTest({})
 
-        property_name = "ORGANIZATION_SHORT_NAME"
+        property_name = "DEFAULT_LANGUAGE"
         property_value = getattr(domain, property_name)
 
         assert (
-            properties.get_property(botengine, "ORGANIZATION_SHORT_NAME")
+            properties.get_property(botengine, "DEFAULT_LANGUAGE")
             == property_value
         )
 
-        botengine.organization_properties[property_name] = "test"
-        assert properties.get_property(botengine, "ORGANIZATION_SHORT_NAME") == "test"
+        botengine.organization_properties[property_name] = "en"
+        assert properties.get_property(botengine, "DEFAULT_LANGUAGE") == "en"
 
         botengine.organization_properties[property_name] = "null"
-        assert properties.get_property(botengine, "ORGANIZATION_SHORT_NAME") is None
+        assert properties.get_property(botengine, "DEFAULT_LANGUAGE") is None
 
     def test_language_localization(self):
         botengine = BotEnginePyTest({})

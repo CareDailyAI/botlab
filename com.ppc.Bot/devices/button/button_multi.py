@@ -7,19 +7,16 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 """
 
-from devices.device import Device
+from devices.button.button import ButtonDevice
 
 
-class MultiButtonDevice(Device):
+class MultiButtonDevice(ButtonDevice):
     """
     Multi Button Device - Base Class
     """
 
     # List of Device Types this class is compatible with
     DEVICE_TYPES = []
-
-    # Measurement name for the button status
-    MEASUREMENT_NAME_BUTTON_STATUS = "buttonStatus"
 
     # Low battery tag
     LOW_BATTERY_TAG = "lowbattery"
@@ -59,7 +56,7 @@ class MultiButtonDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(
+        ButtonDevice.__init__(
             self,
             botengine,
             location_object,
@@ -78,56 +75,6 @@ class MultiButtonDevice(Device):
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
         return _("Assist Button")
-
-    def get_icon(self):
-        """
-        :return: the font icon name of this device type
-        """
-        return "push-button"
-
-    def is_currently_pressed(self, botengine, index=None):
-        """
-        :param botengine:
-        :param index: Button index if there are multiple buttons on this device.
-        :return: True if the button is currently being pressed (from the perspective of the server)
-        """
-        param_name = self.MEASUREMENT_NAME_BUTTON_STATUS
-        if index is not None:
-            param_name += f".{index}"
-        if param_name in self.measurements:
-            return self.measurements[param_name][0][0]
-
-        return False
-
-    def is_single_button_pressed(self, botengine, index=None):
-        """
-        Find out if a single button is pressed on this device
-        :param botengine:
-        :param index: Button index if there are multiple buttons on this device.
-        :return: True if the button is currently pressed
-        """
-        param_name = self.MEASUREMENT_NAME_BUTTON_STATUS
-        if index is not None:
-            param_name += f".{index}"
-        return (
-            param_name in self.last_updated_params
-            and self.measurements[param_name][0][0]
-        )
-
-    def is_single_button_released(self, botengine, index=None):
-        """
-        Find out if a single button is pressed on this device
-        :param botengine:
-        :param index: Button index if there are multiple buttons on this device.
-        :return: True if the button is currently pressed
-        """
-        param_name = self.MEASUREMENT_NAME_BUTTON_STATUS
-        if index is not None:
-            param_name += f".{index}"
-        return (
-            param_name in self.last_updated_params
-            and not self.measurements[param_name][0][0]
-        )
 
     def did_enter_panic(self, botengine=None):
         """

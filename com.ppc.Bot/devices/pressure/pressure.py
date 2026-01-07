@@ -13,6 +13,7 @@ from devices.device import Device
 class PressurePadDevice(Device):
     """
     Pressure Pad Device - Bed Sensor
+    DEPRECATED - replaced with devices.bed.zigbee.bed
     """
 
     # Goals
@@ -32,7 +33,7 @@ class PressurePadDevice(Device):
     BATTERY_TYPE = "CR123A"
 
     # List of Device Types this class is compatible with
-    DEVICE_TYPES = [9039]
+    DEVICE_TYPES = []
 
     def __init__(
         self,
@@ -55,14 +56,6 @@ class PressurePadDevice(Device):
 
         # Default behavior
         self.goal_id = PressurePadDevice.GOAL_PRESSUREPAD_BED
-
-    def initialize(self, botengine):
-        """
-        Initialize
-        :param botengine:
-        :return:
-        """
-        Device.initialize(self, botengine)
 
     def get_device_type_name(self):
         """

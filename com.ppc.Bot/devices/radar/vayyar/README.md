@@ -25,7 +25,7 @@ Facing out into the room from the device for a wall installation:
 * vyrc.yMax = room boundary farthest from the Vayyar Care.          yMax > yMin
 * vyrc.zMin = room boundary at floor height (0 meters).             zMin < zMax
 * vyrc.zMax = room boundary at ceiling height (2.5 meters ).        zMax > zMin
-* vyrc.sensorHeight = height off the ground (1.5 meters).
+* vyrc.sensorHeight = height off the ground (1.5 meters, between 2.1 and 2.4 on tilted installations).
 * vyrc.sensorMounting = Wall - Vayyar Care sensor is mounted on a wall (0 Enum) or tilted down (3 Enum)
 
 ### Ceiling

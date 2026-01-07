@@ -14,15 +14,49 @@ from devices.device import Device, MINIMUM_MEASUREMENTS_TO_CACHE
 
 class RadarDevice(Device):
     """
-    Radar Device
+    Base class for radar-based occupancy detection and fall monitoring devices.
+
+    This abstract base class provides a common interface and shared functionality for all radar
+    device implementations, including Vayyar, Pontosense, and other radar sensor manufacturers.
+    Radar devices use radio frequency technology to detect and track human presence, movement,
+    and falls within monitored spaces.
+
+    Core Capabilities:
+    - Real-time occupancy detection and multi-target tracking
+    - Fall detection with configurable sensitivity and confirmation workflows
+    - Spatial positioning of detected targets with 3D X/Y/Z coordinates
+    - Room boundary configuration for various mounting types (wall, ceiling, corner)
+    - Subregion management for advanced tracking zones (beds, doors, chairs, toilets)
+    - Bed occupancy monitoring and out-of-bed detection
+    - Fall position tracking and location-based fall analysis
+
+    Key Features:
+    - Multi-target occupancy tracking with specific target indices
+    - Fall detection with multiple status levels (suspected, detected, confirmed, calling)
+    - Room boundary management with sensor height and mounting configuration
+    - Subregion-based occupancy monitoring for specific areas of interest
+    - Real-time target detection with configurable reporting rates
+    - Signal strength monitoring with low signal warnings
+    - Bedroom classification and behavior type detection
+    - Fall count tracking for confidence-based alerting
+
+    Mounting Support:
+    - Wall mounting (standard and 45-degree tilt)
+    - Ceiling mounting (standard and 45-degree rotation)
+    - Corner mounting for specialized installations
+
+    Subclass Implementation:
+    Specific radar device manufacturers (e.g., Vayyar, Pontosense) extend this base class
+    to provide device-specific implementations while maintaining a consistent API for
+    occupancy detection, fall monitoring, and spatial tracking applications.
     """
 
     # Parameters
+    MEASUREMENT_NAME_BED_STATUS = "bedStatus"
     MEASUREMENT_NAME_FALL_STATUS = "fallStatus"
     MEASUREMENT_NAME_OCCUPANCY = "occupancy"
     MEASUREMENT_NAME_OCCUPANCY_TARGET = "occupancyTarget"
     MEASUREMENT_NAME_OCCUPANCY_MAP = "occupancyMap"
-    MEASUREMENT_NAME_BED_STATUS = "bedStatus"
     MEASUREMENT_NAME_FALL_LOC_X = "fallLocX"
     MEASUREMENT_NAME_FALL_LOC_Y = "fallLocY"
     MEASUREMENT_NAME_FALL_LOC_Z = "fallLocZ"
@@ -70,12 +104,24 @@ class RadarDevice(Device):
     SENSOR_MOUNTING_WALL_45_DEGREE = 3
     SENSOR_MOUNTING_CEILING = 1
     SENSOR_MOUNTING_CEILING_45_DEGREE = 2
+    SENSOR_MOUNTING_CORNER = 4
 
     # Maximum allowable subregions
     MAXIMUM_SUBREGIONS = 6
 
     # Low signal strength warning threshold
     LOW_RSSI_THRESHOLD = -70
+
+    # Subregion transition timing - Default to immediate knowledge promotion (0ms delay)
+    # Subclasses can override this to implement device-specific timing behavior
+    SUBREGION_TRANSITION_DELAY_MS = 0
+
+    # Occupancy transition timing - Default to immediate knowledge promotion (0ms delay)
+    # Subclasses can override this to implement device-specific timing behavior for general occupancy
+    OCCUPANCY_TRANSITION_DELAY_MS = 0
+
+    # Occupancy target detection reading rate in milliseconds
+    DEFAULT_REPORTING_RATE_MS = 5500
 
     # List of Device Types this class is compatible with
     DEVICE_TYPES = []
@@ -139,6 +185,10 @@ class RadarDevice(Device):
             RadarDevice.MEASUREMENT_NAME_OCCUPANCY_MAP: 2,
         }
 
+        # Override for bedroom classification from room classification algorithm
+        # None = no override, True = force bedroom, False = force not bedroom
+        self.is_in_bedroom_override = None
+
     def new_version(self, botengine):
         """
         New version
@@ -147,10 +197,17 @@ class RadarDevice(Device):
         Device.new_version(self, botengine)
 
         # Added: January 23, 2025
-        if self.minimum_measurements_to_cache_by_parameter_name == MINIMUM_MEASUREMENTS_TO_CACHE:
+        if (
+            self.minimum_measurements_to_cache_by_parameter_name
+            == MINIMUM_MEASUREMENTS_TO_CACHE
+        ):
             self.minimum_measurements_to_cache_by_parameter_name = {
                 RadarDevice.MEASUREMENT_NAME_OCCUPANCY_MAP: 2,
             }
+        
+        # Added: July 29, 2025
+        if not hasattr(self, 'is_in_bedroom_override'):
+            self.is_in_bedroom_override = None
         pass
 
     def get_device_type_name(self):
@@ -158,7 +215,7 @@ class RadarDevice(Device):
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
-        return _("Radar")
+        return _("Radar")  # noqa: F821 # type: ignore
 
     def get_icon(self):
         """
@@ -182,17 +239,21 @@ class RadarDevice(Device):
         :param botengine:
         :return: True if this device is in a bedroom
         """
+        # Check for override from room classification algorithm
+        if hasattr(self, 'is_in_bedroom_override') and self.is_in_bedroom_override is not None:
+            return self.is_in_bedroom_override
+        
         if self.goal_id == RadarDevice.BEHAVIOR_TYPE_BEDROOM:
             return True
 
         bedroom_names = [
-            _("bed"),
-            _("bett"),
-            _("bdrm"),
-            _("moms room"),
-            _("dads room"),
-            _("mom's room"),
-            _("dad's room"),
+            _("bed"),  # noqa: F821 # type: ignore
+            _("bett"),  # noqa: F821 # type: ignore
+            _("bdrm"),  # noqa: F821 # type: ignore
+            _("moms room"),  # noqa: F821 # type: ignore
+            _("dads room"),  # noqa: F821 # type: ignore
+            _("mom's room"),  # noqa: F821 # type: ignore
+            _("dad's room"),  # noqa: F821 # type: ignore
         ]
 
         for name in bedroom_names:
@@ -211,7 +272,7 @@ class RadarDevice(Device):
         if self.goal_id == RadarDevice.BEHAVIOR_TYPE_BATHROOM:
             return True
 
-        bathroom_names = [_("schlaf"), _("bath"), _("toilet"), _("shower"), _("powder")]
+        bathroom_names = [_("schlaf"), _("bath"), _("toilet"), _("shower"), _("powder")]  # noqa: F821 # type: ignore
 
         for name in bathroom_names:
             if name in self.description.lower():
@@ -694,6 +755,30 @@ class RadarDevice(Device):
 
         return False
 
+    def get_realtime_occupancy_target_detection(self, botengine):
+        """
+        Describes if this device provides realtime updates to occupancy target changes
+        :param botengine:
+        :return: True if the device provides realtime updates, False otherwise
+        """
+        return True
+    
+    def set_realtime_occupancy_target_detection(self, botengine, is_realtime=True):
+        """
+        Sets the realtime occupancy target detection state.
+        :param botengine: BotEngine environment
+        :param is_realtime: True to enable realtime updates, False to disable
+        """
+        pass
+
+    def realtime_occupancy_target_detection_rate(self, botengine):
+        """
+        Get the reading rate for realtime occupancy target detection in ms.
+        :param botengine: BotEngine environment
+        :return: Reading rate in milliseconds
+        """
+        return RadarDevice.DEFAULT_REPORTING_RATE_MS
+
     def set_room_boundaries(self, botengine, content={}):
         """
         Set the boundaries of the room.
@@ -740,11 +825,12 @@ class RadarDevice(Device):
             "near_exit": self.near_exit,
         }
 
-    def get_room_boundaries_properties(self, botengine):
+    def get_room_boundaries_properties(self, botengine, return_defaults=True):
         """
         Return the boundaries of this room FROM THE DEVICE PROPERTY in the form of a dictionary, and include an "updated_ms" value declaring the newest update timestamp in milliseconds.
         Note that some values will be internal default values if they haven't be reported by the device yet.
         :param botengine:
+        :param return_defaults: If True, return default values for any missing properties.  If False, return only the properties that are defined in the device property.
         :return: Dictionary with room boundaries
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
@@ -779,6 +865,16 @@ class RadarDevice(Device):
                     "|get_room_boundaries_properties() Room has not been set, using non-volatile location state"
                 )
                 content = nv_room[self.device_id]
+        if not return_defaults:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "|get_room_boundaries_properties() returning properties only"
+            )
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "<get_room_boundaries_properties() room_boundaries={}".format(
+                    content
+                )
+            )
+            return content
 
         x_min = content.get("x_min_meters", RadarDevice.X_MIN_METERS_WALL)
         x_max = content.get("x_max_meters", RadarDevice.X_MAX_METERS_WALL)
@@ -1040,8 +1136,8 @@ class RadarDevice(Device):
             * abs(s["y_max_meters"] - s["y_min_meters"]),
             reverse=True,
         )
-        api_subregion_list.sort(key=lambda s: 1 if s["isDoor"] else 0, reverse=True)
-        native_subregion_list.sort(key=lambda s: 1 if s["is_door"] else 0, reverse=True)
+        api_subregion_list.sort(key=lambda s: 1 if s.get("isDoor") else 0, reverse=True)
+        native_subregion_list.sort(key=lambda s: 1 if s.get("is_door") else 0, reverse=True)
         api_subregion_list.sort(
             key=lambda s: 1
             if radar.is_context_bed(s.get("context_id", radar.SUBREGION_CONTEXT_IGNORE))
@@ -1065,8 +1161,8 @@ class RadarDevice(Device):
         del native_subregion_list[RadarDevice.MAXIMUM_SUBREGIONS :]
 
         # Sort door subregions to be at last in our list
-        api_subregion_list.sort(key=lambda s: 1 if s["isDoor"] else 0)
-        native_subregion_list.sort(key=lambda s: 1 if s["is_door"] else 0)
+        api_subregion_list.sort(key=lambda s: 1 if s.get("isDoor") else 0)
+        native_subregion_list.sort(key=lambda s: 1 if s.get("is_door") else 0)
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
             "<get_sorted_subregions() device_id={} api_subregion_list={} native_subregion_list={}".format(
                 self.device_id, api_subregion_list, native_subregion_list
@@ -1191,6 +1287,16 @@ class RadarDevice(Device):
 
         return exited
 
+    def has_bed_subregion(self, botengine):
+        """
+        Check if this device has any bed subregions configured.
+        Base implementation returns False by default. Subclasses should override this method
+        to provide device-specific bed subregion detection.
+        :param botengine: BotEngine environment
+        :return: True if the device has at least one bed subregion, False otherwise
+        """
+        return False
+
     def _to_subregion_indices(self, botengine, subregion_str):
         """
         Convert "101000" to [1, 0, 1, 0, 0, 0]
@@ -1224,6 +1330,8 @@ class RadarDevice(Device):
         :return:
         """
         targets = {}
+        if target is None:
+            return targets
         for t in target.split(";"):
             identifier = t.split(":")[0]
             x = t.split(":")[1].split(",")[0]

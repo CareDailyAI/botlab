@@ -51,6 +51,7 @@ class TestHealthDevice:
         assert mut.last_communications_timestamp is None
         assert mut.intelligence_modules == {}
 
+        device_id = "A:0"
         mut = AppleHealthDevice(
             botengine, location_object, device_id, device_type, device_desc
         )

@@ -1,0 +1,8 @@
+{
+  "version": {
+    "triggerParameters": [
+      "manufacturer",
+      "model"
+    ]
+  }
+}

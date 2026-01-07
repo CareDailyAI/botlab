@@ -7,10 +7,10 @@ file 'LICENSE.txt', which is part of this source code package.
 @author: David Moss
 """
 
-from devices.device import Device
+from devices.button.button import ButtonDevice
 
 
-class PanicButtonDevice(Device):
+class PanicButtonDevice(ButtonDevice):
     """
     Panic Button - Base Class
     """
@@ -44,7 +44,7 @@ class PanicButtonDevice(Device):
         :param device_description:
         :param precache_measurements:
         """
-        Device.__init__(
+        ButtonDevice.__init__(
             self,
             botengine,
             location_object,

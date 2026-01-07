@@ -162,7 +162,6 @@ class LocationVideoMicroservice(Intelligence):
         :param file_extension: The file extension, for example 'mp4'
         """
         try:
-            
             from azure.identity import DefaultAzureCredential
             from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
         except ImportError:
@@ -221,7 +220,7 @@ class LocationVideoMicroservice(Intelligence):
             token = token[1:len(token)-1]
             conn.close()
         except Exception as e:
-            print("[Errno {0}] {1}".format(e.errno, e.strerror))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("[Errno {0}] {1}".format(e.errno, e.strerror))
         
         # Use Access Token to upload Video file 
         headers = {
@@ -241,7 +240,7 @@ class LocationVideoMicroservice(Intelligence):
             d = json.loads(data)
             conn.close()
         except Exception as e:
-            print("[Errno {0}] {1}".format(e.errno, e.strerror))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("[Errno {0}] {1}".format(e.errno, e.strerror))
 
         botengine.get_logger().info('Video Processing..')
 

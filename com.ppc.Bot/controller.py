@@ -154,6 +154,74 @@ class Controller:
             stat["time"] = int(stat["time"])
 
         return stats
+    
+    def track_new_and_deleted_locations(self, botengine):
+        """
+        Track any new or deleted sub locations
+        :param botengine: Execution environment
+        """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">track_new_and_deleted_locations()"
+        )
+
+        # Track the location this bot is running on
+        location_id = botengine.get_location_id()
+        if location_id not in self.locations:
+            # The location isn't being tracked yet, add it
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|track_new_and_deleted_devices() \t=> Now tracking location "
+                + str(location_id)
+            )
+            self.locations[location_id] = Location(botengine, location_id)
+
+        # Update coordinates and track any sub locations
+        for location_access in botengine.get_locations():
+            location = location_access["location"]
+            if location["locationId"] == location_id:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|track_new_and_deleted_devices() Updating Location Information"
+                )
+                if (
+                    "latitude" in location
+                    and "longitude" in location
+                ):
+                    self.locations[location_id].update_coordinates(
+                        botengine,
+                        location["latitude"],
+                        location["longitude"],
+                    )
+            if location["locationId"] in self.locations:
+                continue
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|track_new_and_deleted_locations() \t=> Now tracking sub-location "
+                + str(location["locationId"])
+            )
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "|track_new_and_deleted_locations() \t\tsub_type={}".format(location.get("subType", None))
+            )
+            self.locations[location["locationId"]] = Location(
+                botengine, location["locationId"], sub_type=location.get("subType", None)
+            )
+        
+        # Remove any deleted sub locations
+        for location_id in copy.copy(self.locations):
+            if location_id == botengine.get_location_id():
+                continue
+            found = False
+            for location_access in botengine.get_locations():
+                location = location_access["location"]
+                if location["locationId"] == location_id:
+                    found = True
+                    break
+            if not found:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                    f"|track_new_and_deleted_locations() {location_id} Not provided in locations, deleting..."
+                )
+                self.delete_location(botengine, location_id)
+        
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<track_new_and_deleted_locations()"
+        )
 
     def track_new_and_deleted_devices(self, botengine, precache_measurements=True):
         """
@@ -165,15 +233,6 @@ class Controller:
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
             ">track_new_and_deleted_devices()"
         )
-        location_id = botengine.get_location_id()
-        if len(self.locations) == 0:
-            if location_id not in self.locations:
-                # The location isn't being tracked yet, add it
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
-                    "|track_new_and_deleted_devices() \t=> Now tracking location "
-                    + str(location_id)
-                )
-                self.locations[location_id] = Location(botengine, location_id)
 
         access = botengine.get_access_block()
 
@@ -185,22 +244,7 @@ class Controller:
 
         # Maintenance: Add new devices
         for item in access:
-            if item["category"] == botengine.ACCESS_CATEGORY_MODE:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                    "|track_new_and_deleted_devices() Updating Location Information"
-                )
-                if "location" in item:
-                    if (
-                        "latitude" in item["location"]
-                        and "longitude" in item["location"]
-                    ):
-                        self.locations[location_id].update_coordinates(
-                            botengine,
-                            item["location"]["latitude"],
-                            item["location"]["longitude"],
-                        )
-
-            elif item["category"] == botengine.ACCESS_CATEGORY_DEVICE:
+            if item["category"] == botengine.ACCESS_CATEGORY_DEVICE:
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
                     "|track_new_and_deleted_devices() Adding New Devices"
                 )
@@ -233,8 +277,19 @@ class Controller:
                     )
                     continue
 
-                device_object = self.get_device(device_id)
+                device_object = self.get_device(botengine, device_id)
+                deprecated_device_object = None
+                if device_object is not None:
+                    if not device_object.device_type in type(device_object).DEVICE_TYPES:
+                        # Store a copy of the deprecated device object before we potentially delete it
+                        deprecated_device_object = device_object
+                        device_object = None
+
                 location_object = self.locations[location_id]
+                # Associate device sub-locations with their parent location
+                if hasattr(location_object, "sub_type") and location_object.sub_type == botengine.LOCATION_SUB_TYPE_DEVICE:
+                    location_id = botengine.get_location_id()
+                    location_object = self.locations[location_id]
 
                 if device_object is not None:
                     if not hasattr(device_object, "device_type"):
@@ -268,10 +323,11 @@ class Controller:
                 )
 
                 if device_object is None:
-                    # Instantiate the device object based on the device type
+                    # Try to find a new device class for this device type
+                    new_device_object = None
                     for device_type_class in device_type_classes:
                         if device_type in device_type_class.DEVICE_TYPES:
-                            device_object = device_type_class(
+                            new_device_object = device_type_class(
                                 botengine,
                                 location_object,
                                 device_id,
@@ -280,16 +336,38 @@ class Controller:
                                 precache_measurements,
                             )
                             break
-                    if device_object is None:
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|track_new_and_deleted_devices() Unsupported device type: "
-                            + str(device_type)
-                            + " ('"
-                            + device_desc
-                            + "')"
-                        )
+                    
+                    if new_device_object is not None:
+                        # We found a new class - migrate the deprecated device to the new one
+                        if deprecated_device_object is not None:
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                                "|track_new_and_deleted_devices() Migrating device {} from {} to {}".format(
+                                    device_id, 
+                                    type(deprecated_device_object).__name__, 
+                                    type(new_device_object).__name__
+                                )
+                            )
+                            location_object.migrate_device_object(botengine, deprecated_device_object, new_device_object)
+                        device_object = new_device_object
+                    else:
+                        # No new class found - this device is truly unsupported
+                        if deprecated_device_object is not None:
+                            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
+                                "|track_new_and_deleted_devices() No replacement class found for device type {}, deleting device".format(
+                                    device_type
+                                )
+                            )
+                            self.delete_device(botengine, device_id)
+                        else:
+                            botengine.get_logger(
+                                f"{__name__}.{__class__.__name__}"
+                            ).warning(
+                                "|track_new_and_deleted_devices() Unsupported device type: "
+                                + str(device_type)
+                                + " ('"
+                                + device_desc
+                                + "')"
+                            )
                         continue
 
                 # Translate connectionStatus to connected attribute
@@ -338,7 +416,9 @@ class Controller:
                     device_object.user_id = user_id
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                    "|track_new_and_deleted_devices() Synchronizing device"
+                    "|track_new_and_deleted_devices() Synchronizing device {} in location {}".format(
+                        device_id, location_id
+                    )
                 )
                 self.sync_device(botengine, location_id, device_id, device_object)
 
@@ -355,9 +435,12 @@ class Controller:
 
             if not found:
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
-                    "|track_new_and_deleted_devices() Not provided in access, deleting..."
+                    f"|track_new_and_deleted_devices() {device_id} Not provided in access, deleting..."
                 )
                 self.delete_device(botengine, device_id)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<track_new_and_deleted_devices()"
+        )
 
     def sync_device(self, botengine, location_id, device_id, device_object):
         """
@@ -571,7 +654,7 @@ class Controller:
 
         self.locations[location_id].call_center_updated(botengine, user_id, status)
 
-    def data_request_ready(self, botengine, reference, device_csv_dict):
+    def async_data_request_ready(self, botengine, reference, device_csv_dict):
         """
         A botengine.request_data() request is ready
         :param botengine: BotEngine environment
@@ -579,7 +662,7 @@ class Controller:
         :param device_csv_dict: { 'device_id': 'csv data string' }
         """
         for location_id in self.locations:
-            self.locations[location_id].data_request_ready(
+            self.locations[location_id].async_data_request_ready(
                 botengine, reference, device_csv_dict
             )
 
@@ -705,7 +788,7 @@ class Controller:
         for location_id in self.locations:
             self.locations[location_id].schedule_fired(botengine, schedule_id)
 
-    def get_device(self, device_id):
+    def get_device(self, botengine, device_id):
         """
         Get the device represented by the device ID, if it exists
         :return: the device object represented by the device ID, or return None if the device does not yet exist
@@ -717,7 +800,10 @@ class Controller:
                 ]
 
         except Exception:
-            return None
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|get_device() Device ID {} not found".format(device_id)
+            )
+        return None
 
     def delete_device(self, botengine, device_id):
         """
@@ -727,11 +813,19 @@ class Controller:
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
             ">delete_device() Deleting device: " + str(device_id)
         )
-        if device_id in self.location_devices:
-            if self.location_devices[device_id] in self.locations:
-                location = self.locations[self.location_devices[device_id]]
-                location.delete_device(botengine, device_id)
-            del self.location_devices[device_id]
+        try:
+            if device_id in self.location_devices:
+                if self.location_devices[device_id] in self.locations:
+                    location = self.locations[self.location_devices[device_id]]
+                    location.delete_device(botengine, device_id)
+                del self.location_devices[device_id]
+        except Exception as e:
+            import traceback
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                "|delete_device() Exception deleting device {}: {}; trace={}".format(
+                    device_id, str(e), traceback.format_exc()
+                )
+            )
 
     def delete_location(self, botengine, location_id):
         """
@@ -783,6 +877,16 @@ class Controller:
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
             "<is_version_updated()"
         )
+
+        if botengine.local and botengine.local_execution_count == 0:
+            botengine.local_execution_count += 1
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "<is_version_updated() Local execution new version detected {} >> {}".format(
+                    self.version if hasattr(self, "version") else "null", version
+                )
+            )
+            return True
+
         return False
 
     def update_version(self, botengine):

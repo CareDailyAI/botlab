@@ -1,0 +1,1 @@
+# Zigbee bed devices package 

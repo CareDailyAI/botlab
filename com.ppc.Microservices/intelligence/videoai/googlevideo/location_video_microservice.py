@@ -173,10 +173,10 @@ class LocationVideoMicroservice(Intelligence):
         segment_labels = result.annotation_results[0].segment_label_annotations
 
         for i, segment_label in enumerate(segment_labels):
-            print('Video label description: {}'.format(
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info('Video label description: {}'.format(
                 segment_label.entity.description))
             for category_entity in segment_label.category_entities:
-                print('\tLabel category description: {}'.format(
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info('\tLabel category description: {}'.format(
                     category_entity.description))
 
             for i, segment in enumerate(segment_label.segments):
@@ -186,9 +186,8 @@ class LocationVideoMicroservice(Intelligence):
                             segment.segment.end_time_offset.nanos / 1e9)
                 positions = '{}s to {}s'.format(start_time, end_time)
                 confidence = segment.confidence
-                print('\tSegment {}: {}'.format(i, positions))
-                print('\tConfidence: {}'.format(confidence))
-            print('\n')
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info('\tSegment {}: {}'.format(i, positions))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info('\tConfidence: {}'.format(confidence))
         return
 
     def sunrise_fired(self, botengine, proxy_object):

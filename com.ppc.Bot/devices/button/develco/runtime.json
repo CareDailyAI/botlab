@@ -4,7 +4,6 @@
       "alarmStatus",
       "alarmBehavior",
       "alarmCancelDelay",
-      "batteryLevel",
       "buttonActivationDelay",
       "buttonCancelDelay"
     ]

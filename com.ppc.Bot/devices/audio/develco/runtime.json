@@ -1,0 +1,10 @@
+{
+  "version": {
+    "triggerParameters": [
+      "buttonStatus",
+      "ledAppEnable",
+      "ledErrEnable",
+      "btStatus"
+    ]
+  }
+}

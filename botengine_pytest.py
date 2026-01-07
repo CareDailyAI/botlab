@@ -24,6 +24,9 @@ SERVICE_LOG_LEVEL = logging.DEBUG
 
 # Name of our core variable
 CORE_VARIABLE_NAME = "-core-"
+TIMERS_VARIABLE_NAME = "[t]"
+QUESTIONS_VARIABLE_NAME = "[q]"
+COUNT_VARIABLE_NAME = "[c]"
 
 
 class BotEnginePyTest:
@@ -131,8 +134,8 @@ class BotEnginePyTest:
     DATASTREAM_ORGANIZATIONAL_FIELD_TO_ALL = 3
 
     # Narrative priority levels
+    NARRATIVE_PRIORITY_DEBUG = -2
     NARRATIVE_PRIORITY_ANALYTIC = -1
-    NARRATIVE_PRIORITY_DEBUG = 0
     NARRATIVE_PRIORITY_DETAIL = 0
     NARRATIVE_PRIORITY_INFO = 1
     NARRATIVE_PRIORITY_WARNING = 2
@@ -190,14 +193,34 @@ class BotEnginePyTest:
     BOT_TYPE_ORGANIZATION = 1
     BOT_TYPE_ORGANIZATION_RAG = 2
 
-    def __init__(self, inputs={}):
+    # Location Sub Types
+    LOCATION_SUB_TYPE_ALL = 0
+    LOCATION_SUB_TYPE_DEVICE = 1
+
+    def __init__(self, inputs={}, bot_variables=None):
         """Constructor"""
         self.inputs = inputs
         self.loggers = {}
         self.reset()
+        if bot_variables is not None:
+            import dill
+            import os
+            
+            for variable_path in bot_variables:
+                if not os.path.exists(variable_path):
+                    raise FileNotFoundError(f"Variable file {variable_path} does not exist")
+                # Unpickle the variables
+                with open(variable_path, 'rb') as f:
+                    variable = dill.load(f)
+                    name = os.path.basename(variable_path).replace('.variable', '')
+                    self.save_variable(name, variable)
 
     def reset(self):
         """Reset all the flags that let us know how this class was accessed during testing"""
+
+        # Logging service names to render
+        self.logging_service_names = []
+
         self.notify_called = False
         self.command_sent = False
         self.commands = []
@@ -243,7 +266,7 @@ class BotEnginePyTest:
         # Spaces
         self.spaces = {}
 
-        # States
+        # States by location id
         self.states = {}
 
         # Users
@@ -282,6 +305,11 @@ class BotEnginePyTest:
         # Device properties
         self.device_properties = {}
 
+        # System properties
+        self.system_properties = {
+            "ppc.bot.minCountdownThreshold": "10000"  # 10 seconds
+        }
+
         # Questions
         self.collections = {}
         self.questions = {}
@@ -312,6 +340,8 @@ class BotEnginePyTest:
 
         # Last data stream message that was attempted to be sent
         self.datastream = {}
+        # Accumulated list of datastream messages sent during test execution
+        self.datastream_messages = []
 
         # Timers dictionary by reference
         self.timers = {}
@@ -320,8 +350,7 @@ class BotEnginePyTest:
         self.alarms = {}
 
         self.variables = {}
-
-        self.location_block = self.get_location_block()
+        self.variables_to_flush = {}
 
         self.organization_properties = {}
         self.all_trigger_types = []
@@ -335,9 +364,6 @@ class BotEnginePyTest:
         # How many times has this bot been run locally
         # Enabling us to know if it's the first run and a new_version() should be triggered, or gather stats if we want.
         self.local_execution_count = None
-
-        # Logging service names to render
-        self.logging_service_names = []
 
     # ============================================================================
     # Loggers
@@ -584,12 +610,19 @@ class BotEnginePyTest:
                     "category" in block
                     and block["category"] == BotEnginePyTest.ACCESS_CATEGORY_MODE
                 ):
+                    if (
+                        block
+                        .get("location", {})
+                        .get("subType", 0) == BotEnginePyTest.LOCATION_SUB_TYPE_DEVICE
+                    ):
+                        continue
                     return block
 
         return {
             "category": 1,
             "control": True,
             "location": {
+                "id": 0,
                 "event": "HOME",
                 "latitude": "47.72328",
                 "locationId": 0,
@@ -718,12 +751,31 @@ class BotEnginePyTest:
         """
         return "1"
 
-    def get_location_info(self):
+    def get_location_info(self, sub_type=LOCATION_SUB_TYPE_ALL):
         """
         :param location_id: Location ID to extract
+        :param sub_type: Sub type of location to extract, or LOCATION_SUB_TYPE_ALL for any
         :return: location information from the access block
         """
-        return self.location_block
+        return self.get_location_block()
+    
+    def get_locations(self):
+        """
+        :return: All locations available to this bot
+        """
+        locations = []
+
+        access_block = self.get_access_block()
+        if access_block:
+            for block in access_block:
+                if (
+                    "category" in block
+                    and block["category"] == BotEnginePyTest.ACCESS_CATEGORY_MODE
+                ):
+                    locations.append(block)
+        else:
+            locations.append(self.get_location_block())
+        return locations
 
     def get_user_id(self):
         """
@@ -883,37 +935,107 @@ class BotEnginePyTest:
     # Variables
     # ============================================================================
     def save_variable(
-        self, name, value, required_for_each_execution=False, shared=False
+        self, name, value, required_for_each_execution=False, shared=False, overwrite=False
     ):
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            "save_variable: {}:{}".format(name, value)
+            ">save_variable() {}:{}".format(name, value)
         )
-        self.variables[name] = value
+        if shared:
+            self.save_shared_variable(name, value)
+            return
+        self.save_variables(
+            {name: value},
+            required_for_each_execution=required_for_each_execution,
+            shared=shared,
+            overwrite=overwrite,
+        )
+
+    def save_variables(
+        self, variables_dictionary, required_for_each_execution=False, shared=False, overwrite=False
+    ):
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">save_variables() variables={} required_for_each_execution={} shared={} overwrite={}".format(
+                variables_dictionary, required_for_each_execution, shared, overwrite
+            )
+        )
+        if shared:
+            for name, value in variables_dictionary.items():
+                self.save_shared_variable(name, value)
+            return
+        
+        if required_for_each_execution:
+            if CORE_VARIABLE_NAME not in self.variables:
+                self.variables[CORE_VARIABLE_NAME] = {}
+            if overwrite:
+                for name, value in variables_dictionary.items():
+                    self.variables[CORE_VARIABLE_NAME][name] = value
+            else:
+                self.variables[CORE_VARIABLE_NAME].update(variables_dictionary)
+            self.variables_to_flush[CORE_VARIABLE_NAME] = self.variables[CORE_VARIABLE_NAME]
+        else:
+            if overwrite:
+                for name, value in variables_dictionary.items():
+                    self.variables[name] = value
+                    self.variables_to_flush[name] = value
+            else:
+                self.variables.update(variables_dictionary)
+                self.variables_to_flush.update(variables_dictionary)
+        return
+
+    def load_variable(self, name, shared=False):
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">load_variable() name={} shared={}".format(name, shared)
+        )
+        if shared:
+            return self.load_shared_variable(name)
+        if CORE_VARIABLE_NAME in self.variables:
+            if name in self.variables[CORE_VARIABLE_NAME]:
+                return self.variables[CORE_VARIABLE_NAME][name]
+        if name in self.variables:
+            return self.variables[name]
+        else:
+            return None
+
+    def load_variables(self, names):
+        return_values = {}
+        for name in names:
+            return_values[name] = self.variables.get(name)
+        return return_values
+
+    def delete_variable(self, name, shared=False):
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">delete_variable() name={} shared={}".format(name, shared)
+        )
+        if shared:
+            self.delete_shared_variable(name)
+            return
+        if name in self.variables:
+            del self.variables[name]
+        if name in self.variables_to_flush:
+            del self.variables_to_flush[name]
+
+    def flush_binary_variables(self):
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">flush_binary_variables()"
+        )
+        for name in self.variables_to_flush:
+            if self.inputs.get("trigger") == 2048 and name == CORE_VARIABLE_NAME:
+                raise Exception(
+                    "flush_binary_variables() called during data request execution for core variables, which is not supported."
+                )
+            import dill
+            v = dill.dumps(self.variables_to_flush[name])
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "|flush_binary_variables() {} size={} bytes".format(name, len(v))
+            )
+        self.variables_to_flush.clear()
+        pass
 
     def save_shared_variable(self, name, value):
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
             "save_shared_variable: {}:{}".format(name, value)
         )
-        self.variables[name] = value
-
-    def save_variables(
-        self, variables_dictionary, required_for_each_execution=False, shared=False
-    ):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            "load_variable: {} (required_for_each_execution={}; shared={})".format(
-                variables_dictionary, required_for_each_execution, shared
-            )
-        )
-        pass
-
-    def load_variable(self, name):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            "load_variable: {}".format(name)
-        )
-        if name in self.variables:
-            return self.variables[name]
-        else:
-            return None
+        self.variables.update({name: value})
 
     def load_shared_variable(self, name):
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
@@ -924,37 +1046,40 @@ class BotEnginePyTest:
         else:
             return None
 
-    def delete_variable(self, name):
+    def delete_shared_variable(self, name):
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            "delete_variable: {}".format(name)
+            "delete_shared_variable: {}".format(name)
         )
-        if name in self.variables:
-            del self.variables[name]
-
-    def delete_all_variables(self):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            "delete_all_variables"
-        )
-        self.variables = {}
-
-    def clear_variable(self, name):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            "clear_variable: {}".format(name)
-        )
-        pass
-
-    def flush_binary_variables(self):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            "flush_binary_variables"
-        )
-        pass
-
-    def flush_variable(self):
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug("flush_variable")
         pass
 
     def destroy_core_memory(self):
+        if CORE_VARIABLE_NAME in self.variables:
+            del self.variables[CORE_VARIABLE_NAME]
+        self._reset_core_variable()
         pass
+
+    def _reset_core_variable(self):
+        """
+        Reset the core variable
+        :return:
+        """
+        if CORE_VARIABLE_NAME not in self.variables:
+            self.variables[CORE_VARIABLE_NAME] = {}
+
+        if self.variables[CORE_VARIABLE_NAME] is None:
+            self.variables[CORE_VARIABLE_NAME] = {}
+
+        if not isinstance(self.variables[CORE_VARIABLE_NAME], dict):
+            self.variables[CORE_VARIABLE_NAME] = {}
+
+        if TIMERS_VARIABLE_NAME not in self.variables[CORE_VARIABLE_NAME]:
+            self.variables[CORE_VARIABLE_NAME][TIMERS_VARIABLE_NAME] = None
+
+        if QUESTIONS_VARIABLE_NAME not in self.variables[CORE_VARIABLE_NAME]:
+            self.variables[CORE_VARIABLE_NAME][QUESTIONS_VARIABLE_NAME] = None
+
+        if COUNT_VARIABLE_NAME not in self.variables[CORE_VARIABLE_NAME]:
+            self.variables[CORE_VARIABLE_NAME][COUNT_VARIABLE_NAME] = 0
 
     # ============================================================================
     # Notifications
@@ -1228,6 +1353,60 @@ class BotEnginePyTest:
         )
         pass
 
+    def make_voip_call(self, device_id, location_id=None, sip_address=None, phone=None, address_name=None,
+                    audio_device_id=None, speaker_volume=None, mic_volume=None):
+        """
+        Make a VoIP Call to a device registered on a SIP server.
+
+        If the device is registered on a SIP server, it can make a VoIP call.
+
+        :param device_id: Device ID (string, required)
+        :param location_id: Device location ID (integer, required)
+        :param sip_address: SIP address to make a call (string, optional)
+        :param phone: Phone number to make a call, if SIP address is not provided (string, optional)
+        :param address_name: Address name to make a call, if SIP address is not provided (string, optional)
+        :param audio_device_id: Audio Device ID, if not set, the first available one will be used (string, optional)
+        :param speaker_volume: Audio Device speaker volume (integer, optional)
+        :param mic_volume: Audio Device microphone volume (integer, optional)
+        :return: JSON response from Care Daily API
+        """
+        params = {
+            "locationId": location_id or None
+        }
+        if sip_address is not None:
+            params["sipAddress"] = sip_address
+        if phone is not None:
+            params["phone"] = phone
+        if address_name is not None:
+            params["addressName"] = address_name
+        if audio_device_id is not None:
+            params["audioDeviceId"] = audio_device_id
+        if speaker_volume is not None:
+            params["speakerVolume"] = speaker_volume
+        if mic_volume is not None:
+            params["micVolume"] = mic_volume
+
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(
+            f"|make_voip_call() device_id={device_id} location_id={location_id} params={params}"
+        )
+        pass
+
+
+    def hang_up_voip_call(self, device_id, location_id=None):
+        """
+        Hang up a VoIP Call to a device registered on a SIP server.
+        :param device_id: Device ID (string, required)
+        :param location_id: location ID (integer, required)
+        :return:
+        """
+        params = {"locationId": location_id or self.get_location_id()}
+
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(
+            f"|hang_up_voip_call() device_id={device_id} location_id={location_id} params={params}"
+        )
+        pass
+
+
     def send_mms(
         self,
         user_id,
@@ -1388,6 +1567,31 @@ class BotEnginePyTest:
                     else:
                         del self.device_properties[device_id][i]
 
+    def get_system_property(self, name):
+        """
+        Get a system property for this bot
+        https://app.peoplepowerco.com/cloud/apidocs/cloud.html#tag/System-and-User-Properties
+
+        :param name: Property name
+        :return: Property value (dict or str) or None
+        """
+        system_property = self.system_properties.get(name, "")
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            f"Getting system property: {name}: {system_property}"
+        )
+        if len(system_property) == 0:
+            return None
+        if system_property[0] in ["{", "["]:
+            import json
+            try:
+                return json.loads(system_property)
+            except Exception as e:
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").error(
+                    "|get_system_property() Error extracting JSON {}".format(e)
+                )
+                return None
+        return system_property
+
     # ============================================================================
     # Commands
     # ============================================================================
@@ -1463,6 +1667,17 @@ class BotEnginePyTest:
         location_id_list=None,
     ):
         self.datastream = {address: feed_dictionary}
+        # Also record all messages for test assertions
+        self.datastream_messages.append({
+            "address": address,
+            "content": feed_dictionary,
+            "scope": scope,
+            "location_id_list": location_id_list,
+        })
+
+    def get_datastream_messages(self):
+        """Return a list of all datastream messages sent so far."""
+        return list(self.datastream_messages)
 
     # ============================================================================
     # Tags
@@ -1475,18 +1690,20 @@ class BotEnginePyTest:
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
             ">botengine.tag_user(" + str(tag) + ")"
         )
-        self.user_tags.append(tag)
+        self.user_tags.append({"tag": tag})
 
-    def tag_location(self, tag):
+    def tag_location(self, tag, category=None, priority=None):
         """Tag a location
 
         :param tag The tag to give the location
         :param location_id The location ID to tag
+        :param category The category of the tag (optional)
+        :param priority The priority of the tag (optional)
         """
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
             ">botengine.tag_location(" + str(tag) + ")"
         )
-        self.location_tags.append(tag)
+        self.location_tags.append({"id": self.get_location_id(), "tag": tag, "category": category, "priority": priority})
 
     def tag_device(self, tag, device_id):
         """Tag a device
@@ -1497,7 +1714,7 @@ class BotEnginePyTest:
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
             ">botengine.tag_device(" + str(tag) + ", " + str(device_id) + ")"
         )
-        self.device_tags.append(tag)
+        self.device_tags.append({"id": device_id, "tag": tag})
 
     def tag_file(self, tag, file_id):
         """Tag a file
@@ -1508,7 +1725,7 @@ class BotEnginePyTest:
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
             ">botengine.tag_File(" + str(tag) + ", " + str(file_id) + ")"
         )
-        self.file_tags.append(tag)
+        self.file_tags.append({"id": file_id, "tag": tag})
 
     def delete_user_tag(self, tag):
         """Delete a user tag
@@ -1531,14 +1748,19 @@ class BotEnginePyTest:
         self.deleted_location_tags.append(tag)
 
     def delete_device_tag(self, tag, device_id):
-        """Delete a location device
+        """Delete a location device tag
 
         :param tag Tag to delete
+        :param device_id Device ID to remove tag from
         """
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
             ">botengine.delete_device_tag(" + str(tag) + ", " + str(device_id) + ")"
         )
         self.deleted_device_tags.append(tag)
+        
+        # Actually remove the tag from device_tags list
+        self.device_tags = [device_tag for device_tag in self.device_tags 
+                           if not (device_tag['tag'] == tag and device_tag['id'] == device_id)]
 
     def delete_file_tag(self, tag, file_id):
         """Delete a location file
@@ -1553,9 +1775,17 @@ class BotEnginePyTest:
     def get_location_tags(self):
         return self.location_tags
 
-    def get_tags(self, type=None, id=None):
-        print("\n\nWARNING: get_tags() called, but we can't return anything")
-        return None
+    def get_tags(self, tag_type=None, tag_id=None):
+        tags = []
+        [tags.append({"type": 1, "tag": tag["tag"]}) for tag in self.user_tags]
+        [tags.append({"type": 2, "tag": tag["tag"], "id": tag["id"]}) for tag in self.location_tags]
+        [tags.append({"type": 3, "tag": tag["tag"], "id": tag["id"]}) for tag in self.device_tags]
+        [tags.append({"type": 4, "tag": tag["tag"], "id": tag["id"]}) for tag in self.file_tags]
+        if tag_type is not None:
+            tags = [tag for tag in tags if tag["type"] == tag_type]
+        if tag_id is not None:
+            tags = [tag for tag in tags if tag.get("id", "") == tag_id]
+        return tags
 
     # ============================================================================
     # Executions
@@ -1570,140 +1800,191 @@ class BotEnginePyTest:
         self.execute_again_seconds = 0
         self.execute_again_timestamp = 0
 
+    def get_system_time_ms(self):
+        return self.get_timestamp()
+
     # ============================================================================
     # Timers
     # ============================================================================
-    def set_alarm(self, timestamp_ms, function, argument=None, reference=None):
-        self.get_logger(f"{__name__}.{__class__.__name__}").info(
-            ">botengine.set_alarm(timestamp_ms={}, function={}, argument={}, reference={})".format(
-                timestamp_ms, function, argument, reference
-            )
-        )
-        self.alarms[reference] = (timestamp_ms, argument, function)
 
-    def start_timer_s(self, seconds, function, argument=None, reference=None):
+    def start_timer(self, seconds, function, argument=None, reference=None):
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
-            ">botengine.start_timer_s(s={}, function={}, argument={}, reference={})".format(
+            ">start_timer() seconds={}, function={}, argument={}, reference={})".format(
                 seconds, function, argument, reference
             )
         )
-        self.timers[reference] = (
-            self.get_timestamp() + seconds * 1000,
-            argument,
+        absolute_timestamp = self.get_timestamp()
+        self.set_alarm(
+            absolute_timestamp + seconds * 1000,
             function,
+            argument,
+            reference,
+        )
+
+    def start_timer_s(self, seconds, function, argument=None, reference=None):
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">start_timer_s() seconds={}, function={}, argument={}, reference={})".format(
+                seconds, function, argument, reference
+            )
+        )
+        self.set_alarm(
+            self.get_timestamp() + seconds * 1000,
+            function,
+            argument,
+            reference,
         )
 
     def start_timer_ms(self, milliseconds, function, argument=None, reference=None):
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
-            ">botengine.start_timer_ms(ms={}, function={}, argument={}, reference={})".format(
+            ">start_timer_ms() ms={}, function={}, argument={}, reference={})".format(
                 milliseconds, function, argument, reference
             )
         )
-        self.timers[reference] = (
+        self.set_alarm(
             self.get_timestamp() + milliseconds,
-            argument,
             function,
+            argument,
+            reference,
         )
 
-    def start_timer(self, seconds, function, argument=None, reference=None):
+    def set_alarm(self, timestamp_ms, function, argument=None, reference=None):
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
-            ">botengine.start_timer(s={}, function={}, argument={}, reference={})".format(
-                seconds, function, argument, reference
+            ">set_alarm() timestamp_ms={}, function={}, argument={}, reference={})".format(
+                timestamp_ms, function, argument, reference
             )
         )
-        self.timers[reference] = (
-            self.get_timestamp() + seconds * 1000,
-            argument,
-            function,
+        if self.inputs.get("trigger") == 2048:
+            raise Exception(
+                "set_alarm() called during data request execution, which is not supported."
+            )
+        time_variance = int(self.get_system_property("ppc.bot.minCountdownThreshold") or 10000)
+        if timestamp_ms <= self.get_timestamp() + time_variance:
+            self.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "|set_alarm() Timestamp {} in the past, setting time to 1 second later.".format(
+                    timestamp_ms
+                )
+            )
+            timestamp_ms = self.get_timestamp() + time_variance + 1
+        saved_timers = self.load_variable(TIMERS_VARIABLE_NAME)
+        if saved_timers is None:
+            saved_timers = []
+        saved_timers = [
+            x for x in saved_timers if x[3] != reference
+        ]
+        saved_timers.append(
+            (timestamp_ms, function, argument, reference)
         )
+        saved_timers.sort(key=lambda x: x[0])
+        self.save_variable(TIMERS_VARIABLE_NAME, saved_timers)
 
     def cancel_timers(self, reference):
-        if reference in self.timers:
-            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                "cancel_timers: {} timers:[{}]".format(
-                    reference, len(self.timers[reference])
+        import traceback
+        try:
+            raise Exception()
+        except Exception:
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").debug(
+                "|cancel_timers() called from:\n{}".format(
+                    "".join(traceback.format_stack(limit=5))
                 )
             )
-            del self.timers[reference]
 
-        if reference in self.alarms:
-            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                "cancel_timers: {} alarms:[{}]".format(
-                    reference, len(self.alarms[reference])
-                )
-            )
-            del self.alarms[reference]
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">cancel_timers() reference={}".format(reference)
+        )
+        saved_timers = self.load_variable(TIMERS_VARIABLE_NAME)
+        if saved_timers is None:
+            saved_timers = []
+
+        saved_timers = [
+            x for x in saved_timers if x[3] != reference
+        ]
+        saved_timers.sort(key=lambda x: x[0])
+        self.save_variable(TIMERS_VARIABLE_NAME, saved_timers)
 
     def is_timer_running(self, reference):
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            "is_timer_running: {} {}".format(
-                reference, reference in self.timers or reference in self.alarms
-            )
+            ">is_timer_running() reference={}".format(reference)
         )
-        return reference in self.timers or reference in self.alarms
+        saved_timers = self.load_variable(TIMERS_VARIABLE_NAME)
+        if saved_timers is None:
+            saved_timers = []
+        for ref in [x[3] for x in saved_timers]:
+            if ref == reference:
+                return True
+        return False
 
     def is_executing_timer(self):
         """
         :return: True if this execution includes a timer fire
         """
-        return True
+        return self.inputs.get("trigger") == 64
 
-    def get_next_timer(self, reference=None):
+    def get_next_timer(self, reference=None, remove=True):
         """
         :return: Next timer tuple: (absolute timestamp the next timer will fire in milliseconds, argument, reference)
         """
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">get_next_timer() reference={}".format(reference)
+        )
+        saved_timers = self.load_variable(TIMERS_VARIABLE_NAME)
+        if saved_timers is None:
+            saved_timers = []
+        
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "|get_next_timer() saved_timers={}".format(saved_timers)
+        )
         # Search through timers by timestamp
-        timer = None
-        for ref, item in sorted(self.timers.items(), key=lambda x: x[1][0]):
+        timer_index = None
+        for idx, timer in enumerate(saved_timers):
             # Skip timers that are not for this reference if specified
-            if reference is not None and reference not in ref:
+            if reference is not None and reference not in timer[3]:
                 continue
-            # Assign the first timer in our sorted list
-            timer = (item[0], item[1], ref, item[2])
-            # Override if it is an exact reference match
-            if reference is not None and reference == ref:
-                timer = (item[0], item[1], ref, item[2])
+            # Grab the first timer
+            if timer_index is None:
+                timer_index = idx
+            # Grab any timer that matches the reference exactly
+            if reference is not None and reference == timer[3]:
+                timer_index = idx
                 break
-
-        # No timers found
-        return timer
-
-    def get_next_alarm(self, reference=None):
-        """
-        :return: Next alarm tuple: (absolute timestamp the next timer will fire in milliseconds, argument, reference, function)
-        """
-        # Search through alarms by timestamp
-        alarm = None
-        for ref, item in sorted(self.alarms.items(), key=lambda x: x[1]):
-            # Skip alarms that are not for this reference if specified
-            if reference is not None and reference not in ref:
-                continue
-            # Assign the first alarm in our sorted list
-            if alarm is None:
-                alarm = (item[0], item[1], ref, item[2])
-            # Override if it is an exact reference match
-            if reference is not None and reference == ref:
-                alarm = (item[0], item[1], ref, item[2])
-                break
-
-        # No alarms found
-        return alarm
-
-    def get_next_alarm_or_timer(self, reference=None):
-        next_alarm = self.get_next_alarm(reference)
-        next_timer = self.get_next_timer(reference)
-
-        if next_alarm is None:
-            return next_timer
-
-        elif next_timer is None:
-            return next_alarm
-
+        if remove:
+            timer = saved_timers.pop(timer_index) if timer_index is not None else None
+            self.save_variable(TIMERS_VARIABLE_NAME, saved_timers)
         else:
-            if next_timer[0] < next_alarm[0]:
-                return next_timer
-            else:
-                return next_alarm
+            timer = saved_timers[timer_index] if timer_index is not None else None
+        
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<get_next_timer() timer={}".format(timer)
+        )
+        return timer
+    
+    def timer_timestamp_ms(self, reference):
+        """
+        :return: Timestamp in milliseconds of the timer with the given reference, or None if not found
+        """
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">timer_timestamp_ms() reference={}".format(reference)
+        )
+        saved_timers = self.load_variable(TIMERS_VARIABLE_NAME)
+        if saved_timers is None:
+            saved_timers = []
+        
+        for timer in saved_timers:
+            if timer[3] == reference:
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "<timer_timestamp_ms() timestamp={}".format(timer[0])
+                )
+                return timer[0]
+        
+        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<timer_timestamp_ms() timestamp=None"
+        )
+        return None
+
+    def get_next_alarm(self, reference=None, remove=True):
+        return self.get_next_timer(reference, remove)
+
+    def get_next_alarm_or_timer(self, reference=None, remove=True):
+        return self.get_next_timer(reference, remove)
 
     def fire_next_timer_or_alarm(self, intelligence_module, reference=None):
         """
@@ -1714,78 +1995,70 @@ class BotEnginePyTest:
         :param reference: The reference to the timer
         :return:
         """
-        next_alarm_or_timer = self.get_next_alarm_or_timer(reference)
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            ">botengine.fire_next_timer_or_alarm(): All alarms={}".format(self.alarms)
+            "|fire_next_timer_or_alarm() intelligence_module={} reference={}".format(intelligence_module, reference)
         )
+        next_timer = self.get_next_timer(reference)
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            ">botengine.fire_next_timer_or_alarm(): All timers={}".format(self.timers)
-        )
-        self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            ">botengine.fire_next_timer_or_alarm(): Next alarm={}".format(
-                next_alarm_or_timer
+            "|fire_next_timer_or_alarm() Next timer={}".format(
+                next_timer
             )
         )
+        if next_timer is None:
+            self.get_logger(f"{__name__}.{__class__.__name__}").warning(
+                "<fire_next_timer_or_alarm() NO TIMERS AVAILABLE TO FIRE"
+            )
+            return
 
-        if next_alarm_or_timer is not None:
-            # function = next_alarm_or_timer[3]
-            reference = next_alarm_or_timer[2]
-            argument = next_alarm_or_timer[1]
-            # Check if this module is the one that should fire the timer
-            if intelligence_module.intelligence_id != argument[0]:
-                # If not, find the module that should fire the timer
-                intelligence_modules = []
-                if hasattr(intelligence_module.parent, "location_object"):
-                    # Device intelligence module
-                    intelligence_modules = (
-                        intelligence_module.parent.location_object.intelligence_modules
-                    )
-                elif hasattr(intelligence_module.parent, "intelligence_modules"):
-                    # Location intelligence module
-                    intelligence_modules = (
-                        intelligence_module.parent.intelligence_modules
-                    )
-                for module in intelligence_modules:
-                    intelligence_module_lookup = intelligence_modules[module]
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                        ">botengine.fire_next_timer_or_alarm(): Microservice={} '{}'".format(
-                            module, intelligence_module_lookup.intelligence_id
-                        )
-                    )
-                    if intelligence_module_lookup.intelligence_id == argument[0]:
-                        intelligence_module = intelligence_module_lookup
-                        break
+        timestamp = next_timer[0]
+        function = next_timer[1]
+        argument = next_timer[2]
+        reference = next_timer[3]
 
-            if intelligence_module is not None:
-                self.set_timestamp(next_alarm_or_timer[0])
-                self.cancel_timers(reference)
-
-                # Note that the microservice's real argument is placed in element 1,
-                # and element 0 contains the intelligence_id for the microservice to trigger.
-                self.get_logger(f"{__name__}.{__class__.__name__}").info(
-                    "\n\n\n>botengine.fire_next_timer_or_alarm(): FIRING TIMER with argument={}".format(
-                        argument[1]
+        # Check if this module is the one that should fire the timer
+        if intelligence_module.intelligence_id != argument[0]:
+            # If not, find the module that should fire the timer
+            intelligence_modules = []
+            if hasattr(intelligence_module.parent, "location_object"):
+                # Device intelligence module
+                intelligence_modules = (
+                    intelligence_module.parent.location_object.intelligence_modules
+                )
+            elif hasattr(intelligence_module.parent, "intelligence_modules"):
+                # Location intelligence module
+                intelligence_modules = (
+                    intelligence_module.parent.intelligence_modules
+                )
+            for module in intelligence_modules:
+                intelligence_module_lookup = intelligence_modules[module]
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    ">botengine.fire_next_timer_or_alarm(): Microservice={} '{}'".format(
+                        module, intelligence_module_lookup.intelligence_id
                     )
                 )
-                location_object = None
-                if hasattr(intelligence_module.parent, "location_object"):
-                    # Device intelligence module
-                    location_object = intelligence_module.parent.location_object
-                elif hasattr(intelligence_module.parent, "intelligence_modules"):
-                    # Location intelligence module
-                    location_object = intelligence_module.parent
-                if location_object:
-                    self.get_logger(f"{__name__}.{__class__.__name__}").info(
-                        ">botengine.fire_next_timer_or_alarm(): ISO time {}".format(
-                            location_object.get_local_datetime(self)
-                        )
-                    )
-                intelligence_module.timer_fired(self, argument[1])
+                if intelligence_module_lookup.intelligence_id == argument[0]:
+                    intelligence_module = intelligence_module_lookup
+                    break
 
-        else:
-            self.get_logger(f"{__name__}.{__class__.__name__}").info(
-                "\n\n\n>botengine.fire_next_timer_or_alarm(): NO TIMERS AVAILABLE TO FIRE"
+        # if intelligence_module is not None:
+        self.set_timestamp(timestamp)
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|fire_next_timer_or_alarm() Firing reference={}".format(
+                reference
             )
+        )
+        if intelligence_module is None:
+            function(self, argument)
+            return
+
+        # Note that the microservice's real argument is placed in element 1,
+        # and element 0 contains the intelligence_id for the microservice to trigger.
+        self.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "|fire_next_timer_or_alarm() firing intelligence argument={}".format(
+                argument
+            )
+        )
+        intelligence_module.timer_fired(self, argument[1])
 
     # ===========================================================================
     # Modes
@@ -2071,7 +2344,9 @@ class BotEnginePyTest:
         :param overwrite: True to overwrite all existing content, False to update existing server content only with the top-level dictionary keys that are presented leaving others untouched (default)
         :param timestamp_ms: For time-series state variables, fill in the timestamp in milliseconds.
         """
-        self.states[address] = json_content
+        if self.get_location_id() not in self.states:
+            self.states[self.get_location_id()] = {}
+        self.states[self.get_location_id()][address] = json_content
         return None
 
     def get_ui_content(self, address, timestamp_ms=None):
@@ -2081,8 +2356,11 @@ class BotEnginePyTest:
         :param timestamp_ms: Optional timestamp for time-based state variables
         :return: The JSON value for this address, or None if it doesn't exist
         """
-        if address in self.states:
-            return self.states[address]
+
+        if self.get_location_id() not in self.states:
+            return None
+        if address in self.states[self.get_location_id()]:
+            return self.states[self.get_location_id()][address]
 
         return None
 
@@ -2098,6 +2376,7 @@ class BotEnginePyTest:
         publish_to_partner=True,
         fields_updated=[],
         fields_deleted=[],
+        sub_location=False,
     ):
         """
         Set information to be consumed by user interfaces through a known address.
@@ -2118,52 +2397,76 @@ class BotEnginePyTest:
         :param publish_to_partner: True or False to stream this state update to a partner cloud. Default is True, streaming enabled.
         :param fields_updated: To optimize integrations with 3rd party clouds, this is a list of the fields that were added/updated. Always used in conjunction with overwrite=True.
         :param fields_deleted: List of fields that were removed. Always used in conjunction with overwrite=True
+        :param sub_location: True to also save this state variable to the sub-location (if applicable). Default is False.
         """
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-            ">set_state() address={} json_content={} overwrite={} timestamp_ms={}".format(
-                address, json_content, overwrite, timestamp_ms
+            ">set_state() address={} json_content={} overwrite={} timestamp_ms={} sub_location={}".format(
+                address, json_content, overwrite, timestamp_ms, sub_location
             )
         )
+        if self.get_location_id() not in self.states:
+            self.states[self.get_location_id()] = {}
         if timestamp_ms is not None:
-            if timestamp_ms not in self.states:
+            if timestamp_ms not in self.states[self.get_location_id()]:
                 self.get_logger(f"{__name__}.{__class__.__name__}").debug(
                     "|set_state() Initialize timeseries state"
                 )
-                self.states[timestamp_ms] = {}
-
+                self.states[self.get_location_id()][timestamp_ms] = {}
             if not overwrite:
-                if address in self.states[timestamp_ms]:
+                if address in self.states[self.get_location_id()][timestamp_ms]:
                     self.get_logger(f"{__name__}.{__class__.__name__}").debug(
                         "|set_state() Update timeseries state"
                     )
-                    self.states[timestamp_ms][address].update(json_content)
+                    self.states[self.get_location_id()][timestamp_ms][address].update(json_content)
                 else:
                     self.get_logger(f"{__name__}.{__class__.__name__}").debug(
                         "|set_state() Add timeseries state"
                     )
-                    self.states[timestamp_ms][address] = json_content
+                    self.states[self.get_location_id()][timestamp_ms][address] = json_content
             else:
                 self.get_logger(f"{__name__}.{__class__.__name__}").debug(
                     "|set_state() Overwrite timeseries state"
                 )
-                self.states[timestamp_ms][address] = json_content
+                self.states[self.get_location_id()][timestamp_ms][address] = json_content
+            
         else:
-            if not overwrite:
-                if address in self.states:
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                        "|set_state() Update state"
-                    )
-                    self.states[address].update(json_content)
-                else:
-                    self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                        "|set_state() Add state"
-                    )
-                    self.states[address] = json_content
+            if overwrite or address not in self.states[self.get_location_id()]:
+                self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    f"|set_state() {'Overwrite' if overwrite else 'Update'} state"
+                )
+                self.states[self.get_location_id()][address] = json_content
+
+                if sub_location:
+                    # Publish states to sub-type locations
+                    locations = self.get_locations()
+                    for location_access in locations:
+                        location = location_access["location"]
+                        if location.get("subType", 0) != 0:
+                            location_id = location["locationId"]
+                            if location_id not in self.states:
+                                self.states[location_id] = {}
+                            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                                f"|set_state() {'Overwrite' if overwrite else 'Update'} state for sub-type location {location_id}"
+                            )
+                            self.states[location_id][address] = json_content
             else:
                 self.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                    "|set_state() Overwrite state"
+                    "|set_state() Update state"
                 )
-                self.states[address] = json_content
+                self.states[self.get_location_id()][address].update(json_content)
+                if sub_location:
+                    # Publish states to sub-type locations
+                    locations = self.get_locations()
+                    for location_access in locations:
+                        location = location_access["location"]
+                        if location.get("subType", 0) != 0:
+                            location_id = location["locationId"]
+                            if location_id not in self.states:
+                                self.states[location_id] = {}
+                            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                                f"|set_state() Update state for sub-type location {location_id}"
+                            )
+                            self.states[location_id][address].update(json_content)
         self.get_logger(f"{__name__}.{__class__.__name__}").debug("<set_state()")
 
     def get_state(self, address, timestamp_ms=None):
@@ -2178,32 +2481,42 @@ class BotEnginePyTest:
         self.get_logger(f"{__name__}.{__class__.__name__}").debug(
             ">get_state() address={} timestamp_ms={}".format(address, timestamp_ms)
         )
+        if self.get_location_id() not in self.states:
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "<get_state() (no state for location)"
+            )
+            return None
         state = None
-        if timestamp_ms in self.states:
-            if address in self.states[timestamp_ms]:
+        if timestamp_ms in self.states[self.get_location_id()]:
+            if address in self.states[self.get_location_id()][timestamp_ms]:
                 self.get_logger(f"{__name__}.{__class__.__name__}").debug(
                     "|get_state() Found timeseries state"
                 )
-                state = self.states[timestamp_ms][address]
+                state = self.states[self.get_location_id()][timestamp_ms][address]
 
         else:
             self.get_logger(f"{__name__}.{__class__.__name__}").debug(
                 "|get_state() Initialize timeseries state"
             )
-            self.states[timestamp_ms] = {}
+            self.states[self.get_location_id()][timestamp_ms] = {}
 
         if state is None:
             if timestamp_ms is not None:
-                if address in self.states[timestamp_ms]:
+                if address in self.states[self.get_location_id()][timestamp_ms]:
                     self.get_logger(f"{__name__}.{__class__.__name__}").debug(
                         "|get_state() Found timeseries state"
                     )
-                    state = self.states[timestamp_ms][address]
-            elif address in self.states:
+                    state = self.states[self.get_location_id()][timestamp_ms][address]
+            elif address in self.states[self.get_location_id()]:
                 self.get_logger(f"{__name__}.{__class__.__name__}").debug(
                     "|get_state() Found state"
                 )
-                state = self.states[address]
+                state = self.states[self.get_location_id()][address]
+        # For time-series queries with no data, return None so callers can detect absence
+        if timestamp_ms is not None and state is None:
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_state() (no timeseries data)")
+            return None
+
         self.get_logger(f"{__name__}.{__class__.__name__}").debug("<get_state()")
         return state
 
@@ -2240,37 +2553,24 @@ class BotEnginePyTest:
                 address, start_timestamp_ms, end_timestamp_ms
             )
         )
+        if self.get_location_id() not in self.states:
+            self.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "get_timeseries_state: No states for location"
+            )
+            return {}
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
-            "get_timeseries_state: timestamps: {}".format(self.states.keys())
+            "get_timeseries_state: timestamps: {}".format(self.states[self.get_location_id()].keys())
         )
 
         states = {}
-        for timestamp_ms in [key for key in self.states.keys() if isinstance(key, int)]:
+        for timestamp_ms in [key for key in self.states[self.get_location_id()].keys() if isinstance(key, int)]:
             if end_timestamp_ms is None:
                 end_timestamp_ms = self.get_timestamp()
             if start_timestamp_ms <= timestamp_ms <= end_timestamp_ms:
-                if address in self.states[timestamp_ms]:
-                    states[timestamp_ms] = self.states[timestamp_ms][address]
+                if address in self.states[self.get_location_id()][timestamp_ms]:
+                    states[timestamp_ms] = self.states[self.get_location_id()][timestamp_ms][address]
 
         return states
-
-    def flush_states(self):
-        """
-        Flush all UI content to the server
-        :return:
-        """
-        return
-
-    def _flush_states(self, address, json_content, overwrite=False, timestamp_ms=None):
-        """
-        Commit UI content to the cloud
-        :param address:
-        :param json_content:
-        :param overwrite:
-        :param timestamp_ms: Timestamp for time-based state variables
-        :return:
-        """
-        return
 
     def set_admin_content(self, organization_id, address, json_content, private=True):
         """
@@ -2456,7 +2756,28 @@ class BotEnginePyTest:
 
         self.save_variable("body", body)
 
-        return
+        # Store and return a mock narrative reference so Location.narrate() can track it
+        # Initialize storage lazily
+        if not hasattr(self, "_narratives_store"):
+            self._narratives_store = {}
+        if not hasattr(self, "_narratives_next_id"):
+            self._narratives_next_id = 1
+
+        # Choose a narrative timestamp
+        narrative_time = (
+            timestamp_ms if timestamp_ms is not None else self.get_timestamp()
+        )
+        narrative_id = str(self._narratives_next_id)
+        self._narratives_next_id += 1
+
+        # Persist full narrative content for later retrieval via get_narration()
+        stored = body.get("narrative", {}).copy()
+        stored["narrativeId"] = narrative_id
+        stored["narrativeTime"] = narrative_time
+        stored["scope"] = 2 if admin else 1
+        self._narratives_store[narrative_id] = stored
+
+        return {"narrativeId": narrative_id, "narrativeTime": narrative_time}
 
     # ===========================================================================
     # Open AI
@@ -2515,7 +2836,17 @@ class BotEnginePyTest:
 
     def delete_narration(self, narrative_id, narrative_timestamp): ...
 
-    def get_narration(self, narrative_id, admin=False): ...
+    def get_narration(self, narrative_id, admin=False):
+        """
+        Retrieve a stored narrative by ID for test assertions.
+        :param narrative_id: ID previously returned by narrate()
+        :param admin: Unused in pytest engine; present for API parity
+        :return: narrative dict or None
+        """
+        try:
+            return getattr(self, "_narratives_store", {}).get(str(narrative_id))
+        except Exception:
+            return None
 
     def form_parameter(self, name, value, index=None):
         if not name.startswith("syn."):
@@ -2542,6 +2873,7 @@ class BotEnginePyTest:
         user_id=None,
         template="",
         language=None,
+        voip_call=None,
     ):
         self.customer_support_body = {
             "brand": brand,

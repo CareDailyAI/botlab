@@ -205,7 +205,14 @@ class SmartplugDevice(Device):
         Save the status of this device
         :param botengine: BotEngine environment
         """
+        botengine.get_logger().debug(
+            "|save() id={} desc='{}' is_connected={}".format(
+                self.device_id, self.description, self.is_connected
+            )
+        )
+
         if not self.is_connected:
+            botengine.get_logger().debug("|save() -> False (not connected)")
             return False
 
         try:
@@ -215,11 +222,16 @@ class SmartplugDevice(Device):
 
         self.saved = True
 
+        botengine.get_logger().debug(
+            "|save() saved_state={} saved={}".format(self.saved_state, self.saved)
+        )
+
         botengine.get_logger().info(
             "{}: Smart Plug '{}' saved state is {}".format(
                 self.device_id, self.description, self.saved_state
             )
         )
+        botengine.get_logger().debug("|save() -> True")
         return True
 
     def restore(self, botengine, reliably=False):
@@ -229,20 +241,30 @@ class SmartplugDevice(Device):
         :param reliably: True to send the command reliably (default is False)
         :return: True if the smart plug was restored, False if there was nothing to restore
         """
+        botengine.get_logger().debug(
+            "|restore() id={} desc='{}' reliably={} can_control={} saved={}".format(
+                self.device_id, self.description, reliably, self.can_control, self.saved
+            )
+        )
+
         if not self.can_control:
+            botengine.get_logger().debug("|restore() -> False (cannot control)")
             return False
 
-        botengine.get_logger().info(">restore(" + str(self.device_id) + ")")
         if not self.saved:
+            botengine.get_logger().debug("|restore() -> False (no saved state)")
             return False
 
         self.saved = False
 
         if self.saved_state:
+            botengine.get_logger().debug("|restore() restoring: on")
             self.on(botengine, reliably)
         else:
+            botengine.get_logger().debug("|restore() restoring: off")
             self.off(botengine, reliably)
 
+        botengine.get_logger().debug("|restore() -> True")
         return True
 
     def on(self, botengine, reliably=False):
@@ -251,10 +273,18 @@ class SmartplugDevice(Device):
         :param botengine: BotEngine environment
         :param reliably: True to send the command reliably (default is False)
         """
+        botengine.get_logger().debug(
+            "|on() id={} desc='{}' reliably={} can_control={}".format(
+                self.device_id, self.description, reliably, self.can_control
+            )
+        )
+
         if not self.can_control:
+            botengine.get_logger().debug("|on() -> False (cannot control)")
             return False
 
         if reliably:
+            botengine.get_logger().debug("|on() sending reliably")
             cancel_reliable_command(
                 botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS
             )
@@ -263,10 +293,12 @@ class SmartplugDevice(Device):
             )
 
         else:
+            botengine.get_logger().debug("|on() sending direct command")
             botengine.send_command(
                 self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "1"
             )  # This does work with the keyword True.
 
+        botengine.get_logger().debug("|on() -> True")
         return True
 
     def off(self, botengine, reliably=False):
@@ -275,10 +307,18 @@ class SmartplugDevice(Device):
         :param botengine: BotEngine environment
         :param reliably: True to send the command reliably (default is False)
         """
+        botengine.get_logger().debug(
+            "|off() id={} desc='{}' reliably={} can_control={}".format(
+                self.device_id, self.description, reliably, self.can_control
+            )
+        )
+
         if not self.can_control:
+            botengine.get_logger().debug("|off() -> False (cannot control)")
             return False
 
         if reliably:
+            botengine.get_logger().debug("|off() sending reliably")
             cancel_reliable_command(
                 botengine, self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS
             )
@@ -287,10 +327,12 @@ class SmartplugDevice(Device):
             )
 
         else:
+            botengine.get_logger().debug("|off() sending direct command")
             botengine.send_command(
                 self.device_id, SmartplugDevice.MEASUREMENT_NAME_STATUS, "0"
             )  # TODO this should be able to say the keyword False, but that doesn't work. Needs a server fix.
 
+        botengine.get_logger().debug("|off() -> True")
         return True
 
     def toggle(self, botengine, reliably=False):
@@ -299,13 +341,22 @@ class SmartplugDevice(Device):
         :param botengine:
         :param reliably: True to send the command reliably (default is False)
         """
+        botengine.get_logger().debug(
+            "|toggle() id={} desc='{}' reliably={} can_control={}".format(
+                self.device_id, self.description, reliably, self.can_control
+            )
+        )
+
         if not self.can_control:
+            botengine.get_logger().debug("|toggle() -> no-op (cannot control)")
             return
 
         if self.is_on(botengine):
+            botengine.get_logger().debug("|toggle() currently on → turning off")
             self.off(botengine, reliably)
 
         else:
+            botengine.get_logger().debug("|toggle() currently off → turning on")
             self.on(botengine, reliably)
 
     def raw_command(self, botengine, name, value):

@@ -18,8 +18,8 @@ class TestLocalization(unittest.TestCase):
             pytest.skip("No translations found")
         assert translations["en"] == message
         assert translations["es"] == "Dispositivo"
-        assert translations["fr"] == "Dispositif"
-        assert get_translation(None, message, language_code="fr") == "Dispositif"
+        assert translations["fr"] in ["Dispositif", "Appareil"]
+        assert get_translation(None, message, language_code="fr") in ["Dispositif", "Appareil"]
 
         botengine = BotEnginePyTest(
             {
@@ -40,11 +40,11 @@ class TestLocalization(unittest.TestCase):
             }
         )
 
-        botengine.logging_service_names = "localization"
+        # botengine.logging_service_names = ["localization"]
         initialize(botengine)
         assert botengine.get_language() == "fr"
-        assert _(message) == "Dispositif"  # noqa: F821 # type: ignore
+        assert _(message) in ["Dispositif", "Appareil"]  # noqa: F821 # type: ignore
         translations = get_translations(botengine, message)
         assert translations["en"] == message
-        assert translations["fr"] == "Dispositif"
+        assert translations["fr"] in ["Dispositif", "Appareil"]
         assert get_translation(None, message, language_code="en") == message

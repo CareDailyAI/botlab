@@ -1,0 +1,76 @@
+{
+  "model": {
+    "settings": {
+      "language": "en-US",
+      "voice": 5,
+      "timeout": 10
+    },
+    "phrases": {
+      "LOCATION_NAME": "PyTest Location",
+      "SERVICE_NAME": "Care Daily AI",
+      "RESIDENT_MESSAGE": "Homeowner Message : Water leak.",
+      "SUPPORTER_MESSAGE": "Supporter Message : Water leak.",
+      "READY_PROMPT": "Press 1 if you are ready to answer, otherwise press any other key",
+      "RESOLUTION_PROMPT": "Update Status",
+      "RESOLUTION_OPTIONS": "Press 0 if Resolved. Press 1 if False Alarm.",
+      "OOPS": "You pressed a wrong key.",
+      "BYE": "Goodbye!"
+    },
+    "startStepId": 0,
+    "steps": [
+      {
+        "id": 0,
+        "text": "Hello, this is {SERVICE_NAME}. I'm calling from {LOCATION_NAME}. // {READY_PROMPT}",
+        "answerKey": "de4f281d-0221-4b58-a7fc-797532790e6e",
+        "actions": [
+          {
+            "digits": "1",
+            "nextStepId": 100
+          }
+        ],
+        "timeoutAlerts": [
+          "Looks like you're busy right now. Let me call you back later!"
+        ],
+        "mishitAlerts": []
+      },
+      {
+        "id": 100,
+        "text": "{RESIDENT_MESSAGE} // {RESOLUTION_PROMPT}\n{RESOLUTION_OPTIONS}",
+        "answerKey": "RESOLUTION_OPTIONS",
+        "actions": [
+          {
+            "digits": 0,
+            "nextStepId": 110
+          },
+          {
+            "digits": 1,
+            "nextStepId": 111
+          }
+        ],
+        "timeoutAlerts": [
+          "It is taking you longer than usual to answer the question, let me repeat it for you. {RESIDENT_MESSAGE} // {RESOLUTION_PROMPT}\n{RESOLUTION_OPTIONS}",
+          "{BYE}"
+        ],
+        "mishitAlerts": [
+          "{OOPS} {RESOLUTION_OPTIONS}",
+          "{OOPS} {RESIDENT_MESSAGE} // {RESOLUTION_PROMPT}\n{RESOLUTION_OPTIONS}",
+          "{OOPS} {BYE}"
+        ]
+      },
+      {
+        "id": 110,
+        "text": "Thanks! Marking this problem resolved... {BYE}",
+        "actions": [],
+        "timeoutAlerts": [],
+        "mishitAlerts": []
+      },
+      {
+        "id": 111,
+        "text": "Marking this a false alarm.\nSorry about that. {BYE}",
+        "actions": [],
+        "timeoutAlerts": [],
+        "mishitAlerts": []
+      }
+    ]
+  }
+}

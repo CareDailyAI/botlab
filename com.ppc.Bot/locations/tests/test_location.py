@@ -38,7 +38,6 @@ class TestLocation(unittest.TestCase):
         assert mut.language == botengine.get_language()
         assert mut.users == {}
         # assert mut.synchronize_users(botengine)
-        assert not mut.deviceless_trends
 
     def test_location_new_version(self):
         # Initial setup
@@ -215,3 +214,37 @@ class TestLocation(unittest.TestCase):
                         + i * utilities.ONE_DAY_MS
                         + j * utilities.ONE_HOUR_MS
                     )
+
+
+
+    def test_location_migrate_device_object(self):
+        from devices.motion.develco.motion import DevelcoMotionDevice
+
+        botengine = BotEnginePyTest({})
+        # Clear out any previous tests
+        botengine.reset()
+
+        # Initialize the location
+        mut = Location(botengine, 0)
+
+        device_id = "ABC123"
+
+        new_device_object = DevelcoMotionDevice(botengine, mut, device_id, 9138, "New Test Device")
+        old_device_object = DevelcoMotionDevice(botengine, mut, device_id, 9138, "Old Test Device")
+
+        mut.devices[device_id] = old_device_object
+        
+        mut.new_version(botengine)
+        mut.initialize(botengine)
+
+        assert mut.devices == {device_id: old_device_object}
+        assert len(mut.intelligence_modules) > 0
+
+        mut.migrate_device_object(botengine, old_device_object, new_device_object)
+
+        assert new_device_object.location_object == mut
+        assert mut.devices == {device_id: new_device_object}
+
+        for attr_name, attr_value in old_device_object.__dict__.items():
+            if not attr_name.startswith("_"):
+                assert getattr(new_device_object, attr_name) == attr_value

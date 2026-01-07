@@ -1,0 +1,11 @@
+{
+  "version": {
+    "triggerParameters": [
+      "fallStatus",
+      "motionStatus",
+      "degC",
+      "relativeHumidity",
+      "voc"
+    ]
+  }
+}

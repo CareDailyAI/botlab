@@ -121,3 +121,52 @@ class TestDevice:
             (1, botengine.get_timestamp() - TOTAL_DURATION_TO_CACHE_MEASUREMENTS_MS),
         ]
         assert len(mut.measurements["test"]) == 2
+
+    def test_device_module_comparison(self):
+        import devices.motion.motion as motion
+        import devices.motion.develco.motion as motion_develco
+        from devices.motion.motion import MotionDevice
+        from devices.motion.develco.motion import DevelcoMotionDevice
+
+        botengine = BotEnginePyTest({})
+        # Clear out any previous tests
+        botengine.reset()
+
+        # Initialize the location
+        location_object = Location(botengine, 0)
+
+        device_id = "A"
+        device_type = 0
+        device_desc = "Test"
+
+        mut = DevelcoMotionDevice(botengine, location_object, device_id, device_type, device_desc)
+
+        assert isinstance(mut, DevelcoMotionDevice)
+        assert mut.__module__ == DevelcoMotionDevice.__module__
+        assert isinstance(mut, MotionDevice)
+        assert mut.__module__ in [m.__module__ for m in MotionDevice.__subclasses__()]
+        assert issubclass(DevelcoMotionDevice, MotionDevice)
+
+        from importlib import reload
+        reload(motion)
+        reload(motion_develco)
+
+        from devices.motion.motion import MotionDevice
+        from devices.motion.develco.motion import DevelcoMotionDevice
+
+        assert not isinstance(mut, DevelcoMotionDevice)
+        assert mut.__module__ == DevelcoMotionDevice.__module__
+        assert not isinstance(mut, MotionDevice)
+        assert mut.__module__ in [m.__module__ for m in MotionDevice.__subclasses__()]
+        assert issubclass(DevelcoMotionDevice, MotionDevice) # Class structure remains the same
+
+        from utilities.utilities import _isinstance
+        assert _isinstance(1, int)
+        assert not _isinstance(1, bool)
+        assert _isinstance(mut, DevelcoMotionDevice)
+        assert _isinstance(mut, MotionDevice)
+
+        assert _isinstance(1, (int,))
+        assert not _isinstance(1, (bool,))
+        assert _isinstance(mut, (DevelcoMotionDevice,))
+        assert _isinstance(mut, (MotionDevice,))

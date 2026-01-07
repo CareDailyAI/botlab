@@ -170,6 +170,9 @@ class Device:
         # Born on timestamp
         self.born_on = botengine.get_timestamp()
 
+        # Odometer tracking hours of connected service
+        self.odometer_hours = 0
+
         # True to enforce the default cache size. This can be reconfigured externally, followed by a call to garbage collect when needed to get rid of excess cache.
         self.enforce_cache_size = precache_measurements
 
@@ -218,25 +221,18 @@ class Device:
         :param botengine: BotEngine environment
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(">new_version() device_id={}".format(self.device_id))
-        # Added April 7, 2022
-        if not hasattr(self, "is_goal_changed"):
-            self.is_goal_changed = False
-
-        # Added March 20, 2024
-        if not hasattr(self, "user_id"):
-            self.user_id = None
-
-        # Added March 27, 2024
-        if not hasattr(self, "last_user_id"):
-            self.last_user_id = None
-
-        # Fixed March 27, 2024: User ID may have been set to the device ID in the past
-        if self.user_id == self.device_id:
-            self.user_id = None
-
+        
         # Added January 23, 2025
         if not hasattr(self, "minimum_measurements_to_cache_by_parameter_name"):
             self.minimum_measurements_to_cache_by_parameter_name = {}
+
+        # Added August 22, 2025 - Odometer tracking hours of connected service
+        if not hasattr(self, "odometer_hours"):
+            # Calculate initial odometer value based on born_on timestamp for existing devices
+            import datetime
+            current_time = botengine.get_timestamp()
+            time_diff_hours = int((current_time - self.born_on) / (1000 * 60 * 60))
+            self.odometer_hours = time_diff_hours
 
         # Synchronize device microservices
         self.synchronize_microservices(botengine)
@@ -291,11 +287,23 @@ class Device:
         """
         return
     
+    def schedule_fired(self, botengine, schedule_id):
+        """
+        Schedule fired
+        :param botengine: BotEngine environment
+        :param schedule_id: Schedule ID
+        """
+        # Odometer tracking - increment if device is connected
+        if schedule_id == "HOUR":
+            if self.is_connected:
+                self.odometer_hours += 1
+    
     def synchronize_microservices(self, botengine):
         """
         Synchronize device microservices
         :param botengine: BotEngine environment
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(">synchronize_microservices()")
         if str(self.device_type) in index.MICROSERVICES.get("DEVICE_MICROSERVICES", {}):
             # Synchronize microservices
             changed = False
@@ -327,7 +335,7 @@ class Device:
 
                     if not found:
                         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                            "\tDeleting device microservice: " + str(module_name)
+                            "|synchronize_microservices() \tDeleting device microservice: " + str(module_name)
                         )
                         delete.append(module_name)
 
@@ -338,6 +346,10 @@ class Device:
                 for intelligence_info in index.MICROSERVICES["DEVICE_MICROSERVICES"][
                     str(self.device_type)
                 ]:
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                        "|synchronize_microservices() \tChecking device microservice: "
+                        + intelligence_info["module"]
+                    )
                     if intelligence_info["module"] not in self.intelligence_modules:
                         try:
                             intelligence_module = importlib.import_module(
@@ -349,7 +361,7 @@ class Device:
                             botengine.get_logger(
                                 f"{__name__}.{__class__.__name__}"
                             ).debug(
-                                "\tAdding device microservice: "
+                                "|synchronize_microservices() \tAdding device microservice: "
                                 + str(intelligence_info["module"])
                             )
                             intelligence_object = class_(botengine, self)
@@ -362,7 +374,7 @@ class Device:
                             botengine.get_logger(
                                 f"{__name__}.{__class__.__name__}"
                             ).error(
-                                "Could not add device microservice: {}: {}; {}".format(
+                                "|synchronize_microservices() Could not add device microservice: {}: {}; {}".format(
                                     str(intelligence_info),
                                     str(e),
                                     traceback.format_exc(),
@@ -376,9 +388,11 @@ class Device:
         elif len(self.intelligence_modules) > 0:
             # There are no intelligence modules for this device type, and yet we have some intelligence modules locally. Delete everything.
             botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                "\tDeleting all device microservices"
+                "|synchronize_microservices()\tDeleting all device microservices"
             )
             self.intelligence_modules = {}
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<synchronize_microservices()"
+        )
 
     def get_device_type_name(self):
         """
@@ -601,14 +615,8 @@ class Device:
                     param_name = measure["name"]
                     if param_name not in self.measurements or measure["updated"]:
                         if "value" not in measure:
-                            botengine.get_logger(
-                                f"{__name__}.{__class__.__name__}"
-                            ).info(
-                                "device.py: Updated parameter provided no updated value: {}".format(
-                                    measure
-                                )
-                            )
-                            continue
+                            # "None" values are important and should be processed like any other
+                            measure["value"] = None
 
                         value = utilities.normalize_measurement(measure["value"])
 
@@ -630,7 +638,7 @@ class Device:
                         ):
                             self.last_updated_params.append(param_name)
 
-                        if param_name == "batteryLevel" and param_name in self.last_updated_params:
+                        if param_name == "batteryLevel" and param_name in self.last_updated_params and value is not None:
                             # Update the battery level
                             self.battery_level = int(value)
         # List of devices (this one and its proxy) that were updated, to later synchronize with the location outside of this object
@@ -938,6 +946,9 @@ class Device:
                 )
                 return False
 
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "device.is_in_space(): Checking for space type {} in {}".format(space_type, self.spaces)
+        )
         for space in self.spaces:
             if space["spaceType"] == space_type:
                 return True

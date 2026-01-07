@@ -32,6 +32,23 @@ NETWORK_TYPE_LOOPBACK = "lo"
 # Network type measurement
 MEASUREMENT_NETWORK_TYPE = "netType"
 
+# VoIP call state enum
+VOIP_CALL_STATE_CALLING = 1
+VOIP_CALL_STATE_INCOMING = 2
+VOIP_CALL_STATE_RINGING = 3
+VOIP_CALL_STATE_CONNECTING = 4
+VOIP_CALL_STATE_ACTIVE = 5
+VOIP_CALL_STATE_DISCONNECTED = 6
+VOIP_CALL_STATE_ALL_LINES_BUSY = 7
+VOIP_CALL_STATE_NOT_FOUND = 8
+VOIP_CALL_STATE_HANGUP_LOCAL = 9
+VOIP_CALL_STATE_HANGUP_REMOTE = 10
+VOIP_CALL_STATE_SERVICE_UNAVAILABLE = 11
+VOIP_CALL_STATE_BUSY_HERE = 12
+VOIP_CALL_STATE_TERMINATED = 13
+
+# VoIP call state measurement
+MEASUREMENT_VOIP_CALL_STATE = "voipCallState"
 
 class DevelcoSquidlinkDevice(GatewayDevice):
     """
@@ -291,3 +308,46 @@ class DevelcoSquidlinkDevice(GatewayDevice):
         :return:
         """
         return self.battery_level
+
+    def did_update_voip_call_state(self, botengine=None):
+        """
+        Check if the VoIP call state was updated in the last event.
+        :param botengine:
+        :return: True if VoIP call state was updated, False otherwise
+        """
+        return MEASUREMENT_VOIP_CALL_STATE in self.last_updated_params
+
+    def get_voip_call_state(self, botengine=None):
+        """
+        Get the most recent VoIP call state value.
+        :param botengine:
+        :return: Integer VoIP call state value, or None if not available
+        """
+        if MEASUREMENT_VOIP_CALL_STATE in self.measurements:
+            return self.measurements[MEASUREMENT_VOIP_CALL_STATE][0][0]
+        return None
+
+    def voip_call_state_string(self, botengine=None, state=None):
+        """
+        Get a user-friendly string description of the current VoIP call state.
+        :param botengine:
+        :return: String description of the VoIP call state, or "Unknown" if not available
+        """
+        if state is None:
+            state = self.get_voip_call_state(botengine)
+        state_map = {
+            VOIP_CALL_STATE_CALLING: _("Calling"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_INCOMING: _("Incoming Call"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_RINGING: _("Ringing"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_CONNECTING: _("Connecting"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_ACTIVE: _("Active Call"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_DISCONNECTED: _("Disconnected"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_ALL_LINES_BUSY: _("All Lines Busy"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_NOT_FOUND: _("Not Found"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_HANGUP_LOCAL: _("Call Ended (Local)"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_HANGUP_REMOTE: _("Call Ended (Remote)"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_SERVICE_UNAVAILABLE: _("Service Unavailable"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_BUSY_HERE: _("Busy"),  # noqa: F821 # type: ignore
+            VOIP_CALL_STATE_TERMINATED: _("Terminated"),  # noqa: F821 # type: ignore
+        }
+        return state_map.get(state, "Unknown")

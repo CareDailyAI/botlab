@@ -1,0 +1,10 @@
+{
+  "version": {
+    "triggerParameters": [
+      "axend.interferenceThreshold",
+      "axend.study",
+      "firmware",
+      "roomType"
+    ]
+  }
+}

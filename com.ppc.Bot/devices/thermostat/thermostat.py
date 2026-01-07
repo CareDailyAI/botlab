@@ -294,7 +294,7 @@ class ThermostatDevice(Device):
                                         ][0][0]
                                     ),
                                 ),
-                                priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                                 icon="thermostat",
                                 extra_json_dict={"device_id": self.device_id},
                                 event_type="thermostat.thermostat_mode",
@@ -371,7 +371,7 @@ class ThermostatDevice(Device):
                                         ][0][0]
                                     ),
                                 ),
-                                priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                                 icon="thermostat",
                                 extra_json_dict={"device_id": self.device_id},
                                 event_type="thermostat.thermostat_cooling_setpoint",
@@ -448,7 +448,7 @@ class ThermostatDevice(Device):
                                         ][0][0]
                                     ),
                                 ),
-                                priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                                priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                                 icon="thermostat",
                                 extra_json_dict={"device_id": self.device_id},
                                 event_type="thermostat.thermostat_heating_setpoint",
@@ -513,7 +513,7 @@ class ThermostatDevice(Device):
                                 ][0][0]
                             ),
                         ),
-                        priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                        priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                         icon="thermostat",
                         extra_json_dict={"device_id": self.device_id},
                         event_type="thermostat.thermostat_mode",
@@ -556,7 +556,7 @@ class ThermostatDevice(Device):
                                 ][0][0]
                             ),
                         ),
-                        priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                        priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                         icon="thermostat",
                         extra_json_dict={"device_id": self.device_id},
                         event_type="thermostat.thermostat_cooling_setpoint",
@@ -598,7 +598,7 @@ class ThermostatDevice(Device):
                                 ][0][0]
                             ),
                         ),
-                        priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                        priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                         icon="thermostat",
                         extra_json_dict={"device_id": self.device_id},
                         event_type="thermostat.thermostat_heating_setpoint",
@@ -959,7 +959,7 @@ class ThermostatDevice(Device):
                             self.preferred_cooling_setpoint_home_c
                         ),
                     ),
-                    priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                    priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                     icon="thermostat",
                     extra_json_dict={"device_id": self.device_id},
                     event_type="thermostat.thermostat_cooling_setpoint_learned",
@@ -998,7 +998,7 @@ class ThermostatDevice(Device):
                             self.preferred_heating_setpoint_home_c
                         ),
                     ),
-                    priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                    priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                     icon="thermostat",
                     extra_json_dict={"device_id": self.device_id},
                     event_type="thermostat.thermostat_heating_setpoint_learned",
@@ -1092,7 +1092,7 @@ class ThermostatDevice(Device):
                     description=_(
                         "Your '{}' learned the night time cooling setpoint."
                     ).format(self.description),
-                    priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                    priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                     icon="thermostat",
                     extra_json_dict={"device_id": self.device_id},
                     event_type="thermostat.thermostat_cooling_sleep_setpoint_learned",
@@ -1151,7 +1151,7 @@ class ThermostatDevice(Device):
                     description=_(
                         "Your '{}' learned the night time heating setpoint."
                     ).format(self.description),
-                    priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                    priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                     icon="thermostat",
                     extra_json_dict={"device_id": self.device_id},
                     event_type="thermostat.thermostat_heating_sleep_setpoint_learned",
@@ -1247,7 +1247,7 @@ class ThermostatDevice(Device):
                             self.preferred_cooling_offset_away_c
                         ),
                     ),
-                    priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                    priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                     icon="thermostat",
                     extra_json_dict={
                         "device_id": self.device_id,
@@ -1319,7 +1319,7 @@ class ThermostatDevice(Device):
                             self.preferred_heating_offset_away_c
                         ),
                     ),
-                    priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                    priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                     icon="thermostat",
                     extra_json_dict={
                         "device_id": self.device_id,
@@ -1583,7 +1583,7 @@ class ThermostatDevice(Device):
                         self._celsius_to_narrative(cooling_setpoint_celsius),
                         self._celsius_to_narrative(heating_setpoint_celsius),
                     ),
-                    priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                    priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                     icon="thermostat",
                     extra_json_dict={"device_id": self.device_id},
                     event_type="thermostat.thermostat_policy_update",

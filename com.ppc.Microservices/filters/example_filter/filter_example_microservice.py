@@ -115,7 +115,7 @@ class FilterExampleMicroservice(Filter):
 
         return
 
-    def data_request_ready(self, botengine, reference, csv_dict):
+    def async_data_request_ready(self, botengine, reference, csv_dict):
         """
         Edit the data request results directly in place.
 
@@ -127,10 +127,19 @@ class FilterExampleMicroservice(Filter):
         The bot can exit its current execution. The server will independently gather all the necessary data and
         capture it into a LZ4-compressed CSV file on the server which is available for one day and accessible only by
         the bot through a public HTTPS URL identified by a cryptographic token. The bot then gets triggered and
-        downloads the CSV data, passing the data throughout the environment with this data_request_ready()
+        downloads the CSV data, passing the data throughout the environment with this async_data_request_ready()
         event-driven method.
 
-        Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
+
+        IMPORTANT: This method executes in an asynchronous environment where you are NOT allowed to:
+        - Set timers or alarms
+        - Manage class variables that persist across executions
+        - Perform other stateful operations
+
+        To return to a synchronous environment where you can use timers and manage state, call:
+        botengine.async_execute_again_in_n_seconds(seconds)
+
+                Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
         reference is passed back out at the completion of the request, allowing the developer to ensure the
         data request that is now available was truly destined for their microservice.
 
@@ -142,7 +151,7 @@ class FilterExampleMicroservice(Filter):
         :param reference: Optional reference passed into botengine.request_data(..)
         :param csv_dict: { device_object: 'csv data string' }
         """
-        botengine.get_logger().info("Filter: data_request_ready()")
+        botengine.get_logger().info("Filter: async_data_request_ready()")
         return
 
     def datastream_updated(self, botengine, address, content):

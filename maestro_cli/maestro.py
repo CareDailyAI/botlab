@@ -78,6 +78,7 @@ def main():
     functional_group.add_argument("--lz4_request", dest="lz4_request", help="Generate a download link for the resulting .lz4 data request.")
     functional_group.add_argument("--start_time_ms", dest="start_time_ms", help="For data downloads, this is an optional absolute Unix epoch start time in milliseconds")
     functional_group.add_argument("--days_ago", dest="days_ago", help="Number of days ago to start a data request. Instead of looking up a start_time_ms, this will figure it out for you.")
+    functional_group.add_argument("--hours_ago", dest="hours_ago", help="Number of hours ago to start a data request. Instead of looking up a start_time_ms, this will figure it out for you.")
     functional_group.add_argument("--end_time_ms", dest="end_time_ms", help="For data downloads, this is an optional absolute Unix epoch end time in milliseconds")
 
     # Process arguments
@@ -95,9 +96,17 @@ def main():
 
     print("Cloud URL: {}".format(args.cloud_url))
 
-    if args.days_ago is not None:
+    if args.days_ago is not None or args.hours_ago is not None:
         now = int(time.time() * 1000)
-        args.start_time_ms = now - (int(args.days_ago) * api.ONE_DAY_MS)
+        total_offset_ms = 0
+        
+        if args.days_ago is not None:
+            total_offset_ms += int(args.days_ago) * api.ONE_DAY_MS
+            
+        if args.hours_ago is not None:
+            total_offset_ms += int(args.hours_ago) * api.ONE_HOUR_MS
+            
+        args.start_time_ms = now - total_offset_ms
 
     if args.start_time_ms is not None:
         start_time_ms = args.start_time_ms

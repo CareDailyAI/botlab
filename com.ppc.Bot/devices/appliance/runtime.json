@@ -1,0 +1,28 @@
+{
+  "version": {
+    "triggerParameters": [
+      "ig.lock.mode",
+      "ig.lock.extTimerMode",
+      "ig.lock.serviceMode",
+      "ig.audio.beforeShutoff",
+      "ig.audio.userInput",
+      "ig.timer.defaultDuration",
+      "ig.timer.timerWarning",
+      "ig.timer.maxDuration",
+      "ig.timer.showAutoTimer",
+      "ig.safety",
+      "ig.stove.minOnCurrent",
+      "ig.status.stove",
+      "ig.status.temp",
+      "ig.status.timeRemaining",
+      "serialNo",
+      "firmware",
+      "hardware",
+      "version",
+      "macAddress",
+      "ig.event.stove",
+      "occupancy",
+      "ig.event.timer"
+    ]
+  }
+}

@@ -9,6 +9,7 @@ file 'LICENSE.txt', which is part of this source code package.
 
 import datetime
 import importlib
+import json
 
 import index
 import properties
@@ -37,7 +38,7 @@ class Location:
     SECURITY_STATE_ALARMING = 7
     SECURITY_STATE_TEST_MODE = 8
 
-    def __init__(self, botengine, location_id):
+    def __init__(self, botengine, location_id, sub_type=None):
         """
         Constructor
         :param botengine: BotEngine environment
@@ -47,6 +48,9 @@ class Location:
 
         # Born on date
         self.born_on = botengine.get_timestamp()
+
+        # Odometer tracking hours of connected service in which devices are truly connected / operating
+        self.odometer_hours = 0
 
         # Data filtration modules to optionally correct data before entering into the upper layers of our stack
         self.filters = {}
@@ -104,12 +108,10 @@ class Location:
         self.synchronize_users(botengine)
 
         # Activate trends for locations without devices
-        # TODO: Deprecate.  Individual services should use the trends signal as needed,
-        # and should have service specific logic to prevent capturing trends.
-        self.deviceless_trends = False
+        self.deviceless_trends = False  # deprecated November 18, 2025
 
-        # TODO: Discuss removing this.  It's a temporary fix and will be resolved with the inclusion of EngageKit.
-        self.skip_handled_message = False
+        # Location sub type
+        self.sub_type = sub_type
 
     def new_version(self, botengine):
         """
@@ -126,26 +128,44 @@ class Location:
             ">new_version() New bot version detected"
         )
 
-        # Added October 21, 2021
-        if not hasattr(self, "filters"):
-            self.filters = {}
-
-        # Added July 2, 2021
-        if not hasattr(self, "users"):
-            self.users = {}
-            self.synchronize_users(botengine)
-
-        # Added February 2, 2022
-        if not hasattr(self, "language"):
-            self.language = botengine.get_language()
-
         # Added January 13th, 2023
         if not hasattr(self, "deviceless_trends"):
-            self.deviceless_trends = False
+            self.deviceless_trends = False  # deprecated November 18, 2025
 
-        if not hasattr(self, "skip_handled_message"):
-            self.skip_handled_message = False
+        # Deleted August 22, 2025
+        if hasattr(self, "skip_handled_message"):
+            del self.skip_handled_message
 
+        # Added October 3, 2025
+        if not hasattr(self, "sub_type"):
+            self.sub_type = None
+
+        # Added August 22, 2025 - Odometer tracking hours of connected service
+        if not hasattr(self, "odometer_hours"):
+            # Calculate initial odometer value based on born_on timestamp for existing locations
+            current_time = botengine.get_timestamp()
+            time_diff_hours = int((current_time - self.born_on) / (1000 * 60 * 60))
+            self.odometer_hours = time_diff_hours
+
+        # Log device information when running locally
+        if botengine.local:
+            logger = botengine.get_logger(f"{__name__}.{__class__.__name__}")
+            logger.info("=== DEVICE TRACKING INFORMATION ===")
+            if self.devices:
+                for device_id, device_object in self.devices.items():
+                    logger.info(
+                        f"{utilities.Color.CYAN}Device ID: {device_id}, Type: {device_object.device_type}, Description: {device_object.description}{utilities.Color.END}"
+                    )
+            else:
+                logger.info("No devices currently being tracked")
+            logger.info("=====================================")
+
+        if self.sub_type not in [None, 0]:
+            # Services for sub type locations run on the parent location
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "<new_version() Skipping microservice synchronization for sub-type location"
+            )
+            return
         # Synchronize all microservices
         self._sync_modules(
             botengine,
@@ -165,15 +185,17 @@ class Location:
             try:
                 device_object.new_version(botengine)
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|new_version() - Error delivering new_version to device object (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "|new_version() - Error delivering new_version to device object (continuing execution): {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
+
                 if botengine.playback:
                     # Give us a chance to see the error as we playback data in fast-forward mode
                     import time
@@ -185,14 +207,15 @@ class Location:
             try:
                 filter_object.new_version(botengine)
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|new_version() - Error delivering new_version to data filter (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "|new_version() - Error delivering new_version to data filter (continuing execution): {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 if botengine.playback:
                     # Give us a chance to see the error as we playback data in fast-forward mode
@@ -211,14 +234,15 @@ class Location:
                     botengine, (time.time() - t) * 1000
                 )
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|new_version() - Error delivering new_version to device microservice (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "|new_version() - Error delivering new_version to device microservice (continuing execution): {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 if botengine.playback:
                     # Give us a chance to see the error as we playback data in fast-forward mode
@@ -233,7 +257,12 @@ class Location:
         :param botengine: BotEngine environment
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(">initialize()")
-
+        if self.sub_type not in [None, 0]:
+            # Services for sub type locations run on the parent location
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                "<initialize() Skipping microservice synchronization for sub-type location"
+            )
+            return
         # Synchronize all microservices
         self._sync_modules(
             botengine,
@@ -252,14 +281,15 @@ class Location:
             try:
                 filter_object.initialize(botengine)
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "location.py - Error initializing data filter (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "location.py - Error initializing data filter (continuing execution): {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 if botengine.playback:
                     # Give us a chance to see the error as we playback data in fast-forward mode
@@ -271,14 +301,15 @@ class Location:
             try:
                 device_object.initialize(botengine)
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|new_version() - Error initializing device microservice (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "|new_version() - Error initializing device microservice (continuing execution): {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 if botengine.playback:
                     # Give us a chance to see the error as we playback data in fast-forward mode
@@ -290,14 +321,15 @@ class Location:
             try:
                 user_object.initialize(botengine)
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|new_version() - Error initializing user (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "|new_version() - Error initializing user (continuing execution): {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 if botengine.playback:
                     # Give us a chance to see the error as we playback data in fast-forward mode
@@ -319,14 +351,15 @@ class Location:
                 )
 
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|new_version() - Error initializing microservice (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "|new_version() - Error initializing microservice (continuing execution): {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 if botengine.playback:
                     # Give us a chance to see the error as we playback data in fast-forward mode
@@ -355,14 +388,16 @@ class Location:
                         botengine, device_object
                     )
                 except Exception as e:
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                        "|add_device() - Error delivering add_device to device microservice (continuing execution): "
-                        + str(e)
-                    )
                     import traceback
 
                     botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                        traceback.format_exc()
+                        "|add_device() - Error delivering add_device to device microservice (continuing execution): {}device_object={} exception={} trace={}{}".format(
+                            utilities.Color.RED,
+                            device_object,
+                            e,
+                            traceback.format_exc(),
+                            utilities.Color.END,
+                        )
                     )
 
         for microservice_object in self.sorted_intelligence_modules(botengine).values():
@@ -375,21 +410,23 @@ class Location:
                     botengine, (time.time() - t) * 1000
                 )
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|add_device() - Error delivering add_device to location microservice (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "|add_device() - Error delivering add_device to location microservice (continuing execution): {}device_object={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        device_object,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
 
         for filter_object in self.sorted_filters(botengine).values():
             try:
                 filter_object.device_added(botengine, device_object)
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
                     "|add_device() - Error delivering add_device to filter (continuing execution): "
                     + str(e)
                 )
@@ -405,6 +442,9 @@ class Location:
         Delete the given device ID
         :param device_id: Device ID to delete
         """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">delete_device() Deleting device_id={}".format(device_id)
+        )
         if device_id in self.devices:
             device_object = self.devices[device_id]
 
@@ -415,24 +455,30 @@ class Location:
                             botengine
                         )
                     except Exception as e:
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|delete_device() Exception destroying device intelligence module. device_id={} device_type={} description={} intelligence_id={} exception={}".format(
+                        import traceback
+
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|delete_device() Exception destroying device intelligence module. {}device_id={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
                                 device_object.device_id,
-                                device_object.device_type,
-                                device_object.description,
-                                intelligence_id,
                                 e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
 
             try:
                 device_object.destroy(botengine)
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|delete_device() Exception destroying device. exception={}".format(
-                        e
+                import traceback
+
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|delete_device() Exception destroying device. {}device_id={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        device_object.device_id,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -450,29 +496,84 @@ class Location:
                         botengine, (time.time() - t) * 1000
                     )
                 except Exception as e:
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                        "|delete_device() - Error delivering delete_device to location microservice (continuing execution): "
-                        + str(e)
-                    )
                     import traceback
 
                     botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                        traceback.format_exc()
+                        "|delete_device() - Error delivering delete_device to location microservice (continuing execution): {}device_id={} exception={} trace={}{}".format(
+                            utilities.Color.RED,
+                            device_object.device_id,
+                            e,
+                            traceback.format_exc(),
+                            utilities.Color.END,
+                        )
                     )
 
             for filter_object in self.sorted_filters(botengine).values():
                 try:
                     filter_object.device_deleted(botengine, device_object)
                 except Exception as e:
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                        "|delete_device() - Error delivering delete_device to filter (continuing execution): "
-                        + str(e)
-                    )
                     import traceback
 
                     botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                        traceback.format_exc()
+                        "|delete_device() - Error delivering delete_device to filter (continuing execution): {}device_id={} exception={} trace={}{}".format(
+                            utilities.Color.RED,
+                            device_object.device_id,
+                            e,
+                            traceback.format_exc(),
+                            utilities.Color.END,
+                        )
                     )
+
+    def migrate_device_object(self, botengine, old_device_object, new_device_object):
+        """
+        Migrate a device from one class to another without triggering location-wide device_deleted() events.
+        This preserves the device's runtime state and only cleans up the old device object's microservices.
+
+        :param botengine: BotEngine environment
+        :param old_device_object: The deprecated device object being replaced
+        :param new_device_object: The new device object that will replace it
+        """
+        device_id = old_device_object.device_id
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">migrate_device_object() Migrating device {} from {} to {}".format(
+                device_id, old_device_object, new_device_object
+            )
+        )
+
+        for attr_name, attr_value in old_device_object.__dict__.items():
+            if hasattr(new_device_object, attr_name):
+                if hasattr(new_device_object, attr_name):
+                    setattr(new_device_object, attr_name, attr_value)
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                        f"|migrate_device_object() Migrated attribute {attr_name}: {getattr(new_device_object, attr_name)}"
+                    )
+
+        # Destroy the old device object itself
+        try:
+            old_device_object.destroy(botengine)
+        except Exception as e:
+            import traceback
+
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                "|migrate_device_object() Exception destroying old device object. {}device_id={} exception={} trace={}{}".format(
+                    utilities.Color.RED,
+                    device_id,
+                    e,
+                    traceback.format_exc(),
+                    utilities.Color.END,
+                )
+            )
+
+        # Replace the device object in our devices dictionary
+        self.devices[device_id] = new_device_object
+
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<migrate_device_object() Successfully migrated device {} from {} to {}".format(
+                device_id,
+                type(old_device_object).__name__,
+                type(new_device_object).__name__,
+            )
+        )
 
     def mode_updated(self, botengine, mode):
         """
@@ -494,14 +595,16 @@ class Location:
                     botengine, (time.time() - t) * 1000
                 )
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|mode_updated() - Error delivering mode_updated to location microservice (continuing execution): "
-                    + str(e)
-                )
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
-                    traceback.format_exc()
+                    "|mode_updated() - Error delivering mode_updated to location microservice (continuing execution): {}mode={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        mode,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 if botengine.playback:
                     # Give us a chance to see the error as we playback data in fast-forward mode
@@ -520,11 +623,13 @@ class Location:
                     except Exception as e:
                         import traceback
 
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|mode_updated() - Error delivering mode_updated to device microservice (continuing execution). exception={} trace={}".format(
-                                e, traceback.format_exc()
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|mode_updated() - Error delivering mode_updated to device microservice (continuing execution). {}mode={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                mode,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
                         if botengine.playback:
@@ -541,8 +646,12 @@ class Location:
                 import traceback
 
                 botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|mode_updated() - Error delivering mode_updated to filter (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                    "|mode_updated() - Error delivering mode_updated to filter (continuing execution). {}mode={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        mode,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 if botengine.playback:
@@ -567,9 +676,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|filter_measurements() - Error delivering filter_measurements to filter (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|filter_measurements() - Error delivering filter_measurements to filter (continuing execution). {}measurements={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        measurements,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 if botengine.playback:
@@ -598,9 +711,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|device_measurements_updated() - Error delivering device_measurements_updated to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|device_measurements_updated() - Error delivering device_measurements_updated to location microservice (continuing execution). {}device_object={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        device_object,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 if botengine.playback:
@@ -627,9 +744,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|device_metadata_updated() - Error delivering device_metadata_updated to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|device_metadata_updated() - Error delivering device_metadata_updated to location microservice (continuing execution). {}device_object={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        device_object,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 if botengine.playback:
@@ -643,7 +764,8 @@ class Location:
         Device sent an alert
         :param botengine: BotEngine environment
         :param device_object: Device object that sent the alert
-        :param alerts_list: List of alerts
+        :param alert_type: Type of alert
+        :param alert_params: Alert parameters
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
             ">device_alert() device_id={} alert_type={}".format(
@@ -664,9 +786,14 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|device_alert() - Error delivering device_alert to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|device_alert() - Error delivering device_alert to location microservice (continuing execution). {}alert_type={} alert_params={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        alert_type,
+                        alert_params,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 if botengine.playback:
@@ -694,9 +821,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|question_answered() - Error delivering question_answered to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|question_answered() - Error delivering question_answered to location microservice (continuing execution). {}question={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        question,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -711,11 +842,13 @@ class Location:
                     except Exception as e:
                         import traceback
 
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|question_answered() - Error delivering question_answered to device microservice (continuing execution). exception={} trace={}".format(
-                                e, traceback.format_exc()
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|question_answered() - Error delivering question_answered to device microservice (continuing execution). {}question={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                question,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
 
@@ -726,9 +859,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "location.py - Error delivering question_answered to filter (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "location.py - Error delivering question_answered to filter (continuing execution). {}question={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        question,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -766,9 +903,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger().warning(
-                    "|messages_updated() - Error delivering messages_updated to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger().error(
+                    "|messages_updated() - Error delivering messages_updated to location microservice (continuing execution). {}messages={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        messages,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -786,9 +927,13 @@ class Location:
                     except Exception as e:
                         import traceback
 
-                        botengine.get_logger().warning(
-                            "|messages_updated() - Error delivering messages_updated to device microservice (continuing execution). exception={} trace={}".format(
-                                e, traceback.format_exc()
+                        botengine.get_logger().error(
+                            "|messages_updated() - Error delivering messages_updated to device microservice (continuing execution). {}messages={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                messages,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
 
@@ -801,9 +946,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger().warning(
-                    "|messages_updated() - Error delivering messages_updated to filter (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger().error(
+                    "|messages_updated() - Error delivering messages_updated to filter (continuing execution). {}messages={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        messages,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
@@ -829,11 +978,6 @@ class Location:
         for microservice_object in self.sorted_intelligence_modules(botengine).values():
             if not hasattr(microservice_object, "datastream_updated"):
                 continue
-            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
-                "|datastream_updated() - Delivering datastream message '{}' to location microservice: {}".format(
-                    address, microservice_object
-                )
-            )
             try:
                 import time
 
@@ -849,9 +993,14 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|datastream_updated() - Error delivering datastream message '{}' to location microservice (continuing execution). exception={} trace={}".format(
-                        address, e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|datastream_updated() - Error delivering datastream message '{}' to location microservice (continuing execution). {}content={} exception={} trace={}{}".format(
+                        address,
+                        utilities.Color.RED,
+                        content,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 exceptions.append((e, traceback.format_exc()))
@@ -886,11 +1035,14 @@ class Location:
                     except Exception as e:
                         import traceback
 
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|datastream_updated() - Error delivering datastream message '{}' to device microservice (continuing execution). exception={} trace={}".format(
-                                address, e, traceback.format_exc()
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|datastream_updated() - Error delivering datastream message '{}' to device microservice (continuing execution). {}content={} exception={} trace={}{}".format(
+                                address,
+                                utilities.Color.RED,
+                                content,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
                         exceptions.append((e, traceback.format_exc()))
@@ -911,9 +1063,14 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|datastream_updated() - Error delivering datastream message '{}' to filter (continuing execution). exception={} trace={}".format(
-                        address, e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|datastream_updated() - Error delivering datastream message '{}' to filter (continuing execution). {}content={} exception={} trace={}{}".format(
+                        address,
+                        utilities.Color.RED,
+                        content,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 exceptions.append((e, traceback.format_exc()))
@@ -924,7 +1081,10 @@ class Location:
                     time.sleep(2)
         if raise_exceptions and len(exceptions) > 0:
             raise Exception(
-                "Error delivering datastream message to microservices", exceptions
+                utilities.Color.RED
+                + "Error delivering datastream message to microservices"
+                + utilities.Color.END,
+                exceptions,
             )
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
             "<datastream_updated()"
@@ -939,6 +1099,29 @@ class Location:
         if schedule_id == "MIDNIGHT":
             self.synchronize_users(botengine)
 
+        # Device intelligence modules
+        for device_object in self.devices.values():
+            try:
+                device_object.schedule_fired(botengine, schedule_id)
+            except Exception as e:
+                import traceback
+
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|schedule_fired() - Error delivering schedule_fired to device object (continuing execution). {}schedule_id={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        schedule_id,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
+                )
+
+                if botengine.playback:
+                    # Give us a chance to see the error as we playback data in fast-forward mode
+                    import time
+
+                    time.sleep(2)
+
         # Filters
         for filter_object in self.sorted_filters(botengine).values():
             try:
@@ -946,9 +1129,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|schedule_fired() - Error delivering schedule_fired to filter (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|schedule_fired() - Error delivering schedule_fired to filter (continuing execution). {}schedule_id={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        schedule_id,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 if botengine.playback:
@@ -970,9 +1157,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|schedule_fired() - Error delivering schedule_fired to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|schedule_fired() - Error delivering schedule_fired to location microservice (continuing execution). {}schedule_id={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        schedule_id,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
                 if botengine.playback:
@@ -992,11 +1183,13 @@ class Location:
                     except Exception as e:
                         import traceback
 
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|schedule_fired() - Error delivering schedule_fired to device microservice (continuing execution). exception={} trace={}".format(
-                                e, traceback.format_exc()
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|schedule_fired() - Error delivering schedule_fired to device microservice (continuing execution). {}schedule_id={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                schedule_id,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
                         if botengine.playback:
@@ -1004,6 +1197,20 @@ class Location:
                             import time
 
                             time.sleep(2)
+
+        # Odometer tracking - increment if any device is connected
+        if schedule_id == "HOUR":
+            any_device_connected = False
+            for device_object in self.devices.values():
+                if device_object.is_connected:
+                    any_device_connected = True
+                    break
+
+            if any_device_connected:
+                self.odometer_hours += 1
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                    f"|schedule_fired() Running live for {self.odometer_hours} hours"
+                )
 
     def timer_fired(self, botengine, microservice_id, argument):
         """
@@ -1026,9 +1233,13 @@ class Location:
                 except Exception as e:
                     import traceback
 
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                        "|timer_fired() - Error triggering timer_fired in location microservice (continuing execution). exception={} trace={}".format(
-                            e, traceback.format_exc()
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                        "|timer_fired() - Error triggering timer_fired in location microservice (continuing execution). {}argument={} exception={} trace={}{}".format(
+                            utilities.Color.RED,
+                            argument,
+                            e,
+                            traceback.format_exc(),
+                            utilities.Color.END,
                         )
                     )
                     if botengine.playback:
@@ -1046,9 +1257,12 @@ class Location:
                 except Exception as e:
                     import traceback
 
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                        "|timer_fired() - Error triggering timer_fired in filter (continuing execution). exception={} trace={}".format(
-                            e, traceback.format_exc()
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                        "|timer_fired() - Error triggering timer_fired in filter (continuing execution). {}exception={} trace={}{}".format(
+                            utilities.Color.RED,
+                            e,
+                            traceback.format_exc(),
+                            utilities.Color.END,
                         )
                     )
                     if botengine.playback:
@@ -1095,9 +1309,14 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|file_uploaded() - Error delivering file_uploaded to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|file_uploaded() - Error delivering file_uploaded to location microservice (continuing execution). {}device_object={} file_id={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        device_object,
+                        file_id,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -1139,9 +1358,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|user_role_updated() - Error delivering user_role_updated to user object (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|user_role_updated() - Error delivering user_role_updated to user object (continuing execution). {}user_id={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        user_id,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -1164,9 +1387,15 @@ class Location:
                     botengine, (time.time() - t) * 1000
                 )
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "location.py - Error delivering user_role_updated to location microservice (continuing execution): "
-                    + str(e)
+                import traceback
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|user_role_updated() - Error delivering user_role_updated to location microservice (continuing execution): {}; user_id={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        user_id,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 import traceback
 
@@ -1193,11 +1422,13 @@ class Location:
                     except Exception as e:
                         import traceback
 
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|user_role_updated() - Error delivering user_role_updated to device microservice (continuing execution). exception={} trace={}".format(
-                                e, traceback.format_exc()
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|user_role_updated() - Error delivering user_role_updated to device microservice (continuing execution). {}user_id={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                user_id,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
 
@@ -1221,9 +1452,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|call_center_updated() - Error delivering call_center_updated to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|call_center_updated() - Error delivering call_center_updated to location microservice (continuing execution). {}user_id={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        user_id,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -1238,15 +1473,17 @@ class Location:
                     except Exception as e:
                         import traceback
 
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|call_center_updated() - Error delivering call_center_updated to device microservice (continuing execution). exception={} trace={}".format(
-                                e, traceback.format_exc()
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|call_center_updated() - Error delivering call_center_updated to device microservice (continuing execution). {}user_id={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                user_id,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
 
-    def data_request_ready(self, botengine, reference, device_csv_dict):
+    def async_data_request_ready(self, botengine, reference, device_csv_dict):
         """
         A botengine.request_data() asynchronous request for CSV data is ready.
         :param botengine: BotEngine environment
@@ -1257,13 +1494,19 @@ class Location:
         # Edit the device_csv_dict in place inside the filter
         for filter_object in self.sorted_filters(botengine).values():
             try:
-                filter_object.data_request_ready(botengine, reference, device_csv_dict)
+                filter_object.async_data_request_ready(
+                    botengine, reference, device_csv_dict
+                )
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|data_request_ready() - Error delivering data_request_ready to filter (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|async_data_request_ready() - Error delivering async_data_request_ready to filter (continuing execution). {}reference={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        reference,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -1273,7 +1516,7 @@ class Location:
                 import time
 
                 t = time.time()
-                microservice_object.data_request_ready(
+                microservice_object.async_data_request_ready(
                     botengine, reference, device_csv_dict
                 )
                 microservice_object.track_statistics(
@@ -1282,9 +1525,13 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|data_request_ready() - Error delivering data_request_ready to location microservice (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|async_data_request_ready() - Error delivering async_data_request_ready to location microservice (continuing execution). {}reference={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        reference,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -1295,13 +1542,18 @@ class Location:
                     try:
                         device_object.intelligence_modules[
                             intelligence_id
-                        ].data_request_ready(botengine, reference, device_csv_dict)
+                        ].async_data_request_ready(
+                            botengine, reference, device_csv_dict
+                        )
                     except Exception as e:
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "location.py - Error delivering data_request_ready to device microservice : "
-                            + str(e)
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|async_data_request_ready() - Error delivering async_data_request_ready to device microservice (continuing execution). {}reference={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                reference,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
+                            )
                         )
                         import traceback
 
@@ -1341,9 +1593,12 @@ class Location:
                 except Exception as e:
                     import traceback
 
-                    botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                        "|update_coordinates() - Error delivering coordinates_updated to location microservice (continuing execution). exception={} trace={}".format(
-                            e, traceback.format_exc()
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                        "|update_coordinates() - Error delivering coordinates_updated to location microservice (continuing execution). {}exception={} trace={}{}".format(
+                            utilities.Color.RED,
+                            e,
+                            traceback.format_exc(),
+                            utilities.Color.END,
                         )
                     )
 
@@ -1359,9 +1614,12 @@ class Location:
             except Exception as e:
                 import traceback
 
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "|language_updated() - Error delivering language_updated to filter (continuing execution). exception={} trace={}".format(
-                        e, traceback.format_exc()
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|language_updated() - Error delivering language_updated to filter (continuing execution). {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
                     )
                 )
 
@@ -1376,9 +1634,13 @@ class Location:
                     botengine, (time.time() - t) * 1000
                 )
             except Exception as e:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                    "location.py - Error delivering language_updated to location microservice : "
-                    + str(e)
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                    "|language_updated() - Error delivering language_updated to location microservice (continuing execution). {}exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
                 )
                 import traceback
 
@@ -1397,11 +1659,12 @@ class Location:
                     except Exception as e:
                         import traceback
 
-                        botengine.get_logger(
-                            f"{__name__}.{__class__.__name__}"
-                        ).warning(
-                            "|language_updated() - Error delivering language_updated to device microservice (continuing execution). exception={} trace={}".format(
-                                e, traceback.format_exc()
+                        botengine.get_logger(f"{__name__}.{__class__.__name__}").error(
+                            "|language_updated() - Error delivering language_updated to device microservice (continuing execution). {}exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
                             )
                         )
 
@@ -1774,6 +2037,7 @@ class Location:
         fields_updated=[],
         fields_deleted=[],
         track=True,
+        sub_location=False,
     ):
         """
         Set a large location property. The name is referenced by our 'location_properties' but stored separately
@@ -1790,6 +2054,7 @@ class Location:
         :param fields_updated: Optional. To optimize integrations with 3rd party clouds, this is a list of the fields that were added/updated. Always used in conjunction with overwrite=True and non-time-series states.
         :param fields_deleted: Optional. List of fields that were removed. Always used in conjunction with overwrite=True and non-time-series states.
         :param track: True to automatically copy these properties to the 3rd party analytics (default is True)
+        :param sub_location: True if this property is for a sub-location (default is False)
         """
         if timestamp_ms is None:
             additional_properties = self.get_location_property(
@@ -1801,7 +2066,10 @@ class Location:
             if additional_property_name not in additional_properties:
                 additional_properties.append(additional_property_name)
                 self.set_location_property(
-                    botengine, "additional_properties", additional_properties, track=track
+                    botengine,
+                    "additional_properties",
+                    additional_properties,
+                    track=track,
                 )
 
         else:
@@ -1817,7 +2085,10 @@ class Location:
             except Exception:
                 timeseries_properties[additional_property_name] = timestamp_ms
                 self.set_location_property(
-                    botengine, "timeseries_properties", timeseries_properties, track=track
+                    botengine,
+                    "timeseries_properties",
+                    timeseries_properties,
+                    track=track,
                 )
 
         botengine.set_state(
@@ -1827,6 +2098,25 @@ class Location:
             timestamp_ms=timestamp_ms,
             fields_updated=fields_updated,
             fields_deleted=fields_deleted,
+            sub_location=sub_location,
+        )
+        try:
+            serialized = json.dumps(additional_property_json, sort_keys=True)
+            size_bytes = len(serialized)
+        except Exception:
+            serialized = str(additional_property_json)
+            size_bytes = len(serialized)
+
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "|set_location_property_separately() Queued state save: name='{}' overwrite={} timestamp_ms={} track={} sub_location={} size={} bytes content={}".format(
+                additional_property_name,
+                overwrite,
+                timestamp_ms,
+                track,
+                sub_location,
+                size_bytes,
+                serialized,
+            )
         )
 
     def _sync_location_properties(self, botengine):
@@ -1916,6 +2206,15 @@ class Location:
     ):
         """
         Narrate some activity
+
+        # Narrative 'priority' levels
+        botengine.NARRATIVE_PRIORITY_DEBUG = -2
+        botengine.NARRATIVE_PRIORITY_ANALYTIC = -1
+        botengine.NARRATIVE_PRIORITY_DETAIL = 0
+        botengine.NARRATIVE_PRIORITY_INFO = 1
+        botengine.NARRATIVE_PRIORITY_WARNING = 2
+        botengine.NARRATIVE_PRIORITY_CRITICAL = 3
+
         :param botengine: BotEngine environment
         :param title: Title of the event
         :param description: Description of the event
@@ -2072,14 +2371,16 @@ class Location:
         """
         if microservice_identifier in self.org_narratives:
             if self.org_narratives[microservice_identifier] is not None:
-                if isinstance(self.org_narratives[microservice_identifier], Narrative):
+                if utilities._isinstance(
+                    self.org_narratives[microservice_identifier], Narrative
+                ):
                     self.org_narratives[microservice_identifier].resolve(botengine)
 
                 del self.org_narratives[microservice_identifier]
 
         if microservice_identifier in self.location_narratives:
             if self.location_narratives[microservice_identifier] is not None:
-                if isinstance(
+                if utilities._isinstance(
                     self.location_narratives[microservice_identifier], Narrative
                 ):
                     self.location_narratives[microservice_identifier].resolve(botengine)
@@ -2217,7 +2518,7 @@ class Location:
         :param botengine: BotEngine environment
         :return: timezone string
         """
-        location_block = botengine.get_location_info()
+        location_block = botengine.get_location_info() or {}
 
         # Default Timezone
         timezone = (
@@ -2279,13 +2580,24 @@ class Location:
         weekday = int(weekday)
 
         reference = self.get_local_datetime(botengine)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "|local_timestamp_ms_from_relative_hours() reference={}".format(reference)
+        )
         hour, minute = divmod(hours, 1)
         minute = round(minute * 60)
         if minute >= 60:
             minute -= 60
         days = reference.weekday() - weekday
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "|local_timestamp_ms_from_relative_hours() days={} hour={} minute={}".format(
+                days, hour, minute
+            )
+        )
         target_dt = (reference - timedelta(days=days)).replace(
             hour=int(hour), minute=int(minute), second=0, microsecond=0
+        )
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "|local_timestamp_ms_from_relative_hours() target_dt={}".format(target_dt)
         )
         timestamp_ms = self.timezone_aware_datetime_to_unix_timestamp(
             botengine, target_dt
@@ -2294,6 +2606,11 @@ class Location:
         if future:
             if timestamp_ms <= botengine.get_timestamp():
                 timestamp_ms += utilities.ONE_WEEK_MS
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|local_timestamp_ms_from_relative_hours() adjusted target_dt={}".format(
+                        target_dt + timedelta(days=7)
+                    )
+                )
 
         return timestamp_ms
 

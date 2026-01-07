@@ -1,0 +1,21 @@
+{
+  "version": {
+    "triggerParameters": [
+      "bedStatus",
+      "fallStatus",
+      "firmware",
+      "model",
+      "occupancy",
+      "occupancyTarget",
+      "pnt.fallThreshold",
+      "pnt.scanHeight",
+      "pnt.scanLeft",
+      "pnt.scanRight",
+      "pnt.unit",
+      "pnt.zones",
+      "pnt.realTimeTarget",
+      "rssi",
+      "status"
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "model": {
+    "settings": {
+      "language": "en-US",
+      "voice": 5,
+      "timeout": 12
+    },
+    "phrases": {
+      "Q1": "How do you feel today?",
+      "Q2": "How did you feel yesterday?",
+      "OPTS": "Press 1 if well, press 2 if not so good.",
+      "OOPS": "You pressed a wrong key.",
+      "BYE": "It appears you may have left the conversation. But no worries, we will call back another time to complete the survey or you can call back anytime to do so."
+
+    },
+    "startStepId": 0,
+    "steps": [
+      {
+        "id": 0,
+        "text": "Hello! I would like to ask you a few questions about how you feel. Press 1 if you are ready to answer, otherwise press any other key",
+        "timeoutAlerts": [
+          "Looks like you're busy right now. Let me call you back later!"
+        ],
+        "actions": [
+          {
+            "digits": "1",
+            "nextStepId": 1
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "text": "First question: {Q1} // {OPTS}",
+        "timeoutAlerts": [
+          "It is taking you longer than usual to answer the question, let me repeat it for you. {Q1} // {OPTS}",
+          "{BYE}"
+        ],
+        "mishitAlerts": [
+          "{OOPS} Let me repeat the options: {OPTS}",
+          "{OOPS} Let me repeat the question: {Q1} // {OPTS}"
+        ],
+        "actions": [
+          {
+            "digits": "12",
+            "nextStepId": 2,
+            "answerKey": "Q1"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "Last question: {Q2} // {OPTS}",
+        "timeoutAlerts": [
+          "It is taking you longer than usual to answer the question, let me repeat it for you. {Q2} // {OPTS}",
+          "{BYE}"
+        ],
+        "mishitAlerts": [
+          "{OOPS} Let me repeat the options: {OPTS}",
+          "{OOPS} Let me repeat the question: {Q2} // {OPTS}"
+        ],
+        "actions": [
+          {
+            "digits": "12",
+            "nextStepId": 3,
+            "answerKey": "Q2"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "I appreciate your time in answering these questions!"
+      }
+    ]
+  }
+}
