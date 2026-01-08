@@ -8,8 +8,6 @@ file 'LICENSE.txt', which is part of this source code package.
 '''
 
 from intelligence.intelligence import Intelligence
-from google.cloud import videointelligence
-from google.cloud import storage
 import os, uuid, sys
 
 # User authentication/authorization is done through Google Cloud
@@ -79,8 +77,6 @@ class LocationVideoMicroservice(Intelligence):
     def device_alert(self, botengine, device_object, alert_type, alert_params):
         """
         Device sent an alert.
-        When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
-        When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
         :param botengine: BotEngine environment
         :param device_object: Device object that sent the alert
         :param alert_type: Type of alert
@@ -130,6 +126,13 @@ class LocationVideoMicroservice(Intelligence):
         :param content_type: The content type, for example 'video/mp4'
         :param file_extension: The file extension, for example 'mp4'
         """
+        try:
+            from google.cloud import videointelligence
+            from google.cloud import storage
+        except ImportError:
+            botengine.get_logger().error("Google Cloud Video Intelligence and Storage libraries are not installed. "
+                                         "Please install them using 'pip install -r com.ppc.VideoRecognitionGoogle/requirements.txt'.")
+            return
         # We are demonstrating video processing here, so avoid video processing on files that are not videos.
         if "video" not in content_type:
             botengine.get_logger().info("The uploaded file is not a video, skipping processing ...")
@@ -170,10 +173,10 @@ class LocationVideoMicroservice(Intelligence):
         segment_labels = result.annotation_results[0].segment_label_annotations
 
         for i, segment_label in enumerate(segment_labels):
-            print('Video label description: {}'.format(
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info('Video label description: {}'.format(
                 segment_label.entity.description))
             for category_entity in segment_label.category_entities:
-                print('\tLabel category description: {}'.format(
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info('\tLabel category description: {}'.format(
                     category_entity.description))
 
             for i, segment in enumerate(segment_label.segments):
@@ -183,9 +186,8 @@ class LocationVideoMicroservice(Intelligence):
                             segment.segment.end_time_offset.nanos / 1e9)
                 positions = '{}s to {}s'.format(start_time, end_time)
                 confidence = segment.confidence
-                print('\tSegment {}: {}'.format(i, positions))
-                print('\tConfidence: {}'.format(confidence))
-            print('\n')
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info('\tSegment {}: {}'.format(i, positions))
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info('\tConfidence: {}'.format(confidence))
         return
 
     def sunrise_fired(self, botengine, proxy_object):

@@ -1,0 +1,17 @@
+{
+  "version": {
+    "trigger": 4325,
+    "dataStreams": [
+    ],
+    "communications": [
+      {
+        # Open up communications to the user
+        "category": 0,
+        "email": true,
+        "push": true,
+        "sms": true,
+        "msg": true
+      }
+    ]
+  }
+}

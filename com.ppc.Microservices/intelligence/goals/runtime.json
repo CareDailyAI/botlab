@@ -1,0 +1,10 @@
+{
+  "version": {
+    "trigger": 257,
+    "dataStreams": [
+      {
+        "address": "goals_updated"
+      }
+    ]
+  }
+}

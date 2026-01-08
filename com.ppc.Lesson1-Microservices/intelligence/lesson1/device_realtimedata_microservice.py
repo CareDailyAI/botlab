@@ -137,11 +137,10 @@ class DeviceRealTimeDataMicroservice(Intelligence):
     def device_alert(self, botengine, device_object, alert_type, alert_params):
         """
         Device sent an alert.
-        When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
-        When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
         :param botengine: BotEngine environment
         :param device_object: Device object that sent the alert
         :param alert_type: Type of alert
+        :param alert_params: Alert parameters as key/value dictionary
         """
         botengine.get_logger().info("DEVICE_realtimedata_microservice: device_alert from '{}': alert_type={}; alert_params={}".format(device_object.description, str(alert_type), str(alert_params)))
         return

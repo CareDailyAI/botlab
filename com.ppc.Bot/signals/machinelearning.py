@@ -188,3 +188,31 @@ def vayyar_filter_input_updated(
         vayyar_target_array,
         csv_dictionary,
     )
+
+
+def data_request_postprocess(botengine, location_object, reference):
+    """
+    Distribute a data request postprocess signal to microservices.
+    
+    This function is used to safely post-process data request results. During async_data_request_ready() 
+    execution, we cannot save class variables, update the dashboard, set timers, or do anything 
+    that requires core variable access because data request triggers operate concurrently with 
+    other triggers. This data_request_postprocess internal data stream message exists to provide 
+    a safe environment for post-processing any data and drawing conclusions from it, setting timers, 
+    updating class variables, etc.
+    
+    The proper practice is to:
+    1. Process your data during async_data_request_ready() and store conclusions in explicit non-volatile 
+       variables using botengine.save_variable() or botengine.save_shared_variable(). DO NOT use 
+       class variables to store state.
+    2. Implement the data_request_postprocess() event handler in your microservice to safely 
+       interact with the user, set timers, update class variables, and perform any other operations 
+       that require core variable access.
+    
+    :param botengine: BotEngine environment
+    :param location_object: Location object
+    :param reference: Reference string that was passed into the original async_data_request_ready()
+    """
+    location_object.distribute_datastream_message(
+        botengine, "data_request_postprocess", reference, internal=True, external=False
+    )

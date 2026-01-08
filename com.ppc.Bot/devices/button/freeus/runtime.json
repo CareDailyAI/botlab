@@ -1,0 +1,11 @@
+{
+  "version": {
+    "triggerParameters": [
+      "charging",
+      "eventType",
+      "mobileSignal",
+      "latitude",
+      "longitude"
+    ]
+  }
+}

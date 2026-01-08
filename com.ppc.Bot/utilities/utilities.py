@@ -417,12 +417,13 @@ def cumulative_moving_average(new_value, previous_average, previous_count):
     """
     return previous_average + (new_value - previous_average) / (previous_count + 1)
 
+
 def zscore(x, avg, stdev):
     """
     Calculate the standard z-score, which measures how many standard deviations a data point is from the mean.
-    
+
     The z-score normalizes data points based on their distance from the mean, scaled by standard deviation.
-    A z-score of 0 means the data point equals the mean, while a z-score of 1 means it's one standard 
+    A z-score of 0 means the data point equals the mean, while a z-score of 1 means it's one standard
     deviation above the mean.
 
     Args:
@@ -438,11 +439,12 @@ def zscore(x, avg, stdev):
 
     return (x - avg) / stdev
 
+
 def modify_zscore(x, values, k=1.4826):
     """
     Calculate the modified z-score using median absolute deviation (MAD), which is more robust to outliers
     than the standard z-score.
-    
+
     The modified z-score uses the median instead of mean and MAD instead of standard deviation. This makes
     it less sensitive to extreme values while still effectively identifying unusual data points. The scaling
     factor k=1.4826 makes the MAD scale comparable to standard deviation for normal distributions.
@@ -460,7 +462,9 @@ def modify_zscore(x, values, k=1.4826):
     data_median = median(values)
     dev_from_med = []
     for data in values:
-        print(f"data: {data}, data_median: {data_median}, abs(data - data_median): {abs(data - data_median)}")
+        # print(
+        #     f"data: {data}, data_median: {data_median}, abs(data - data_median): {abs(data - data_median)}"
+        # )
         dev_from_med.append(abs(data - data_median))
 
     mad = median(dev_from_med)
@@ -468,6 +472,7 @@ def modify_zscore(x, values, k=1.4826):
         return 0
 
     return (x - data_median) / (k * mad)
+
 
 def get_chat_assistant_name(botengine):
     """
@@ -782,6 +787,53 @@ def getsize(obj_0):
     return inner(obj_0)
 
 
+def _isinstance(object, classinfo):
+    """
+    Check if an object is an instance of a class or a subclass of a class using
+    built-in isinstance().
+
+    Supports fallback to checking module comparisons to ensure compatibility with
+    consecutive executions of the same lifecycle across various Python runtimes.
+    """
+    # __isinstance = isinstance(object, classinfo)
+    # if __isinstance:
+    #     return True
+    # if not hasattr(object, "__module__") or not hasattr(classinfo, "__module__"):
+    #     return False
+    # return object.__module__ == classinfo.__module__ or object.__module__ in [
+    #     subclass.__module__
+    #     for subclass in classinfo.__subclasses__()
+    #     if hasattr(subclass, "__module__")
+    # ]
+
+    # print(f">_isinstance() called with object={object}, classinfo={classinfo}")
+    # print(f"|_isinstance() Object type: {type(object)}, Classinfo type: {type(classinfo)}")
+    __isinstance = isinstance(object, classinfo)
+    if __isinstance:
+        # print(f"<_isinstance()={__isinstance}>")
+        return True
+    __classinfo = classinfo if isinstance(classinfo, tuple) else (classinfo,)
+    for _classinfo in __classinfo:
+        if not hasattr(object, "__module__") or not hasattr(_classinfo, "__module__"):
+            # print(f"<_isinstance()={__isinstance}>")
+            return False
+        # print(f"_isinstance() Object module: {object.__module__ if hasattr(object, '__module__') else 'N/A'}")
+        # print(f"_isinstance() Classinfo module: {_classinfo.__module__ if hasattr(_classinfo, '__module__') else 'N/A'}")
+        # print(f"_isinstance() Classinfo subclasses: {[subclass.__module__ for subclass in _classinfo.__subclasses__()]}")
+        # print(f"_isinstance() isinstance(object, classinfo): {isinstance(object, _classinfo)}")
+        # print(f"_isinstance() object.__module__ == classinfo.__module__: {object.__module__ == _classinfo.__module__}")
+        # print(f"_isinstance() object.__module__ in [subclass.__module__ for subclass in classinfo.__subclasses__()]: {object.__module__ in [subclass.__module__ for subclass in _classinfo.__subclasses__() if hasattr(subclass, '__module__')]}")
+        __isinstance = (
+            object.__module__ == _classinfo.__module__
+            or object.__module__ in [subclass.__module__ for subclass in _classinfo.__subclasses__() if hasattr(subclass, "__module__")]
+        )
+        if __isinstance:
+            # print(f"<_isinstance()={__isinstance}>")
+            return True
+    # print(f"<_isinstance()={__isinstance}>")
+    return __isinstance
+
+
 class MachineLearningError(Exception):
     """
     Machine learning exception class
@@ -833,6 +885,35 @@ class Color:
     RED = Fore.RED
     BOLD = Style.BRIGHT
     END = Style.RESET_ALL
+
+
+def intify_tstmp(tstmp):
+    """
+    Convert a timestamp to millisecond ints for efficient interval calculation.
+    Handles both ISO format timestamps and Unix timestamps in milliseconds.
+    
+    :param tstmp: timestamp string (ISO format like '2023-01-01T12:00:00.000' or Unix timestamp like '1680002949610')
+    :return: millisecond timestamp as int
+    """
+    from datetime import datetime
+    import calendar
+    
+    try:
+        # Try to parse as ISO format timestamp
+        tmp = datetime.strptime(tstmp[0:19], '%Y-%m-%dT%H:%M:%S')
+    except ValueError:
+        # Handle case where timestamp is already a Unix timestamp in milliseconds
+        # Convert from unix time in ms to datetime
+        dt = datetime.utcfromtimestamp(int(int(tstmp[0:19]) / 1000))
+        dt_2 = datetime.isoformat(dt)
+        tmp = datetime.strptime(dt_2, '%Y-%m-%dT%H:%M:%S')
+    
+    val = 0
+    if len(tstmp) > 20:
+        val = int(tstmp[20:23])
+    
+    # Use calendar.timegm to avoid overflow issues with large timestamps
+    return int(calendar.timegm(tmp.timetuple()) * 1000) + val
 
 
 def distance_between_points(latitude_1, longitude_1, latitude_2, longitude_2):

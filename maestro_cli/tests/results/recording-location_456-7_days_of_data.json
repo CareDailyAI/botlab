@@ -1,0 +1,14 @@
+{
+"location_info":{"addrStreet1": "123 Main", "addrCity": "Small Town", "zip": "12345", "id": 456, "name": "My Home", "timezone": {"id": "America/Los_Angeles", "offset": -480, "dst": true, "name": "Pacific Standard Time"}, "organizationId": 999},
+"device_properties":{"abc123": []},
+"device_parameters":{"abc123": []},
+"data":[
+{"trigger": "8", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218231000", "timestamp_iso": "2025-07-22T21:03:51Z", "timestamp_excel": "07/22/2025 14:03:51", "behavior": "-1", "updated_params": "firmware", "[online]": "1", "firmware": "0", "occupancy": "1", "occupancyTarget.other": "2:53,57,204"},
+{"trigger": "4", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218231000", "timestamp_iso": "2025-07-22T21:03:51Z", "timestamp_excel": "07/22/2025 14:03:51", "behavior": "-1", "alert_type": "powerfailure"},
+{"trigger": "4", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218232000", "timestamp_iso": "2025-07-22T21:03:52Z", "timestamp_excel": "07/22/2025 14:03:52", "behavior": "-1", "[online]": "1", "firmware": "0", "occupancy": "1", "occupancyTarget.other": "2:53,57,204"},
+{"trigger": "256", "location_id": "456", "timestamp_ms": "1753218232000", "timestamp_iso": "2025-07-22T21:03:52Z", "timestamp_excel": "07/22/2025 14:03:52", "address": "set_radar_room", "feed": "{\"device_id\":\"abc123\",\"x_min_meters\":0.0,\"x_max_meters\":6.0,\"y_min_meters\":0.0,\"y_max_meters\":6.0,\"z_min_meters\":0.0,\"z_max_meters\":6.0,\"mounting_type\":4,\"sensor_height_m\":2.0}"},
+{"trigger": "2", "location_id": "456", "timestamp_ms": "1753218232000", "timestamp_iso": "2025-07-22T21:03:52Z", "timestamp_excel": "07/22/2025 14:03:52", "event": "HOME", "source_type": "2"},
+{"trigger": "8", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218233000", "timestamp_iso": "2025-07-22T21:03:53Z", "timestamp_excel": "07/22/2025 14:03:53", "behavior": "-1", "updated_params": "occupancy,occupancyTarget.other", "[online]": "1", "firmware": "0", "occupancy": "1", "occupancyTarget.other": "2:53,57,204"},
+{"trigger": "8", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218234000", "timestamp_iso": "2025-07-22T21:03:54Z", "timestamp_excel": "07/22/2025 14:03:54", "behavior": "-1", "updated_params": "occupancy,occupancyTarget.other", "[online]": "1", "firmware": "0", "occupancy": "0"}
+
+]}

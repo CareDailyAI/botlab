@@ -10,7 +10,7 @@ file 'LICENSE.txt', which is part of this source code package.
 from intelligence.intelligence import Intelligence
 from devices.motion.motion import MotionDevice
 from devices.entry.entry import EntryDevice
-import utilities
+import utilities.utilities as utilities
 
 # You would have your own machine learning implementation here.
 import intelligence.ml_example.ml_engine_example as ml
@@ -90,8 +90,8 @@ class LocationMlExampleMicroservice(Intelligence):
 
     Your bot should include the 'data_request' microservice package in its structure.json. This will wake up about
     once per week and download all data from a Location. The data is then passed around to all microservices through the
-    data_request_ready() event.  The 'data_request' microservice package uses a reference 'all' for its data requests,
-    so when the data_request_ready() event fires, you can check the reference to see if this data request includes
+    async_data_request_ready() event.  The 'data_request' microservice package uses a reference 'all' for its data requests,
+    so when the async_data_request_ready() event fires, you can check the reference to see if this data request includes
     all data from the location as requested by the 'data_request' microservice package.
 
     Some machine learning developers choose to preprocess the raw CSV data before building models. For example,
@@ -124,7 +124,7 @@ class LocationMlExampleMicroservice(Intelligence):
 
         # First boot - request all existing data from this location to generate initial models.
         # This data stream message is picked up by the 'data_request' microservice package, and will later
-        # result in the data_request_ready() event triggering below.
+        # result in the async_data_request_ready() event triggering below.
         self.parent.distribute_datastream_message(botengine, 'download_data')
 
     def initialize(self, botengine):
@@ -158,7 +158,7 @@ class LocationMlExampleMicroservice(Intelligence):
         :param botengine: BotEngine environment
         :param device_object: Device object that was updated
         """
-        if isinstance(device_object, EntryDevice):
+        if utilities._isinstance(device_object, EntryDevice):
             # Door opened or closed
             if not self._is_entry_sensor_naughty(botengine, device_object):
                 if device_object.did_close(botengine):
@@ -168,7 +168,7 @@ class LocationMlExampleMicroservice(Intelligence):
                     self.last_door_closed_object = device_object
                     self.start_timer_s(botengine, self._calculate_next_duration(botengine), argument=[HOME_AWAY_EVALUATION_REFERENCE, device_object], reference=HOME_AWAY_EVALUATION_REFERENCE)
 
-        elif isinstance(device_object, MotionDevice):
+        elif utilities._isinstance(device_object, MotionDevice):
             # Motion detected or not
             if device_object.did_start_detecting_motion(botengine):
                 # Motion detected
@@ -188,11 +188,10 @@ class LocationMlExampleMicroservice(Intelligence):
     def device_alert(self, botengine, device_object, alert_type, alert_params):
         """
         Device sent an alert.
-        When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
-        When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
         :param botengine: BotEngine environment
         :param device_object: Device object that sent the alert
         :param alert_type: Type of alert
+        :param alert_params: Alert parameters as key/value dictionary
         """
         return
 
@@ -240,7 +239,7 @@ class LocationMlExampleMicroservice(Intelligence):
         # First we're going to tag accounts that don't have enough sensors for this machine learning service to operate.
         motion_devices = 0
         for device_id in self.parent.devices:
-            motion_devices += isinstance(self.parent.devices[device_id], MotionDevice)
+            motion_devices += utilities._isinstance(self.parent.devices[device_id], MotionDevice)
 
         if motion_devices < MINIMUM_NUMBER_OF_MOTION_SENSORS_FOR_AWAY_ML_ALGORITHMS:
             if not NOT_ENOUGH_MOTION_SENSOR_TAG in self.tags:
@@ -383,7 +382,7 @@ class LocationMlExampleMicroservice(Intelligence):
         """
         return
 
-    def data_request_ready(self, botengine, reference, csv_dict):
+    def async_data_request_ready(self, botengine, reference, csv_dict):
         """
         A botengine.request_data() asynchronous request for CSV data is ready.
 
@@ -393,10 +392,19 @@ class LocationMlExampleMicroservice(Intelligence):
         The bot can exit its current execution. The server will independently gather all the necessary data and
         capture it into a LZ4-compressed CSV file on the server which is available for one day and accessible only by
         the bot through a public HTTPS URL identified by a cryptographic token. The bot then gets triggered and
-        downloads the CSV data, passing the data throughout the environment with this data_request_ready()
+        downloads the CSV data, passing the data throughout the environment with this async_data_request_ready()
         event-driven method.
 
-        Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
+
+        IMPORTANT: This method executes in an asynchronous environment where you are NOT allowed to:
+        - Set timers or alarms
+        - Manage class variables that persist across executions
+        - Perform other stateful operations
+
+        To return to a synchronous environment where you can use timers and manage state, call:
+        botengine.async_execute_again_in_n_seconds(seconds)
+
+                Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
         reference is passed back out at the completion of the request, allowing the developer to ensure the
         data request that is now available was truly destined for their microservice.
 

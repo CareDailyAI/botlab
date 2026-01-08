@@ -1,0 +1,76 @@
+{
+    "model": {
+        "settings": {
+            "language": "en-US",
+            "voice": 5,
+            "timeout": 10
+        },
+        "phrases": {
+            "LOCATION_NAME": "Destry Teeter's Home",
+            "SERVICE_NAME": "testing",
+            "RESIDENT_MESSAGE": "Occupants are usually awake by now, but there has been no motion detected outside the bedroom.\n\n>> Reply 1 to resolve this alert.",
+            "SUPPORTER_MESSAGE": "Occupants are usually awake by now. ",
+            "READY_PROMPT": "Press 1 if you are ready to answer, otherwise press any other key",
+            "RESOLUTION_PROMPT": "Update Status",
+            "RESOLUTION_PHRASES": "Press 0 if Resolved. Press 1 if False Alarm.",
+            "OOPS": "You pressed a wrong key.",
+            "BYE": "Goodbye!"
+        },
+        "startStepId": 0,
+        "steps": [
+            {
+                "id": 0,
+                "text": "Hello, this is {SERVICE_NAME}. I'm calling from {LOCATION_NAME}. // {READY_PROMPT}",
+                "actions": [
+                    {
+                        "digits": "1",
+                        "nextStepId": 100
+                    }
+                ],
+                "timeoutAlerts": [
+                    "Looks like you're busy right now. Let me call you back later!"
+                ],
+                "mishitAlerts": [],
+                "answerKey": "171a27e8-3d2a-46e6-bc34-4be29a06971c"
+            },
+            {
+                "id": 100,
+                "text": "{RESIDENT_MESSAGE} // {RESOLUTION_PROMPT} {RESOLUTION_PHRASES}",
+                "actions": [
+                    {
+                        "digits": 0,
+                        "nextStepId": 110
+                    },
+                    {
+                        "digits": 1,
+                        "nextStepId": 111
+                    }
+                ],
+                "timeoutAlerts": [
+                    "It is taking you longer than usual to answer the question, let me repeat it for you. {RESIDENT_MESSAGE} // {RESOLUTION_PROMPT} {RESOLUTION_PHRASES}",
+                    "{BYE}"
+                ],
+                "mishitAlerts": [
+                    "{OOPS} {RESOLUTION_PHRASES}",
+                    "{OOPS} {RESIDENT_MESSAGE} // {RESOLUTION_PROMPT} {RESOLUTION_PHRASES}",
+                    "{OOPS} {BYE}"
+                ],
+                "answerKey": "RESOLUTION_OPTION"
+            },
+            {
+                "id": 110,
+                "text": "Thanks! Marking this problem resolved... {BYE}",
+                "actions": [],
+                "timeoutAlerts": [],
+                "mishitAlerts": []
+            },
+            {
+                "id": 111,
+                "text": "Marking this a false alarm.\nSorry about that. {BYE}",
+                "actions": [],
+                "timeoutAlerts": [],
+                "mishitAlerts": []
+            }
+        ]
+    }
+}

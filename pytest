@@ -1,7 +1,20 @@
 #!/usr/bin/env python3
 # encoding: utf-8
+"""
+Bot PyTest Tool
 
-# USAGE:  ./pytest --core ../botlab-private/
+A specialized pytest wrapper for testing bot microservices in the botlab-core framework.
+This tool handles the complex setup required to test microservices within the bot environment,
+including file merging, variable loading, and proper test isolation.
+
+USAGE EXAMPLES:
+    ./pytest                                    # Run all tests in default bot
+    ./pytest --core ../botlab-private/          # Run tests with custom core directory
+    ./pytest --mut meta_analysis               # Run tests for specific microservice
+    ./pytest --mut meta_analysis --test-file test_missedbathroom.py  # Run specific test file
+    ./pytest --bundle com.ppc.Bot --verbose    # Run tests with verbose output
+    ./pytest --variables data.variable          # Run tests with preloaded variables
+"""
 
 import importlib
 import os
@@ -12,112 +25,344 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import pytest
 
 parser = ArgumentParser(
-    description="Bot PyTest Tool",
+    description="""
+Bot PyTest Tool - A specialized pytest wrapper for testing bot microservices.
+
+This tool creates a temporary test environment by merging bot files and microservices,
+then runs pytest within that environment. It handles the complex setup required to
+test microservices within the botlab-core framework.
+
+KEY FEATURES:
+  • Automatic bot environment setup and teardown
+  • Microservice-specific test filtering
+  • Variable preloading for regression testing
+  • Safe test isolation in temporary directories
+  • Support for custom core repositories
+""",
     formatter_class=RawDescriptionHelpFormatter,
-    add_help=False,
+    add_help=True,
+    epilog="""
+EXAMPLES:
+  Run all tests in default bot:
+    ./pytest
+
+  Run tests for specific microservice:
+    ./pytest --mut meta_analysis
+
+  Run specific test file:
+    ./pytest --mut meta_analysis --test-file test_missedbathroom.py
+
+  Run with custom core directory:
+    ./pytest --core ../botlab-private/
+
+  Run with preloaded variables:
+    ./pytest --variables data.variable --location_id 123
+
+  Run with verbose output:
+    ./pytest --mut meta_analysis --verbose
+""",
 )
-developer_group = parser.add_argument_group("Bot Configuration")
+# ============================================================================
+# ARGUMENT GROUPS
+# ============================================================================
+
+developer_group = parser.add_argument_group(
+    "Bot Configuration",
+    "Core bot setup and environment configuration"
+)
 developer_group.add_argument(
     "--core",
     dest="core_directory",
-    help="For repository structures that separate a shared core bot repository from a private proprietary repository, this is the absolute path to the core bot repository.",
-)
-developer_group.add_argument(
-    "-m",
-    "--mut",
-    dest="mut",
-    action="append",
-    help="Specific microservice packages to test, you can append more than one",
+    metavar="PATH",
+    help="Absolute path to the core bot repository. Required when using a "
+         "separate core repository structure (e.g., ../botlab-private/). "
+         "If not specified, uses current working directory.",
 )
 developer_group.add_argument(
     "-b",
     "--bundle",
     dest="bundle_id",
-    help="Specific microservices bundle (e.g., app) to test the microservice within. Default to `com.ppc.Tests`",
+    metavar="BUNDLE",
+    help="Bot bundle ID to test within (e.g., com.ppc.Bot, com.ppc.Tests). "
+         "Default: com.ppc.Tests",
 )
 developer_group.add_argument(
     "-d",
     "--directory",
     dest="directory",
     default="",
-    help="Specific directory to test the microservice within. i.e., `intelligence`",
+    metavar="DIR",
+    help="Specific directory within the bot to test (e.g., 'intelligence', 'tests'). "
+         "Default: empty (tests entire bot)",
 )
-developer_group.add_argument(
+
+# ============================================================================
+# TEST FILTERING
+# ============================================================================
+
+test_group = parser.add_argument_group(
+    "Test Filtering",
+    "Options to filter which tests to run"
+)
+test_group.add_argument(
+    "-m",
+    "--mut",
+    dest="mut",
+    action="append",
+    metavar="MICROSERVICE",
+    help="Filter tests to specific microservice packages. Can be specified multiple times. "
+         "Example: --mut meta_analysis --mut occupancy_analysis",
+)
+test_group.add_argument(
+    "-t",
+    "--test-file",
+    dest="test_file",
+    metavar="FILE",
+    help="Run tests from a specific test file. When used with --mut, automatically searches "
+         "in the microservice's tests directory. Example: test_missedbathroom.py or "
+         "test_missedbathroom.py::test_function",
+)
+# ============================================================================
+# TEST DATA & OUTPUT
+# ============================================================================
+
+data_group = parser.add_argument_group(
+    "Test Data & Output",
+    "Options for test data loading and output control"
+)
+data_group.add_argument(
+    "--variables",
+    dest="variables",
+    nargs="+",
+    metavar="FILE",
+    help="Preload *.variable files into test cases. Useful for regression testing. "
+         "Example: --variables data1.variable data2.variable",
+)
+data_group.add_argument(
+    "--location_id",
+    dest="location_id",
+    metavar="ID",
+    help="Location ID to preload into test cases. Used for location-specific testing.",
+)
+data_group.add_argument(
     "-v",
     "--verbose",
     dest="verbose",
     action="store_true",
-    default="",
-    help="Verbose output",
+    default=False,
+    help="Enable verbose pytest output (equivalent to pytest -vv)",
 )
-args = parser.parse_args()
+# ============================================================================
+# MAIN EXECUTION
+# ============================================================================
 
-print("args: {}".format(args))
-core = os.getcwd()
-if args.core_directory is not None:
-    core = args.core_directory
+def main():
+    """Main execution function for the Bot PyTest Tool."""
+    
+    # Parse command line arguments
+    args = parser.parse_args()
+    
+    print("=" * 80)
+    print("BOT PYTEST TOOL")
+    print("=" * 80)
+    print(f"Arguments: {args}")
+    print()
+    
+    # Determine core directory
+    core = os.getcwd()
+    if args.core_directory is not None:
+        core = args.core_directory
+        if not os.path.isdir(core):
+            raise ValueError(f"Core directory does not exist: {core}")
+    
+    print(f"Using BOTLAB_CORE = {core}")
+    print()
 
-print("Using $BOTLAB_CORE = {}".format(core))
+    # ============================================================================
+    # BOTENGINE SETUP
+    # ============================================================================
+    
+    print("Setting up botengine...")
+    
+    # Load the botengine module
+    try:
+        shutil.copy(os.path.join("./", "botengine"), "botengine.py")
+    except (FileNotFoundError, PermissionError) as e:
+        raise RuntimeError(f"Failed to copy botengine: {e}")
+    
+    botengine = importlib.import_module("botengine")
+    
+    # ============================================================================
+    # BOT GENERATION
+    # ============================================================================
+    
+    print("Generating bot environment...")
+    
+    # Determine bot name and base path
+    botname = "com.ppc.Tests"
+    if args.bundle_id is not None:
+        botname = args.bundle_id
+    
+    base_path = os.path.join(os.getcwd(), "." + botname)
+    print(f"Using base_path = {base_path}")
+    
+    # Merge bot files from core repository
+    botengine._merge_redirects(
+        os.path.join(core, botname), base_path, botname, core_directory=core
+    )
 
-# Load the botengine.
-shutil.copy(os.path.join("./", "botengine"), "botengine.py")
-botengine = importlib.import_module("botengine")
+    # ============================================================================
+    # MICROSERVICE SETUP
+    # ============================================================================
+    
+    print("Setting up microservices...")
+    
+    # Copy all available microservice packages to ensure compatibility
+    # This is necessary when loading ISM data environments from other bots,
+    # as we need to be able to unpickle objects and land on files that exist.
+    original_intelligence_path = os.path.join(os.getcwd(), "." + botname, "intelligence")
+    target_intelligence_path = os.path.join(base_path, "intelligence")
+    
+    if os.path.exists(original_intelligence_path):
+        for original_microservice_dir in os.listdir(original_intelligence_path):
+            original_dir_path = os.path.join(original_intelligence_path, original_microservice_dir)
+            target_dir_path = os.path.join(target_intelligence_path, original_microservice_dir)
+            
+            if os.path.isdir(original_dir_path):
+                if not os.path.exists(target_dir_path):
+                    print(f"  Copying microservice: {original_microservice_dir}")
+                    shutil.copytree(original_dir_path, target_dir_path)
 
-# Generate the bot
-botname = "com.ppc.Tests"
-if args.bundle_id is not None:
-    botname = args.bundle_id
-base_path = os.path.join(os.getcwd(), "." + botname)
-print("Using base_path = {}".format(base_path))
-botengine._merge_redirects(
-    os.path.join(core, botname), base_path, botname, core_directory=core
-)
+    # ============================================================================
+    # PYTEST ARGUMENT BUILDING
+    # ============================================================================
+    
+    print("Building pytest arguments...")
+    
+    extras = []
+    
+    # Add microservice filtering
+    if args.mut is not None:
+        for mut in args.mut:
+            print(f"  Filtering by microservice: {mut}")
+            extras += ["-k", mut]
+    
+    # Add specific test file
+    if args.test_file is not None:
+        print(f"  Running specific test file: {args.test_file}")
+        
+        # If we have microservice filtering, construct the proper path to the test file
+        if args.mut is not None and len(args.mut) > 0:
+            # Assume the test file is in the microservice's tests directory
+            microservice_name = args.mut[0]  # Use the first microservice if multiple specified
+            test_file_path = os.path.join(base_path, "intelligence", microservice_name, "tests", args.test_file)
+            
+            # Check if the file exists
+            if os.path.exists(test_file_path):
+                print(f"    Found test file at: {test_file_path}")
+                extras += [test_file_path]
+            else:
+                # Try alternative locations
+                alternative_paths = [
+                    os.path.join(base_path, "intelligence", microservice_name, args.test_file),
+                    os.path.join(base_path, args.test_file),
+                    args.test_file  # Fallback to original path
+                ]
+                
+                found = False
+                for alt_path in alternative_paths:
+                    if os.path.exists(alt_path):
+                        print(f"    Found test file at: {alt_path}")
+                        extras += [alt_path]
+                        found = True
+                        break
+                
+                if not found:
+                    print(f"    Warning: Could not find test file '{args.test_file}' in any expected location")
+                    print(f"    Searched in:")
+                    for path in [test_file_path] + alternative_paths:
+                        print(f"      - {path}")
+                    extras += [args.test_file]  # Let pytest handle the error
+        else:
+            # No microservice filtering, use the file as-is
+            extras += [args.test_file]
+    
+    # Add variable files
+    if args.variables is not None:
+        print("  Loading variable files:")
+        for variable_path in args.variables:
+            if not os.path.exists(variable_path):
+                raise FileNotFoundError(f"Variable file not found: {variable_path}")
+            print(f"    {variable_path}")
+        extras += ["--variables", " ".join(args.variables)]
+    
+    # Add location ID
+    if args.location_id is not None:
+        print(f"  Setting location ID: {args.location_id}")
+        extras += ["--location_id", args.location_id]
+    # ============================================================================
+    # CLEANUP AND FINAL SETUP
+    # ============================================================================
+    
+    print("Finalizing setup...")
+    
+    # Clean up temporary botengine.py file
+    try:
+        os.remove("botengine.py")
+    except (FileNotFoundError, PermissionError) as e:
+        print(f"Warning: Could not remove botengine.py: {e}")
+    
+    # Copy botengine pytest stubs to the test environment
+    botengine_destination = os.path.join(base_path, "botengine_pytest.py")
+    try:
+        shutil.copyfile("./botengine_pytest.py", botengine_destination)
+    except (FileNotFoundError, PermissionError) as e:
+        raise RuntimeError(f"Failed to copy botengine_pytest.py: {e}")
+    
+    # Add the bot path to Python's module search path
+    sys.path.insert(0, base_path)
+    
+    # Import localization module to ensure gettext is initialized
+    try:
+        import localization  # noqa: F401, E402 # type: ignore
+    except ImportError:
+        print("Warning: Could not import localization module")
+    
+    # ============================================================================
+    # RUN PYTEST
+    # ============================================================================
+    
+    print("=" * 80)
+    print("RUNNING PYTEST")
+    print("=" * 80)
+    
+    # Build the final pytest command
+    pytest_args = [
+        "-vv" if args.verbose else "-q",
+        os.path.join(base_path, args.directory),
+        "-s"
+    ] + extras
+    
+    print(f"Pytest command: pytest {' '.join(pytest_args)}")
+    print()
+    
+    # Execute pytest
+    exit_code = pytest.main(pytest_args)
+    
+    print("=" * 80)
+    print(f"PYTEST COMPLETED (exit code: {exit_code})")
+    print("=" * 80)
+    
+    return exit_code
 
-# Here we're going to overwrite the set of microservices in the bot with ALL the available microservice packages.
-# This is because when we load up ISM data environments from other bots, we need to be able to unpickle objects and land on files that exist.
-for original_microservice_dir in os.listdir(
-    os.path.join(os.getcwd(), "." + botname, "intelligence")
-):
-    if os.path.isdir(
-        os.path.join(
-            os.getcwd(), "." + botname, "intelligence", original_microservice_dir
-        )
-    ):
-        if original_microservice_dir not in os.listdir(
-            os.path.join(base_path, "intelligence")
-        ):
-            shutil.copytree(
-                os.path.join(
-                    os.getcwd(),
-                    "." + botname,
-                    "intelligence",
-                    original_microservice_dir,
-                ),
-                os.path.join(base_path, "intelligence", original_microservice_dir),
-            )
 
-extras = []
-if args.mut is not None:
-    for mut in args.mut:
-        print("MUT: {}".format(mut))
-        extras += ["-k", mut]
-
-# Delete the 'botengine.py' module which was temporarily created for this task
-try:
-    os.remove("botengine.py")
-except Exception as e:
-    print("Error removing botengine.py: {}".format(e))
-    pass
-
-# Copy the botengine pytest stubs into this directory
-botengine_destination = os.path.join(core, base_path, "botengine_pytest.py")
-shutil.copyfile("./botengine_pytest.py", botengine_destination)
-
-# Import the base pass into the system path
-sys.path.insert(0, base_path)
-
-# Import localization module to ensure gettext is initialized
-import localization  # noqa: F401, E402 # type: ignore
-
-# Run pytest
-pytest.main(["-vv" if args.verbose else "-q", os.path.join(base_path, args.directory), "-s"] + extras)
+if __name__ == "__main__":
+    try:
+        exit_code = main()
+        sys.exit(exit_code)
+    except KeyboardInterrupt:
+        print("\nInterrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nError: {e}")
+        sys.exit(1)

@@ -13,6 +13,7 @@ import json
 import localization
 from controller import Controller
 from startup import StartUpUtil
+from utilities.utilities import getsize, Color
 
 
 def run(botengine):
@@ -87,6 +88,143 @@ def run(botengine):
     controller = load_controller(botengine)
     botengine.get_logger(f"{__name__}").debug("|run() Controller Loaded")
 
+    # When running locally, report the largest objects inside the controller
+    # Only execute this once per local execution, similar to how new_version() is triggered
+    if hasattr(botengine, "local") and botengine.local and botengine.local_execution_count == 0:
+        try:
+            sizes = []
+            controller_dict = vars(controller) if hasattr(controller, "__dict__") else {}
+            for attr_name, attr_value in controller_dict.items():
+                try:
+                    sizes.append((attr_name, type(attr_value).__name__, getsize(attr_value)))
+                except Exception:
+                    # Best-effort sizing; skip problematic attributes
+                    pass
+
+            sizes.sort(key=lambda t: t[2], reverse=True)
+
+            total_size = 0
+            try:
+                total_size = getsize(controller)
+            except Exception:
+                pass
+
+            botengine.get_logger(f"{__name__}").info(
+                f"{Color.BOLD}{Color.YELLOW}Controller deep size: {total_size/1024/1024:.2f} MB{Color.END} — Top 50 attributes by size:"
+            )
+
+            for name, typename, size_bytes in sizes[:50]:
+                botengine.get_logger(f"{__name__}").info(
+                    f" {Color.CYAN}- {Color.BOLD}{name}{Color.END} ({typename}): {Color.GREEN}{size_bytes/1024/1024:.2f} MB{Color.END} ({size_bytes:,} bytes)"
+                )
+
+            # Microservice deep sizes across all locations and devices.
+            # Exclude shared graph roots (controller/locations/devices) to avoid identical sizes via back-references.
+            micro_sizes = []
+            try:
+                excluded_ids = set()
+                excluded_ids.add(id(controller))
+                try:
+                    excluded_ids.add(id(controller.locations))
+                except Exception:
+                    pass
+
+                if getattr(controller, "locations", None):
+                    for _loc_id, _loc_obj in controller.locations.items():
+                        excluded_ids.add(id(_loc_obj))
+                        try:
+                            excluded_ids.add(id(_loc_obj.devices))
+                        except Exception:
+                            pass
+                        if getattr(_loc_obj, "devices", None):
+                            for _dev_id, _dev_obj in _loc_obj.devices.items():
+                                excluded_ids.add(id(_dev_obj))
+
+                def deep_size_excluding(obj, excluded):
+                    import sys
+                    from collections import deque
+                    from numbers import Number
+                    try:
+                        from collections.abc import Mapping
+                        zero_depth_bases = (str, bytes, Number, range, bytearray)
+                        iteritems = "items"
+                    except ImportError:
+                        from collections import Mapping
+                        zero_depth_bases = (basestring, Number, xrange, bytearray)  # noqa: F821
+                        iteritems = "iteritems"
+
+                    seen = set()
+
+                    def inner(o):
+                        oid = id(o)
+                        if oid in seen or oid in excluded:
+                            return 0
+                        seen.add(oid)
+                        size_ = 0
+                        try:
+                            size_ = sys.getsizeof(o)
+                        except Exception:
+                            pass
+                        if isinstance(o, zero_depth_bases):
+                            return size_
+                        if isinstance(o, (tuple, list, set, deque)):
+                            return size_ + sum(inner(i) for i in o)
+                        if isinstance(o, Mapping) or hasattr(o, iteritems):
+                            try:
+                                it = getattr(o, iteritems)()
+                            except Exception:
+                                it = []
+                            return size_ + sum(inner(k) + inner(v) for k, v in it)
+                        if hasattr(o, "__dict__"):
+                            size_ += inner(vars(o))
+                        if hasattr(o, "__slots__"):
+                            try:
+                                size_ += sum(inner(getattr(o, s)) for s in o.__slots__ if hasattr(o, s))
+                            except Exception:
+                                pass
+                        return size_
+
+                    return inner(obj)
+
+                for location_id, location_obj in (controller.locations or {}).items():
+                    # Location-level intelligence modules
+                    if hasattr(location_obj, "intelligence_modules") and isinstance(location_obj.intelligence_modules, dict):
+                        for ms_key, ms_obj in location_obj.intelligence_modules.items():
+                            try:
+                                size_bytes = deep_size_excluding(ms_obj, excluded_ids)
+                                micro_sizes.append((size_bytes, "location", None, None, ms_key))
+                            except Exception:
+                                pass
+
+                    # Device-level intelligence modules
+                    if hasattr(location_obj, "devices") and isinstance(location_obj.devices, dict):
+                        for device_id, device_obj in location_obj.devices.items():
+                            if hasattr(device_obj, "intelligence_modules") and isinstance(device_obj.intelligence_modules, dict):
+                                for ms_key, ms_obj in device_obj.intelligence_modules.items():
+                                    try:
+                                        size_bytes = deep_size_excluding(ms_obj, excluded_ids)
+                                        micro_sizes.append((size_bytes, "device", None, device_id, ms_key))
+                                    except Exception:
+                                        pass
+            except Exception:
+                pass
+
+            if micro_sizes:
+                micro_sizes.sort(key=lambda t: t[0], reverse=True)
+                botengine.get_logger(f"{__name__}").info(
+                    f"{Color.BOLD}{Color.YELLOW}Top 50 microservices by deep size:{Color.END}"
+                )
+                for size_bytes, scope, loc_id, dev_id, ms_key in micro_sizes[:50]:
+                    # Show device id if present; omit location scope entirely
+                    scope_suffix = f" [device={dev_id}]" if dev_id is not None else ""
+                    botengine.get_logger(f"{__name__}").info(
+                        f" {Color.CYAN}- {Color.BOLD}{ms_key}{Color.END}{scope_suffix}: {Color.GREEN}({size_bytes:,} bytes){Color.END}"
+                    )
+        except Exception as e:
+            botengine.get_logger(f"{__name__}").warning(
+                f"Local controller size report failed: {e}"
+            )
+
     # The controller stores the bot's last version number.
     # If this is a new bot version, this evaluation will automatically trigger the new_version() event in all microservices.
     # Note that the new_version() event is also a bot trigger.
@@ -149,6 +287,9 @@ def load_controller(botengine):
         botengine.save_variable(
             "controller", controller, required_for_each_execution=True
         )
+    
+    botengine.get_logger(f"{__name__}").debug("|load_controller() track locations")
+    controller.track_new_and_deleted_locations(botengine)
 
     botengine.get_logger(f"{__name__}").debug("|load_controller() track devices")
     controller.track_new_and_deleted_devices(botengine)
@@ -196,11 +337,14 @@ def trigger_event(botengine, controller, trigger_type, triggers):
     )
     # SCHEDULE TRIGGER
     if trigger_type & botengine.TRIGGER_SCHEDULE != 0:
+        botengine.get_logger(f"{__name__}").info(
+            "|trigger_event() Schedule triggered"
+        )
         schedule_ids = ["DEFAULT"]
         if "scheduleIds" in botengine.get_inputs():
             schedule_ids = botengine.get_inputs()["scheduleIds"]
             botengine.get_logger(f"{__name__}").info(
-                ">trigger_event() schedule_ids={}".format(schedule_ids)
+                "|trigger_event() schedule_ids={}".format(schedule_ids)
             )
 
         for schedule_id in schedule_ids:
@@ -209,7 +353,7 @@ def trigger_event(botengine, controller, trigger_type, triggers):
     # MODE TRIGGERS
     if trigger_type & botengine.TRIGGER_MODE != 0:
         # Triggered off a change of location
-        botengine.get_logger(f"{__name__}").info(">trigger_event() Synchronize Modes")
+        botengine.get_logger(f"{__name__}").info("|trigger_event() Synchronize Modes")
         for trigger in triggers:
             if "location" in trigger:
                 mode = trigger["location"]["event"]
@@ -218,14 +362,21 @@ def trigger_event(botengine, controller, trigger_type, triggers):
 
     # MEASUREMENT TRIGGERS
     if trigger_type & botengine.TRIGGER_DEVICE_MEASUREMENT != 0:
+        botengine.get_logger(f"{__name__}").info(
+            "|trigger_event() Device measurement triggered"
+        )
         # Triggered off a device measurement
         for trigger in triggers:
             if "device" in trigger:
                 device_id = trigger["device"]["deviceId"]
-                device_object = controller.get_device(device_id)
+                device_object = controller.get_device(botengine, device_id)
 
                 if device_object is not None:
-                    device_location = trigger["device"]["locationId"]
+                    device_location_id = trigger["device"]["locationId"]
+                    # Associate device sub-locations with their parent location
+                    location_object = controller.locations[device_location_id]
+                    if hasattr(location_object, "sub_type") and location_object.sub_type == botengine.LOCATION_SUB_TYPE_DEVICE:
+                        device_location_id = botengine.get_location_id()
 
                     # Measurement dictionary by updated timestamp { timestamp : [ {measure}, {measure}, {measure} ] }
                     measures_dict = {}
@@ -248,27 +399,32 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                             else:
                                 # Updated parameter
                                 # First apply 1 ms corrections for the same parameter at the same time
-                                if m["name"] in updated_ts:
-                                    if updated_ts[m["name"]] == m["time"]:
-                                        m["time"] = updated_ts[m["name"]] + 1
+                                measure_name = m["name"]
+                                if "index" in m:
+                                    measure_name += f".{m['index']}"
+                                if measure_name in updated_ts:
+                                    if updated_ts[measure_name] == m["time"]:
+                                        m["time"] = updated_ts[measure_name] + 1
 
                                 # Then add it to our list of measurements we need to trigger upon
                                 if m["time"] not in measures_dict:
                                     measures_dict[m["time"]] = []
 
-                                updated_ts[m["name"]] = m["time"]
+                                updated_ts[measure_name] = m["time"]
                                 measures_dict[m["time"]].append(m)
 
                     # For each unique timestamp, trigger the microservices from the oldest timestamp to the newest
                     # Also modify the botengine's concept of time to match the current input parameter's time we are executing against, and restore it later.
                     execution_time_ms = botengine.get_timestamp()
                     for timestamp_ms in sorted(list(measures_dict.keys())):
-                        botengine.inputs["time"] = timestamp_ms
+                        botengine.get_logger(f"{__name__}").info(f"|trigger_event() Setting timestamp to {timestamp_ms}")
+                        botengine.set_timestamp(timestamp_ms)
+                        botengine.get_logger(f"{__name__}").info("|trigger_event() Timestamp set")
                         all_measurements = measures_static + measures_dict[timestamp_ms]
 
                         # Filter data
                         controller.filter_measurements(
-                            botengine, device_location, device_object, all_measurements
+                            botengine, device_location_id, device_object, all_measurements
                         )
 
                         # Update the device directly
@@ -284,6 +440,7 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                                 # Ping any proxy devices to let any sub-microservices know that the proxy is still connected and delivering measurements
                                 if updated_device.proxy_id is not None:
                                     proxy_object = controller.get_device(
+                                        botengine,
                                         updated_device.proxy_id
                                     )
                                     if proxy_object is not None:
@@ -301,23 +458,36 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                                     )
                                 )
 
+                                if botengine.playback:
+                                    import time
+                                    time.sleep(1)
+
                             # Update the location
                             controller.device_measurements_updated(
-                                botengine, device_location, updated_device
+                                botengine, device_location_id, updated_device
                             )
-
-                    botengine.inputs["time"] = execution_time_ms
+                    botengine.get_logger(f"{__name__}").info(f"|trigger_event() Setting timestamp to {execution_time_ms}")
+                    botengine.set_timestamp(execution_time_ms)
+                    botengine.get_logger(f"{__name__}").info("|trigger_event() Timestamp set")
 
     # DEVICE ALERTS
     if trigger_type & botengine.TRIGGER_DEVICE_ALERT != 0:
+        botengine.get_logger(f"{__name__}").info(
+            "|trigger_event() Device alert triggered"
+        )
         # Triggered off a device alert
         for trigger in triggers:
             if "device" in trigger:
                 device_id = trigger["device"]["deviceId"]
-                device_object = controller.get_device(device_id)
+                device_object = controller.get_device(botengine, device_id)
 
                 if device_object is not None:
-                    device_location = trigger["device"]["locationId"]
+                    device_location_id = trigger["device"]["locationId"]
+                    # Associate device sub-locations with their parent location
+                    location_object = controller.locations[device_location_id]
+                    if hasattr(location_object, "sub_type") and location_object.sub_type == botengine.LOCATION_SUB_TYPE_DEVICE:
+                        device_location_id = botengine.get_location_id()
+
                     alerts = botengine.get_alerts_block()
                     if alerts is None:
                         # Transform connectionStatus to alertType
@@ -354,7 +524,7 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                                 )
                                 controller.device_alert(
                                     botengine,
-                                    device_location,
+                                    device_location_id,
                                     device_object,
                                     alert["alertType"],
                                     alert_params,
@@ -368,13 +538,119 @@ def trigger_event(botengine, controller, trigger_type, triggers):
             "|trigger_event() file=" + json.dumps(file, sort_keys=True)
         )
         if file is not None:
-            device_object = controller.get_device(file["deviceId"])
+            device_object = controller.get_device(botengine, file["deviceId"])
 
             if device_object is not None:
                 controller.file_uploaded(botengine, device_object, file)
+    
+    # TIMER FIRED
+    if trigger_type & botengine.TRIGGER_TIMER != 0:
+        botengine.get_logger(f"{__name__}").info(
+            "|trigger_event() Timer triggered"
+        )
+        MAXINT = 9223372036854775807
+        TIMERS_VARIABLE_NAME = "[t]"
+        TIMER_MIN_MS = 10000
+        timer = botengine.inputs["time"]
+
+        saved_timers = botengine.load_variable(TIMERS_VARIABLE_NAME)
+
+        if saved_timers:
+            execution_time = botengine.get_timestamp()
+            min_countdown_threshold = botengine.get_system_property("ppc.bot.minCountdownThreshold")
+            botengine.get_logger(f"{'botengine'}").debug("|trigger_Event() min_countdown_threshold={}".format(min_countdown_threshold))
+            botengine.get_logger(f"{__name__}").info("|trigger_event() Checking timers")
+            botengine.get_logger(f"{__name__}").info(
+                "|trigger_event() " + Color.PURPLE + "TIMER STACK: " + Color.END
+            )
+            import time
+            for t in saved_timers:
+                system_time = botengine.get_system_time_ms()
+                botengine.get_logger(f"{__name__}").info(
+                    "|trigger_event() " + Color.PURPLE + "t{}\t{}".format(system_time - t[0], t) + Color.END
+                )
+
+            # Double check our timers first, before giving up and letting the bot engine execute trigger type 64.
+            botengine.get_logger(f"{__name__}").info(
+                "|trigger_event() " + Color.PURPLE + "timestamp={} timer={}".format(botengine.get_timestamp(), timer) + Color.END
+            )
+            while True:
+                saved_timers = botengine.load_variable(TIMERS_VARIABLE_NAME)
+                if saved_timers is None:
+                    botengine.get_logger(f"{__name__}").warning(
+                        "|trigger_event() "
+                        + Color.YELLOW
+                        + "No timers variable found."
+                        + Color.END
+                    )
+                    break
+                if len(saved_timers) == 0:
+                    break
+                focused_timer = saved_timers[0]
+                t = focused_timer[0]
+                botengine.get_logger(f"{__name__}").info(
+                    "|trigger_event() "
+                    + Color.YELLOW
+                    + "Checking timer: {} at time {}".format(focused_timer, t)
+                    + Color.END
+                )
+                if t == MAXINT:
+                    botengine.get_logger(f"{__name__}").warning(
+                        "|trigger_event() "
+                        + Color.YELLOW
+                        + "No timers available for execution."
+                        + Color.END
+                    )
+                    break
+                system_time = botengine.get_system_time_ms()
+                try:
+                    time_variance = int(min_countdown_threshold or TIMER_MIN_MS)
+                except Exception:
+                    time_variance = TIMER_MIN_MS
+                if (
+                    t - time_variance > system_time 
+                    or t - time_variance > timer
+                ):
+                    botengine.get_logger(f"{__name__}").info(
+                        "|trigger_event() "
+                        + Color.YELLOW
+                        + "Next timer not ready for execution yet."
+                        + Color.END
+                    )
+                    break
+                # Pop the timer and execute it
+                focused_timer = saved_timers.pop(0)
+                botengine.save_variable(TIMERS_VARIABLE_NAME, saved_timers, overwrite=True)
+                botengine.get_logger(f"{__name__}").info(
+                    "|trigger_event() "
+                    + Color.PURPLE
+                    + "Executing timer. t{} timer={}".format(
+                        system_time - t, focused_timer
+                    )
+                    + Color.END
+                )
+                if callable(focused_timer[1]):
+                    # Execute the timer function relative to the timer's timestamp
+                    botengine.set_timestamp(focused_timer[0])
+                    focused_timer[1](botengine, focused_timer[2])
+                    botengine.get_logger(f"{__name__}").info(
+                        "|trigger_event() Finished executing timer: "
+                        + str(focused_timer)
+                    )
+                    botengine.set_timestamp(execution_time)
+                else:
+                    botengine.get_logger(f"{__name__}").error(
+                        "|trigger_event() Timer fired and popped, but cannot call the focused timer: "
+                        + str(focused_timer)
+                    )
+        pass
 
     # QUESTIONS ANSWERED
     if trigger_type & botengine.TRIGGER_QUESTION_ANSWER != 0:
+
+        botengine.get_logger(f"{__name__}").info(
+            "|trigger_event() Question triggered"
+        )
         question = botengine.get_answered_question()
         if question is None:
             botengine.get_logger(f"{__name__}").error(
@@ -382,14 +658,14 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                     json.dumps(triggers)
                 )
             )
-            return
-        botengine.get_logger(f"{__name__}").info(
-            "|trigger_event() question.key_identifier=" + str(question.key_identifier)
-        )
-        botengine.get_logger(f"{__name__}").info(
-            "|trigger_event() question.answer={}".format(question.answer)
-        )
-        controller.sync_question(botengine, question)
+        else:
+            botengine.get_logger(f"{__name__}").info(
+                "|trigger_event() question.key_identifier=" + str(question.key_identifier)
+            )
+            botengine.get_logger(f"{__name__}").info(
+                "|trigger_event() question.answer={}".format(question.answer)
+            )
+            controller.sync_question(botengine, question)
 
     # DATA STREAM TRIGGERS
     if trigger_type & botengine.TRIGGER_DATA_STREAM != 0:
@@ -437,6 +713,9 @@ def trigger_event(botengine, controller, trigger_type, triggers):
     # GOAL / SCENARIO CHANGES
     if trigger_type & botengine.TRIGGER_METADATA != 0:
         # The user changed the goal / scenario for a single sensor
+        botengine.get_logger(f"{__name__}").info(
+            "|trigger_event() Changed device metadata"
+        )
         for trigger in triggers:
             botengine.get_logger(f"{__name__}").info(
                 "|trigger_event() Changed device configuration"
@@ -444,9 +723,18 @@ def trigger_event(botengine, controller, trigger_type, triggers):
             if "device" in trigger:
                 device_id = trigger["device"]["deviceId"]
 
-                device_object = controller.get_device(device_id)
+                device_object = controller.get_device(botengine, device_id)
                 if device_object is not None:
-                    device_location = trigger["device"]["locationId"]
+                    device_location_id = trigger["device"]["locationId"]
+
+                    # Associate device sub-locations with their parent location
+                    location_object = controller.locations[device_location_id]
+                    if hasattr(location_object, "sub_type") and location_object.sub_type == botengine.LOCATION_SUB_TYPE_DEVICE:
+                        device_location_id = botengine.get_location_id()
+
+                    botengine.get_logger(f"{__name__}").info(
+                        "|trigger_event() device_id={} checking spaces {}".format(device_id, trigger["device"].get("spaces", []))
+                    )
 
                     if "spaces" in trigger["device"]:
                         device_object.spaces = trigger["device"]["spaces"]
@@ -457,18 +745,23 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                         botengine, botengine.get_measures_block()
                     )
 
+
                     for updated_device in updated_metadata:
                         controller.sync_device(
-                            botengine, device_location, device_id, updated_device
+                            botengine, device_location_id, device_id, updated_device
                         )
                         updated_device.device_metadata_updated(botengine)
                         controller.device_metadata_updated(
-                            botengine, device_location, updated_device
+                            botengine, device_location_id, updated_device
                         )
 
     # LOCATION CONFIGURATION CHANGES
     if trigger_type & botengine.TRIGGER_LOCATION_CONFIGURATION != 0:
         # The user changed location configuration settings, such as adding/removing/changing a user role in the location
+
+        botengine.get_logger(f"{__name__}").info(
+            "|trigger_event() Changed location configuration"
+        )
         category = None
         previous_category = None
         location_access = None
@@ -530,6 +823,11 @@ def trigger_event(botengine, controller, trigger_type, triggers):
 
             controller.call_center_updated(botengine, location_id, user_id, status)
 
+        # TODO: Handling Adding LOCATION_SUB_TYPE_DEVICE
+        # {..., "trigger": True, "location": {..., "subType": 1}}
+        # Sub type locations/devices have been added and processed at this point, wrap it up
+        # TODO: Handling Removing LOCATION_SUB_TYPE_DEVICE, somehow
+        # Sub type locations/devices have been deleted and processed at this point, wrap it up
     # DATA REQUEST
     if trigger_type & botengine.TRIGGER_DATA_REQUEST != 0:
         botengine.get_logger(f"{__name__}").info(
@@ -563,12 +861,12 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                     data_events[reference] = {}
 
                 for device_id, decompressed_content in value.items():
-                    data_events[reference][controller.get_device(device_id)] = (
+                    data_events[reference][controller.get_device(botengine, device_id)] = (
                         decompressed_content
                     )
 
             for reference in data_events:
-                controller.data_request_ready(
+                controller.async_data_request_ready(
                     botengine, reference, data_events[reference]
                 )
 
@@ -611,12 +909,12 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                         data_events[reference] = {}
 
                     for device_id, decompressed_content in value.items():
-                        data_events[reference][controller.get_device(device_id)] = (
+                        data_events[reference][controller.get_device(botengine, device_id)] = (
                             decompressed_content
                         )
 
                 for reference in data_events:
-                    controller.data_request_ready(
+                    controller.async_data_request_ready(
                         botengine, reference, data_events[reference]
                     )
 

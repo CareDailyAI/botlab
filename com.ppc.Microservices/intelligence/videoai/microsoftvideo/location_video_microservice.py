@@ -17,8 +17,6 @@ except ImportError:
     # Python 2
     import httplib as http_client
 import json
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import time
 
 # Copy/paste Microsoft Blob Storage Account Name
@@ -96,8 +94,6 @@ class LocationVideoMicroservice(Intelligence):
     def device_alert(self, botengine, device_object, alert_type, alert_params):
         """
         Device sent an alert.
-        When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
-        When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
         :param botengine: BotEngine environment
         :param device_object: Device object that sent the alert
         :param alert_type: Type of alert
@@ -165,6 +161,13 @@ class LocationVideoMicroservice(Intelligence):
         :param content_type: The content type, for example 'video/mp4'
         :param file_extension: The file extension, for example 'mp4'
         """
+        try:
+            from azure.identity import DefaultAzureCredential
+            from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+        except ImportError:
+            botengine.get_logger().error("Azure Blob Storage libraries are not installed. "
+                                         "Please install them using 'pip install -r com.ppc.VideoRecognitionMicrosoft/requirements.txt'.")
+            return
         # We are demonstrating video processing here, so avoid video processing on files that are not videos.
         if "video" not in content_type:
             botengine.get_logger().info("The uploaded file is not a video, skipping processing ...")
@@ -217,7 +220,7 @@ class LocationVideoMicroservice(Intelligence):
             token = token[1:len(token)-1]
             conn.close()
         except Exception as e:
-            print("[Errno {0}] {1}".format(e.errno, e.strerror))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("[Errno {0}] {1}".format(e.errno, e.strerror))
         
         # Use Access Token to upload Video file 
         headers = {
@@ -237,7 +240,7 @@ class LocationVideoMicroservice(Intelligence):
             d = json.loads(data)
             conn.close()
         except Exception as e:
-            print("[Errno {0}] {1}".format(e.errno, e.strerror))
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").info("[Errno {0}] {1}".format(e.errno, e.strerror))
 
         botengine.get_logger().info('Video Processing..')
 

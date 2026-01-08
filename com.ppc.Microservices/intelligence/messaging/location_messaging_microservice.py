@@ -83,11 +83,10 @@ class LocationMessagingMicroservice(Intelligence):
     def device_alert(self, botengine, device_object, alert_type, alert_params):
         """
         Device sent an alert.
-        When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
-        When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
         :param botengine: BotEngine environment
         :param device_object: Device object that sent the alert
         :param alert_type: Type of alert
+        :param alert_params: Alert parameters as key/value dictionary
         """
         return
 
@@ -173,7 +172,7 @@ class LocationMessagingMicroservice(Intelligence):
         """
         return
 
-    def data_request_ready(self, botengine, reference, csv_dict):
+    def async_data_request_ready(self, botengine, reference, csv_dict):
         """
         A botengine.request_data() asynchronous request for CSV data is ready.
 
@@ -183,10 +182,19 @@ class LocationMessagingMicroservice(Intelligence):
         The bot can exit its current execution. The server will independently gather all the necessary data and
         capture it into a LZ4-compressed CSV file on the server which is available for one day and accessible only by
         the bot through a public HTTPS URL identified by a cryptographic token. The bot then gets triggered and
-        downloads the CSV data, passing the data throughout the environment with this data_request_ready()
+        downloads the CSV data, passing the data throughout the environment with this async_data_request_ready()
         event-driven method.
 
-        Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
+
+        IMPORTANT: This method executes in an asynchronous environment where you are NOT allowed to:
+        - Set timers or alarms
+        - Manage class variables that persist across executions
+        - Perform other stateful operations
+
+        To return to a synchronous environment where you can use timers and manage state, call:
+        botengine.async_execute_again_in_n_seconds(seconds)
+
+                Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
         reference is passed back out at the completion of the request, allowing the developer to ensure the
         data request that is now available was truly destined for their microservice.
 

@@ -9,7 +9,7 @@ file 'LICENSE.txt', which is part of this source code package.
 
 import bot
 from locations.location import Location
-
+import utilities.utilities as utilities
 
 class Intelligence:
     """
@@ -32,35 +32,6 @@ class Intelligence:
         :param botengine: BotEngine environment
         """
         return
-
-    def reset_statistics(self, botengine):
-        """
-        Reset statistics
-        :param botengine: BotEngine environment
-        """
-        self._init_statistics()
-        return
-
-    def track_statistics(self, botengine, time_elapsed_ms):
-        """
-        Track statistics for this microservice
-        :param botengine: BotEngine environment
-        """
-        # Catch-all in case subclass forgets to call super().initialize()
-        if not hasattr(self, "statistics"):
-            self._init_statistics()
-        self.statistics["calls"] += 1
-        self.statistics["time"] += time_elapsed_ms
-        return
-
-    def get_statistics(self, botengine):
-        """
-        get statistics
-        :param botengine: BotEngine environment
-        """
-        if not hasattr(self, "statistics"):
-            self._init_statistics()
-        return self.statistics
 
     def destroy(self, botengine):
         """
@@ -104,11 +75,10 @@ class Intelligence:
     def device_alert(self, botengine, device_object, alert_type, alert_params):
         """
         Device sent an alert.
-        When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
-        When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
         :param botengine: BotEngine environment
         :param device_object: Device object that sent the alert
         :param alert_type: Type of alert
+        :param alert_params: Alert parameters as key/value dictionary
         """
         return
 
@@ -246,7 +216,7 @@ class Intelligence:
         """
         return
 
-    def data_request_ready(self, botengine, reference, csv_dict):
+    def async_data_request_ready(self, botengine, reference, csv_dict):
         """
         A botengine.request_data() asynchronous request for CSV data is ready.
 
@@ -256,8 +226,13 @@ class Intelligence:
         The bot can exit its current execution. The server will independently gather all the necessary data and
         capture it into a LZ4-compressed CSV file on the server which is available for one day and accessible only by
         the bot through a public HTTPS URL identified by a cryptographic token. The bot then gets triggered and
-        downloads the CSV data, passing the data throughout the environment with this data_request_ready()
+        downloads the CSV data, passing the data throughout the environment with this async_data_request_ready()
         event-driven method.
+
+        IMPORTANT: This method executes in an asynchronous environment where you are NOT allowed to:
+        - Set timers or alarms
+        - Manage class variables that persist across executions
+        - Perform other stateful operations
 
         Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
         reference is passed back out at the completion of the request, allowing the developer to ensure the
@@ -267,11 +242,74 @@ class Intelligence:
         * runtime.json should include trigger 2048
         * structure.json should include inside 'pip_install_remotely' a reference to the "lz4" Python package
 
+        CSV Data Structure:
+        The csv_dict parameter contains device measurement data in the following format:
+        { device_object: 'csv data string' }
+
+        Each CSV string contains:
+        - First line: Headers (parameter names)
+        - Subsequent lines: Measurement data with columns:
+          * measure_time: Timestamp of the measurement
+          * index: Measurement index (defaults to '0' if empty)
+          * group: Measurement group identifier
+          * param_name: Parameter values corresponding to headers
+
+        The CSV data can be processed into a structured format:
+        { param_name: [[measure_time, index, param_value], ...] }
+
+        Common processing pattern:
+        1. Split CSV string into lines
+        2. Extract headers from first line
+        3. Parse each subsequent line into measurement data
+        4. Organize data by parameter name for analysis
+
         :param botengine: BotEngine environment
-        :param reference: Optional reference passed into botengine.request_data(..)
-        :param csv_dict: { device_object: 'csv data string' }
+        :param reference: Optional reference passed into botengine.request_data(..). Use this to identify
+                         which specific data request is being processed.
+        :param csv_dict: Dictionary mapping device objects to CSV data strings. Format:
+                        { device_object: 'csv data string' } where device_object is typically a device
+                        instance, and csv_data is either bytes or string containing measurement
+                        data with headers in the first line and comma-separated values in subsequent lines.
         """
+        # For backwards compatibility, call the deprecated data_request_ready method if it exists
+        if hasattr(self, 'data_request_ready'):
+            return self.data_request_ready(botengine, reference, csv_dict)
         return
+
+
+
+
+    # ===============================================================================
+    # Built-in statistics methods.
+    # ===============================================================================
+    def reset_statistics(self, botengine):
+        """
+        Reset statistics
+        :param botengine: BotEngine environment
+        """
+        self._init_statistics()
+        return
+
+    def track_statistics(self, botengine, time_elapsed_ms):
+        """
+        Track statistics for this microservice
+        :param botengine: BotEngine environment
+        """
+        # Catch-all in case subclass forgets to call super().initialize()
+        if not hasattr(self, "statistics"):
+            self._init_statistics()
+        self.statistics["calls"] += 1
+        self.statistics["time"] += time_elapsed_ms
+        return
+
+    def get_statistics(self, botengine):
+        """
+        get statistics
+        :param botengine: BotEngine environment
+        """
+        if not hasattr(self, "statistics"):
+            self._init_statistics()
+        return self.statistics
 
     # ===============================================================================
     # Built-in Timer and Alarm methods.
@@ -285,7 +323,7 @@ class Intelligence:
         :param reference: Optional reference to use to manage this timer.
         """
         # We seed the reference with this intelligence ID to make it unique against all other intelligence modules.
-        if isinstance(self.parent, Location):
+        if utilities._isinstance(self.parent, Location):
             # Location intelligence
             bot.start_location_intelligence_timer_ms(
                 botengine,
@@ -324,7 +362,7 @@ class Intelligence:
         :param reference: Optional reference to use to manage this timer.
         """
         # We seed the reference with this intelligence ID to make it unique against all other intelligence modules.
-        if isinstance(self.parent, Location):
+        if utilities._isinstance(self.parent, Location):
             # Location intelligence
             bot.start_location_intelligence_timer(
                 botengine,
@@ -353,6 +391,14 @@ class Intelligence:
         """
         return botengine.is_timer_running(self.intelligence_id + str(reference))
 
+    def timer_timestamp_ms(self, botengine, reference=""):
+        """
+        Get the timer or alarm's timestamp in milliseconds
+        :param reference:
+        :return:
+        """
+        return botengine.timer_timestamp_ms(self.intelligence_id + str(reference))
+
     def cancel_timers(self, botengine, reference=""):
         """
         Cancel timers with the given reference
@@ -370,7 +416,7 @@ class Intelligence:
         :param reference: Optional reference to use to manage this timer.
         """
         # We seed the reference with this intelligence ID to make it unique against all other intelligence modules.
-        if isinstance(self.parent, Location):
+        if utilities._isinstance(self.parent, Location):
             # Location intelligence
             bot.set_location_intelligence_alarm(
                 botengine,
@@ -408,6 +454,36 @@ class Intelligence:
         # It's not a mistake that this is forwarding to `cancel_timers`.
         # They're all the same thing underneath, and this is a convenience method help to avoid confusion and questions.
         botengine.cancel_timers(self.intelligence_id + str(reference))
+
+    def cancel_timer(self, botengine, reference=""):
+        """
+        Convenience method for cancel_timers() to maintain backward compatibility
+        :param botengine: BotEngine environment
+        :param reference: Cancel all timers with the given reference
+        """
+        self.cancel_timers(botengine, reference)
+
+    def cancel_alarm(self, botengine, reference=""):
+        """
+        Convenience method for cancel_alarms() to maintain backward compatibility
+        :param botengine: BotEngine environment
+        :param reference: Cancel all alarms with the given reference
+        """
+        self.cancel_alarms(botengine, reference)
+
+    # ===============================================================================
+    # DEPRECATED METHODS - DO NOT USE IN NEW CODE
+    # ===============================================================================
+    
+    def data_request_ready(self, botengine, reference, csv_dict):
+        """
+        DEPRECATED: Use async_data_request_ready() instead.
+        
+        :param botengine: BotEngine environment
+        :param reference: Optional reference passed into botengine.request_data(..)
+        :param csv_dict: { device_object: 'csv data string' }
+        """
+        return
 
     # ===============================================================================
     # Private methods

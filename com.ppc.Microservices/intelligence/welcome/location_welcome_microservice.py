@@ -147,11 +147,10 @@ class LocationWelcomeMicroservice(Intelligence):
     def device_alert(self, botengine, device_object, alert_type, alert_params):
         """
         Device sent an alert.
-        When a device disconnects, it will send an alert like this:  [{u'alertType': u'status', u'params': [{u'name': u'deviceStatus', u'value': u'2'}], u'deviceId': u'eb10e80a006f0d00'}]
-        When a device reconnects, it will send an alert like this:  [{u'alertType': u'on', u'deviceId': u'eb10e80a006f0d00'}]
         :param botengine: BotEngine environment
         :param device_object: Device object that sent the alert
         :param alert_type: Type of alert
+        :param alert_params: Alert parameters as key/value dictionary
         """
         return
 
@@ -207,27 +206,58 @@ class LocationWelcomeMicroservice(Intelligence):
             # This fires one time, 5 minutes after birth
             ios_url = properties.get_property(botengine, "APP_IOS_URL", False)
             android_url = properties.get_property(botengine, "APP_ANDROID_URL", False)
+            ios_store_name = properties.get_property(botengine, "APP_IOS_STORE_NAME", False)
+            android_store_name = properties.get_property(botengine, "APP_ANDROID_STORE_NAME", False)
 
-            if ios_url is not None or android_url is not None:
+            # Check if we have either URLs or store names available
+            has_ios_info = ios_url is not None or ios_store_name is not None
+            has_android_info = android_url is not None or android_store_name is not None
+
+            if has_ios_info or has_android_info:
                 message = _("Thanks for signing up! Here's how to download {}.").format(properties.get_property(botengine, "SERVICE_NAME"))
 
                 if ios_url is not None:
                     # Note: iOS app download URL qualifier
                     message += "\n\n{}: {}".format(_("iPhone / iPad"), ios_url)
+                elif ios_store_name is not None:
+                    # Note: iOS app store name when URL not available
+                    message += "\n\n{}: Search for '{}' in the App Store".format(_("iPhone / iPad"), ios_store_name)
 
                 if android_url is not None:
                     # Note: Android download URL qualifier
                     message += "\n\n{}: {}".format(_("Android"), android_url)
+                elif android_store_name is not None:
+                    # Note: Android app store name when URL not available
+                    message += "\n\n{}: Search for '{}' in the Play Store".format(_("Android"), android_store_name)
+
+                # Add instructions to sign in with phone number
+                message += "\n\n" + _("After downloading, open the app and sign in with your phone number.")
 
                 analytics.track_and_notify(botengine, self.parent, 'services_activated', push_content=_("{} services are activated at \"{}\"!").format(properties.get_property(botengine, "SERVICE_NAME"), self.parent.get_location_name(botengine)), push_sms_fallback_content=message, to_residents=True)
 
         elif argument == TIMER_REFERENCE_INSTALL:
             # This is a recommendation to schedule time with customer support for an assisted connect session
-            if len(self.parent.devices) < TOTAL_MINIMUM_DEVICES:
-                if properties.get_property(botengine, "CS_SCHEDULE_URL") is not None and properties.get_property(botengine, "SERVICE_NAME") is not None:
-                    if len(properties.get_property(botengine, "CS_SCHEDULE_URL")) > 0:
+            
+            # Check if any device is a BedDevice
+            from devices.bed.bed import BedDevice
+            from devices.radar.radar import RadarDevice
+            for device_id in self.parent.devices:
+                if utilities._isinstance(self.parent.devices[device_id], BedDevice):
+                    return
+
+                if utilities._isinstance(self.parent.devices[device_id], RadarDevice):
+                    return
+            
+            # Else let's check for a smattering of device sources available to round out a solution from
+            # a standard Activities of Daily Living style pack of products.
+            device_count = len(self.parent.devices)
+            if 0 < device_count < TOTAL_MINIMUM_DEVICES:
+                support_email = properties.get_property(botengine, "CS_EMAIL_ADDRESS")
+                service_name = properties.get_property(botengine, "SERVICE_NAME")
+                if support_email is not None and service_name is not None:
+                    if len(support_email) > 0:
                         # Notify: Want a person to help you set up?
-                        message = _("Want a real person to help you set up {} at {}? Check out -> {}.").format(properties.get_property(botengine, "SERVICE_NAME"), botengine.get_location_name(), properties.get_property(botengine, "CS_SCHEDULE_URL"))
+                        message = _("Want a real person to help you set up {} at {}? Email -> {}.").format(service_name, botengine.get_location_name(), support_email)
 
                         import signals.sms as sms
                         sms.send(botengine,
@@ -288,7 +318,7 @@ class LocationWelcomeMicroservice(Intelligence):
         """
         return
 
-    def data_request_ready(self, botengine, reference, csv_dict):
+    def async_data_request_ready(self, botengine, reference, csv_dict):
         """
         A botengine.request_data() asynchronous request for CSV data is ready.
 
@@ -298,10 +328,19 @@ class LocationWelcomeMicroservice(Intelligence):
         The bot can exit its current execution. The server will independently gather all the necessary data and
         capture it into a LZ4-compressed CSV file on the server which is available for one day and accessible only by
         the bot through a public HTTPS URL identified by a cryptographic token. The bot then gets triggered and
-        downloads the CSV data, passing the data throughout the environment with this data_request_ready()
+        downloads the CSV data, passing the data throughout the environment with this async_data_request_ready()
         event-driven method.
 
-        Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
+
+        IMPORTANT: This method executes in an asynchronous environment where you are NOT allowed to:
+        - Set timers or alarms
+        - Manage class variables that persist across executions
+        - Perform other stateful operations
+
+        To return to a synchronous environment where you can use timers and manage state, call:
+        botengine.async_execute_again_in_n_seconds(seconds)
+
+                Developers are encouraged to use the 'reference' argument inside calls to botengine.request_data(..). The
         reference is passed back out at the completion of the request, allowing the developer to ensure the
         data request that is now available was truly destined for their microservice.
 

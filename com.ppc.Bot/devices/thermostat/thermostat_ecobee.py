@@ -143,7 +143,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
                 botengine,
                 title=_("'{}': Sleep mode").format(self.description),
                 description=_("Setting your ecobee thermostat into Sleep mode."),
-                priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                 icon="thermostat",
                 event_type="thermostat.thermostat_policy_set",
             )
@@ -176,7 +176,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
                 botengine,
                 title=_("'{}': Away mode").format(self.description),
                 description=_("Setting your ecobee thermostat into Away mode."),
-                priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+                priority=botengine.NARRATIVE_PRIORITY_DETAIL,
                 icon="thermostat",
                 event_type="thermostat.thermostat_policy_set",
             )
@@ -229,7 +229,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             botengine,
             title=_("'{}': Away mode").format(self.description),
             description=_("Setting your ecobee thermostat into Away mode."),
-            priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+            priority=botengine.NARRATIVE_PRIORITY_DETAIL,
             icon="thermostat",
             event_type="thermostat.thermostat_policy_set",
         )
@@ -277,7 +277,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             botengine,
             title=_("'{}': Sleep mode").format(self.description),
             description=_("Setting your ecobee thermostat into Sleep mode."),
-            priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+            priority=botengine.NARRATIVE_PRIORITY_DETAIL,
             icon="thermostat",
             event_type="thermostat.thermostat_policy_set",
         )
@@ -340,7 +340,7 @@ class ThermostatEcobeeDevice(ThermostatDevice):
             botengine,
             title=_("'{}': Home mode").format(self.description),
             description=_("Setting your ecobee thermostat into Home mode."),
-            priority=botengine.NARRATIVE_PRIORITY_DEBUG,
+            priority=botengine.NARRATIVE_PRIORITY_DETAIL,
             icon="thermostat",
             event_type="thermostat.thermostat_policy_unset",
         )

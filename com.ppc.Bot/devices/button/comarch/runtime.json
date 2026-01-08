@@ -1,0 +1,34 @@
+{
+  "version": {
+    "triggerParameters": [
+      "batteryLevel",
+      "mobileSignal",
+      "buttonStatus",
+      "firmware",
+      "charging",
+      "putOn",
+      "fallStatus",
+      "eventType",
+      "hr",
+      "steps",
+      "longitude",
+      "latitude",
+      "cmr.cyclicPeriod",
+      "cmr.gpsMode",
+      "cmr.gpsSwitch",
+      "cmr.locationPeriod",
+      "cmr.phone",
+      "cmr.timezone",
+      "cmr.twinPeriod",
+      "cmr.volume",
+      "cmr.fallSwitch",
+      "cmr.fallLevel",
+      "cmr.sequentialCalls",
+      "cmr.hrSwitch",
+      "cmr.whitelist",
+      "cmr.whitelistSwitch",
+      "immobility",
+      "timeZoneId"
+    ]
+  }
+}

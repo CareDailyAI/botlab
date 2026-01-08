@@ -18,6 +18,7 @@ RULES OF THE API IMPLEMENTATIONS IN THIS FILE:
 
 import requests
 import json
+import csv
 import os
 import sys
 import shutil
@@ -34,8 +35,8 @@ _https_proxy = None
 session = None
 
 # Narrative priority levels
+NARRATIVE_PRIORITY_DEBUG = -2
 NARRATIVE_PRIORITY_ANALYTIC = -1
-NARRATIVE_PRIORITY_DEBUG = 0
 NARRATIVE_PRIORITY_DETAIL = 0
 NARRATIVE_PRIORITY_INFO = 1
 NARRATIVE_PRIORITY_WARNING = 2
@@ -77,6 +78,11 @@ COMMA_DELIMITER_REPLACEMENT_CHARACTER = '&&'
 # When downloading data that may contain quotes like '[""This""]' to enclose fields, this character will replace those quotes with '[\"This\"]'
 # See https://stackoverflow.com/a/76784255
 QUOTE_DELIMITER_REPLACEMENT_CHARACTER = '""'
+
+# List of system property names to extract from specified cloud
+SYSTEM_PROPERTY_NAMES = [
+    "ppc.api.highlights.metadata",
+]
 
 def _session():
     """
@@ -422,7 +428,7 @@ def set_organization_properties(cloud_url, admin_key, organization_id, propertie
     return None
 
 
-def get_location(cloud_url, admin_key, location_id):
+def get_locations(cloud_url, admin_key, location_id):
     """
     Get information about a specific location
     https://iotadmins.docs.apiary.io/reference/users-and-locations/locations-in-an-organization/get-locations
@@ -445,7 +451,7 @@ def get_location(cloud_url, admin_key, location_id):
     _check_for_errors(j)
     if 'locations' in j:
         if len(j['locations']) > 0:
-            return j['locations'][0]
+            return j['locations']
 
     return None
 
@@ -509,6 +515,30 @@ def get_device_properties(cloud_url, admin_key, location_id, device_id, property
         return j['properties']
     return None
 
+
+def get_system_property(cloud_url, admin_key, name):
+    """
+    Get a system property for this bot
+    https://app.peoplepowerco.com/cloud/apidocs/cloud.html#tag/System-and-User-Properties
+
+    :param name: Property name
+    :return: Property value (dict or str) or None
+    """
+    headers = {
+        'API_KEY': admin_key
+    }
+    r = _session().get(cloud_url + "/cloud/json/systemProperty/{}".format(name), headers=headers)
+    if len(r.text) == 0:
+        return None
+    if r.text[0] in ["{", "["]:
+        try:
+            return json.loads(r.text)
+        except Exception as e:
+            print(
+                "|get_system_property() Error extracting JSON {}".format(e)
+            )
+            return None
+    return r.text
 
 def get_organization_narratives(cloud_url, admin_key, organization_id, row_count=100, newest_first=True, page_marker=None, minimum_priority=None, maximum_priority=None):
     """
@@ -740,6 +770,7 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
 
     # Location object placeholder
     location_object = None
+    sub_type_location_objects = []
 
     # Force a start time
     if start_time_ms is None:
@@ -766,7 +797,13 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
         params.update({
             "locationId": location_id
         })
-        location_object = get_location(cloud_url, admin_key, location_id)
+        location_objects = get_locations(cloud_url, admin_key, location_id)
+        if location_objects:
+            for _location_object in location_objects:
+                if int(_location_object['id']) == int(location_id):
+                    location_object = _location_object
+                else:
+                    sub_type_location_objects.append(_location_object)
 
     if organization_id is not None:
         params.update({
@@ -775,7 +812,14 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
 
     if type == DATA_REQUEST_TYPE_DEVICE_PARAMETERS:
         # This is a device data request
-        devices = get_devices(cloud_url, admin_key, location_id)
+        devices = []
+        location_devices = get_devices(cloud_url, admin_key, location_id)
+        if location_devices:
+            devices += location_devices
+        for sub_location_object in sub_type_location_objects:
+            sub_location_devices = get_devices(cloud_url, admin_key, sub_location_object['id'])
+            if sub_location_devices:
+                devices += sub_location_devices
         if devices is None:
             print("=> No devices at location {}".format(location_id))
             return
@@ -863,14 +907,15 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
             # Filter specific devices by `type`
             if device_types is not None:
                 if int(device['type']) not in device_types:
+                    print("Skipping device {} of type {}".format(device['id'], device['type']))
                     continue
 
             this_download_start_time_ms = start_time_ms
             if end_time_ms < int(device["startDateMs"]):
-                # print("Device {} has a start date of {} which is after the end time of this download request. Skipping.".format(device["id"], device["startDateMs"]))
+                print("Device {} has a start date of {} which is after the end time of this download request. Skipping.".format(device["id"], device["startDateMs"]))
                 continue
             if start_time_ms < int(device["startDateMs"]):
-                # print("Device {} has a start date of {} which is after the start time of this download request. Adjusting.".format(device["id"], device["startDateMs"]))
+                print("Device {} has a start date of {} which is after the start time of this download request. Adjusting.".format(device["id"], device["startDateMs"]))
                 this_download_start_time_ms = int(device["startDateMs"])
 
             request_key = str(uuid.uuid4())
@@ -908,6 +953,7 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
             # Filter specific device types
             if device_types is not None:
                 if int(device['type']) not in device_types:
+                    print("Skipping device {} of type {}".format(device['id'], device['type']))
                     continue
             this_download_start_time_ms = start_time_ms
             if end_time_ms < int(device["startDateMs"]):
@@ -1004,23 +1050,30 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
         data_requests.append(request)
 
     print("Executing data requests")
-    total_requests = 0
+    request_location_ids = set()
     for request in data_requests:
         sys.stdout.write('.')
         sys.stdout.flush()
+        request_params = params.copy()
+        if "deviceId" in request:
+            for device in devices:
+                if device["id"] == request["deviceId"]:
+                    request_params["locationId"] = device["locationId"]
+                    break
+        request_location_ids.add(request_params["locationId"])
         body = {
             "byEmail": False,
             "dataRequests": [request]
         }
 
         # print("Headers: {}".format(json.dumps(headers, indent=2, sort_keys=True)))
-        # print("Params: {}".format(json.dumps(params, indent=2, sort_keys=True)))
+        # print("Params: {}".format(json.dumps(request_params, indent=2, sort_keys=True)))
         # print("Body: {}".format(json.dumps(body, indent=2, sort_keys=True)))
 
         downloaded = False
         while not downloaded:
             try:
-                r = _session().post(cloud_url + "/cloud/json/dataRequests", params=params, headers=headers, data=json.dumps(body))
+                r = _session().post(cloud_url + "/cloud/json/dataRequests", params=request_params, headers=headers, data=json.dumps(body))
                 j = json.loads(r.text)
                 # print("DATA REQUEST RESPONSE: {}".format(json.dumps(j, indent=2, sort_keys=True)))
                 _check_for_errors(j)
@@ -1039,25 +1092,28 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
     results = {}
     attempts = 0
     while True:
-        # print("REQUEST CHECK\nURL={}\nPARAMS={}\nHEADERS={}\n".format(cloud_url + "/cloud/json/dataRequests", params, headers))
-        r = _session().get(cloud_url + "/cloud/json/dataRequests", params=params, headers=headers)
-        j = json.loads(r.text)
+        for request_location_id in request_location_ids:
+            request_params = params.copy()
+            request_params['locationId'] = request_location_id
+            # print("REQUEST CHECK\nURL={}\nPARAMS={}\nHEADERS={}\n".format(cloud_url + "/cloud/json/dataRequests", request_params, headers))
+            r = _session().get(cloud_url + "/cloud/json/dataRequests", params=request_params, headers=headers)
+            j = json.loads(r.text)
 
-        # print("REQUEST CHECK RESPONSE: {}".format(json.dumps(j, indent=2, sort_keys=True)))
+            # print("REQUEST CHECK RESPONSE: {}".format(json.dumps(j, indent=2, sort_keys=True)))
 
-        if 'results' in j:
-            for result in j['results']:
-                if result['key'] in request_keys and result['key'] not in results:
-                    sys.stdout.write("!")
-                    if 'url' in result:
-                        results[result['key']] = result['url']
+            if 'results' in j:
+                for result in j['results']:
+                    if result['key'] in request_keys and result['key'] not in results:
+                        sys.stdout.write("!")
+                        if 'url' in result:
+                            results[result['key']] = result['url']
 
-                    elif result['dataLength'] == 0:
-                        # No data to download
-                        results[result['key']] = None
-
-            if len(results) == len(request_keys):
-                break
+                        elif result['dataLength'] == 0:
+                            # No data to download
+                            results[result['key']] = None
+        # print("Found {}/{} results".format(len(results), len(request_keys)))
+        if len(results) == len(request_keys):
+            break
 
         attempts += 1
         sys.stdout.write(".")
@@ -1077,13 +1133,13 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
         if stop:
             break
 
-        # Attempt the data request again
-        if attempts % 50 == 0:
-            print("Attempting the data request again...")
-            r = _session().post(cloud_url + "/cloud/json/dataRequests", params=params, headers=headers,
-                                data=json.dumps(body))
-            j = json.loads(r.text)
-            _check_for_errors(j)
+        # # Attempt the data request again
+        # if attempts % 50 == 0:
+        #     print("Attempting the data request again...")
+        #     r = _session().post(cloud_url + "/cloud/json/dataRequests", params=params, headers=headers,
+        #                         data=json.dumps(body))
+        #     j = json.loads(r.text)
+        #     _check_for_errors(j)
 
         if attempts > 320:
             print("SKIPPING LOCATION {}; \n\nDATA REQUESTS {}; \n\nRESULTS {}".format(location_id,
@@ -1259,49 +1315,45 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
         for device_id in activity_requestkeys_by_device:
             request_keys = activity_requestkeys_by_device[device_id]
 
-            csv_activity_data = ""
+            data = []
             for r in request_keys:
                 if r in extractedpath_by_requestkey:
                     with open(extractedpath_by_requestkey[r], "r") as f:
-                        for line in f:
-                            if line.strip() == "":
-                                continue
-
-                            if line.startswith("start"):
-                                continue
-
+                        print("Processing activity file: {}".format(extractedpath_by_requestkey[r]))
+                        reader = csv.DictReader(f)
+                        for line in reader:
                             # We're going to form this into the same style of CSV as our measurements
                             # timestamp_ms,param_name,index,group,value
-                            timestamps = line.split(",")
-                            online_ms = int(timestamps[0])
-                            offline_ms = int(timestamps[1])
+                            online_ms = int(line['startTime'])
+                            offline_ms = int(line['endTime'])
 
-                            csv_activity_data += "{},{},{},{},{}\n".format(online_ms,
-                                                                         "[online]",
-                                                                         "",
-                                                                         "",
-                                                                         1)
-
-                            # This giant number is the timestamp the server puts in when a device is still connected.
-                            # Anything less than that means disconnected
-                            if int(offline_ms) < 5000000000000:
-                                csv_activity_data += "{},{},{},{},{}\n".format(offline_ms,
-                                                                         "[online]",
-                                                                         "",
-                                                                         "",
-                                                                         0)
+                            data.append({
+                                "measureTime": online_ms,
+                                "paramName": "[online]",
+                                "index": "",
+                                "value": 1
+                            })
+                            if int(offline_ms) < 5000000000000: # Only log offline if the device actually went offline
+                                data.append({
+                                    "measureTime": offline_ms,
+                                    "paramName": "[online]",
+                                    "index": "",
+                                    "value": 0
+                                })
 
                     if os.path.exists(extractedpath_by_requestkey[r]):
                         os.remove(extractedpath_by_requestkey[r])
                         del extractedpath_by_requestkey[r]
 
             # If we have something to write, then throw some CSV headers on top and write it out
-            if len(csv_activity_data) > 0:
-                csv_activity_data = "measureTime,paramName,index,group,value\n" + csv_activity_data
+            if len(data) > 0:
                 activities_filename = os.path.join(data_path, slugify(device_id + "_activities") + ".csv")
 
                 with open(activities_filename, "w") as f:
-                    f.write(csv_activity_data)
+                    writer = csv.DictWriter(f, fieldnames=["measureTime", "paramName", "index", "value"])
+                    writer.writeheader()
+                    for d in data:
+                        writer.writerow(d)
 
                 if device_id not in extracted_parameters_paths_by_device:
                     extracted_parameters_paths_by_device[device_id] = []
@@ -1312,26 +1364,29 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
         data_request_params_files = {}
         for device_id in extracted_parameters_paths_by_device:
             paths = extracted_parameters_paths_by_device[device_id]
-            data = ""
+            data = []
             out_file = os.path.join(data_path, slugify("{}_parameters".format(device_id)) + ".csv")
             for p in paths:
                 with open(p, "r") as f:
-                    for line in f:
-                        if line.startswith("measureTime"):
-                            continue
-                        data += line
+                    print("Processing parameter file: {}".format(p))
+                    reader = csv.DictReader(f)
+                    for line in reader:
+                        data.append(line)
 
                 os.remove(p)
 
-            data = sorted(data.split("\n"))
+            data = sorted(data, key=lambda x: x['measureTime'])
 
             if os.path.exists(out_file):
                 os.remove(out_file)
 
             with open(out_file, "w") as f:
-                f.write("measureTime,paramName,index,group,value")
+                writer = csv.DictWriter(f, fieldnames=["measureTime", "paramName", "index", "value"])
+                writer.writeheader()
                 for d in data:
-                    f.write(d + "\n")
+                    if "group" in d:
+                        del d["group"]
+                    writer.writerow(d)
             if device_id in device_by_id:
                 transformed_files.append(transform_device_csv(out_file, device_by_id[device_id]))
 
@@ -1345,26 +1400,27 @@ def data_request(cloud_url, admin_key, type, location_id=None, organization_id=N
 
         for device_id in extracted_alerts_paths_by_device:
             paths = extracted_alerts_paths_by_device[device_id]
-            data = ""
+            data = []
             out_file = os.path.join(data_path, slugify("{}_alerts".format(device_id)) + ".csv")
             for p in paths:
+                print("Processing alert file: {}".format(p))
                 with open(p, "r") as f:
-                    for line in f:
-                        if line.startswith("time"):
-                            continue
-                        data += line
+                    reader = csv.DictReader(f)
+                    for line in reader:
+                        data.append(line)
 
                 os.remove(p)
 
-            data = sorted(data.split("\n"))
+            data = sorted(data, key=lambda x: x['time'])
 
             if os.path.exists(out_file):
                 os.remove(out_file)
 
             with open(out_file, "w") as f:
-                f.write("time,type,params,content")
+                writer = csv.DictWriter(f, fieldnames=["time", "type", "params", "content"])
+                writer.writeheader()
                 for d in data:
-                    f.write(d + "\n")
+                    writer.writerow(d)
 
             if device_id in device_by_id:
                 transformed_files.append(transform_device_csv(out_file, device_by_id[device_id], DATA_REQUEST_TYPE_DEVICE_ALERTS))
@@ -1510,50 +1566,29 @@ def transform_narrative_csv(original_csv_file, recommended_csv_filename, locatio
 
     print("Transforming: {}...".format(transform_path))
 
-    TIMESTAMP_COLUMN = 1
-    line_buffer = ""
+    data = []
 
     with open(original_csv_file, 'r') as in_file:
+        print("Reading: {}...".format(original_csv_file))
+        reader = csv.DictReader(in_file)
+        for line in reader:
+            print("Line: {}".format(line))
+            data.append(line)
+
         with open(transform_path, 'w') as out_file:
-            for index, line in enumerate(in_file.readlines()):
-                if index == 0:
-                    out_file.write("locationId,timestamp_iso,timestamp_excel," + line.strip())
-
-                else:
-                    line_list = line.split(",")
-
-                    # ISO is UTC time while the Excel timestamp is in the user's local timezone
-                    try:
-                        timestamp_ms = int(line_list[TIMESTAMP_COLUMN])
-
-                        # These narratives may contain arbitrary carriage-returns which may stretch a single narrative entry across multiple lines.
-                        # If we can't extract a timestamp (as indicated by an integer in the second element of a comma-split list of words),
-                        # then it's not a new narrative entry and we buffer it up and gather then next line
-                        # If we found a solid new narrative entry, we make sure the last buffered line is written.
-                        # And we always make sure the last line had a carriage-return.
-
-                        # If we make it to this line and didn't get an exception, then we probably have a new narrative entry.
-                        # So we either output the last buffered line, or if we don't have one then we at least make sure we have a carriage-return.
-                        if line_buffer != "":
-                            out_file.write(line_buffer.replace(",", " ") + "\n")
-                            line_buffer = ""
-                        else:
-                            out_file.write("\n")
-
-                    except:
-                        line_buffer += line.strip()
-                        continue
-
-                    timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
-                    timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
-                    out_file.write("{},{},{},{}".format(location_id, timestamp_iso, timestamp_excel, line.strip()))
-
-            if line_buffer != "":
-                out_file.write(line_buffer.replace(",", " ") + "\n")
-            else:
-                out_file.write("\n")
-
-            out_file.flush()
+            print("Writing: {}...".format(transform_path))
+            writer = csv.DictWriter(out_file, fieldnames=["locationId", "timestamp_iso", "timestamp_excel"] + reader.fieldnames)
+            for line in data:
+                print("Line: {}".format(line))
+                timestamp_ms = int(line['timestamp'])
+                timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
+                timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
+                writer.writerow({
+                    "locationId": location_id,
+                    "timestamp_iso": timestamp_iso,
+                    "timestamp_excel": timestamp_excel,
+                    **line
+                })
 
     return transform_path
 
@@ -1577,293 +1612,139 @@ def transform_device_csv(original_csv_file, device_object, type=DATA_REQUEST_TYP
     device_description = re.sub('[^0-9a-zA-Z]+', '-', device_object.get('desc', "NoDescription").strip())
     behavior = device_object.get('goalId', -1)
     spaces = [f"{space['type']}" for space in device_object.get('spaces',[])]
+    timezone_string = "America/Los_Angeles"
+    if 'timezone' in device_object:
+        timezone_string = device_object['timezone']['id']
 
     new_filename = "{}_{}_{}_{}_{}.csv".format(device_type, device_model, device_id, device_description, type)
     new_file_path = os.path.join(os.path.dirname(original_csv_file), new_filename)
     print("Transforming {} into {}...".format(original_csv_file, new_file_path))
     if type == DATA_REQUEST_TYPE_DEVICE_PARAMETERS:
 
-        # STEP 1. Extract a list of all parameters and their initial (timestamp, value)
         print("Transforming parameters")
         # This is the type of data we're dealing with for devices
         # measureTime, paramName, index, group, value
         # 1589920192201, buttonStatus,,, 0
         # 1589920192201, alarmStatus, 2,, 0
 
-        TIMESTAMP_COLUMN = 0
-        PARAMETER_NAME_COLUMN = 1
-        PARAMETER_INDEX_COLUMN = 2
-        PARAMETER_GROUP_COLUMN = 3
-        PARAMETER_VALUE_COLUMN = 4
+        # This is the output data structure
+        # trigger, location_id, device_type, device_id, description, timestamp_ms, timestamp_iso, timestamp_excel, behavior, spaces, updated_params, buttonStatus, alarmStatus.2
+        # 8, 123, 1001, abcdef, My Device, 1589920192201, 2020-05-19T21:29:52Z, 05/19/2020 14:29:52, 1, [], [buttonStatus, alarmStatus.2], 0, 0
 
-        parameters = {}
+        data = {} # {"timestamp_ms": { "param_name": value, "param_name2": value2 } }
+        parameter_names = set()
+        current_params = {}
         with open(original_csv_file, 'r') as f:
-            for index, line in enumerate(f.readlines()):
-                if index > 0:
-                    value = ""
-                    in_bracket = 0
-                    in_quote = 0
-                    line_list = []
-                    for c in line:
-                        if c == '[':
-                            in_bracket += 1
-                        elif c == ']':
-                            in_bracket -= 1
-
-                        if c == '\"' and in_quote > 0:
-                            in_quote -= 1
-                        elif c == '\"':
-                            in_quote += 1
-
-                        if in_bracket == 0 and in_quote == 0:
-                            if c == ',':
-                                line_list.append(value)
-                                value = ""
-                                continue
-
-                        value += c
-
-                    line_list.append(value)
-
-                    param_name = line_list[PARAMETER_NAME_COLUMN].strip()
-                    param_index = line_list[PARAMETER_INDEX_COLUMN].strip()
-
-                    if len(param_index) > 0:
-                        param_name = param_name + "." + param_index
-
-                    if param_name not in parameters:
-                        parameters[param_name] = line_list[PARAMETER_VALUE_COLUMN].strip()
+            print("Reading parameters for header extraction...")
+            reader = csv.DictReader(f)
+            for line in reader:
+                param_name = line['paramName'].strip()
+                param_index = line['index'].strip()
+                if len(param_index) > 0:
+                    param_name = param_name + "." + param_index
+                if line["measureTime"] not in data:
+                    data[line["measureTime"]] = {}
+                parameter_names.add(param_name)
+                current_params[param_name] = line['value'].replace('"','').replace(",",COMMA_DELIMITER_REPLACEMENT_CHARACTER)
+                data[line["measureTime"]] = current_params.copy()
 
         with open(new_file_path, 'w') as out:
-            # STEP 2. Output CSV header
-            out.write("trigger,location_id,device_type,device_id,description,timestamp_ms,timestamp_iso,timestamp_excel,behavior,spaces,updated_params")
-
-            for p in sorted(list(parameters.keys())):
-                out.write("," + p)
-            out.write("\n")
-
-            # STEP 3. Read from the original file and export all columns
-            with open(original_csv_file, 'r') as f:
-                line_buffer = ""
-                last_timestamp_ms = 0
+            print("Writing transformed parameters...")
+            writer = csv.DictWriter(out, fieldnames=["trigger", "location_id", "device_type", "device_id", "description",
+                                                    "timestamp_ms", "timestamp_iso", "timestamp_excel", "behavior", "spaces",
+                                                    "updated_params"] + sorted(list(parameter_names)))
+            writer.writeheader()
+            last_data = {}
+            for timestamp_ms in sorted(data.keys(), key=lambda x: int(x)):
+                try:
+                    param_names = list(data[timestamp_ms].keys())
+                except Exception as e:
+                    print("Exception extracting param names for timestamp_ms={} {}".format(timestamp_ms, data[timestamp_ms]))
+                    raise e
+                trigger = 8
+                if param_name == "[online]":
+                    trigger = 4
+                timestamp_iso = datetime.datetime.utcfromtimestamp(int(timestamp_ms) / 1000.0).isoformat() + "Z"
+                timestamp_excel = datetime.datetime.fromtimestamp(int(timestamp_ms) / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
+                # Determine which parameters have actually changed since last time
                 updated_params = []
-
-                for index, line in enumerate(f.readlines()):
-                    if index > 0:
-                        value = ""
-                        in_bracket = 0
-                        in_quote = 0
-                        line_list = []
-                        for c in line:
-                            if c == '[':
-                                in_bracket += 1
-                            elif c == ']':
-                                in_bracket -= 1
-
-                            if c == '\"' and in_quote > 0:
-                                in_quote -= 1
-                            elif c == '\"':
-                                in_quote += 1
-
-                            if in_bracket == 0 and in_quote == 0:
-                                if c == ',':
-                                    line_list.append(value)
-                                    value = ""
-                                    continue
-
-                            value += c
-
-                        line_list.append(value)
-
-                        param_name = line_list[PARAMETER_NAME_COLUMN].strip()
-                        param_index = line_list[PARAMETER_INDEX_COLUMN].strip()
-                        timestamp_ms = int(line_list[TIMESTAMP_COLUMN].strip())
-
-                        if last_timestamp_ms != timestamp_ms:
-                            if last_timestamp_ms > 0:
-                                line_buffer += "\n"
-
-                            out.write(line_buffer)
-                            last_timestamp_ms = timestamp_ms
-                            updated_params = []
-
-                        if len(param_index) > 0:
-                            param_name = param_name + "." + param_index
-
-                        parameters[param_name] = line_list[PARAMETER_VALUE_COLUMN].strip()
-
-                        trigger = 8
-                        if param_name == "[online]":
-                            trigger = 4
-                        else:
-                            updated_params.append(param_name)
-
-                        # ISO is UTC time while the Excel timestamp is in the user's local timezone
-                        timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
-                        timezone_string = "America/Los_Angeles"
-                        if 'timezone' in device_object:
-                            timezone_string = device_object['timezone']['id']
-                        timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
-
-                        line_buffer = "{},{},{},{},{},{},{},{},{},{},{}".format(trigger, location_id, device_type, device_id,
-                                                                        device_description, timestamp_ms, timestamp_iso,
-                                                                        timestamp_excel, behavior,"&&".join(spaces),"&&".join(updated_params))
-
-                        for p in sorted(list(parameters.keys())):
-                            # Remove quotes on values - not sure where the quotes came from but it would be more ideal to remove them earlier.
-                            if parameters[p].startswith("\"") and parameters[p].endswith("\""):
-                                parameters[p] = parameters[p][1:-1]
-                            line_buffer += ",{}".format(parameters[p].replace(",", COMMA_DELIMITER_REPLACEMENT_CHARACTER))
-
-                line_buffer += "\n"
-                out.write(line_buffer)
+                for p in param_names:
+                    if p not in last_data:
+                        updated_params.append(p)
+                    elif str(data[timestamp_ms][p]) != str(last_data[p]):
+                        updated_params.append(p)
+                last_data.update(data[timestamp_ms])
+                writer.writerow({
+                    "trigger": trigger,
+                    "location_id": location_id,
+                    "device_type": device_type,
+                    "device_id": device_id,
+                    "description": device_description,
+                    "timestamp_ms": timestamp_ms,
+                    "timestamp_iso": timestamp_iso,
+                    "timestamp_excel": timestamp_excel,
+                    "behavior": behavior,
+                    "spaces": COMMA_DELIMITER_REPLACEMENT_CHARACTER.join(spaces),
+                    "updated_params": COMMA_DELIMITER_REPLACEMENT_CHARACTER.join(updated_params)} | data[timestamp_ms])
 
     elif type == DATA_REQUEST_TYPE_DEVICE_ALERTS:
 
-        # STEP 1. Extract a list of all alerts and their initial (timestamp, value)
         # This is the type of data we're dealing with for devices
         # time,type,params,content
         # 1670107276000,on,,
         # 1670107276000,mqtt_disconnection,"{""disconnect_timestamp"":""1670107262070"",""disconnect_duration_s"":""13""}",
 
-        TIMESTAMP_COLUMN = 0
-        ALERT_NAME_COLUMN = 1
-        ALERT_PARAM_GROUP_COLUMN = 2
-        ALERT_CONTENT_COLUMN = 3
+        # This is the output data structure
+        # trigger, location_id, device_type, device_id, description, timestamp_ms, timestamp_iso, timestamp_excel, behavior, spaces, alert_type, param1, param2, content
+        # 4, 123, 1001, abcdef, My Device, 1670107276000, 2022-12-03T21:21:16Z, 12/03/2022 13:21:16, 1, [], mqtt_disconnection, 1670107262070, 13
 
-        alert_name = ""
-        alert_params = {}
+        print("Transforming alerts")
+
+        data = []
+        parameter_names = set()
         if os.path.exists(original_csv_file):
             with open(original_csv_file, 'r') as f:
-                for index, line in enumerate(f.readlines()):
-                    if index > 0:
-                        value = ""
-                        in_bracket = 0
-                        in_quote = 0
-                        line_list = []
-                        for c in line:
-                            if c == '[':
-                                in_bracket += 1
-                            elif c == ']':
-                                in_bracket -= 1
+                print("Reading alerts for header extraction...")
+                reader = csv.DictReader(f)
+                for line in reader:
+                    print("Line: {}".format(line))
+                    params = line['params'].strip()
+                    if len(params) > 0:
+                        try:
+                            params_json = json.loads(params.replace('"{','{').replace('}"','}').replace('""','"'))
+                        except Exception as e:
+                            print("Failed to parse params: {} e={}".format(params, e))
+                            continue
+                        data.append({
+                            "time": line['time'].strip(),
+                            "type": line['type'].strip(),
+                        } | {**params_json})
+                        parameter_names.update(params_json.keys())
 
-                            if c == '\"' and in_quote > 0:
-                                in_quote -= 1
-                            elif c == '\"':
-                                in_quote += 1
-
-                            if in_bracket == 0 and in_quote == 0:
-                                if c == ',':
-                                    line_list.append(value)
-                                    value = ""
-                                    continue
-
-                            value += c
-
-                        line_list.append(value)
-
-                        alert_name = line_list[ALERT_NAME_COLUMN].strip()
-                        params = line_list[ALERT_PARAM_GROUP_COLUMN].strip()
-                        if len(params) > 0:
-                            try:
-                                params_json = json.loads(params.replace('"{','{').replace('}"','}').replace('""','"'))
-                            except:
-                                continue
-                            for param_name in params_json.keys():
-                                if param_name not in alert_params:
-                                    alert_params[param_name] = params_json[param_name]
 
         with open(new_file_path, 'w') as out:
-            # STEP 2. Output CSV header
-            out.write("trigger,location_id,device_type,device_id,description,timestamp_ms,timestamp_iso,timestamp_excel,behavior,spaces")
-
-            out.write("," + "alert_type")
-
-            for p in sorted(list(alert_params.keys())):
-                out.write("," + p)
-            out.write("\n")
-
-            # STEP 3. Read from the original file and export all columns
-            if os.path.exists(original_csv_file):
-                with open(original_csv_file, 'r') as f:
-                    line_buffer = ""
-                    last_timestamp_ms = 0
-
-                    for index, line in enumerate(f.readlines()):
-                        if index > 0:
-                            value = ""
-                            in_bracket = 0
-                            in_quote = 0
-                            line_list = []
-                            for c in line:
-                                if c == '[':
-                                    in_bracket += 1
-                                elif c == ']':
-                                    in_bracket -= 1
-
-                                if c == '\"' and in_quote > 0:
-                                    in_quote -= 1
-                                elif c == '\"':
-                                    in_quote += 1
-
-                                if in_bracket == 0 and in_quote == 0:
-                                    if c == ',':
-                                        line_list.append(value)
-                                        value = ""
-                                        continue
-
-                                value += c
-
-                            line_list.append(value)
-
-
-                            timestamp_ms = int(line_list[TIMESTAMP_COLUMN].strip())
-
-                            if last_timestamp_ms != timestamp_ms:
-                                if last_timestamp_ms > 0:
-                                    line_buffer += "\n"
-
-                                out.write(line_buffer)
-                                last_timestamp_ms = timestamp_ms
-
-                            alert_name = line_list[ALERT_NAME_COLUMN].strip()
-                            params = line_list[ALERT_PARAM_GROUP_COLUMN].strip()
-                            cur_alert_params = {}
-                            if len(params) > 0:
-                                try:
-                                    params_json = json.loads(params.replace('"{','{').replace('}"','}').replace('""','"'))
-                                except:
-                                    continue
-                                for param_name in params_json.keys():
-                                    if param_name not in cur_alert_params:
-                                        cur_alert_params[param_name] = params_json[param_name]
-                            print(alert_params)
-                            print(cur_alert_params)
-                            # asfd
-                            trigger = 4
-
-                            # ISO is UTC time while the Excel timestamp is in the user's local timezone
-                            timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
-                            timezone_string = "America/Los_Angeles"
-                            if 'timezone' in device_object:
-                                timezone_string = device_object['timezone']['id']
-                            timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
-
-                            line_buffer = "{},{},{},{},{},{},{},{},{},{},{}".format(trigger, location_id, device_type, device_id,
-                                                                            device_description, timestamp_ms, timestamp_iso,
-                                                                            timestamp_excel, behavior, "&&".join(spaces), alert_name)
-
-                            for p in sorted(list(alert_params.keys())):
-                                if p not in cur_alert_params:
-                                    line_buffer += ","
-                                    continue        
-                                # Remove quotes on values - not sure where the quotes came from but it would be more ideal to remove them earlier.
-                                if cur_alert_params[p].startswith("\"") and cur_alert_params[p].endswith("\""):
-                                    cur_alert_params[p] = cur_alert_params[p][1:-1]
-                                line_buffer += ",{}".format(cur_alert_params[p].replace(",", COMMA_DELIMITER_REPLACEMENT_CHARACTER))
-
-                    line_buffer += "\n"
-                    out.write(line_buffer)
+            print("Writing transformed alerts...")
+            writer = csv.DictWriter(out, fieldnames=["trigger", "location_id", "device_type", "device_id", "description",
+                                                    "timestamp_ms", "timestamp_iso", "timestamp_excel", "behavior", "spaces",
+                                                    "alert_type"] + sorted(list(parameter_names)))
+            writer.writeheader()
+            for row in data:
+                timestamp_ms = row['time'].strip()
+                timestamp_iso = datetime.datetime.utcfromtimestamp(int(timestamp_ms) / 1000.0).isoformat() + "Z"
+                timestamp_excel = datetime.datetime.fromtimestamp(int(timestamp_ms) / 1000.0, pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
+                writer.writerow({
+                    "trigger": 4,
+                    "location_id": location_id,
+                    "device_type": device_type,
+                    "device_id": device_id,
+                    "description": device_description,
+                    "timestamp_ms": timestamp_ms,
+                    "timestamp_iso": timestamp_iso,
+                    "timestamp_excel": timestamp_excel,
+                    "behavior": behavior,
+                    "spaces": COMMA_DELIMITER_REPLACEMENT_CHARACTER.join(spaces),
+                    "alert_type": row['type'].strip()
+                } | {k: v for k, v in row.items() if k not in ['time', 'type']})
 
     return new_file_path
 
@@ -1888,10 +1769,9 @@ def transform_modes_csv(original_csv_file, location_object):
     # 2, 1306512, 1596735015000, 2022-12-06T05:34:02Z, 12/05/2022 21:34:02, AWAY.1313473.:.PRESENT.AI, 2
 
     location_id = location_object['id']
-
-    TIMESTAMP_COLUMN = 0
-    EVENT_COLUMN = 1
-    SOURCE_TYPE_COLUMN = 2
+    timezone_string = "America/Los_Angeles"
+    if 'timezone' in location_object:
+        timezone_string = location_object['timezone']['id']
 
     new_filename = "location_{}_modes_history.csv".format(location_object['id'])
     new_file_path = os.path.join(os.path.dirname(original_csv_file), new_filename)
@@ -1899,35 +1779,33 @@ def transform_modes_csv(original_csv_file, location_object):
 
     with open(new_file_path, 'w') as out:
         # STEP 1. Output CSV header
-        out.write("trigger,location_id,timestamp_ms,timestamp_iso,timestamp_excel,event,source_type\n")
+        writer = csv.DictWriter(out, fieldnames=["trigger", "location_id", "timestamp_ms", "timestamp_iso", "timestamp_excel", "event", "source_type"])
+        writer.writeheader()
 
         # STEP 2. Read from the original file and export all columns
         with open(original_csv_file, 'r') as f:
-            for index, line in enumerate(f.readlines()):
-                if index > 0:
-                    line_list = line.split(",")
-
-                    # ISO is UTC time while the Excel timestamp is in the user's local timezone
-                    timestamp_ms = int(line_list[TIMESTAMP_COLUMN])
-                    timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
-                    timezone_string = "America/Los_Angeles"
-                    if 'timezone' in location_object:
-                        timezone_string = location_object['timezone']['id']
-                    timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0,
-                                                                      pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
-                    event = line_list[EVENT_COLUMN].strip()
-                    source_type = line_list[SOURCE_TYPE_COLUMN].strip()
-                    if source_type == 2:
-                        # Ignore bot-driven modes to allow for playback of user-driven modes only
-                        continue
-
-                    out.write("{},{},{},{},{},{},{}\n".format(2,
-                                                              location_id,
-                                                              timestamp_ms,
-                                                              timestamp_iso,
-                                                              timestamp_excel,
-                                                              event,
-                                                              source_type))
+            print("Reading modes from {}...".format(original_csv_file))
+            reader = csv.DictReader(f)
+            for line in reader:
+                timestamp_ms = int(line['time'])
+                timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
+                timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0,
+                                                                  pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
+                event = line['mode'].strip()
+                source_type = line['sourceType'].strip()
+                if source_type == 2:
+                    # Ignore bot-driven modes to allow for playback of user-driven modes only
+                    continue
+                
+                writer.writerow({
+                    "trigger": 2,
+                    "location_id": location_id,
+                    "timestamp_ms": timestamp_ms,
+                    "timestamp_iso": timestamp_iso,
+                    "timestamp_excel": timestamp_excel,
+                    "event": event,
+                    "source_type": source_type
+                })
 
     return new_file_path
 
@@ -1947,43 +1825,37 @@ def transform_datastreams_csv(original_csv_file, location_object):
     # 256, 1306512, 1596740404000, 2022-12-06T05:34:02Z, 12/05/2022 21:34:02, do_something, '{""thing"":{""type"":""0""}&&""other_thing"":123}'
 
     location_id = location_object['id']
-
-    TIMESTAMP_COLUMN = 0
-    ADDRESS_COLUMN = 1
-    FEED_COLUMN = 2
+    timezone_string = "America/Los_Angeles"
+    if 'timezone' in location_object:
+        timezone_string = location_object['timezone']['id']
 
     new_filename = "location_{}_datastreams_history.csv".format(location_object['id'])
     new_file_path = os.path.join(os.path.dirname(original_csv_file), new_filename)
     print("Transforming {}...".format(new_file_path))
 
-    with open(new_file_path, 'w') as out:
-        # STEP 1. Output CSV header
-        out.write("trigger,location_id,timestamp_ms,timestamp_iso,timestamp_excel,address,feed\n")
+    with open(new_file_path, 'w') as out:        
+        writer = csv.DictWriter(out, fieldnames=["trigger", "location_id", "timestamp_ms", "timestamp_iso", "timestamp_excel", "address", "feed"])
+        writer.writeheader()
 
-        # STEP 2. Read from the original file and export all columns
         with open(original_csv_file, 'r') as f:
-            for index, line in enumerate(f.readlines()):
-                if index > 0:
-                    line_list = line.split(",")
-
-                    # ISO is UTC time while the Excel timestamp is in the user's local timezone
-                    timestamp_ms = int(line_list[TIMESTAMP_COLUMN])
-                    timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
-                    timezone_string = "America/Los_Angeles"
-                    if 'timezone' in location_object:
-                        timezone_string = location_object['timezone']['id']
-                    timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0,
-                                                                      pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
-                    feed_content = {}
-                    idx = line.find(line_list[FEED_COLUMN])
-                    feed_content = line[idx:].replace('"{','{').replace('}"','}').replace(',','&&')
-                    out.write("{},{},{},{},{},{},{}\n".format(256,
-                                                              location_id,
-                                                              timestamp_ms,
-                                                              timestamp_iso,
-                                                              timestamp_excel,
-                                                              line_list[ADDRESS_COLUMN].strip(),
-                                                              feed_content.strip()))
+            print("Reading datastreams from {}...".format(original_csv_file))
+            reader = csv.DictReader(f)
+            for line in reader:
+                
+                # ISO is UTC time while the Excel timestamp is in the user's local timezone
+                timestamp_ms = int(line['time'])
+                timestamp_iso = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000.0).isoformat() + "Z"
+                timestamp_excel = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0,
+                                                                    pytz.timezone(timezone_string)).strftime('%m/%d/%Y %H:%M:%S')
+                writer.writerow({
+                    "trigger": 256,
+                    "location_id": location_id,
+                    "timestamp_ms": timestamp_ms,
+                    "timestamp_iso": timestamp_iso,
+                    "timestamp_excel": timestamp_excel,
+                    "address": line['address'].strip(),
+                    "feed": line['feed'].strip().replace('"{','{').replace('}"','}').replace(',',COMMA_DELIMITER_REPLACEMENT_CHARACTER)
+                })
     return new_file_path
 
 def __zipdir(path, z):
@@ -1999,19 +1871,41 @@ def _generate_recordings(cloud_url, admin_key, location_id, transformed_files, d
     :return: List of recordings
     """
     print("Generating recordings for --playback...")
-    location_info = get_location(cloud_url, admin_key, location_id)
-    devices = get_devices(cloud_url, admin_key, location_id)
+    location_object = None
+    sub_type_location_objects = []
+    location_objects = get_locations(cloud_url, admin_key, location_id)
+    for _location_object in location_objects:
+        if int(_location_object['id']) == int(location_id):
+            location_object = _location_object
+        else:
+            sub_type_location_objects.append(_location_object)
+    devices = []
+    location_devices = get_devices(cloud_url, admin_key, location_id)
+    if location_devices:
+        devices += location_devices
+    for sub_location in sub_type_location_objects:
+        sub_location_devices = get_devices(cloud_url, admin_key, sub_location['id'])
+        if sub_location_devices:
+            devices += sub_location_devices
     device_properties = {}
     device_parameters = {}
     for device in devices:
         device_properties[device['id']] = get_device_properties(cloud_url, admin_key, location_id, device['id'])
         device_parameters[device['id']] = get_current_device_parameters(cloud_url, admin_key, location_id, device['id'])
 
+    system_properties = {}
+    for property_name in SYSTEM_PROPERTY_NAMES:
+        system_properties[property_name] = get_system_property(cloud_url, admin_key, property_name)
+    system_properties = {k: v for k, v in system_properties.items() if v is not None}
     all_data = []
     for f in transformed_files:
+
         all_data += _csv_file_to_python(f)
 
     # Massive amount of data to sort by timestamp - btw, hope your computer has a lot of memory.
+    all_data_with_no_timestamp_ms = [data for data in all_data if 'timestamp_ms' not in data]
+    print("Warning: {} data entries have no timestamp_ms and will be ignored.".format(len(all_data_with_no_timestamp_ms)))
+    print("> d={}".format(all_data_with_no_timestamp_ms))
     all_data = sorted(all_data, key=lambda d: d['timestamp_ms'])
 
     if start_time_ms is not None:
@@ -2046,8 +1940,10 @@ def _generate_recordings(cloud_url, admin_key, location_id, transformed_files, d
             out.write("\"data_requests\":" + json.dumps(param_data_request_files) + ",\n")
             data_request_files.clear()
 
-        out.write("\"location_info\":" + json.dumps(location_info) + ",\n")
+        out.write("\"location_info\":" + json.dumps(location_object) + ",\n")
+        out.write("\"sub_locations\":" + json.dumps(sub_type_location_objects) + ",\n")
         out.write("\"device_properties\":" + json.dumps(device_properties) + ",\n")
+        out.write("\"system_properties\":" + json.dumps(system_properties) + ",\n")
         out.write("\"device_parameters\":" + json.dumps(device_parameters) + ",\n")
         out.write("\"data\":[\n")
         for index, line in enumerate(all_data):
@@ -2086,8 +1982,10 @@ def _generate_recordings(cloud_url, admin_key, location_id, transformed_files, d
 
                     out.write("\"data_requests\":" + json.dumps(param_data_request_files) + ",\n")
                     data_request_files.clear()
-                out.write("\"location_info\":" + json.dumps(location_info) + ",\n")
+                out.write("\"location_info\":" + json.dumps(location_object) + ",\n")
+                out.write("\"sub_locations\":" + json.dumps(sub_type_location_objects) + ",\n")
                 out.write("\"device_properties\":" + json.dumps(device_properties[device['id']]) + ",\n")
+                out.write("\"system_properties\":" + json.dumps(system_properties) + ",\n")
                 out.write("\"device_parameters\":" + json.dumps(device_parameters[device['id']]) + ",\n")
                 out.write("\"data\":[\n")
                 for index, line in enumerate(lines_for_this_device):
@@ -2110,36 +2008,19 @@ def _csv_file_to_python(csv_file):
     :param csv_file: CSV file path
     :return: [ { bunch of transformed csv data here } ]
     """
+    print(f"Parsing CSV file {csv_file} into Python data structure...")
     headers = []
     all_data = []
     trim_dangling_comma = False
     with open(csv_file, 'r') as f:
-        for index, line in enumerate(f.readlines()):
-            line = line.strip()
-            if trim_dangling_comma:
-                line = line[:-1]
-
-            if index == 0:
-                # Headers
-                # Correct some dangling comma export issues
-                if line.strip().endswith(","):
-                    line = line[:-1]
-                    trim_dangling_comma = True
-                headers = line.split(",")
-
-            else:
-                # Data
-                data = {}
-                values = line.split(",")
-                for i, h in enumerate(headers):
-                    if len(values) <= i:
-                        continue
-                    if len(values[i]) == 0:
-                        continue
-                    data[h] = values[i] \
-                    .replace(COMMA_DELIMITER_REPLACEMENT_CHARACTER, ",") \
-                    .replace(QUOTE_DELIMITER_REPLACEMENT_CHARACTER, "\"")
-                all_data.append(data)
+        reader = csv.DictReader(f)
+        for line in reader:
+            data = {
+                k: v.replace(COMMA_DELIMITER_REPLACEMENT_CHARACTER, ",").replace(QUOTE_DELIMITER_REPLACEMENT_CHARACTER, "\"") 
+                for k, v in line.items() if v is not None and len(v) > 0
+            }
+            all_data.append(data)
+    print(f"Parsed {len(all_data)} data entries from CSV file {csv_file}.  First entry: {all_data[0] if len(all_data) > 0 else 'N/A'}")
     return all_data
 
 def _generate_ism(transformed_files, ism_path):

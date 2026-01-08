@@ -56,6 +56,22 @@ class MotionDevice(Device):
 
         # Default behavior
         self.goal_id = MotionDevice.GOAL_MOTION_PROTECT_HOME
+        
+        # Override for bedroom classification from room classification algorithm
+        # None = no override, True = force bedroom, False = force not bedroom
+        self.is_in_bedroom_override = None
+
+    def new_version(self, botengine):
+        """
+        New version
+        :param botengine: BotEngine environment
+        """
+        Device.new_version(self, botengine)
+
+        # Added: July 29, 2025
+        if not hasattr(self, 'is_in_bedroom_override'):
+            self.is_in_bedroom_override = None
+        pass
 
     def get_device_type_name(self):
         """
@@ -75,6 +91,10 @@ class MotionDevice(Device):
         :param botengine:
         :return: True if this device is in a bedroom
         """
+        # Check for override from room classification algorithm
+        if hasattr(self, 'is_in_bedroom_override') and self.is_in_bedroom_override is not None:
+            return self.is_in_bedroom_override
+        
         bedroom_names = [
             _("bed"),
             _("bett"),

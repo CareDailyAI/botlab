@@ -1,0 +1,12 @@
+{
+"location_info":{"addrStreet1": "123 Main", "addrCity": "Small Town", "zip": "12345", "id": 456, "name": "My Home", "timezone": {"id": "America/Los_Angeles", "offset": -480, "dst": true, "name": "Pacific Standard Time"}, "organizationId": 999},
+"device_properties":[],
+"device_parameters":[],
+"data":[
+{"trigger": "8", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218231000", "timestamp_iso": "2025-07-22T21:03:51Z", "timestamp_excel": "07/22/2025 14:03:51", "behavior": "-1", "updated_params": "firmware", "[online]": "1", "firmware": "0", "occupancy": "1", "occupancyTarget.other": "2:53,57,204"},
+{"trigger": "4", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218231000", "timestamp_iso": "2025-07-22T21:03:51Z", "timestamp_excel": "07/22/2025 14:03:51", "behavior": "-1", "alert_type": "powerfailure"},
+{"trigger": "4", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218232000", "timestamp_iso": "2025-07-22T21:03:52Z", "timestamp_excel": "07/22/2025 14:03:52", "behavior": "-1", "[online]": "1", "firmware": "0", "occupancy": "1", "occupancyTarget.other": "2:53,57,204"},
+{"trigger": "8", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218233000", "timestamp_iso": "2025-07-22T21:03:53Z", "timestamp_excel": "07/22/2025 14:03:53", "behavior": "-1", "updated_params": "occupancy,occupancyTarget.other", "[online]": "1", "firmware": "0", "occupancy": "1", "occupancyTarget.other": "2:53,57,204"},
+{"trigger": "8", "location_id": "456", "device_type": "123", "device_id": "abc123", "description": "Device", "timestamp_ms": "1753218234000", "timestamp_iso": "2025-07-22T21:03:54Z", "timestamp_excel": "07/22/2025 14:03:54", "behavior": "-1", "updated_params": "occupancy,occupancyTarget.other", "[online]": "1", "firmware": "0", "occupancy": "0"}
+
+]}

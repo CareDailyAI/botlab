@@ -1,0 +1,10 @@
+{
+  "version": {
+    "triggerParameters": [
+      "alarmStatus",
+      "batteryDefect",
+      "ppc.charging",
+      "tamper"
+    ]
+  }
+}

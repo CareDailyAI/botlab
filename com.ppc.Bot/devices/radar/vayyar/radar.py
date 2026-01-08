@@ -80,10 +80,16 @@ class RadarVayyarDevice(RadarDevice):
     Y_MAX_METERS_WALL = 4.0
     Z_MIN_METERS_WALL = 0
     Z_MAX_METERS_WALL = 2.0
+    SENSOR_HEIGHT_MIN_METERS_WALL = 1.5
+    SENSOR_HEIGHT_MAX_METERS_WALL = 1.5
+    SENSOR_HEIGHT_MIN_METERS_WALL_45 = 2.1
+    SENSOR_HEIGHT_MAX_METERS_WALL_45 = 2.4
     X_MIN_METERS_CEILING = -2.5
     X_MAX_METERS_CEILING = 2.5
     Y_MIN_METERS_CEILING = -3
     Y_MAX_METERS_CEILING = 3
+    Z_MIN_METERS_CEILING = 0
+    Z_MAX_METERS_CEILING = 3.0
     SENSOR_HEIGHT_MIN_METERS_CEILING = 2.3
     SENSOR_HEIGHT_MAX_METERS_CEILING = 3.0
 
@@ -101,6 +107,12 @@ class RadarVayyarDevice(RadarDevice):
 
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [2000]
+
+    # Subregion transition timing - Vayyar devices need a time buffer between information and knowledge signals
+    SUBREGION_TRANSITION_DELAY_MS = utilities.ONE_MINUTE_MS
+
+    # Occupancy transition timing - Vayyar devices need a time buffer for general occupancy detection
+    OCCUPANCY_TRANSITION_DELAY_MS = utilities.ONE_MINUTE_MS
 
     # Maximum stability event counter value
     MAXIMUM_STABILITY_EVENT_COUNT = 20
@@ -1207,7 +1219,18 @@ class RadarVayyarDevice(RadarDevice):
             if y_max_meters - y_min_meters < 1.0:
                 y_max_meters = y_min_meters + 1.0
 
-            # Fixed sensor height on walls
+            # Sensor height constraints
+            if mounting_type == RadarVayyarDevice.SENSOR_MOUNTING_WALL_45_DEGREE:
+                if sensor_height_m < RadarVayyarDevice.SENSOR_HEIGHT_MIN_METERS_WALL_45_DEGREE:
+                    sensor_height_m = RadarVayyarDevice.SENSOR_HEIGHT_MIN_METERS_WALL_45_DEGREE
+                if sensor_height_m > RadarVayyarDevice.SENSOR_HEIGHT_MAX_METERS_WALL_45_DEGREE:
+                    sensor_height_m = RadarVayyarDevice.SENSOR_HEIGHT_MAX_METERS_WALL_45_DEGREE
+            else:
+                if sensor_height_m < RadarVayyarDevice.SENSOR_HEIGHT_MIN_METERS_WALL:
+                    sensor_height_m = RadarVayyarDevice.SENSOR_HEIGHT_MIN_METERS_WALL
+                if sensor_height_m > RadarVayyarDevice.SENSOR_HEIGHT_MAX_METERS_WALL:
+                    sensor_height_m = RadarVayyarDevice.SENSOR_HEIGHT_MAX_METERS_WALL
+                
             all_params.append(
                 {"name": RadarVayyarDevice.MEASUREMENT_NAME_SENSOR_HEIGHT, "value": sensor_height_m}
             )
@@ -1464,39 +1487,31 @@ class RadarVayyarDevice(RadarDevice):
 
         return room
 
-    def get_room_boundaries_properties(self, botengine):
+    def get_room_boundaries_properties(self, botengine, return_defaults=True):
         """
         Return the boundaries of this room FROM THE DEVICE PROPERTY in the form of a dictionary, and include an "updated_ms" value declaring the newest update timestamp in milliseconds.
         Note that some values will be internal default values if they haven't be reported by the device yet.
         :param botengine:
+        :param return_defaults: If True, return default values for any missing properties.  If False, return only the properties that are defined in the device property.
         :return: Dictionary with room boundaries
         """
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
             ">get_room_boundaries_properties()"
         )
-        content = RadarDevice.get_room_boundaries_properties(self, botengine)
+        # Retrieve room boundaries from properties, without retrieving default boundaries from underlying class
+        content = RadarDevice.get_room_boundaries_properties(self, botengine, return_defaults=False)
 
-        # Backwards compability between "radar_room" and "vayyar_room" non-volatile memory
-        if content == {
-            "x_min_meters": RadarDevice.X_MIN_METERS_WALL,
-            "x_max_meters": RadarDevice.X_MAX_METERS_WALL,
-            "y_min_meters": RadarDevice.Y_MIN_METERS_WALL,
-            "y_max_meters": RadarDevice.Y_MAX_METERS_WALL,
-            "z_min_meters": RadarDevice.Z_MIN_METERS_WALL,
-            "z_max_meters": RadarDevice.Z_MAX_METERS_WALL,
-            "mounting_type": RadarDevice.SENSOR_MOUNTING_WALL,
-            "sensor_height_m": 1.5,
-            "updated_ms": 0,
-            "near_exit": self.near_exit,
-        }:
-            # Check if the room boundaries are defined in the non-volatile memory
-            nv_room = botengine.get_state("vayyar_room")
-            if nv_room is not None and self.device_id in nv_room:
-                botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
-                    "|get_room_boundaries_properties() Room has not been set, using non-volatile location state"
+        if not return_defaults:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "|get_room_boundaries_properties() returning properties only"
+            )
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "<get_room_boundaries_properties() room_boundaries={}".format(
+                    content
                 )
-                content = nv_room[self.device_id]
-
+            )
+            return content
+        
         x_min = content.get("x_min_meters", RadarDevice.X_MIN_METERS_WALL)
         x_max = content.get("x_max_meters", RadarDevice.X_MAX_METERS_WALL)
         y_min = content.get("y_min_meters", RadarDevice.Y_MIN_METERS_WALL)
@@ -1692,8 +1707,6 @@ class RadarVayyarDevice(RadarDevice):
         :param botengine: BotEngine environment
         :return: Subregion list, or None if it doesn't exist.
         """
-        import json
-
         if RadarVayyarDevice.MEASUREMENT_NAME_TRACKER_SUBREGIONS in self.measurements:
             if (
                 len(
@@ -1703,18 +1716,21 @@ class RadarVayyarDevice(RadarDevice):
                 )
                 > 0
             ):
+                subregions_string = self.measurements[
+                    RadarVayyarDevice.MEASUREMENT_NAME_TRACKER_SUBREGIONS
+                ][0][0]
+                if subregions_string is None or subregions_string == "[]":
+                    return []
+                if isinstance(subregions_string, list):
+                    return subregions_string
                 try:
-                    return json.loads(
-                        self.measurements[
-                            RadarVayyarDevice.MEASUREMENT_NAME_TRACKER_SUBREGIONS
-                        ][0][0]
-                    )
-                except Exception:
+                    import json
+                    return json.loads(subregions_string)
+                except Exception as e:
+                    import traceback
                     botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                        "|get_raw_subregions() Couldn't load tracker subregion from JSON: {}".format(
-                            self.measurements[
-                                RadarVayyarDevice.MEASUREMENT_NAME_TRACKER_SUBREGIONS
-                            ]
+                        "|get_raw_subregions() Couldn't load tracker subregion from JSON: {} e: {} trace: {}".format(
+                            subregions_string, e, traceback.format_exc()
                         )
                     )
                     pass
@@ -1753,3 +1769,38 @@ class RadarVayyarDevice(RadarDevice):
             "<get_subregion_index() device_id={} index={}".format(self.device_id, None)
         )
         return None
+
+    def has_bed_subregion(self, botengine):
+        """
+        Check if this device has any bed subregions configured.
+        Vayyar devices identify bed subregions by checking the 'name' field of subregions
+        for bed-related names (case-insensitive).
+        :param botengine: BotEngine environment
+        :return: True if the device has at least one bed subregion, False otherwise
+        """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            ">has_bed_subregion()"
+        )
+        
+        subregions = self.get_raw_subregions(botengine)
+        if subregions is None or len(subregions) == 0:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "<has_bed_subregion() no subregions found, returning False"
+            )
+            return False
+        
+        for subregion in subregions:
+            # Check if this subregion has a bed-related name
+            subregion_name = subregion.get("name", "").lower()
+            if "bed" in subregion_name:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "<has_bed_subregion() found bed subregion with name '{}', returning True".format(
+                        subregion.get("name", "")
+                    )
+                )
+                return True
+        
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+            "<has_bed_subregion() no bed subregions found, returning False"
+        )
+        return False

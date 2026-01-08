@@ -52,11 +52,10 @@ class LocationAmplitudeMicroservice(Intelligence):
 
         event_name = content.get("event_name")
         event_properties = content.get("properties")
-        if event_name is None or event_properties is None:
-
+        if event_name is None:
             botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
-                "<analytics_track() Missing event_name or properties. content={} traceback={}".format(
-                    content, traceback.format_exc()
+                "<analytics_track() Missing event_name. content={}".format(
+                    content
                 )
             )
             return
@@ -249,7 +248,7 @@ class LocationAmplitudeMicroservice(Intelligence):
             return
 
         token = None
-        amplitude_tokens = properties.get_property(botengine, "AMPLITUDE_TOKENS")
+        amplitude_tokens = properties.get_property(botengine, "AMPLITUDE_TOKENS", False)
         if amplitude_tokens is not None:
             for cloud_address in amplitude_tokens:
                 if cloud_address in bundle.CLOUD_ADDRESS:

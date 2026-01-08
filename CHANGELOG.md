@@ -5,188 +5,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [9.6.0] - 2024-12-30
+## [9.6.11] - 2024-12-30
 
 ### Fixed
 
-- Reduced warning from missing domain properties
-- Organization User Notification email templates
-- Vayyar radar fall test
-- Reduce warnings for missing domain settings when gathering organization user notification categories
-- Missing localized keys
-- Device class extraction should be accessible by other services
-- Rules engine device class extraction should be generalized
-- Radar multi-occupancy detection
-- Radar backwards compatibility
-- Location narrative return json exception
-- Disable datastream requests during playback
-- Handle merging index, runtime and structure files from individual microservices when extending
-- PF-1152 Daily Reports
+- Organization user notification email templates and categories
+- Daily report bedtime analysis and email delivery
+- Playback data handling and narrative publishing
+- Device class extraction and rules engine generalization
+- Gateway network handling and question slider structures
+- Exception handling across device measurements and triggers
+- Logging configurations and cloudwatch export functionality
 
 ### Added
 
-- AGE-2 Responder organization user notification category
-- Radar occupancy getters
-- Allow choosing email passcode delivery type
+- AGE-2 Responder notification category
+- Email passcode delivery options
+- Freezetime logic for demo environments
+- RSSI parameter triggers for entry and motion devices
+- Domain properties for report customization
 
-## [9.5.3] - 2024-11-18
+## [9.6.4] - 2024-07-25
 
 ### Fixed
 
-- PF-1206 Gateway broadband connection should handle loopback measurements
-- botengine playback space type handling
-- Squidlink Gateway handling of loopback network type
-- Question Slider json structure
-- Daily Report bedtime analysis
+- Botengine playback execution and authentication handling
+- Dashboard alarm cleanup and status expiration controls
+- Daily report services and timezone handling
+- SMS delivery timing and analytics tracking
+- Device microservice conversation handling
+- Lambda logging and exception management
+- Apple Health device logic refactoring
 
 ### Added
-- Methods from parent class motion.py to motion_devloco.py
-- PF-1208 Domain property to disable weekly/monthly daily reports
-- Freezetime logic to demo microservice
-- entry and motion devices rssi parameter trigger
 
-## [9.5.2] - 2024-09-30
-
-### Fixed
-- BOT-1425 Exception handling and added debug info
-- Botengine playback api keys may expire
-- Botengine playback timestates should be published only after 2020-01-01
-
-### Added
-- Ability to save location priorities after bot playback
-- Botengine playback can now publish/update/remove narratives upon completion (within 300 days)
-
-## [9.5.1] - 2024-09-18
-
-### Fixed
-- Refactor location state publication after bot playback
-- Admin url formatting
-- Playback should support measurements that might have the same value described with each new measurement
-- BOT-1416 Add datastream address to invoke service, fix category name
-- Exception during bot playback
-
-## [9.5.0] - 2024-07-25
-
-### Added
-- PF-1056 EngageKitCloud
-- PF-1185 RAG Document Procesing
-- Clear dashboard datastream address and tests
-- BOT-1387 AI signal helper function to form text completion prompts
-- BOT-1387 AI Api and llama model invocation
-
-### Fixed
-- BOT-1415 Condense vayyar subregions when submitting to device
-- Botengine login method should work for bot development user and reference key expiration
-- Tools datastream api url
-- Logging
-- Always sync modules when initializing the location
-- BOT-1393 Daily Reports 
-- BOT-1378 Update SMS items for delivery with entries after midnight
-- Timezone getter
-- User id comparison exception, test user information, and default timezone exception
-
-## [9.4.2] - 2024-07-08
-
-### Fixed
-- Dashboard alarm cleanup should remove currently executed timestamps
-- Loggers should describe warning and errors when logging by service name
-- Botengine log export sorting
-- Refactoring Apple Health device logic
-- BOT-1410 Default cloud logging level
-- Cloudwatch log exporter should handle broken log entries
+- EngageKitCloud integration (PF-1056)
+- RAG document processing (PF-1185)
+- AI signal helpers and LLM model invocation
+- Execution statistics and multistream logging
+- Organization bot management CLI commands
+- Smart Breaker device class support
+- OpenAI chat response handling
+- Maestro data transformation utilities
+- Daily report email and SMS delivery services
 
 ### Changed
+
 - Python runtime to 3.11
-
-## [9.4.1] - 2024-06-07
-
-### Fixed
-- BOT-1397 Do not ask for ratings if iOS url is not none
-- Do not trigger new version logic on first local run
-
-## [9.4.0] - 2024-05-23
-
-## [9.3.7] - 2024-05-23
-
-### Fixed
-- BOT-1379: Dashboard statuses expiration control
-- Device microservice conversation type getter
-- Tests and conversation signal handling
-- Refactoring with additional action plan tests
-- Bot exucution should stop if a valid start key is not provided
-- Failed Botengine start process should not exit the function
-- Bot bundle merge function should always include schedules
-
-### Added
-- BOT-1387: ai datastream address
-- Researcher organization user notification category
-- Error logging
-- daylight tests
-
-## [9.3.6] - 2024-04-30
-
-### Fixed
-- Daily Summary Report email should not be sent went the automated daily report service is disabled
-- Include location name in Daily Summary Report email
-
-### Added
-- optional event_description to analytics signal to include in narrative
-- Vayyar device doorEvent parameter trigger
-
-## [9.3.5] - 2024-04-24
-
-### Fixed
-- Botengine Pytest module should provide complete location information during tests
-- Sunrise and sunset times when no latitude or longitude
-- Daily Report Summary should always email when automated services are enabled
-- Playback input missing datastream feed error messaging
-- botengine get_name_by_user_id may return None
-- Maestro data transformation and csv enclosed quotes
-- Add context to amplitude warning log
-
-### Added
-- Multistream logging
-
-## [9.3.4] - 2024-04-02
-
-### Fixed
-- Botengine logging export
-- Assign user id to device when loading controller
-- Playback handling of location timeseries states
-
-### Added
-- device.last_user_id attribute
-
-## [9.3.3] - 2024-03-26
-
-### Fixed
-- Botengine should gracefully handle no access
-- Botengine playback should execute on all data_request triggers
-- bedstatus param name reference
-- logging exception
-- Submit commands and integers
-
-### Added
-- Vayyar configurations
-
-### Changed
-- Vayyar subregions should be published to the device
-- Update vayyar readme
-
-## [9.3.2] - 2024-03-12
-
-## [9.3.1] - 2024-03-08
-
-### Fixed
-- Organization tests
-- Moved dailyreport, dashboard, daylight, machinelearning, and tasks to public signals and various other minor updates
-- Lambda exception logging
-
-### Added
-- Sorting microservice intelligence modules by defining "execution_priority" in index.py
-- Organization Bot submission management cli commands
-- Bot Instance Log Export cli commands
-- Device class firmware version helper functions
+- Location microservice intelligence module execution priority sorting
 
 ## [9.3.0] - 2024-02-27
 
@@ -310,7 +176,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Push notification title, subtitle and category parameters
 - tag_release cli command
 
-[Unreleased]: https://github.com/caredailyai/botlab/compare/v9.3.0...HEAD
+[Unreleased]: https://github.com/caredailyai/botlab/compare/v9.6.11...HEAD
+[9.6.11]: https://github.com/caredailyai/botlab/compare/v9.6.4...v9.6.11
+[9.6.4]: https://github.com/caredailyai/botlab/compare/v9.3.0...v9.6.4
 [9.3.0]: https://github.com/caredailyai/botlab/compare/v8.2.2...v9.3.0
 [9.2.2]: https://github.com/caredailyai/botlab/compare/v8.2.0...v9.2.2
 [9.0.6]: https://github.com/caredailyai/botlab/compare/v8.2.0...v9.0.6

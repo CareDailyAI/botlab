@@ -33,7 +33,11 @@ def lambda_handler(data, context):
     """
     if data is None:
         # No data to process
-        return {}
+        logger = LambdaLogger(log_level=LOG_LEVEL_DEFAULT)
+        logger.exception(
+            "Missing data inputs for execution: {}".format(json.dumps(context))
+        )
+        return logger.get_lambda_return()
 
     # TODO: Allow multiple loggers to differentiate logs from different microservices
     logger = LambdaLogger(
@@ -41,6 +45,8 @@ def lambda_handler(data, context):
         if data.get("logEvents", False)
         else LOG_LEVEL_DEFAULT
     )
+    logger.info(">lambda_handler() api_hosts={}".format(data.get("apiHosts") or data.get("apiHost")))
+    logger.debug(f"|lambda_handler() data={json.dumps(data)}")
 
     # Get allowable output size
     allowed_output_size = OUTPUT_SIZE - len(json.dumps(data).encode("utf-8"))
@@ -54,6 +60,7 @@ def lambda_handler(data, context):
         logger.exception(
             "Failed to execute bot: {}".format(traceback.format_exception(t, v, tb))
         )
+        logger.info("<lambda_handler()")
         return logger.get_lambda_return(allowed_output_size=allowed_output_size)
 
     # Check for asynchronous data request triggers which handle errors differently than synchronous executions of the bot.
@@ -79,7 +86,7 @@ def lambda_handler(data, context):
             json.dumps(logger.get_lambda_return(botengine, bot, allowed_output_size)),
             data.get("clientContext"),
         )
-
+    logger.info("<lambda_handler()")
     return logger.get_lambda_return(botengine, bot, allowed_output_size)
 
 
@@ -101,7 +108,6 @@ def send_sqs_message(queue_name, msg_body, client_context):
         },
     )
 
-
 class LambdaLogger:
     def __init__(self, log_level=LOG_LEVEL_DEFAULT):
         # Tracebacks for crashes
@@ -109,7 +115,7 @@ class LambdaLogger:
         self.tracebacks = []
 
         # Optional error message to return to the server
-        self.error_message = None
+        self.error_messages = []
 
         # Logs
         # DEPRECATED: Use log_events instead
@@ -129,6 +135,9 @@ class LambdaLogger:
 
         # Invoking service logging this message
         self.service = "lambda"
+
+        # Current log time based on bot input
+        self.log_time = int(time.time() * 1000)
 
     def log(self, level, message):
         if level == "debug":
@@ -150,7 +159,7 @@ class LambdaLogger:
             self.log_events.append(
                 {
                     "timestamp": int(time.time() * 1000),
-                    "message": "[{}] {} {}".format("DEBUG", self.service, message),
+                    "message": "{} [{}] {} {}".format(self.log_time, "DEBUG", self.service, message),
                 }
             )
 
@@ -161,7 +170,7 @@ class LambdaLogger:
             self.log_events.append(
                 {
                     "timestamp": int(time.time() * 1000),
-                    "message": "[{}] {} {}".format("INFO", self.service, message),
+                    "message": "{} [{}] {} {}".format(self.log_time, "INFO", self.service, message),
                 }
             )
 
@@ -173,47 +182,47 @@ class LambdaLogger:
             self.logs.append(
                 "{}: [{}] {} {}".format(time.time(), "WARN", self.service, message)
             )
-            self.error_message = "[{}] {} {}".format("WARN", self.service, message)
+            self.error_messages.append("[{}] {} {}".format("WARN", self.service, message))
             self.log_events.append(
                 {
                     "timestamp": int(time.time() * 1000),
-                    "message": "[{}] {} {}".format("WARN", self.service, message),
+                    "message": "{} [{}] {} {}".format(self.log_time, "WARN", self.service, message),
                 }
             )
 
     def error(self, message):
         self.logs.append(
-            "{}: [{}] {} {}".format(time.time(), "ERROR", self.service, message)
+            "{}: {} [{}] {} {}".format(time.time(), self.log_time, "ERROR", self.service, message)
         )
-        self.error_message = "[{}] {} {}".format("ERROR", self.service, message)
+        self.error_messages.append("[{}] {} {}".format("ERROR", self.service, message))
         self.log_events.append(
             {
                 "timestamp": int(time.time() * 1000),
-                "message": "[{}] {} {}".format("ERROR", self.service, message),
+                "message": "{} [{}] {} {}".format(self.log_time, "ERROR", self.service, message),
             }
         )
 
     def critical(self, message):
         self.logs.append(
-            "{}: [{}] {} {}".format(time.time(), "CRITICAL", self.service, message)
+            "{}: {} [{}] {} {}".format(time.time(), self.log_time, "CRITICAL", self.service, message)
         )
-        self.error_message = "[{}] {} {}".format("CRITICAL", self.service, message)
+        self.error_messages.append("[{}] {} {}".format("CRITICAL", self.service, message))
         self.log_events.append(
             {
                 "timestamp": int(time.time() * 1000),
-                "message": "[{}] {} {}".format("CRITICAL", self.service, message),
+                "message": "{} [{}] {} {}".format(self.log_time, "CRITICAL", self.service, message),
             }
         )
 
     def exception(self, message):
         self.logs.append(
-            "{}: [{}] {} {}".format(time.time(), "EXCEPTION", self.service, message)
+            "{}: {} [{}] {} {}".format(time.time(), self.log_time, "EXCEPTION", self.service, message)
         )
-        self.error_message = "[{}] {} {}".format("EXCEPTION", self.service, message)
+        self.error_messages.append("[{}] {} {}".format("EXCEPTION", self.service, message))
         self.log_events.append(
             {
                 "timestamp": int(time.time() * 1000),
-                "message": "[{}] {} {}".format("EXCEPTION", self.service, message),
+                "message": "{} [{}] {} {}".format(self.log_time, "EXCEPTION", self.service, message),
             }
         )
 
@@ -234,8 +243,8 @@ class LambdaLogger:
             response["startTime"] = self.start_time_ms
             response["endTime"] = int(time.time() * 1000)
             response["logEvents"] = self.log_events
-            if self.error_message is not None:
-                response["errorMessage"] = self.error_message
+            if self.error_messages:
+                response["errorMessage"] = "\n".join(self.error_messages)
 
             if len(self.tracebacks):
                 response["tracebacks"] = self.tracebacks
@@ -273,8 +282,8 @@ class LambdaLogger:
         response["startTime"] = self.start_time_ms
         response["endTime"] = int(time.time() * 1000)
 
-        if self.error_message is not None:
-            response["errorMessage"] = self.error_message
+        if self.error_messages:
+            response["errorMessage"] = "\n".join(self.error_messages)
 
         if len(self.tracebacks):
             response["tracebacks"] = self.tracebacks
