@@ -1,24 +1,56 @@
+["setuptools"]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "caredaily-botlab"
 description = "A modern, enterprise-ready business services development platform."
 readme = "README.md"
 dynamic = ["version"]
-requires-python = "~=3.9"
+requires-python = "~=3.10"
 license = { file="LICENSE.txt" }
 authors = [
     { name = "David Moss", email = "dmoss@caredaily.ai" },
     { name = "Destry Teeter", email = "destry@caredaily.ai" },
 ]
 classifiers = [
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+dependencies = [
+    # Local development version of caredaily; TODO: publish caredaily to PyPI and update this dependency
+    "botlab-cli @ file:////Users/destry/Developer/PPC/Python/botlab-cli",
 ]
 
 [project.urls]
 homepage = "https://github.com/caredailyai/botlab"
 documentation = "https://iotapps.docs.apiary.io"
+
+[project.scripts]
+botlab-tests = "scripts.pytest:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "src.botengine.__version__" }
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "requests_mock",
+]
+video_amazon = [
+    "boto3",
+]
+mixpanel = [
+    "mixpanel",
+]
+amplitude = [
+    "amplitude-python",
+]
+
 
 
 [tool.isort]

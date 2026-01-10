@@ -72,7 +72,8 @@ We host and run them for you on our servers. Of course, you can also run them li
 Want to jump right in and watch a bot in action run? Playback some recorded data using the BotEngine in a new CodeSpace:
 
 ```
-botengine --playback tests/data/14-days-of-data -r com.ppc.Tests
+pip install .
+botlab --playback tests/data/14-days-of-data -r com.ppc.Lesson1-Microservices
 ```
 
 For help on creating a new CodeSpace please refer to [GitHub](https://github.com/features/codespaces) documentation.

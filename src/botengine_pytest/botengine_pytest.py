@@ -2162,7 +2162,7 @@ class BotEnginePyTest:
 
             for q_id in self.questions_to_ask:
                 question = self.questions_to_ask[q_id]
-                json_question = question._form_json_question()
+                json_question = question._form_json_question(logger=self.get_logger("question.Question"))
 
                 body["questions"].append(json_question)
             import random
@@ -3365,7 +3365,7 @@ class Question:
 
         return value
 
-    def _form_json_question(self):
+    def _form_json_question(self, logger):
         """
         Private function to form the JSON request to POST this question
         :return: JSON string ready to send to the server
@@ -3463,8 +3463,8 @@ class Question:
             identifier = 0
             for option in self.response_options:
                 if isinstance(option, dict):
-                    print(
-                        "Malformed question response option {}: {}".format(body, option)
+                    logger.warning(
+                        "|_form_json_question() Malformed question response option {}: {}".format(body, option)
                     )
                     body["responseOptions"].append(option)
                 else:

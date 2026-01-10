@@ -184,13 +184,12 @@ def main():
     
     print("Setting up botengine...")
     
-    # Load the botengine module
-    try:
-        shutil.copy(os.path.join("./", "botengine"), "botengine.py")
-    except (FileNotFoundError, PermissionError) as e:
-        raise RuntimeError(f"Failed to copy botengine: {e}")
+    # # Load the botengine module
+    # try:
+    #     shutil.copy(os.path.join("./", "botengine"), "botengine.py")
+    # except (FileNotFoundError, PermissionError) as e:
+    #     raise RuntimeError(f"Failed to copy botengine: {e}")
     
-    botengine = importlib.import_module("botengine")
     
     # ============================================================================
     # BOT GENERATION
@@ -206,10 +205,13 @@ def main():
     base_path = os.path.join(os.getcwd(), "." + botname)
     print(f"Using base_path = {base_path}")
     
+    from botlab import merge_botengine, merge_redirects
+
     # Merge bot files from core repository
-    botengine._merge_redirects(
+    merge_redirects(
         os.path.join(core, botname), base_path, botname, core_directory=core
     )
+    merge_botengine(os.path.join(core, "src", "botengine_pytest"), base_path, tests=True)
 
     # ============================================================================
     # MICROSERVICE SETUP
@@ -306,18 +308,18 @@ def main():
     
     print("Finalizing setup...")
     
-    # Clean up temporary botengine.py file
-    try:
-        os.remove("botengine.py")
-    except (FileNotFoundError, PermissionError) as e:
-        print(f"Warning: Could not remove botengine.py: {e}")
+    # # Clean up temporary botengine.py file
+    # try:
+    #     os.remove("botengine.py")
+    # except (FileNotFoundError, PermissionError) as e:
+    #     print(f"Warning: Could not remove botengine.py: {e}")
     
-    # Copy botengine pytest stubs to the test environment
-    botengine_destination = os.path.join(base_path, "botengine_pytest.py")
-    try:
-        shutil.copyfile("./botengine_pytest.py", botengine_destination)
-    except (FileNotFoundError, PermissionError) as e:
-        raise RuntimeError(f"Failed to copy botengine_pytest.py: {e}")
+    # # Copy botengine pytest stubs to the test environment
+    # botengine_destination = os.path.join(base_path, "botengine_pytest.py")
+    # try:
+    #     shutil.copyfile("./botengine_pytest.py", botengine_destination)
+    # except (FileNotFoundError, PermissionError) as e:
+    #     raise RuntimeError(f"Failed to copy botengine_pytest.py: {e}")
     
     # Add the bot path to Python's module search path
     sys.path.insert(0, base_path)
