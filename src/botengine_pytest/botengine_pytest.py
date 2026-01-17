@@ -43,7 +43,7 @@ class BotEnginePyTest:
     TRIGGER_TIMER = 1 << 6  # 64
     TRIGGER_METADATA = 1 << 7  # 128
     TRIGGER_DATA_STREAM = 1 << 8  # 256
-    TRIGGER_COMMAND_RESPONSE = 1 << 9  # 512
+    TRIGGER_SURVEY = 1 << 9  # 512
     TRIGGER_LOCATION_CONFIGURATION = 1 << 10  # 1024
     TRIGGER_DATA_REQUEST = 1 << 11  # 2048
     TRIGGER_MESSAGES = 1 << 12  # 4096
@@ -646,6 +646,14 @@ class BotEnginePyTest:
         """
         if "messages" in self.inputs:
             return self.inputs["messages"]
+        return None
+
+    def get_survey_block(self):
+        """
+        :return: the survey block from our inputs, if any
+        """
+        if "survey" in self.inputs:
+            return self.inputs["survey"]
         return None
 
     def get_bundle_id(self):
@@ -2990,6 +2998,27 @@ class BotEnginePyTest:
         self.get_logger(f"{__name__}.{__class__.__name__}").info(
             "<update_cloud_message_read_status()"
         )
+        return {}
+
+    
+    # ===========================================================================
+    # Surveys
+    # ===========================================================================
+    def send_survey_notification(self, survey_key, location_id, user_id=None, role=None, send_to_user=None, notification_category=None):
+        """
+        Send a survey notification to a user, role, or notification category.
+
+        :param survey_key: Key of the survey to answer (string)
+        :param location_id: Answer a survey for this location (integer)
+        :param user_id: Answer a survey for specific user (integer, optional)
+        :param role: Answer a survey for users with this role on the location (integer, optional)
+        :param send_to_user: Send the email directly to the user (boolean, optional)
+        :param notification_category: Send the email to organization notification user with this category (integer, optional)
+        :return: Response JSON from server
+        """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(">send_survey_notification()")
+        
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<send_survey_notification()")
         return {}
 
     # ============================================================================

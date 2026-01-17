@@ -280,7 +280,7 @@ class Controller:
                 device_object = self.get_device(botengine, device_id)
                 deprecated_device_object = None
                 if device_object is not None:
-                    if not device_object.device_type in type(device_object).DEVICE_TYPES:
+                    if not hasattr(type(device_object), "DEVICE_TYPES") or device_object.device_type not in type(device_object).DEVICE_TYPES:
                         # Store a copy of the deprecated device object before we potentially delete it
                         deprecated_device_object = device_object
                         device_object = None
@@ -721,6 +721,30 @@ class Controller:
             self.locations[location_id].messages_updated(botengine, messages)
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
             "<sync_messages()"
+        )
+
+    def sync_survey(self, botengine, survey):
+        """
+        Synchronize a survey answer
+        :param botengine: BotEngine environment
+        :param survey: Survey data dictionary containing locationId, userId, and survey JSON
+        """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">sync_survey()"
+        )
+        # Extract location_id from survey data or use the current location
+        location_id = survey.get("locationId", botengine.get_location_id())
+        
+        if location_id not in self.locations:
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").warning(
+                "|sync_survey() Location {} not found in tracked locations".format(location_id)
+            )
+            return
+        
+        # Sync survey to the appropriate location
+        self.locations[location_id].survey_answered(botengine, survey)
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<sync_survey()"
         )
 
     def run_location_intelligence(self, botengine, intelligence_id, argument):

@@ -36,6 +36,9 @@ from .question import (
 from .bot_error import (
     BotError,
 )
+from .color import (
+    Color
+)
 
 __all__ = [
     "DEFAULT_BASE_SERVER_URL",

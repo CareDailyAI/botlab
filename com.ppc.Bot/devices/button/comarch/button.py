@@ -123,7 +123,6 @@ class ComarchButtonDevice(MobileButtonDevice):
     MEASUREMENT_NAME_FIRMWARE = "firmware"
     MEASUREMENT_NAME_CHARGING = "charging"
     MEASUREMENT_NAME_PUT_ON = "putOn"
-    MEASUREMENT_NAME_FALL_STATUS = "fallStatus"
     MEASUREMENT_NAME_EVENT_TYPE = "eventType"
     MEASUREMENT_NAME_HR = "hr"
     MEASUREMENT_NAME_STEPS = "steps"
@@ -149,7 +148,7 @@ class ComarchButtonDevice(MobileButtonDevice):
     # Measurement parameters list for machine learning data extraction
     MEASUREMENT_PARAMETERS_LIST = [
         MEASUREMENT_NAME_BUTTON_STATUS,
-        MEASUREMENT_NAME_FALL_STATUS,
+        MobileButtonDevice.MEASUREMENT_NAME_FALL_STATUS,
         MEASUREMENT_NAME_HR,
         MEASUREMENT_NAME_STEPS,
     ]
@@ -189,7 +188,7 @@ class ComarchButtonDevice(MobileButtonDevice):
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
-        return _("Comarch Wearable")
+        return _("Comarch Wearable")  # noqa: F821 # type: ignore
 
     # MutliButtonDevice Overrides
     def is_currently_pressed(self, botengine, index=None):
@@ -359,34 +358,6 @@ class ComarchButtonDevice(MobileButtonDevice):
             return self.measurements[ComarchButtonDevice.MEASUREMENT_NAME_PUT_ON][0][0]
 
         return False
-
-    def did_fall_status_change(self, botengine=None):
-        """
-        Did the fall status change?
-        :param botengine:
-        :return: True if the fall status changed
-        """
-        if ComarchButtonDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
-            if (
-                ComarchButtonDevice.MEASUREMENT_NAME_FALL_STATUS
-                in self.last_updated_params
-            ):
-                return True
-
-        return False
-
-    def get_fall_status(self, botengine=None):
-        """
-        Get the fall status
-        :param botengine:
-        :return: Fall status
-        """
-        if ComarchButtonDevice.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
-            return self.measurements[ComarchButtonDevice.MEASUREMENT_NAME_FALL_STATUS][
-                0
-            ][0]
-
-        return None
 
     def did_event_type_change(self, botengine=None):
         """

@@ -114,6 +114,14 @@ class Intelligence:
         """
         return
 
+    def survey_answered(self, botengine, survey):
+        """
+        Survey was answered
+        :param botengine: BotEngine environment
+        :param survey: Survey data dictionary containing locationId, userId, and survey JSON
+        """
+        return
+
     def datastream_updated(self, botengine, address, content):
         """
         Data Stream Message Received

@@ -12,6 +12,15 @@ class BedWavveDevice(BedDevice):
     """
     AeroSense Wavve Device
     """
+
+
+    # Parameters
+    MEASUREMENT_NAME_AXEND_STUDY = "axend.study"
+
+    AXEND_STUDY_NOT_STARTED = 0
+    AXEND_STUDY_STARTED = 1
+    AXEND_STUDY_COMPLETED = 2
+
     # List of Device Types this class is compatible with
     DEVICE_TYPES = [2021, 2022]
 
@@ -179,4 +188,40 @@ class BedWavveDevice(BedDevice):
                 if len(self.measurements[BedDevice.MEASUREMENT_NAME_OCCUPANCY]) > 0:
                     return (self.measurements[BedDevice.MEASUREMENT_NAME_OCCUPANCY][0][0] == 0)
 
-        return False 
+        return False
+
+    def did_update_room_interference(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if the room interference changed
+        """
+        return BedWavveDevice.MEASUREMENT_NAME_AXEND_STUDY in self.last_updated_params
+    
+    def get_room_interference_status(self, botengine=None):
+        """
+        :param botengine:
+        :return: room interference status. None if it's not available.
+        """
+        if BedWavveDevice.MEASUREMENT_NAME_AXEND_STUDY in self.measurements:
+            return self.measurements[BedWavveDevice.MEASUREMENT_NAME_AXEND_STUDY][0][0]
+
+        return None
+
+    def did_start_room_interference(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if the room interference study started
+        """
+        if BedWavveDevice.MEASUREMENT_NAME_AXEND_STUDY in self.last_updated_params:
+            return self.get_room_interference_status(botengine) == BedWavveDevice.AXEND_STUDY_STARTED
+        return False
+
+    def did_complete_room_interference(self, botengine=None):
+        """
+        :param botengine:
+        :return: True if the room interference study completed
+        """
+        if BedWavveDevice.MEASUREMENT_NAME_AXEND_STUDY in self.last_updated_params:
+            return self.get_room_interference_status(botengine) == BedWavveDevice.AXEND_STUDY_COMPLETED
+
+        return False

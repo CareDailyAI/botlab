@@ -377,7 +377,7 @@ def _run(
             )
             next_timer_at_server = None
 
-        botengine.schedule_next_timer(
+        botengine._schedule_next_timer(
             next_timer_at_server
         )
 
@@ -417,7 +417,7 @@ class BotEngine:
     TRIGGER_TIMER = 1 << 6  # 64
     TRIGGER_METADATA = 1 << 7  # 128
     TRIGGER_DATA_STREAM = 1 << 8  # 256
-    TRIGGER_COMMAND_RESPONSE = 1 << 9  # 512
+    TRIGGER_SURVEY = 1 << 9  # 512
     TRIGGER_LOCATION_CONFIGURATION = 1 << 10  # 1024
     TRIGGER_DATA_REQUEST = 1 << 11  # 2048
     TRIGGER_MESSAGES = 1 << 12  # 4096
@@ -1585,6 +1585,14 @@ class BotEngine:
             return self.inputs["messages"]
         return None
 
+    def get_survey_block(self):
+        """
+        :return: the survey block from our inputs, if any
+        """
+        if "survey" in self.inputs:
+            return self.inputs["survey"]
+        return None
+
     def get_property(
         self, obj_arr, property_name, property_value, return_property_name
     ):
@@ -2097,7 +2105,9 @@ class BotEngine:
             * instances of such classes whose __dict__ or the result of calling __getstate__() is
               picklable (see section Pickling Class Instances for details).
         """
-        from botengine.color import Color, BotError
+        from .color import Color
+        from .bot_error import BotError
+
         self.get_logger(f"{'botengine'}.{__class__.__name__}").debug(">flush_binary_variables()")
         if self.get_bot_type() == BotEngine.BOT_TYPE_ORGANIZATION_RAG:
             # We don't want to download variables for organization RAG bots
@@ -4438,7 +4448,7 @@ class BotEngine:
         :param argument: Optional argument to inject into the fired timer
         :param reference: Optional ID to reference this timer. Useful if you plan on canceling the timer later.
         """
-        from botengine.boterror import BotError
+        from botengine import BotError
         if timestamp_ms < self.get_timestamp() - 31536000000:
             # Set a timer for over a year ago. Did you accidentally set an absolute alarm and think it was a relative timer?
             import traceback
@@ -4682,46 +4692,46 @@ class BotEngine:
 
     
 
-    def _schedule_next_timer(botengine, next_timer_at_server):
+    def _schedule_next_timer(self, next_timer_at_server):
         from botengine.color import Color
-        botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info(">_schedule_next_timer() timer={}".format(next_timer_at_server))
-        min_countdown_threshold = botengine.get_system_property("ppc.bot.minCountdownThreshold")
-        botengine.get_logger(f"{'botengine'}.{__class__.__name__}").debug("|_schedule_next_timer() min_countdown_threshold={}".format(min_countdown_threshold))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(">_schedule_next_timer() timer={}".format(next_timer_at_server))
+        min_countdown_threshold = self.get_system_property("ppc.bot.minCountdownThreshold")
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").debug("|_schedule_next_timer() min_countdown_threshold={}".format(min_countdown_threshold))
         while True:
-            saved_timers = botengine.load_variable(TIMERS_VARIABLE_NAME)
+            saved_timers = self.load_variable(TIMERS_VARIABLE_NAME)
             if saved_timers is None:
-                botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info("<_schedule_next_timer() Timers variable not found.")
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<_schedule_next_timer() Timers variable not found.")
                 return
             for t in saved_timers:
-                system_time = botengine.get_system_time_ms()
-                botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info(
+                system_time = self.get_system_time_ms()
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info(
                     "|_schedule_next_timer() " + Color.PURPLE + "t{}\t{}".format(system_time - t[0], t) + Color.END
                 )   
             if len(saved_timers) == 0:
-                botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info("<_schedule_next_timer() No timers to schedule.")
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<_schedule_next_timer() No timers to schedule.")
                 break
             if saved_timers[0][0] == MAXINT:
-                botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info("<_schedule_next_timer() Timers exhausted.")
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<_schedule_next_timer() Timers exhausted.")
                 break
             # Schedule the first timer in our stack
             current_timer = saved_timers[0]
             if current_timer[0] == next_timer_at_server:
-                botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info("_schedule_next_timer() Current timer matches next timer at server, no need to reschedule: t{} {}".format(botengine.get_timestamp() - current_timer[0], current_timer))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("_schedule_next_timer() Current timer matches next timer at server, no need to reschedule: t{} {}".format(botengine.get_timestamp() - current_timer[0], current_timer))
                 break
 
             # Request a new execution no earlier than 1 second from now
-            system_time = botengine.get_system_time_ms()
+            system_time = self.get_system_time_ms()
             try:
                 time_variance = int(min_countdown_threshold or TIMER_MIN_MS)
             except Exception:
                 time_variance = TIMER_MIN_MS
             
-            botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info(
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info(
                 "|_schedule_next_timer() Scheduling first timer: t{} {}".format(system_time - current_timer[0], current_timer)
             )
-            next_timer = botengine._execute_again_at_timestamp(max(system_time + time_variance, current_timer[0]))
+            next_timer = self._execute_again_at_timestamp(max(system_time + time_variance, current_timer[0]))
             if next_timer == 0:
-                botengine.get_logger(f"{'botengine'}.{__class__.__name__}").warning(
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").warning(
                     "|_schedule_next_timer() "
                     + Color.PURPLE
                     + "Executing timer during rescheduling. t{} timer={}".format(
@@ -4731,24 +4741,24 @@ class BotEngine:
                 )
                 # Remove executed timer from saved_timers
                 del saved_timers[0]
-                botengine.save_variable(TIMERS_VARIABLE_NAME, saved_timers, overwrite=True)
+                self.save_variable(TIMERS_VARIABLE_NAME, saved_timers, overwrite=True)
                 
                 # Execute timer callback immediately
                 if callable(current_timer[1]):
-                    current_timer[1](botengine, current_timer[2])
+                    current_timer[1](self, current_timer[2])
                 else:
-                    botengine.get_logger(f"{'botengine'}.{__class__.__name__}").error(
+                    self.get_logger(f"{'botengine'}.{__class__.__name__}").error(
                         "|_schedule_next_timer() Timer callback is not callable: {}".format(current_timer)
                     )
                 # Schedule the next timer in the stack
                 continue
-            if botengine.is_server_version_newer_than(716):
+            if self.is_server_version_newer_than(716):
                 saved_timers[0] = (next_timer, current_timer[1], current_timer[2], current_timer[3])
-                botengine.save_variable(TIMERS_VARIABLE_NAME, saved_timers, overwrite=True)
-            botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info("|_schedule_next_timer() Scheduled next timer at server. timer={}".format(next_timer))
+                self.save_variable(TIMERS_VARIABLE_NAME, saved_timers, overwrite=True)
+            self.get_logger(f"{'botengine'}.{__class__.__name__}").info("|_schedule_next_timer() Scheduled next timer at server. timer={}".format(next_timer))
             break
 
-        botengine.get_logger(f"{'botengine'}.{__class__.__name__}").info("<_schedule_next_timer() next_timer={}".format(saved_timers[0] if saved_timers else None))
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info("<_schedule_next_timer() next_timer={}".format(saved_timers[0] if saved_timers else None))
 
     # ===========================================================================
     # Questions
@@ -6897,6 +6907,45 @@ class BotEngine:
         self.get_logger(f"{'botengine'}.{__class__.__name__}").info(
             "<update_cloud_message_read_status() response={}".format(j)
         )
+        return j
+
+    # ===========================================================================
+    # Surveys
+    # ===========================================================================
+    def send_survey_notification(self, survey_key, location_id, user_id=None, role=None, send_to_user=None, notification_category=None):
+        """
+        Send a survey notification to a user, role, or notification category.
+
+        :param survey_key: Key of the survey to answer (string)
+        :param location_id: Answer a survey for this location (integer)
+        :param user_id: Answer a survey for specific user (integer, optional)
+        :param role: Answer a survey for users with this role on the location (integer, optional)
+        :param send_to_user: Send the email directly to the user (boolean, optional)
+        :param notification_category: Send the email to organization notification user with this category (integer, optional)
+        :return: Response JSON from server
+        """
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(">send_survey_notification()")
+        params = {
+            "locationId": location_id,
+            "surveyKey": survey_key
+        }
+        if user_id is not None:
+            params["userId"] = user_id
+        if role is not None:
+            params["role"] = role
+        if send_to_user is not None:
+            params["sendToUser"] = send_to_user
+        if notification_category is not None:
+            params["notificationCategory"] = notification_category
+
+        headers = {"Content-Type": "application/json"}
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(f"|send_survey_notification() params={params}")
+
+        r = self._http_post("/cloud/json/surveyNotification", params=params, headers=headers)
+        j = json.loads(r.text)
+
+        _check_for_errors(j)
+        self.get_logger(f"{'botengine'}.{__class__.__name__}").info(f"<send_survey_notification() response={j}")
         return j
 
     # ===========================================================================

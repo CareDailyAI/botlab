@@ -239,6 +239,7 @@ class TestLocation(unittest.TestCase):
 
         assert mut.devices == {device_id: old_device_object}
         assert len(mut.intelligence_modules) > 0
+        assert len(old_device_object.intelligence_modules) > 0
 
         mut.migrate_device_object(botengine, old_device_object, new_device_object)
 

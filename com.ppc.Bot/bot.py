@@ -701,13 +701,16 @@ def trigger_event(botengine, controller, trigger_type, triggers):
                 controller.run_intelligence_schedules(botengine)
 
     # COMMAND RESPONSES
-    if trigger_type & botengine.TRIGGER_COMMAND_RESPONSE != 0:
+    if trigger_type & botengine.TRIGGER_SURVEY != 0:
         botengine.get_logger(f"{__name__}").info(
-            "|trigger_event() command_responses={}".format(
-                json.dumps(botengine.get_inputs()["commandResponses"])
+            "|trigger_event() survey={}".format(
+                json.dumps(botengine.get_inputs()["survey"])
             )
         )
-        # TODO responses to commands delivered by the bot are available to build out reliable command delivery infrastructure
+
+        survey = botengine.get_survey_block()
+        if survey is not None:
+            controller.sync_survey(botengine, survey)
         pass
 
     # GOAL / SCENARIO CHANGES

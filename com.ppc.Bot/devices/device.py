@@ -391,6 +391,19 @@ class Device:
                 "|synchronize_microservices()\tDeleting all device microservices"
             )
             self.intelligence_modules = {}
+
+        # Handle migration of device microservices
+        for intelligence_id in self.intelligence_modules:
+            if self.intelligence_modules[intelligence_id].parent != self:
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                    "|synchronize_microservices() migrating intelligence module '{}' to new parent device_id={}".format(
+                        intelligence_id, self.device_id
+                    )
+                )
+                self.intelligence_modules[
+                    intelligence_id
+                ].parent = self
+
         botengine.get_logger(f"{__name__}.{__class__.__name__}").debug("<synchronize_microservices()"
         )
 

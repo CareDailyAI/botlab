@@ -104,7 +104,7 @@ class BecklarButtonDevice(MobileButtonDevice):
         :return: the name of this device type in the given language, for example, "Entry Sensor"
         """
         # NOTE: Abstract device type name, doesn't show up in end user documentation
-        return _("Belle X")
+        return _("Belle X")  # noqa: F821 # type: ignore
     
     def get_icon(self):
         """
@@ -158,7 +158,51 @@ class BecklarButtonDevice(MobileButtonDevice):
             return True
 
         return False
-    
+
+    def did_fall_status_change(self, botengine=None):
+        """
+        Did the fall status change (fall detected or fall canceled event)?
+        :param botengine:
+        :return: True if the fall status changed (i.e., a fall was detected or canceled)
+        """
+        if self.did_event_type_change(botengine):
+            if self.get_event_type(botengine) in (
+                BecklarButtonDevice.EVENT_TYPE_FALL,
+                BecklarButtonDevice.EVENT_TYPE_CANCEL_FALL,
+            ):
+                return True
+        return False
+
+    def get_fall_status(self, botengine=None):
+        """
+        Get the current fall status as represented by event types.
+        :param botengine:
+        :return: 1 if the last event was a fall, 0 if canceled, None otherwise.
+        """
+        if self.MEASUREMENT_NAME_EVENT_TYPE in self.measurements:
+            for event in self.measurements[self.MEASUREMENT_NAME_EVENT_TYPE]:
+                if event[0] == BecklarButtonDevice.EVENT_TYPE_FALL:
+                    return MobileButtonDevice.FALL_STATUS_DETECTED
+                elif event[0] == BecklarButtonDevice.EVENT_TYPE_CANCEL_FALL:
+                    return MobileButtonDevice.FALL_STATUS_CANCELLED
+                return None
+        return None
+
+    def get_fall_status_timestamp(self, botengine=None):
+        """
+        Get the timestamp of the last fall event (fall detected or canceled).
+        :param botengine:
+        :return: Timestamp of the last fall event, or None if none exist
+        """
+        if BecklarButtonDevice.MEASUREMENT_NAME_EVENT_TYPE in self.measurements:
+            for event in self.measurements[self.MEASUREMENT_NAME_EVENT_TYPE]:
+                if event[0] in (
+                    BecklarButtonDevice.EVENT_TYPE_FALL,
+                    BecklarButtonDevice.EVENT_TYPE_CANCEL_FALL,
+                ):
+                    return event[1]
+        return None
+
     def did_record_fall(self, botengine=None):
         """
         Did the button record a fall?

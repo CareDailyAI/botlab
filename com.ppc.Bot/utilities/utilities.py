@@ -812,6 +812,8 @@ def _isinstance(object, classinfo):
     if __isinstance:
         # print(f"<_isinstance()={__isinstance}>")
         return True
+    parent_classes = object.__class__.__bases__ if hasattr(object.__class__, '__bases__') else []
+    # print(f"_isinstance() Parent classes: {parent_classes}")
     __classinfo = classinfo if isinstance(classinfo, tuple) else (classinfo,)
     for _classinfo in __classinfo:
         if not hasattr(object, "__module__") or not hasattr(_classinfo, "__module__"):
@@ -826,6 +828,7 @@ def _isinstance(object, classinfo):
         __isinstance = (
             object.__module__ == _classinfo.__module__
             or object.__module__ in [subclass.__module__ for subclass in _classinfo.__subclasses__() if hasattr(subclass, "__module__")]
+            or _classinfo.__module__ in [parent_class.__module__ for parent_class in parent_classes if hasattr(parent_class, '__module__')]
         )
         if __isinstance:
             # print(f"<_isinstance()={__isinstance}>")

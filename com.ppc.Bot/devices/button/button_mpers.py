@@ -40,6 +40,8 @@ class MobileButtonDevice(ButtonDevice):
 
     # Measurement names for mobile-specific features
     MEASUREMENT_NAME_MOBILE_SIGNAL = 'mobileSignal'
+    MEASUREMENT_NAME_STEPS = 'steps'
+    MEASUREMENT_NAME_FALL_STATUS = 'fallStatus'
 
     def __init__(
         self,
@@ -140,5 +142,73 @@ class MobileButtonDevice(ButtonDevice):
         """
         if self.MEASUREMENT_NAME_MOBILE_SIGNAL in self.measurements:
             return self.measurements[self.MEASUREMENT_NAME_MOBILE_SIGNAL][0][1]
+
+        return None
+
+    def did_steps_change(self, botengine=None):
+        """
+        Did the steps change?
+        :param botengine:
+        :return: True if the steps changed
+        """
+        if self.MEASUREMENT_NAME_STEPS in self.measurements:
+            if self.MEASUREMENT_NAME_STEPS in self.last_updated_params:
+                return True
+
+        return False
+
+    def get_steps(self, botengine=None):
+        """
+        Get the steps
+        :param botengine:
+        :return: Steps
+        """
+        if self.MEASUREMENT_NAME_STEPS in self.measurements:
+            return self.measurements[self.MEASUREMENT_NAME_STEPS][0][0]
+
+        return None
+
+    def get_steps_timestamp(self, botengine=None):
+        """
+        Get the timestamp of the last steps measurement received
+        :param botengine:
+        :return: Timestamp of the last steps measurement in ms; None if it doesn't exist
+        """
+        if self.MEASUREMENT_NAME_STEPS in self.measurements:
+            return self.measurements[self.MEASUREMENT_NAME_STEPS][0][1]
+
+        return None
+
+    def did_fall_status_change(self, botengine=None):
+        """
+        Did the fall status change?
+        :param botengine:
+        :return: True if the fall status changed
+        """
+        if self.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
+            if self.MEASUREMENT_NAME_FALL_STATUS in self.last_updated_params:
+                return True
+
+        return False
+
+    def get_fall_status(self, botengine=None):
+        """
+        Get the fall status
+        :param botengine:
+        :return: Fall status
+        """
+        if self.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
+            return self.measurements[self.MEASUREMENT_NAME_FALL_STATUS][0][0]
+
+        return None
+
+    def get_fall_status_timestamp(self, botengine=None):
+        """
+        Get the timestamp of the last fall status measurement received
+        :param botengine:
+        :return: Timestamp of the last fall status measurement in ms; None if it doesn't exist
+        """
+        if self.MEASUREMENT_NAME_FALL_STATUS in self.measurements:
+            return self.measurements[self.MEASUREMENT_NAME_FALL_STATUS][0][1]
 
         return None

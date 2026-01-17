@@ -164,7 +164,7 @@ class MotionDevice(Device):
 
         return False
 
-    def force_stop_detecting_motion(self, botengine=None):
+    def force_stop_detecting_motion(self, botengine):
         """
         Force stop detecting motion
         :param botengine: BotEngine environment

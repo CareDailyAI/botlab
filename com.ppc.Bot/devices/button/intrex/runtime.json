@@ -5,7 +5,8 @@
       "eventType",
       "fallStatus",
       "latitude",
-      "longitude"
+      "longitude",
+      "steps"
     ]
   }
 }

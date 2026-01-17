@@ -123,10 +123,14 @@ class TestDevice:
         assert len(mut.measurements["test"]) == 2
 
     def test_device_module_comparison(self):
-        import devices.motion.motion as motion
         import devices.motion.develco.motion as motion_develco
-        from devices.motion.motion import MotionDevice
-        from devices.motion.develco.motion import DevelcoMotionDevice
+        import devices.motion.intrex.motion as motion_intrex
+        import devices.motion.motion as motion
+        from devices.motion import (
+            DevelcoMotionDevice,
+            IntrexMotionDevice,
+            MotionDevice,
+        )
 
         botengine = BotEnginePyTest({})
         # Clear out any previous tests
@@ -140,33 +144,52 @@ class TestDevice:
         device_desc = "Test"
 
         mut = DevelcoMotionDevice(botengine, location_object, device_id, device_type, device_desc)
+        mut2 = IntrexMotionDevice(botengine, location_object, device_id, device_type, device_desc)
+        
+        assert isinstance(mut, DevelcoMotionDevice)
+        assert mut.__module__ == DevelcoMotionDevice.__module__
+        assert isinstance(mut, MotionDevice)
+        assert mut.__module__ in [m.__module__ for m in MotionDevice.__subclasses__()]
+        assert issubclass(DevelcoMotionDevice, MotionDevice)
+        assert isinstance(mut2, IntrexMotionDevice)
+        assert mut2.__module__ == IntrexMotionDevice.__module__
+        assert isinstance(mut2, MotionDevice)
+        assert mut2.__module__ in [m.__module__ for m in MotionDevice.__subclasses__()]
+        assert issubclass(IntrexMotionDevice, MotionDevice)
+
+        from importlib import reload
+        reload(motion)
+        reload(motion_develco)
+        reload(motion_intrex)
+
+        from devices.motion import (
+            DevelcoMotionDevice,
+            IntrexMotionDevice,
+            MotionDevice,
+        )
 
         assert isinstance(mut, DevelcoMotionDevice)
         assert mut.__module__ == DevelcoMotionDevice.__module__
         assert isinstance(mut, MotionDevice)
         assert mut.__module__ in [m.__module__ for m in MotionDevice.__subclasses__()]
         assert issubclass(DevelcoMotionDevice, MotionDevice)
-
-        from importlib import reload
-        reload(motion)
-        reload(motion_develco)
-
-        from devices.motion.motion import MotionDevice
-        from devices.motion.develco.motion import DevelcoMotionDevice
-
-        assert not isinstance(mut, DevelcoMotionDevice)
-        assert mut.__module__ == DevelcoMotionDevice.__module__
-        assert not isinstance(mut, MotionDevice)
-        assert mut.__module__ in [m.__module__ for m in MotionDevice.__subclasses__()]
-        assert issubclass(DevelcoMotionDevice, MotionDevice) # Class structure remains the same
+        assert isinstance(mut2, IntrexMotionDevice)
+        assert mut2.__module__ == IntrexMotionDevice.__module__
+        assert isinstance(mut2, MotionDevice)
+        assert mut2.__module__ in [m.__module__ for m in MotionDevice.__subclasses__()]
+        assert issubclass(IntrexMotionDevice, MotionDevice)
 
         from utilities.utilities import _isinstance
         assert _isinstance(1, int)
         assert not _isinstance(1, bool)
         assert _isinstance(mut, DevelcoMotionDevice)
         assert _isinstance(mut, MotionDevice)
+        assert _isinstance(mut2, IntrexMotionDevice)
+        assert _isinstance(mut2, MotionDevice)
 
         assert _isinstance(1, (int,))
         assert not _isinstance(1, (bool,))
         assert _isinstance(mut, (DevelcoMotionDevice,))
         assert _isinstance(mut, (MotionDevice,))
+        assert _isinstance(mut2, (IntrexMotionDevice,))
+        assert _isinstance(mut2, (MotionDevice,))

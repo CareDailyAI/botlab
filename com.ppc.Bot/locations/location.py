@@ -564,6 +564,19 @@ class Location:
                 )
             )
 
+        # Migrate device microservices
+        if hasattr(new_device_object, "intelligence_modules"):
+            for intelligence_id in new_device_object.intelligence_modules:
+                if new_device_object.intelligence_modules[intelligence_id].parent != new_device_object:
+                    botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+                        "|migrate_device_object() migrating intelligence module '{}' to new parent device_id={}".format(
+                            intelligence_id, new_device_object.device_id
+                        )
+                    )
+                    new_device_object.intelligence_modules[
+                        intelligence_id
+                    ].parent = new_device_object
+
         # Replace the device object in our devices dictionary
         self.devices[device_id] = new_device_object
 
@@ -957,6 +970,96 @@ class Location:
                 )
         botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
             ">messages_updated()"
+        )
+
+    def survey_answered(self, botengine, survey):
+        """
+        Survey was answered
+        :param botengine: BotEngine environment
+        :param survey: Survey data dictionary containing locationId, userId, and survey JSON
+        """
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            ">survey_answered()"
+        )
+        # Microservices
+        for microservice_object in self.sorted_intelligence_modules(botengine).values():
+            botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                "|survey_answered() - Delivering survey_answered to location microservice: {}".format(
+                    microservice_object
+                )
+            )
+            if not hasattr(microservice_object, "survey_answered"):
+                botengine.get_logger(f"{__name__}.{__class__.__name__}").debug(
+                    "|survey_answered() - No survey_answered() method in location microservice: {}".format(
+                        microservice_object
+                    )
+                )
+                continue
+            try:
+                import time
+
+                t = time.time()
+                microservice_object.survey_answered(botengine, survey)
+                microservice_object.track_statistics(
+                    botengine, (time.time() - t) * 1000
+                )
+            except Exception as e:
+                import traceback
+
+                botengine.get_logger().error(
+                    "|survey_answered() - Error delivering survey_answered to location microservice (continuing execution). {}survey={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        survey,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
+                )
+
+        # Device microservices
+        for device_object in self.devices.values():
+            if hasattr(device_object, "intelligence_modules"):
+                for intelligence_id in device_object.intelligence_modules:
+                    microservice_object = device_object.intelligence_modules[
+                        intelligence_id
+                    ]
+                    if not hasattr(microservice_object, "survey_answered"):
+                        continue
+                    try:
+                        microservice_object.survey_answered(botengine, survey)
+                    except Exception as e:
+                        import traceback
+
+                        botengine.get_logger().error(
+                            "|survey_answered() - Error delivering survey_answered to device microservice (continuing execution). {}survey={} exception={} trace={}{}".format(
+                                utilities.Color.RED,
+                                survey,
+                                e,
+                                traceback.format_exc(),
+                                utilities.Color.END,
+                            )
+                        )
+
+        # Filters
+        for filter_object in self.filters.values():
+            if not hasattr(filter_object, "survey_answered"):
+                continue
+            try:
+                filter_object.survey_answered(botengine, survey)
+            except Exception as e:
+                import traceback
+
+                botengine.get_logger().error(
+                    "|survey_answered() - Error delivering survey_answered to filter (continuing execution). {}survey={} exception={} trace={}{}".format(
+                        utilities.Color.RED,
+                        survey,
+                        e,
+                        traceback.format_exc(),
+                        utilities.Color.END,
+                    )
+                )
+        botengine.get_logger(f"{__name__}.{__class__.__name__}").info(
+            "<survey_answered()"
         )
 
     def datastream_updated(self, botengine, address, content, raise_exceptions=False):

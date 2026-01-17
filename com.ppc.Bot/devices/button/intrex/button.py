@@ -6,10 +6,10 @@ file 'LICENSE.txt', which is part of this source code package.
 
 @author: Konstantin Manyankin
 '''
-from devices.button.button_multi import MultiButtonDevice
+from devices.button.button_mpers import MobileButtonDevice
 
 
-class IntrexButtonDevice(MultiButtonDevice):
+class IntrexButtonDevice(MobileButtonDevice):
     """
     Intrex Community Wearable Device
     """
@@ -26,6 +26,13 @@ class IntrexButtonDevice(MultiButtonDevice):
         :param device_description:
         :param precache_measurements:
         """
-        MultiButtonDevice.__init__(self, botengine, location_object, device_id, device_type, device_description,
+        MobileButtonDevice.__init__(self, botengine, location_object, device_id, device_type, device_description,
                                    precache_measurements=precache_measurements)
 
+
+    def get_device_type_name(self):
+        """
+        :return: the name of this device type in the given language, for example, "Entry Sensor"
+        """
+        # NOTE: Abstract device type name, doesn't show up in end user documentation
+        return _("Intrex Community Wearable")  # noqa: F821 # type: ignore

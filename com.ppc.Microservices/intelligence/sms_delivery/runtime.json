@@ -13,7 +13,7 @@
     # 64 = Reserved for timers
     # 128 = Device configuration or metadata was updated
     # 256 = Data Stream Message received,
-    # 512 = Command Response,
+    # 512 = Survey answered,
     # 1024 = Location configuration was updated (including user roles)
     "trigger": 256,
 
