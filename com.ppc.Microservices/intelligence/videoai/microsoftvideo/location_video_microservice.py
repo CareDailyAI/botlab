@@ -23,16 +23,16 @@ import time
 ACCOUNT_NAME = 'andresdemo'
 
 # Copy/paste Microsoft Blob Storage Account Key
-ACCOUNT_KEY = '6kG0iguGEK9h41shJasZOW4v/uPKr1Guu8RFWfLhWf7MnDcJaaw5eFhhYGSqaFk2qpqX8JIpJobe0bY8MmYa+g=='
+ACCOUNT_KEY = 'YOUR_ACCOUNT_KEY'
 
 # Copy/paste Microsoft Blob Storage Container Name
 CONTAINER_NAME = 'testcontainer'
 
 # Copy/paste Microsoft Video Indexer Ocp-Apim-Subscription-Key
-API_KEY = '81a077573ec04752badb072f3c1dd3cb'
+API_KEY = 'YOUR_API_KEY'
 
 # Copy/paste Microsoft Video Indexer Account ID
-ACCOUNT_ID = 'd3156601-09f5-46aa-9160-dc3b1827c397'
+ACCOUNT_ID = 'YOUR_ACCOUNT_ID'
 
 # Copy/paste Microsoft Video Indexer Account Location
 ACCOUNT_LOCATION = 'trial'

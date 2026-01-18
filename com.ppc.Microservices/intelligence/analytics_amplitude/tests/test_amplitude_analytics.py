@@ -67,7 +67,7 @@ class TestLocationAnalyticsAmplitudeMicroservice(unittest.TestCase):
         request_json = mock_for_requests.last_request.json()
         botengine.get_logger().info("DEBUG: {}".format(request_json))
         {
-            'api_key': '267ab5573fc279e3ddaa4da272518a15', 'events': [
+            'api_key': 'YOUR_API_KEY', 'events': [
                 {
                     'user_id': 'bot_0', 
                     'device_id': 'com.ppc.Tests', 
