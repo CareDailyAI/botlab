@@ -4716,7 +4716,7 @@ class BotEngine:
             # Schedule the first timer in our stack
             current_timer = saved_timers[0]
             if current_timer[0] == next_timer_at_server:
-                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("_schedule_next_timer() Current timer matches next timer at server, no need to reschedule: t{} {}".format(botengine.get_timestamp() - current_timer[0], current_timer))
+                self.get_logger(f"{'botengine'}.{__class__.__name__}").info("_schedule_next_timer() Current timer matches next timer at server, no need to reschedule: t{} {}".format(self.get_timestamp() - current_timer[0], current_timer))
                 break
 
             # Request a new execution no earlier than 1 second from now
