@@ -1,11 +1,20 @@
 # Lesson 15 : Analytics
 
-Please reach out to the developers if you would like a tutorial on Analytics.
+The `signals.analytics` module in `com.ppc.Bot` can be replaced with an implementation that allows developers to capture analytics to their favorite online analytics services. The core repo includes examples (Mixpanel, Amplitude).
 
-The analytics.py module in com.ppc.Bot can be easily replaced with an implementation that allows developers to capture analytics to their favorite online analytics services. The current implementation supports MixPanel.
+This lesson shows a simple pattern:
+- Use `signals.analytics.track(...)` to record events (and optionally create narratives).
+- Use `Location.set_location_property(..., track=True)` to propagate “people” properties via analytics signals.
 
-Use the com.ppc.Bot/location/location.py location object to track analytics very easily:
+## What you’ll build
 
-    location_object.track("something happened", properties={"name": statistic})
-    
-If using the default mixpanel analytics.py implementation, you can set your mixpanel token and turn mixpanel analytics on and off inside domain.py. See the attached domain.py.
+- A location microservice (`intelligence/lesson15/location_analytics_microservice.py`) that:
+  - emits `analytics_track` datastream messages
+  - emits `analytics_people_set` messages via location properties
+  - publishes a small summary to `lesson15/analytics`
+
+## Run locally (recommended)
+
+```bash
+botlab-tests --bundle com.ppc.Lesson15-Analytics --directory tests
+```

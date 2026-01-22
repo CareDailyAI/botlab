@@ -11,10 +11,10 @@ file 'LICENSE.txt', which is part of this source code package.
 
 
 # Organization short name, which allows us to send emails to this organization's administrators
-ORGANIZATION_SHORT_NAME = "presence"
+ORGANIZATION_SHORT_NAME = "botlab"
 
 # Name of the service
-SERVICE_NAME = "Presence"
+SERVICE_NAME = "Lesson 13 - Language Localization"
 
 # Default language for this bot
 DEFAULT_LANGUAGE = "en"

@@ -1,0 +1,8 @@
+{
+  "extends": "com.ppc.Bot",
+  "microservices": [],
+  "safe_delete_microservices": [],
+  "pip_install": [],
+  "pip_install_remotely": []
+}
+

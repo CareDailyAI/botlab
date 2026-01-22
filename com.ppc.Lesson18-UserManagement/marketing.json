@@ -1,0 +1,20 @@
+{
+  "app": {
+    "category": "L",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Lesson 18 - User Management",
+        "author": "CareDaily BotLab",
+        "copyright": "Copyright 2026 CareDaily",
+        "description": "Lesson 18 demonstrates listing users associated with a location.",
+        "marketingUrl": "http://caredaily.ai",
+        "supportUrl": "",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": ""
+      }
+    ]
+  }
+}
+

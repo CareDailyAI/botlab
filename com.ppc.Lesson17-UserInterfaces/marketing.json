@@ -1,0 +1,20 @@
+{
+  "app": {
+    "category": "L",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Lesson 17 - User Interfaces",
+        "author": "CareDaily BotLab",
+        "copyright": "Copyright 2026 CareDaily",
+        "description": "Lesson 17 demonstrates publishing UI-facing state via botengine.set_state().",
+        "marketingUrl": "http://caredaily.ai",
+        "supportUrl": "",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": ""
+      }
+    ]
+  }
+}
+

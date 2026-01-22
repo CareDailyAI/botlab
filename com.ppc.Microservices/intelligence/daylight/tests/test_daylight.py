@@ -86,15 +86,55 @@ class TestDaylight(unittest.TestCase):
 
         mut = controller.locations[0].intelligence_modules["intelligence.daylight.location_daylight_microservice"]
         assert mut is not None
-        assert mut.next_sunrise_timestamp_ms(botengine) == 1685620744000
-        assert mut.next_sunset_timestamp_ms(botengine) == 1685676801000
+        try:
+            import ephem  # noqa: F401
+            ephem_available = True
+        except ImportError:
+            ephem_available = False
+
+        if ephem_available:
+            assert mut.next_sunrise_timestamp_ms(botengine) == 1685620744000
+            assert mut.next_sunset_timestamp_ms(botengine) == 1685676801000
+        else:
+            # When the `ephem` library is not installed locally, the microservice falls back to
+            # fixed local times (8am/8pm). This keeps the bot functional without native deps.
+            assert (
+                mut.next_sunrise_timestamp_ms(botengine)
+                == botengine.get_timestamp() + 8 * utilities.ONE_HOUR_MS
+            )
+            assert (
+                mut.next_sunset_timestamp_ms(botengine)
+                == botengine.get_timestamp() + 20 * utilities.ONE_HOUR_MS
+            )
 
         botengine.set_timestamp(1685602800000 + 12 * utilities.ONE_HOUR_MS) # Noon on June 1, 2023 PST
 
-        assert mut.next_sunrise_timestamp_ms(botengine) == 1685707110000
-        assert mut.next_sunset_timestamp_ms(botengine) == 1685676801000
+        if ephem_available:
+            assert mut.next_sunrise_timestamp_ms(botengine) == 1685707110000
+            assert mut.next_sunset_timestamp_ms(botengine) == 1685676801000
+        else:
+            # Noon: next sunrise should be tomorrow 8am, next sunset is today 8pm.
+            assert (
+                mut.next_sunrise_timestamp_ms(botengine)
+                == botengine.get_timestamp() + 20 * utilities.ONE_HOUR_MS
+            )
+            assert (
+                mut.next_sunset_timestamp_ms(botengine)
+                == botengine.get_timestamp() + 8 * utilities.ONE_HOUR_MS
+            )
 
         botengine.set_timestamp(1685602800000 + 22 * utilities.ONE_HOUR_MS) # 10 PM on June 1, 2023 PST
 
-        assert mut.next_sunrise_timestamp_ms(botengine) == 1685707110000
-        assert mut.next_sunset_timestamp_ms(botengine) == 1685763253000
+        if ephem_available:
+            assert mut.next_sunrise_timestamp_ms(botengine) == 1685707110000
+            assert mut.next_sunset_timestamp_ms(botengine) == 1685763253000
+        else:
+            # 10pm: next sunrise is tomorrow 8am, next sunset is tomorrow 8pm.
+            assert (
+                mut.next_sunrise_timestamp_ms(botengine)
+                == botengine.get_timestamp() + 10 * utilities.ONE_HOUR_MS
+            )
+            assert (
+                mut.next_sunset_timestamp_ms(botengine)
+                == botengine.get_timestamp() + 22 * utilities.ONE_HOUR_MS
+            )

@@ -1,0 +1,20 @@
+{
+  "app": {
+    "category": "L",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Lesson 15 - Analytics",
+        "author": "CareDaily BotLab",
+        "copyright": "Copyright 2026 CareDaily",
+        "description": "Lesson 15 demonstrates analytics signals and location properties.",
+        "marketingUrl": "http://caredaily.ai",
+        "supportUrl": "",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": ""
+      }
+    ]
+  }
+}
+

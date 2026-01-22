@@ -1,0 +1,20 @@
+{
+  "app": {
+    "category": "L",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Lesson 19 - Behaviors",
+        "author": "CareDaily BotLab",
+        "copyright": "Copyright 2026 CareDaily",
+        "description": "Lesson 19 demonstrates publishing behaviors (menus) for device types via signals.behaviors.",
+        "marketingUrl": "http://caredaily.ai",
+        "supportUrl": "",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": ""
+      }
+    ]
+  }
+}
+

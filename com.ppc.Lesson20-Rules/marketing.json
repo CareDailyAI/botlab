@@ -1,0 +1,20 @@
+{
+  "app": {
+    "category": "L",
+    "marketing": [
+      {
+        "lang": "en",
+        "name": "Lesson 20 - Rules",
+        "author": "CareDaily BotLab",
+        "copyright": "Copyright 2026 CareDaily",
+        "description": "Lesson 20 demonstrates reading and toggling rules using BotEngine APIs.",
+        "marketingUrl": "http://caredaily.ai",
+        "supportUrl": "",
+        "videoUrl": "",
+        "privacyUrl": "",
+        "keywords": ""
+      }
+    ]
+  }
+}
+

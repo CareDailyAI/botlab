@@ -2332,47 +2332,6 @@ class BotEnginePyTest:
         )
 
     # ===========================================================================
-    # Bot-to-UI content delivery
-    # ===========================================================================
-    def set_ui_content(self, address, json_content, overwrite=False, timestamp_ms=None):
-        """
-        Set information to be consumed by user interfaces through a known address.
-
-        Application-layer developers first collectively agree upon the data
-        that needs to be produced by the bot to be rendered on a UI. Then the UI
-        can read the address to extract the JSON information to render natively.
-
-        It is therefore possible for the bot to also produce new addressable content,
-        as long as the addresses are retrievable from a well known base address. For example,
-        you could save some UI content that includes a list of reports, each report saved under
-        a unique address. Then, save UI content for each report under their unique addresses.
-
-        :param address: Address to save information into, in a way that can be recalled by an app.
-        :param json_content: Raw JSON content to deliver to an app/UI.
-        :param overwrite: True to overwrite all existing content, False to update existing server content only with the top-level dictionary keys that are presented leaving others untouched (default)
-        :param timestamp_ms: For time-series state variables, fill in the timestamp in milliseconds.
-        """
-        if self.get_location_id() not in self.states:
-            self.states[self.get_location_id()] = {}
-        self.states[self.get_location_id()][address] = json_content
-        return None
-
-    def get_ui_content(self, address, timestamp_ms=None):
-        """
-        Get UI content by address
-        :param address: Address to retrieve information from
-        :param timestamp_ms: Optional timestamp for time-based state variables
-        :return: The JSON value for this address, or None if it doesn't exist
-        """
-
-        if self.get_location_id() not in self.states:
-            return None
-        if address in self.states[self.get_location_id()]:
-            return self.states[self.get_location_id()][address]
-
-        return None
-
-    # ===========================================================================
     # Bot content delivery to state variables
     # ===========================================================================
     def set_state(

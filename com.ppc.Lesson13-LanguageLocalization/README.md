@@ -1,15 +1,15 @@
 # Lesson 13 : Language Localization
 
-Please reach out to the developers if you would like a complete tutorial on language localization.
+This lesson demonstrates gettext-based localization and the `_()` convention for marking strings translatable.
 
 Also, please check out the following:
-* **i18n.sh** inside each bot. Run this script inside a bot directory to extract all localizable strings from your bots.
-* **localization.py** inside each bot. I've included a copy of this locally with the key lines uncommented to allow for language localization packages.
-* **domain.py** inside each bot. We use this file to configure and brand a bot service. This file also specifies the default language.
+- **`i18n.sh`**: extracts strings and compiles locale catalogs.
+- **`localization.py`**: installs gettext and selects language.
+- **`domain.py`**: configures default language and branding.
 
-Use the famous _("Hello") style nomenclature to create a localizable string in your microsevices. 
+Use the famous `_('Hello')` style nomenclature to create a localizable string in your microservices.
 
-If you want to include something dynamic in this string, then use the format() function like so:
+If you want to include something dynamic in this string, then use the `format()` function like so:
 
 ### CORRECT
     three = "3"
@@ -22,3 +22,27 @@ Remember that everything inside the parenthesis acts like a key, so this is wron
     _("One Two {}".format(three))
 
 Because this turns the string into "One Two 3", and then this string is used as a key to look up the translation - and none exists.
+
+## What you’ll build
+
+- A location microservice (`intelligence/lesson13/location_localization_microservice.py`) that publishes a small payload to `lesson13/localization` showing correct vs incorrect dynamic-string patterns.
+
+## Run locally (recommended)
+
+```bash
+botlab-tests --bundle com.ppc.Lesson13-LanguageLocalization --directory tests
+```
+
+## Generate and compile locale files
+
+Inside the bot directory:
+
+```bash
+./i18n.sh
+```
+
+This will:
+- generate the bot (so all microservices are included),
+- extract strings into `locale/messages.pot`,
+- update per-language `messages.po`,
+- compile `messages.po` into `messages.mo`.

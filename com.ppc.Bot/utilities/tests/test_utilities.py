@@ -107,7 +107,7 @@ class TestUtilities(unittest.TestCase):
         assert utilities.get_admin_url_for_location(botengine) == ""
 
         get_property_mock.return_value = {
-            "app.peoplepowerco.com": "https://console.peoplepowerfamily.com"
+            "sbox.peoplepowerco.com": "https://console.peoplepowerfamily.com"
         }
         assert (
             utilities.get_admin_url_for_location(botengine)
@@ -115,7 +115,7 @@ class TestUtilities(unittest.TestCase):
         )
 
         get_property_mock.return_value = {
-            "app.peoplepowerco.com": "https://app.caredaily.ai"
+            "sbox.peoplepowerco.com": "https://app.caredaily.ai"
         }
         assert (
             utilities.get_admin_url_for_location(botengine)

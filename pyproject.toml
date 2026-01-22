@@ -23,7 +23,7 @@ classifiers = [
 
 dependencies = [
     # Local development version of caredaily; TODO: publish caredaily to PyPI and update this dependency
-    "botlab-cli @ file:////Users/destry/Developer/PPC/Python/botlab-cli",
+    "botlab-cli @ file:../botlab-cli",
 ]
 
 [project.urls]
@@ -43,6 +43,13 @@ dev = [
 ]
 video_amazon = [
     "boto3",
+]
+video_google = [
+    "google.cloud",
+]
+video_microsoft = [
+    "azure.storage.blob",
+    "azure.identity",
 ]
 mixpanel = [
     "mixpanel",

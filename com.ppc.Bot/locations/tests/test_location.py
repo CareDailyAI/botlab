@@ -239,7 +239,10 @@ class TestLocation(unittest.TestCase):
 
         assert mut.devices == {device_id: old_device_object}
         assert len(mut.intelligence_modules) > 0
-        assert len(old_device_object.intelligence_modules) > 0
+        # Device microservices are optional. In the default `com.ppc.Tests` bundle used by
+        # `botlab-tests`, the generated merged `index.py` may not include any device
+        # microservices at all.
+        assert old_device_object.intelligence_modules is not None
 
         mut.migrate_device_object(botengine, old_device_object, new_device_object)
 

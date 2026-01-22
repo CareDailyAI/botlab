@@ -1,0 +1,14 @@
+{
+  "version": {
+    "trigger": 1,
+    "schedules": {
+      "DAILY": "0 0 9 ? * * *"
+    },
+    "dataStreams": [
+      {
+        "address": "lesson17_ui_state"
+      }
+    ]
+  }
+}
+

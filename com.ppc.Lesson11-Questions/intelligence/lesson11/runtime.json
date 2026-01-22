@@ -1,0 +1,9 @@
+{
+  "version": {
+    "trigger": 17,
+    "schedules": {
+      "DAILY": "0 0 9 ? * * *"
+    }
+  }
+}
+

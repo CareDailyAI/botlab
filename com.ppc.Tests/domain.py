@@ -59,6 +59,8 @@ ADMIN_DEFAULT_TIMEZONE = "US/Pacific"
 # Command Center URLs
 COMMAND_CENTER_URLS = {
     "app.peoplepowerco.com": "https://app.caredaily.ai",
+    # Default dev/test server used by botlab-tests (see botlab-cli DEFAULT_BASE_SERVER_URL)
+    "sbox.peoplepowerco.com": "https://app-sbox.caredaily.ai",
     "sboxall.peoplepowerco.com": "https://app-sbox.caredaily.ai"
 }
 
@@ -83,6 +85,8 @@ MIXPANEL_TOKEN = None
 # Amplitude tokens
 AMPLITUDE_TOKENS = {
     "app.peoplepowerco.com": "asdf",
+    # Default dev/test server used by botlab-tests (see botlab-cli DEFAULT_BASE_SERVER_URL)
+    "sbox.peoplepowerco.com": "asdf",
     "sboxall.peoplepowerco.com": "asdf"
 }
 
@@ -115,6 +119,8 @@ CS_VIRTUAL_CONNECT_SMS_DELAY_MS = utilities.ONE_HOUR_MS * 4
 # OpenAI Organization ID
 OPEN_AI_ORGANIZATIONS = {
     "app.peoplepowerco.com": "asdf",
+    # Default dev/test server used by botlab-tests (see botlab-cli DEFAULT_BASE_SERVER_URL)
+    "sbox.peoplepowerco.com": "asdf",
     "sboxall.peoplepowerco.com": "asdf"
 }
 
